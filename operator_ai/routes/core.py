@@ -82,3 +82,15 @@ def me(ctx: Ctx = Depends(get_ctx)):
         "ai": llm.state(ctx.tenant),
         "can_decide": sorted(auth.ROLE_DECIDE.get(ctx.role, set())) if ctx.role != "owner" else ["*"],
     }
+
+
+@router.post("/demo/reset")
+def demo_reset(ctx: Ctx = Depends(get_ctx)):
+    from .. import demo
+
+    if ctx.role != "owner":
+        raise HTTPException(403, "Owner only")
+    try:
+        return demo.reset(ctx.tenant, ctx.actor)
+    except demo.DemoResetRefused as e:
+        raise HTTPException(403, str(e))
