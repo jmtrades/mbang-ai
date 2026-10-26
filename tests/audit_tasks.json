@@ -1,0 +1,69 @@
+[
+ {
+  "id": "a01",
+  "asset_type": "dm_script",
+  "text": "Hey! What's your goal this year? How many clients do you have? What's your budget? Our programme is $3,000 a month and we guarantee results.",
+  "flaws": [
+   "multiple_questions",
+   "price_in_dm",
+   "guarantee"
+  ]
+ },
+ {
+  "id": "a02",
+  "asset_type": "ad",
+  "text": "In today's fast-paced world, unlock your potential and elevate your clinic with our game-changer system. Click here! Book now! Download the guide!",
+  "flaws": [
+   "ai_words",
+   "multiple_ctas",
+   "weak_hook"
+  ]
+ },
+ {
+  "id": "a03",
+  "asset_type": "webinar",
+  "text": "Segment 1: intro (20 min). Segment 2: offer (5 min). During the webinar plant questions in the chat from a second account so it looks busy. Doors closing tonight, last chance!",
+  "flaws": [
+   "segment_timing",
+   "planted_questions",
+   "fake_scarcity"
+  ]
+ },
+ {
+  "id": "a04",
+  "asset_type": "email",
+  "text": "Subject: Re: our chat\nHi there, just following up on our conversation. Our students make $100k a month. Click here or reply to book.",
+  "flaws": [
+   "deceptive_subject",
+   "income_claim",
+   "multiple_ctas"
+  ]
+ },
+ {
+  "id": "a05",
+  "asset_type": "vsl",
+  "text": "Hi, I'm going to show you something. Our clients always succeed, guaranteed. Shout out to Maria who just booked! Buy now.",
+  "flaws": [
+   "guarantee",
+   "fake_shoutout",
+   "weak_hook"
+  ]
+ },
+ {
+  "id": "a06",
+  "asset_type": "reminder",
+  "text": "Don't forget your call tomorrow!",
+  "flaws": [
+   "no_value_reminder"
+  ]
+ },
+ {
+  "id": "a07",
+  "asset_type": "profile_bio",
+  "text": "Helping businesses grow | 100K+ months | DM me",
+  "flaws": [
+   "income_claim",
+   "vague_who"
+  ]
+ }
+]

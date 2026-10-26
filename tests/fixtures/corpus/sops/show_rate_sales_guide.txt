@@ -1,0 +1,35 @@
+Show Rate and Sales Pipeline Guide
+FICTIONAL TRAINING MATERIAL FOR TESTS
+
+Why we track every stage
+Every stage of the pipeline converts into the next one. When revenue is low, one stage is usually the bottleneck. Fix that stage first.
+The pipeline stages are: DM sent, reply, quality conversation, link sent, call booked, call showed, closed.
+
+Benchmarks for each stage
+Benchmark: DM reply rate should be at least 10 percent of DMs sent. Below 8 percent means the opener is the problem.
+Benchmark: at least 40 percent of replies should turn into a quality conversation.
+Benchmark: at least 50 percent of quality conversations should get the booking link.
+Benchmark: at least 30 percent of people who get the link should book a call.
+Benchmark: show rate should be at least 60 percent of booked calls. Under 50 percent is an emergency.
+Benchmark: close rate should be at least 20 percent of calls that showed.
+Benchmark: webinar registration rate should be at least 25 percent of landing page visitors.
+Benchmark: webinar show rate should be at least 35 percent of registrants.
+Benchmark: webinar close rate should be at least 5 percent of attendees.
+Benchmark: cost per lead should stay under 15 dollars for a cold audience.
+Benchmark: cost per acquisition should stay under 30 percent of the offer price.
+
+How to raise the show rate
+Send a confirmation message within five minutes of the booking.
+Send three reminders: twenty-four hours before the call, two hours before the call, and ten minutes before the call.
+Each reminder gives value. Share a short video or a question to think about. Never just say "don't forget".
+Ask the lead to reply to confirm. A lead who replies is far more likely to show up.
+Book calls within forty-eight hours. The longer the gap between booking and call, the lower the show rate.
+
+What to do with a no-show
+Message a no-show within fifteen minutes. Keep it kind and offer two new times.
+Do not shame the lead. People miss calls for real reasons.
+If they do not reply after two attempts, move them to the nurture list.
+
+The pre-call brief
+Before every call the closer reads a pre-call brief: the lead's goal, their current numbers, their main obstacle, and what they said in the DMs.
+A closer who walks in without a brief sounds like a stranger. A closer with a brief sounds like a doctor who read the chart.

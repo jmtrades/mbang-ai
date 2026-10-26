@@ -1,0 +1,31 @@
+Thunder Dome Creative Test SOP
+Presented By Dana Example
+FICTIONAL TRAINING MATERIAL FOR TESTS
+
+What the Thunder Dome is
+The Thunder Dome is a head-to-head creative test. You put several ad creatives in one ring, give them the same conditions, and let the numbers pick the winner.
+The point is to stop guessing which hook works. Opinions do not win the Thunder Dome, cost per lead does.
+
+The rules of a Thunder Dome test
+Rule 1: Test between three and five creatives at a time. Fewer than three gives you no comparison. More than five spreads the budget too thin.
+Rule 2: Every creative goes into the same ad set with the same audience. Do not change targeting during the test.
+Rule 3: Give each creative an equal daily budget. A common starting point is twenty to thirty dollars per creative per day on the practice account.
+Rule 4: Change only one variable between creatives. Test the hook, or the visual, or the offer line. Never all three at once.
+Rule 5: Run the test for a minimum of seventy-two hours before you judge it.
+Rule 6: A creative needs at least one thousand impressions before you can call it a loser.
+
+The kill rule
+Kill any creative whose cost per lead is more than two times your target cost per lead after it has spent one and a half times the target cost per lead.
+If your target cost per lead is ten dollars, a creative that has spent fifteen dollars with zero leads gets switched off.
+Do not kill a creative early because you dislike it. Kill it because the kill rule says so.
+
+Picking the winner
+The winner is the creative with the lowest cost per lead after seventy-two hours, as long as its click-through rate is at least one percent.
+If two creatives are within ten percent of each other on cost per lead, pick the one with the better lead quality from the setter notes.
+The winner graduates to the scaling campaign. The losers get archived, not deleted, so you keep the learnings.
+
+After the Thunder Dome
+Write down why you think the winner won. Was it the hook, the visual or the offer line?
+Use that note to brief the next round. Each new Thunder Dome should test one new idea against the current champion.
+Run a new Thunder Dome every two weeks so creative fatigue never catches you out.
+Creative fatigue shows up as a rising cost per lead and a falling click-through rate on the same creative over seven days.

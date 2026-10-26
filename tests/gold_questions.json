@@ -1,0 +1,497 @@
+[
+ {
+  "id": "g01",
+  "question": "What are the rules for a Thunder Dome test?",
+  "expected": [
+   "sops/thunderdome.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g02",
+  "question": "How many creatives should go into a Thunder Dome?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g03",
+  "question": "How long should a Thunder Dome test run before I judge it?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g04",
+  "question": "When do I kill a creative in the Thunder Dome?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g05",
+  "question": "How many impressions does a creative need before I call it a loser?",
+  "expected": [
+   "sops/thunderdome.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g06",
+  "question": "How do I pick the winner of a creative test?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g07",
+  "question": "What click-through rate does a winning creative need?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g08",
+  "question": "What are the signs of creative fatigue?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g09",
+  "question": "Should I delete losing creatives?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g10",
+  "question": "How often should I run a new Thunder Dome?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "course/transcripts/vid_j1k2l3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g11",
+  "question": "What daily budget per creative do we start with in a test?",
+  "expected": [
+   "sops/thunderdome.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g12",
+  "question": "Can I change the targeting during a creative test?",
+  "expected": [
+   "sops/thunderdome.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g13",
+  "question": "What is a good DM reply rate?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g14",
+  "question": "What show rate should I aim for on booked calls?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g15",
+  "question": "What close rate is the benchmark for calls?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g16",
+  "question": "What should the cost per lead be for a cold audience?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g17",
+  "question": "What is the benchmark for cost per acquisition?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g18",
+  "question": "What webinar registration rate should a landing page get?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g19",
+  "question": "What show rate should a webinar get from registrants?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g20",
+  "question": "What close rate should a webinar have?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g21",
+  "question": "When should the reminders be sent before a sales call?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g22",
+  "question": "How fast should I confirm a booking?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt",
+   "course/sop_email_matrix.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g23",
+  "question": "What do I do when a lead no-shows?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g24",
+  "question": "How many times do I chase a no-show before nurture?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g25",
+  "question": "What goes in a pre-call brief?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g26",
+  "question": "How soon after booking should the call happen?",
+  "expected": [
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g27",
+  "question": "What are the seven segments of a webinar?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g28",
+  "question": "How long is the new mechanism segment in the webinar?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g29",
+  "question": "How do I run the chat during a webinar?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g30",
+  "question": "How do I present the offer on a webinar?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g31",
+  "question": "When should the webinar replay be sent and how long does it stay up?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt",
+   "course/sop_email_matrix.txt"
+  ],
+  "multi_part": true
+ },
+ {
+  "id": "g32",
+  "question": "What happens after the webinar for people who asked about the offer?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g33",
+  "question": "What proof can I use in the proof segment?",
+  "expected": [
+   "sops/mastering_webinars.txt",
+   "course/transcripts/vid_m4n5o6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g34",
+  "question": "What is the USP formula?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt",
+   "course/summaries/vid_a1b2c3.md"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g35",
+  "question": "How do I check if my USP is good?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt",
+   "course/summaries/vid_a1b2c3.md"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g36",
+  "question": "Can I put a guarantee in my USP?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt",
+   "course/summaries/vid_a1b2c3.md"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g37",
+  "question": "How do I pick a niche?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g38",
+  "question": "Should I go broad or narrow with my niche?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g39",
+  "question": "How many bonuses should an offer stack have?",
+  "expected": [
+   "course/transcripts/vid_a1b2c3.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g40",
+  "question": "How many questions should a DM have?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g41",
+  "question": "Can I mention price in a DM?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g42",
+  "question": "What opener moves do we track?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g43",
+  "question": "Which opener move gets the highest reply rate?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g44",
+  "question": "How often should I follow up after a DM?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g45",
+  "question": "What should a DM follow-up contain?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g46",
+  "question": "What is the only figure I can mention in a DM?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g47",
+  "question": "How many conversations a day per setter is the cap?",
+  "expected": [
+   "course/transcripts/vid_d4e5f6.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g48",
+  "question": "What are the stages of a sales call?",
+  "expected": [
+   "course/transcripts/vid_p7q8r9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g49",
+  "question": "How do I handle 'I need to think about it'?",
+  "expected": [
+   "course/transcripts/vid_p7q8r9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g50",
+  "question": "What do I say when a prospect says it's too expensive?",
+  "expected": [
+   "course/transcripts/vid_p7q8r9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g51",
+  "question": "What if they need to ask their partner before buying?",
+  "expected": [
+   "course/transcripts/vid_p7q8r9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g52",
+  "question": "Should I give a discount to close on the call?",
+  "expected": [
+   "course/transcripts/vid_p7q8r9.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g53",
+  "question": "Which emails go to someone who attended but did not buy?",
+  "expected": [
+   "course/sop_email_matrix.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g54",
+  "question": "How many calls to action should an email have?",
+  "expected": [
+   "course/sop_email_matrix.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g55",
+  "question": "What are the rules for email subject lines?",
+  "expected": [
+   "course/sop_email_matrix.txt"
+  ],
+  "multi_part": false
+ },
+ {
+  "id": "g56",
+  "question": "What is the Thunder Dome kill rule and what reminders do we send before calls?",
+  "expected": [
+   "sops/thunderdome.txt",
+   "sops/show_rate_sales_guide.txt",
+   "course/transcripts/vid_g7h8i9.txt"
+  ],
+  "multi_part": true
+ },
+ {
+  "id": "g57",
+  "question": "What's the USP formula and how many opener moves are there?",
+  "expected": [
+   "sops/usp_creation.txt",
+   "course/transcripts/vid_a1b2c3.txt",
+   "course/transcripts/vid_d4e5f6.txt",
+   "course/summaries/vid_a1b2c3.md"
+  ],
+  "multi_part": true
+ }
+]

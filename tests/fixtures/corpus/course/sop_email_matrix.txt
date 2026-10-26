@@ -1,0 +1,10 @@
+Email Matrix SOP (exported from PDF)
+FICTIONAL TRAINING MATERIAL FOR TESTS
+
+The email matrix maps every lead to the right sequence.
+New registrant: confirmation email, then reminder emails one day before, one hour before and at go-live.
+Attended but did not buy: replay email within two hours, then a value email the next morning, then a case-breakdown email on day three.
+Did not attend: replay email within two hours with a one-line summary of what they missed.
+Booked a call: confirmation email within five minutes, then the reminder ladder.
+Subject lines must be honest. Never use "Re:" or "following up" on a first email to someone.
+Every email has one call to action. Two calls to action halve the clicks.
