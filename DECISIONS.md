@@ -15,3 +15,5 @@ One line each: decision — reason — how to change it.
 - "Budget 0" is reported before "AI disabled" — the budget is the product-level gate the owner sees — `llm.unavailable_reason`.
 - Rubric pass needs score ≥ 70, no guardrail block and no heavy criterion (weight ≥ 2) under 5 — a weighted average alone let a 3-question DM pass — `critique.critique`.
 - Unknown lead tier is treated as cold for the outreach money rule — safest reading of "cold or unqualified leads get a no-figure line" — pass `lead_tier` in item meta.
+- Setter cap = 5 new opener conversations per sender per day (the lesson's "five thoughtful conversations a day per sender"); the goal calculator uses the same cap and reports how many senders a goal needs rather than raising one sender's volume — `outreach_loop.DAILY_CAP`, tenant setting `outreach_daily_cap`.
+- Studio/webinar prospect-facing drafts use the placeholder "[their brand]" for the prospect's brand — the programme owner's brand is not the prospect's — edit the draft in the queue.
