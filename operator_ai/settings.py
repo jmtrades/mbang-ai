@@ -22,6 +22,10 @@ def update_from_api(tenant, key: str, value, actor: str) -> None:
     if key not in API_EDITABLE:
         raise KeyError(key)
     tenant.set(key, value)
+    if key in ("banned_names", "persona"):
+        from . import guardrails
+
+        guardrails.banned_cache_clear(tenant.id)
     audit.log(tenant, actor, "settings", {"key": key})
 
 

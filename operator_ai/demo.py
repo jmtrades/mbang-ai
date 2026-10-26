@@ -100,6 +100,9 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
         counts["students"] = n_students
 
         # leads
+        from .agents.sales import DEFAULT_WEIGHTS
+        from .agents.sales import score as score_lead
+
         sources = ["meta_lead_form", "instagram_dm", "webinar", "referral", "lead_magnet"]
         for i in range(n_leads):
             name = _name(rng)
@@ -112,10 +115,14 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
                 "niche": rng.choice(NICHES),
                 "business": f"{rng.choice(BUSINESS_WORDS)} {rng.choice(['Physio', 'Dental', 'Roofing', 'Books', 'Fitness'])} (DEMO)",
             }
-            c.execute("INSERT INTO leads(name,handle,email,source,answers,stage,created,demo,anon_id) VALUES(?,?,?,?,?,?,?,1,?)",
-                      (name, "@" + name.split()[0].lower() + "_demo", _email(name), rng.choice(sources), db.jdump(answers),
+            src = rng.choice(sources)
+            sc = score_lead(answers, src, DEFAULT_WEIGHTS) if i % 3 else None  # a third stay unscored for the demo
+            c.execute("INSERT INTO leads(name,handle,email,source,answers,stage,created,demo,anon_id,tier,score,route) "
+                      "VALUES(?,?,?,?,?,?,?,1,?,?,?,?)",
+                      (name, "@" + name.split()[0].lower() + "_demo", _email(name), src, db.jdump(answers),
                        rng.choice(["new", "new", "replied", "quality_conversation", "link_sent", "booked", "showed", "closed"]),
-                       now - rng.randint(0, 30) * day, f"L-{secrets.token_hex(3)}"))
+                       now - rng.randint(0, 30) * day, f"L-{secrets.token_hex(3)}", sc and sc["tier"], sc and sc["score"],
+                       sc and sc["route"]))
         counts["leads"] = n_leads
 
         # clients

@@ -1,0 +1,10 @@
+== embeddings=hash
+embedder: hash-384
+retrieval {'n': 57, 'hit@5': 1.0, 'hit@10': 1.0} []
+honesty {'n_out_of_scope': 12, 'honesty': 1.0, 'false_answers': [], 'in_scope_answered': 1.0}
+reviewer 1.0 18/18
+== embeddings=auto
+embedder: bge-small-en-v1.5
+retrieval {'n': 57, 'hit@5': 0.93, 'hit@10': 1.0} []
+honesty {'n_out_of_scope': 12, 'honesty': 1.0, 'false_answers': [], 'in_scope_answered': 1.0}
+reviewer 1.0 18/18

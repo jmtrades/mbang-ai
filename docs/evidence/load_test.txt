@@ -1,0 +1,4 @@
+/health: 4379.0 RPS (21906 ok, 0 errors in 5.0 s)
+dashboard over 2000 students: p50 56 ms, p95 65 ms
+500-lead burst: 500 done, 0 failed in 3.6 s; tiers {'cold': 101, 'hot': 116, 'warm': 283}
+LOAD TEST PASS

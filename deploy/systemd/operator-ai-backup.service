@@ -1,0 +1,8 @@
+[Unit]
+Description=Operator AI backup
+
+[Service]
+Type=oneshot
+User=operator
+WorkingDirectory=/opt/operator-ai
+ExecStart=/opt/operator-ai/scripts/backup.sh

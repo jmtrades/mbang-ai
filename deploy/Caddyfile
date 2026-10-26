@@ -1,0 +1,14 @@
+# Automatic HTTPS for the domain in OPERATOR_DOMAIN (set in .env).
+{$OPERATOR_DOMAIN} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	request_body {
+		max_size 12MB
+	}
+	reverse_proxy app:8850
+}

@@ -1,0 +1,25 @@
+OK       Web app built (web/dist)
+MISSING  Course material in inputs/  ->  copy the course folders into inputs/
+MISSING  Secure cookies (OPERATOR_COOKIE_SECURE=1)  ->  set OPERATOR_COOKIE_SECURE=1 behind HTTPS
+MISSING  Public URL / domain (OPERATOR_PUBLIC_URL)  ->  set OPERATOR_PUBLIC_URL
+OK       Caddyfile (automatic HTTPS)
+OK       Backups (scripts/backup.sh)
+MISSING  AI model key in environment  ->  ANTHROPIC_API_KEY or OPENAI_API_KEY
+MISSING  AI token budget > 0 (optional)  ->  scripts/tenant_admin.py budget <tid> ai <n> --owner-yes ...
+OK       Embedding model cached locally (optional)
+MISSING  Meta (ads + lead forms) login  ->  meta_app_id, meta_app_secret, meta_access_token, meta_verify_token
+MISSING  Google Calendar login  ->  google_client_id, google_client_secret, google_refresh_token, google_calendar_id
+MISSING  Instagram messaging login  ->  instagram_access_token
+MISSING  Telegram bot login  ->  telegram_bot_token, telegram_webhook_secret
+MISSING  Slack app login  ->  slack_bot_token, slack_signing_secret
+MISSING  SMS / phone provider login  ->  sms_account_sid, sms_auth_token, sms_webhook_secret
+MISSING  Email (SMTP + inbound) login  ->  smtp_host, smtp_user, smtp_password, email_webhook_secret
+MISSING  Payments login  ->  payments_api_key, payments_webhook_secret
+MISSING  GoHighLevel-style CRM login  ->  crm_api_key, crm_location_id
+MISSING  Google Drive (inbox sync) login  ->  drive_folder_id
+MISSING  Meta live switch  ->  tenant_admin.py switch <tid> live_meta_enabled on --owner-yes ...
+MISSING  Meta account allowlist non-empty  ->  tenant_admin.py allowlist <tid> add <act_id> ...
+MISSING  Calendar live switch  ->  tenant_admin.py switch <tid> live_calendar_enabled on ...
+OK       Demo DB separate from real
+
+5/23 OK, 18 MISSING

@@ -1,0 +1,19 @@
+[Unit]
+Description=Operator AI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=operator
+WorkingDirectory=/opt/operator-ai
+EnvironmentFile=/opt/operator-ai/deploy/.env
+ExecStart=/opt/operator-ai/.venv/bin/python -m uvicorn operator_ai.app:app --host 127.0.0.1 --port 8850 --proxy-headers
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

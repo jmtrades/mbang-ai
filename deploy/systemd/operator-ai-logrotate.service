@@ -1,0 +1,8 @@
+[Unit]
+Description=Rotate Operator AI logs
+
+[Service]
+Type=oneshot
+User=operator
+WorkingDirectory=/opt/operator-ai
+ExecStart=/opt/operator-ai/scripts/rotate_logs.sh

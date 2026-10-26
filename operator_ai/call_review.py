@@ -56,6 +56,8 @@ def consent_status(tenant, call_id: int) -> dict:
     with tenant.db() as c:
         call = c.execute("SELECT parties FROM calls WHERE id=?", (call_id,)).fetchone()
         got = {r["party"] for r in c.execute("SELECT party FROM call_consents WHERE call_id=?", (call_id,))}
+    if call is None:
+        raise KeyError(call_id)
     parties = db.jload(call["parties"], [])
     missing = [p for p in parties if p not in got]
     return {"parties": parties, "consented": sorted(got), "missing": missing, "complete": bool(parties) and not missing}

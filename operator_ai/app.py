@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import re
 import time
 from contextlib import asynccontextmanager
 
@@ -37,6 +38,9 @@ def _load_routers(app: FastAPI) -> None:
             app.include_router(extra)
 
 
+_TENANT_PATH = re.compile(r"^/t/([^/]+)/(api|report)")
+
+
 def create_app(start_workers: bool = True) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -54,6 +58,24 @@ def create_app(start_workers: bool = True) -> FastAPI:
                 workers.stop()
 
     app = FastAPI(title="Operator AI", docs_url=None, redoc_url=None, openapi_url="/openapi.json", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def scrub_banned_names(request: Request, call_next):
+        """Safety net: banned names are scrubbed from every tenant API response (the settings
+        endpoint that manages the list is the one exception)."""
+        response = await call_next(request)
+        m = _TENANT_PATH.match(request.url.path)
+        if not m or request.url.path.endswith("/api/settings") or "json" not in response.headers.get("content-type", ""):
+            return response
+        from . import guardrails
+
+        names = guardrails.banned_cached(m.group(1))
+        if not names:
+            return response
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        text = guardrails.scrub(body.decode("utf-8", errors="replace"), names)
+        headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
+        return Response(text, status_code=response.status_code, headers=headers, media_type="application/json")
 
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError):

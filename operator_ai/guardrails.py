@@ -286,3 +286,27 @@ def tenant_banned_names(tenant) -> list[str]:
 def check_for(tenant, text: str, meta: dict | None = None) -> list[dict]:
     """check() with the tenant's banned names and banned words, mode chosen from meta."""
     return check(text, mode_for(meta), meta, tenant_banned_names(tenant))
+
+
+_banned_cache: dict[str, tuple[float, list[str]]] = {}
+
+
+def banned_cached(tid: str) -> list[str]:
+    """Banned names for a tenant id, cached for two seconds (used by the response scrub)."""
+    import time
+
+    from . import tenancy
+
+    hit = _banned_cache.get(tid)
+    if hit and hit[0] > time.time():
+        return hit[1]
+    try:
+        names = tenant_banned_names(tenancy.get(tid))
+    except Exception:  # noqa: BLE001 - unknown tenant: the route itself answers 404
+        names = []
+    _banned_cache[tid] = (time.time() + 2.0, names)
+    return names
+
+
+def banned_cache_clear(tid: str) -> None:
+    _banned_cache.pop(tid, None)

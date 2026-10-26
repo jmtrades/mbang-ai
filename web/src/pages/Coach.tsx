@@ -21,7 +21,9 @@ export default function Coach({ query }: { query: URLSearchParams }) {
     }
     get(`/threads/${threadId}`).then((t) => setMsgs(t.messages)).catch((e) => setErr(e));
   }, [threadId]);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [msgs, busy]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [msgs, busy]);
 
   const ask = async (text?: string) => {
     const question = (text ?? q).trim();

@@ -1,0 +1,6 @@
+[Unit]
+Description=Operator AI health check (restart after 4 failures)
+
+[Service]
+Type=oneshot
+ExecStart=/opt/operator-ai/deploy/healthcheck.sh

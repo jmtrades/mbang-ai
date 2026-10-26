@@ -232,6 +232,8 @@ def review_call(cid: int, ctx: Ctx = Depends(require("calls"))):
         return call_review.review(ctx.tenant, cid, ctx.user)
     except call_review.ConsentMissing as e:
         raise HTTPException(409, str(e))
+    except KeyError:
+        raise HTTPException(404, "Call not found")
 
 
 @router.get("/drills")

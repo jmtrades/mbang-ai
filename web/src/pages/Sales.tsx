@@ -108,6 +108,35 @@ function LeadDetail({ lead, onDone }: { lead: any; onDone: () => void }) {
   );
 }
 
+function LiveChain() {
+  const { go } = useApp();
+  const { data, error, loading, reload } = useApi<any>("/chain");
+  const [err, setErr] = useState<ApiError | null>(null);
+  const act = async (fn: () => Promise<any>, after?: (r: any) => void) => {
+    setErr(null);
+    try {
+      const r = await fn();
+      reload();
+      after?.(r);
+    } catch (e) {
+      setErr(e as ApiError);
+    }
+  };
+  return (
+    <Card title="Live lead chain" subtitle={data ? `Meta: ${data.live.meta ? "LIVE" : "practice (switch off)"} · Calendar: ${data.live.calendar ? "Google" : "local"}` : ""}>
+      <ErrorBox error={err || error} retry={reload} />
+      {loading && <Loading />}
+      {data && <Table rows={data.leads} empty="No chain leads yet. Signed Meta lead webhooks land here." cols={[
+        { key: "leadgen_id", label: "Lead" }, { key: "tier", label: "Tier", render: (l) => <Badge tone={TIER_TONE[l.tier]}>{l.tier}</Badge> },
+        { key: "stage", label: "Stage" }, { key: "citations", label: "Cited from", render: (l) => <Citations items={l.citations} /> },
+        { key: "x", label: "", render: (l) => l.stage === "qualified" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/reply`, { text: "Recorded reply" }), (r) => go(`/queue?ids=${r.booking_dm},${r.invite}`))}>Record reply</Button>
+          : l.stage === "booked" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/outcome`, { outcome: "showed" }))}>Mark showed</Button> : null },
+      ]} />}
+      {data && <pre className="prose-pre mt-3 rounded-lg bg-panel-2 p-2 text-xs">{JSON.stringify({ stages: data.report.leads_by_stage, inbox: data.report.inbox }, null, 1)}</pre>}
+    </Card>
+  );
+}
+
 export default function Sales() {
   const { me } = useApp();
   const [tab, setTab] = useState("leads");
@@ -117,7 +146,7 @@ export default function Sales() {
   return (
     <div>
       <PageHeader title="Leads & booking" subtitle="Transparent scoring, routing to setter, closer or nurture, cited scripts, three proposed slots and the show-up ladder — all queued for approval." />
-      <Tabs value={tab} onChange={setTab} tabs={[{ key: "leads", label: "Leads" }, { key: "rescue", label: "Lead Rescue Desk" }, ...(me.user.role === "owner" ? [{ key: "burst", label: "Burst" }] : [])]} />
+      <Tabs value={tab} onChange={setTab} tabs={[{ key: "leads", label: "Leads" }, { key: "rescue", label: "Lead Rescue Desk" }, { key: "chain", label: "Live chain" }, ...(me.user.role === "owner" ? [{ key: "burst", label: "Burst" }] : [])]} />
       {tab === "leads" && (
         <>
           {data?.tiers && (
@@ -153,6 +182,7 @@ export default function Sales() {
         </Card>
       )}
       {tab === "burst" && <BurstPanel />}
+      {tab === "chain" && <LiveChain />}
     </div>
   );
 }

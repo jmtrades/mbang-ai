@@ -4,6 +4,26 @@ import { ApiError, TID, get, onConnection, post } from "./api";
 import { AppCtx, Badge, Button, Citation, ErrorBox, Input, Loading, Me, Pill, SourceModal, TraceDrawer, cx } from "./components/ui";
 import { GROUPS, PAGES } from "./pages/registry";
 
+class PageBoundary extends React.Component<{ children: React.ReactNode; page: string }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidUpdate(prev: { page: string }) {
+    if (prev.page !== this.props.page && this.state.error) this.setState({ error: null });
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="card p-6">
+          <ErrorBox error="This screen hit an unexpected error. Your data is safe." retry={() => this.setState({ error: null })} />
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function useHash() {
   const [hash, setHash] = useState(location.hash || "#/");
   useEffect(() => {
@@ -127,7 +147,9 @@ function Shell({ me, reloadMe }: { me: Me; reloadMe: () => void }) {
     }),
     [me, reloadMe],
   );
-  useEffect(() => setNavOpen(false), [page]);
+  useEffect(() => {
+    setNavOpen(false);
+  }, [page]);
   const logout = async () => {
     await post("/auth/logout").catch(() => null);
     location.reload();
@@ -190,7 +212,7 @@ function Shell({ me, reloadMe }: { me: Me; reloadMe: () => void }) {
           </header>
           <main className="min-w-0 flex-1 px-3 py-5 md:px-8 md:py-7">
             <Suspense fallback={<Loading rows={6} />}>
-              {current ? <current.C rest={rest} query={query} /> : <div className="card p-6"><p className="font-medium">That page isn't available for your role.</p><a className="text-brand" href="#/">Back to Day One</a></div>}
+              {current ? <PageBoundary page={page}><current.C rest={rest} query={query} /></PageBoundary> : <div className="card p-6"><p className="font-medium">That page isn't available for your role.</p><a className="text-brand" href="#/">Back to Day One</a></div>}
             </Suspense>
           </main>
         </div>

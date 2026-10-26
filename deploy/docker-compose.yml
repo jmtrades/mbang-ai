@@ -1,0 +1,40 @@
+# docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      OPERATOR_COOKIE_SECURE: "1"
+    volumes:
+      - operator-data:/app/data
+      - operator-backups:/app/backups
+      - ../inputs:/app/inputs:ro
+    expose:
+      - "8850"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8850/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 4
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      OPERATOR_DOMAIN: ${OPERATOR_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  operator-data:
+  operator-backups:
+  caddy-data:
+  caddy-config:
