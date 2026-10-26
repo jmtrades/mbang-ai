@@ -26,7 +26,8 @@ def handler(kind: str):
     return deco
 
 
-def enqueue(tenant, kind: str, payload: dict, key: str | None = None, batch: str | None = None) -> int | None:
+def enqueue(tenant, kind: str, payload: dict, key: str | None = None, batch: str | None = None,
+            delay: float = 0.0) -> int | None:
     """Insert a job. A repeated idempotency key returns the existing job id."""
     from . import workers
 
@@ -39,7 +40,7 @@ def enqueue(tenant, kind: str, payload: dict, key: str | None = None, batch: str
         cur = c.execute(
             "INSERT OR IGNORE INTO jobs(key,kind,payload,status,attempts,next_at,created,updated,batch) "
             "VALUES(?,?,?,?,?,?,?,?,?)",
-            (key, kind, db.jdump(payload), "queued", 0, t, t, t, batch),
+            (key, kind, db.jdump(payload), "queued", 0, t + delay, t, t, batch),
         )
         jid = cur.lastrowid
     workers.watch(tenant)
