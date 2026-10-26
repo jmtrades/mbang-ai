@@ -1,0 +1,24 @@
+# secrets / runtime
+.env
+.env.*
+!deploy/.env.template
+*.key
+data/
+inputs/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+logs/
+backups/
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# web
+web/node_modules/
+web/dist/
+# test artefacts
+test-results/
+playwright-report/

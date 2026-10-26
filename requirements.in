@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+httpx
+cryptography
+numpy
+fastembed
+python-multipart
+pypdf
+python-docx
+pytest
+pytest-timeout
+playwright
