@@ -103,7 +103,7 @@ def create_app(start_workers: bool = True) -> FastAPI:
 
     @app.get("/{path:path}")
     def static(path: str):
-        if path.startswith(("t/", "api/")):
+        if path.startswith(("t/", "api/", "m/")):
             raise HTTPException(404, "Not found")
         f = (WEB_DIST / path).resolve()
         if WEB_DIST.exists() and str(f).startswith(str(WEB_DIST.resolve())) and f.is_file():

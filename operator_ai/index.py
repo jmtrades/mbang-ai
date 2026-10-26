@@ -170,15 +170,23 @@ def _build(key: str, docs: list[corpus.Doc], exclusions: list[dict]) -> Index:
     return Index(key, docs, chunks, excluded, vecs, emb.name)
 
 
-def course_index() -> Index:
+def course_index(additions: Path | None = None) -> Index:
+    """The course corpus, plus owner-approved additions (Drive inbox, uploads) when given."""
     cfg = config.get()
     root = cfg.effective_corpus_dir
     exclusions = load_exclusions()
     key = "course-" + corpus.fingerprint(root, json.dumps(exclusions, sort_keys=True))
+    if additions is not None and additions.exists() and any(additions.glob("*.txt")):
+        key += "-plus-" + corpus.fingerprint(additions)
+    else:
+        additions = None
     with _lock:
         if key in _cache:
             return _cache[key]
-        idx = _build(key, corpus.load(root), exclusions)
+        docs = corpus.load(root)
+        if additions is not None:
+            docs += corpus.load_uploads(additions, corpus_id="course-additions")
+        idx = _build(key, docs, exclusions)
         _cache[key] = idx
         return idx
 
@@ -201,7 +209,7 @@ def for_tenant(tenant) -> Index:
     scope = tenant.kb_scope
     check_licence(tenant.kind, scope)
     if scope == "course":
-        return course_index()
+        return course_index(tenant.kb_dir)
     if scope == "own":
         return own_index(tenant)
     return _empty()

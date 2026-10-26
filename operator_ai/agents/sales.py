@@ -161,7 +161,7 @@ def process_lead(tenant, lead_id: int, user: dict | None = None, full: bool = Tr
                 body = {"24h": "Looking forward to tomorrow. One question to think about: what would ten more booked calls a month change for you?",
                         "2h": "See you in two hours. Here's a short video worth a look before we talk: how the reminder ladder lifts show rates.",
                         "10min": "Starting in ten minutes. Quick tip: have your current numbers to hand so we can use the time well."}[label]
-                ids.append(queue.add(tenant, "reminder", body, channel="sms", recipient_ref=rcpt, title=f"{label} reminder: {lead['name']}",
+                ids.append(queue.add(tenant, "reminder", body, channel="instagram_dm", recipient_ref=rcpt, title=f"{label} reminder: {lead['name']}",
                                      meta={"lead_id": lead_id, "send_at": s0["start"] - before, "ladder": label},
                                      run_id=run.id, actor=actor, demo=demo)["id"])
             return ids

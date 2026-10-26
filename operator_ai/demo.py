@@ -206,7 +206,7 @@ def _seed_queue(tenant, rng) -> None:
         ("followup", "instagram_dm", "@kofi_demo", "Follow-up to Kofi (DEMO)", "Just following up on my last message!", {"prospect_facing": True}),
         ("dm", "instagram_dm", "@nina_demo", "Reply to Nina (DEMO)", "Let me make Northside Physio (DEMO) $50k-$100k a month through our referral-first system. Would a quick call be useful?", {"prospect_facing": True, "lead_tier": "warm"}),
         ("dm", "instagram_dm", "@theo_demo", "Reply to Theo (DEMO)", "Our programme is $3,000 a month and we guarantee results.", {"prospect_facing": True}),
-        ("reminder", "sms", "+1-555-0100 (DEMO)", "24h reminder for Ravi (DEMO)", "Looking forward to tomorrow's call. One question to think about: what would 20 more bookings a month change for you?", {}),
+        ("reminder", "instagram_dm", "@ravi_demo", "24h reminder for Ravi (DEMO)", "Looking forward to tomorrow's call. One question to think about: what would 20 more bookings a month change for you?", {}),
         ("reminder", "sms", "+1-555-0101 (DEMO)", "2h reminder for Isla (DEMO)", "Don't forget your call!", {}),
         ("nudge", "telegram", "Zara Okafor (DEMO)", "Nudge: Zara missed a check-in (DEMO)", "Hey Zara, noticed no check-in this week. What's one small win from the last few days?", {}),
         ("nudge", "telegram", "Luca Varga (DEMO)", "Nudge: Luca's show rate dropped (DEMO)", "Your show rate dipped this week. Here's the reminder ladder checklist from the booking module.", {}),

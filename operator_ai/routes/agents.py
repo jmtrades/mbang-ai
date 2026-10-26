@@ -22,6 +22,15 @@ class AskBody(BaseModel):
 def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
     if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
         raise HTTPException(404, "Thread not found")
+    if ctx.role == "student":
+        from .. import console
+
+        limit = console.personality(ctx.tenant)["daily_question_limit"]
+        with ctx.tenant.db() as c:
+            n = c.execute("SELECT COUNT(*) FROM queries WHERE user_id=? AND created>?",
+                          (ctx.user["id"], db.now() - 86400)).fetchone()[0]
+        if n >= limit:
+            raise HTTPException(429, f"Daily question limit of {limit} reached. It resets in 24 hours.")
     return coach.answer(ctx.tenant, b.question, user=ctx.user, record=True, thread=True, thread_id=b.thread_id)
 
 

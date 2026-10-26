@@ -68,7 +68,7 @@ def _status_for(flags: list[dict]) -> str:
     return "pending"
 
 
-def _check(tenant, title: str, body: str, meta: dict, recipient_ref: str | None) -> list[dict]:
+def _check(tenant, title: str, body: str, meta: dict, recipient_ref: str | None, channel: str = "manual") -> list[dict]:
     text = f"Subject: {meta['subject']}\n{body}" if meta.get("subject") else body
     flags = guardrails.check_for(tenant, text, meta)
     if title and meta.get("check_title", True):
@@ -76,13 +76,19 @@ def _check(tenant, title: str, body: str, meta: dict, recipient_ref: str | None)
     for addr in blocked_recipients(tenant, recipient_ref, meta):
         flags.append({"code": "never_invite", "severity": "block", "message": "Recipient is on the never-invite list",
                       "match": "[blocked attendee]"})
+    if channel in ("sms", "phone"):
+        from . import channels
+
+        if not channels.opted_in(tenant, channel, (recipient_ref or "").split(" ")[0]):
+            flags.append({"code": "not_opted_in", "severity": "block",
+                          "message": "SMS and phone need the recipient's opt-in first (they reply START)", "match": ""})
     return guardrails._dedupe(flags)
 
 
 def add(tenant, kind: str, body: str, *, channel: str = "manual", recipient_ref: str | None = None, title: str = "",
         meta: dict | None = None, run_id: int | None = None, actor: str = "system", demo: bool = False) -> dict:
     meta = dict(meta or {})
-    flags = _check(tenant, title, body, meta, recipient_ref)
+    flags = _check(tenant, title, body, meta, recipient_ref, channel)
     status = _status_for(flags)
     names = guardrails.tenant_banned_names(tenant)
     with tenant.db() as c:
@@ -162,7 +168,7 @@ def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patc
     if not auth.can_decide(role, item["kind"]):
         raise QueueError(403, "Your role can't edit this item")
     meta = {**item["meta"], **(meta_patch or {})}
-    flags = _check(tenant, item["title"] or "", body, meta, item["recipient_ref"])
+    flags = _check(tenant, item["title"] or "", body, meta, item["recipient_ref"], item["channel"])
     status = _status_for(flags)
     with tenant.db() as c:
         c.execute("UPDATE queue SET body=?, flags=?, status=?, meta=? WHERE id=?",
@@ -180,7 +186,7 @@ def approve(tenant, qid: int, actor: str, role: str = "owner") -> dict:
     if item["status"] not in OPEN:
         raise QueueError(409, f"Item is already {item['status']}")
     # guardrails again, on the current (possibly edited) body
-    flags = _check(tenant, item["title"] or "", item["body"], item["meta"], item["recipient_ref"])
+    flags = _check(tenant, item["title"] or "", item["body"], item["meta"], item["recipient_ref"], item["channel"])
     if guardrails.blocked(flags):
         with tenant.db() as c:
             c.execute("UPDATE queue SET flags=?, status='held' WHERE id=?", (db.jdump(flags), qid))
