@@ -213,7 +213,11 @@ export default function App() {
   const [err, setErr] = useState<ApiError | null>(null);
   const load = useCallback(async () => {
     try {
-      const m = await get<Me>("/me");
+      const m = await get<Me & { signed_in: boolean }>("/auth/session");
+      if (!m.signed_in) {
+        setState("signin");
+        return;
+      }
       applyBrand(m.brand);
       setMe(m);
       setState("ready");

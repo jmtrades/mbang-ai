@@ -69,6 +69,15 @@ def logout(request: Request, response: Response, tenant: tenancy.Tenant = Depend
     return {"ok": True}
 
 
+@router.get("/auth/session")
+def session(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
+    """Always 200: the app's first call, so a signed-out visit doesn't log a 401."""
+    user = auth.session_user(tenant, request.cookies.get(COOKIE))
+    if user is None:
+        return {"signed_in": False}
+    return {"signed_in": True, **me(Ctx(tenant=tenant, user=user, ip=client_ip(request)))}
+
+
 @router.get("/me")
 def me(ctx: Ctx = Depends(get_ctx)):
     from .. import llm
