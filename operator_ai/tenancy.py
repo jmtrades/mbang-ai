@@ -160,6 +160,7 @@ def create(tid: str, name: str, kb_scope: str = "empty", kind: str = "client") -
     t.set("live_meta_enabled", False)
     t.set("meta_allowlist", [])
     t.set("live_calendar_enabled", False)
+    t.set("live_channels_enabled", False)
     pw_path = None
     if kind != "demo":
         pw = secrets.token_urlsafe(14)

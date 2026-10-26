@@ -170,3 +170,17 @@ f.title='Assistant';s.parentNode.insertBefore(f,s.nextSibling);})();"""
 @public_router.get("/embed.js")
 def embed_js():
     return Response(EMBED_JS, media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+
+
+@public_router.post("/t/{tid}/hooks/voice")
+async def voice_hook(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
+    import os
+
+    body = await _body(request)
+    from urllib.parse import parse_qsl
+
+    params = dict(parse_qsl(body.decode("utf-8", errors="replace")))
+    public = os.environ.get("OPERATOR_PUBLIC_URL", "").rstrip("/")
+    url = f"{public}{request.url.path}" if public else str(request.url)
+    xml = _ch(lambda: channels.voice_call(tenant, url, request.headers.get("x-twilio-signature"), params))
+    return Response(xml, media_type="application/xml")

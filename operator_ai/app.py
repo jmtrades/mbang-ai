@@ -46,8 +46,9 @@ def create_app(start_workers: bool = True) -> FastAPI:
     async def lifespan(_app: FastAPI):
         tenancy.ensure_defaults()
         if start_workers:
-            from . import workers
+            from . import index, workers
 
+            index.warm_async()
             workers.start()
         try:
             yield

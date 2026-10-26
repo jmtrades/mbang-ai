@@ -54,6 +54,7 @@ class FakeWorld:
         self.fail_next: list[int] = []  # status codes to return before succeeding
         self.lock = threading.Lock()
         self.ads: dict[str, dict] = {}
+        self.sent: list[tuple] = []
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         host, path, method = request.url.host, request.url.path, request.method
@@ -74,6 +75,19 @@ class FakeWorld:
                                              "scope": "calendar.events calendar.freebusy"})
         if host == "www.googleapis.com":
             return self._gcal(request)
+        if host in ("api.telegram.org", "slack.com", "api.twilio.com"):
+            with self.lock:
+                self.sent.append((host, request.url.path, request.content.decode(errors="replace"),
+                                  request.headers.get("authorization", "")))
+            if host == "api.telegram.org":
+                if "/botBADTOKEN/" in request.url.path:
+                    return httpx.Response(401, json={"ok": False, "description": "Unauthorized"})
+                return httpx.Response(200, json={"ok": True, "result": {"message_id": 777}})
+            if host == "slack.com":
+                if request.headers.get("authorization") != "Bearer xoxb-fake":
+                    return httpx.Response(200, json={"ok": False, "error": "invalid_auth"})
+                return httpx.Response(200, json={"ok": True, "ts": "1700000000.0001"})
+            return httpx.Response(201, json={"sid": "SMfake123"})
         with self.lock:
             self.stray.append(f"{method} {host}{path}")
         return httpx.Response(599, json={"error": "stray host"})

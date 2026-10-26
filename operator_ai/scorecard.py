@@ -11,12 +11,15 @@ ROWS: list[dict] = [
     {"id": "A1", "item": "Chat in the creator's voice (cited, honest 'not covered', replay when AI off)", "status": A,
      "score": 2, "evidence": [T + "test_phase4_agents.py::test_thunder_dome_cited_sop_answer",
                               T + "test_phase4_agents.py::test_tiktok_shop_not_covered",
-                              T + "test_phase4_agents.py::test_ai_answer_then_labelled_replay_when_ai_off"],
-     "waiting_for": "AI key + ai_token_budget for voice/style rewriting", "notes": "Rules path: extractive answers from passages; style needs AI."},
+                              T + "test_phase4_agents.py::test_ai_answer_then_labelled_replay_when_ai_off",
+                              T + "test_router_chat.py::test_chat_api_routes_each_intent_into_one_thread",
+                              T + "test_ui_playwright.py::test_one_chat_routes_question_numbers_review_and_csv"],
+     "waiting_for": "AI key + ai_token_budget for voice/style rewriting",
+     "notes": "One chat routes questions, numbers, scripts/ads/DMs, screenshots and Ads exports; follow-ups read in context. Rules path answers in cited bullet points; the creator's voice/style needs AI."},
     {"id": "A2", "item": "Files, screenshots, links (uploads + local OCR + receipt)", "status": R, "score": 1,
      "evidence": [T + "test_phase8_platform.py::test_upload_kinds_and_receipt", T + "test_phase8_platform.py::test_image_ocr_local",
-                  T + "test_phase8_platform.py::test_upload_pdf_and_docx"],
-     "waiting_for": "", "notes": "OCR via tesseract (Docker image) or macOS Vision. Links are not fetched (no outbound web access); paste the text instead."},
+                  T + "test_phase8_platform.py::test_upload_pdf_and_docx", T + "test_router_chat.py::test_chat_upload_ads_csv_and_screenshot"],
+     "waiting_for": "", "notes": "Screenshots, PDFs, transcripts and Ads exports can be dropped straight into the chat (local OCR). Links are still not fetched (no outbound web access); paste the text instead."},
     {"id": "A3", "item": "Threads and history", "status": R, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_threads_title_rename_search_archive_share"], "waiting_for": ""},
     {"id": "A4", "item": "Projects and memory (scoped, user-deletable)", "status": R, "score": 2,
@@ -46,23 +49,27 @@ ROWS: list[dict] = [
      "evidence": [T + "test_phase6_chains_studio_ads.py::test_webinar_chain_produces_linked_queue_items",
                   T + "test_phase6_chains_studio_ads.py::test_rerun_only_dependents"], "waiting_for": ""},
     {"id": "A14", "item": "Web voice (consent, quota, transcript, recap; mock)", "status": L, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_web_voice_consent_quota_transcript_recap"],
-     "waiting_for": "a speech-to-text provider for real audio", "notes": "Mock: transcript typed in; consent and quota enforced."},
+     "evidence": [T + "test_phase8_platform.py::test_web_voice_consent_quota_transcript_recap", T + "test_voice_line.py::test_voice_line_answers_opted_in_caller"],
+     "waiting_for": "sms_auth_token + a provider phone number for the phone line", "notes": "Chat has browser dictation and on-device read-aloud; a real phone Q&A line (Twilio-style, neutral voice, opted-in callers) is built behind live_channels_enabled."},
     {"id": "A15", "item": "Phone and SMS (opt-in first, fictional numbers; mock)", "status": L, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_sms_opt_in_first_and_fictional_numbers"],
-     "waiting_for": "sms_account_sid, sms_auth_token (SMS provider)"},
+     "evidence": [T + "test_phase8_platform.py::test_sms_opt_in_first_and_fictional_numbers", T + "test_live_senders.py::test_telegram_slack_sms_live_after_approval"],
+     "waiting_for": "sms_account_sid, sms_auth_token, sms_from_number + live_channels_enabled (server CLI)", "notes": "Real sender built and tested against a fake provider; off by default."},
     {"id": "A16", "item": "Telegram (link code, ask, check-in, group; mock after approval)", "status": L, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_telegram_link_ask_checkin_group"], "waiting_for": "telegram_bot_token"},
+     "evidence": [T + "test_phase8_platform.py::test_telegram_link_ask_checkin_group", T + "test_live_senders.py::test_telegram_slack_sms_live_after_approval"],
+     "waiting_for": "telegram_bot_token + live_channels_enabled (server CLI)", "notes": "Real Bot API sender built (after approval only); off by default."},
     {"id": "A17", "item": "Slack (signature check, DM, mention; mock)", "status": L, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_slack_signature"], "waiting_for": "slack_bot_token, slack_signing_secret"},
+     "evidence": [T + "test_phase8_platform.py::test_slack_signature", T + "test_live_senders.py::test_telegram_slack_sms_live_after_approval"],
+     "waiting_for": "slack_bot_token, slack_signing_secret + live_channels_enabled", "notes": "Real chat.postMessage sender built; off by default."},
     {"id": "A18", "item": "Email channel (inbound parse, quote strip, drafts only)", "status": L, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_email_inbound_parse_quote_strip_drafts_only"],
-     "waiting_for": "smtp_host, smtp_user, smtp_password, an inbound email webhook"},
+     "evidence": [T + "test_phase8_platform.py::test_email_inbound_parse_quote_strip_drafts_only", T + "test_live_senders.py::test_email_via_smtp"],
+     "waiting_for": "smtp_host, smtp_user, smtp_password, smtp_from + live_channels_enabled", "notes": "Real SMTP sender built; off by default."},
     {"id": "A19", "item": "MCP server (read-only, token auth)", "status": R, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_mcp_read_only_token_auth"], "waiting_for": ""},
     {"id": "A20", "item": "Meta Ads (diagnose read-only, propose PAUSED; mock; live client coded and off)", "status": L, "score": 2,
-     "evidence": [T + "test_phase6_chains_studio_ads.py::test_propose_queues_only", T + "test_phase9_live_tenancy.py::test_meta_ads_adapter_forces_paused"],
-     "waiting_for": "meta_access_token, meta_app_secret, live_meta_enabled + allowlist (server CLI)"},
+     "evidence": [T + "test_phase6_chains_studio_ads.py::test_propose_queues_only", T + "test_phase9_live_tenancy.py::test_meta_ads_adapter_forces_paused",
+                  T + "test_router_chat.py::test_ads_export_audit_kill_and_winner"],
+     "waiting_for": "meta_access_token, meta_app_secret, live_meta_enabled + allowlist (server CLI)",
+     "notes": "Real-data audits work today from an Ads Manager CSV export dropped into the chat (read-only)."},
     {"id": "A21", "item": "CRM / GoHighLevel-style (mock; terminal moves need approval)", "status": L, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_crm_terminal_moves_need_approval"], "waiting_for": "crm_api_key, crm_location_id (real CRM adapter not built)",
      "notes": "Mock CRM only; a real GoHighLevel adapter is not written."},
@@ -75,8 +82,8 @@ ROWS: list[dict] = [
     {"id": "A24", "item": "KB admin (licence, provenance, priority, notes)", "status": R, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_kb_admin_labels_priority_notes"], "waiting_for": ""},
     {"id": "A25", "item": "Source sync (local Drive inbox: list → diff → fetch → screen → stage)", "status": R, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_drive_list_diff_fetch_screen_stage"],
-     "waiting_for": "drive_folder_id for a real Google Drive sync", "notes": "Local inbox folder; Google Drive API sync not built."},
+     "evidence": [T + "test_phase8_platform.py::test_drive_list_diff_fetch_screen_stage", T + "test_phase8_platform.py::test_drive_daily_auto_sync_and_synced_folder"],
+     "waiting_for": "", "notes": "Daily auto-sync; point OPERATOR_DRIVE_INBOX_<TENANT> at a Google Drive for desktop folder for real Drive sync. No Drive API client."},
     {"id": "A26", "item": "Personality (name, limits, banned words always enforced)", "status": R, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_personality_banned_words_always_enforced", T + "test_phase8_platform.py::test_daily_question_limit"],
      "waiting_for": "AI budget for style", "notes": "Style rewriting needs AI."},
@@ -216,7 +223,7 @@ ROWS: list[dict] = [
 
 # vault fields that flip a NEEDS_LOGIN row to REAL_OK on this tenant
 LIVE_FIELDS = {
-    "A15": ["sms_account_sid", "sms_auth_token"], "A16": ["telegram_bot_token"], "A17": ["slack_bot_token", "slack_signing_secret"],
+    "A15": ["sms_account_sid", "sms_auth_token", "sms_from_number"], "A16": ["telegram_bot_token"], "A17": ["slack_bot_token", "slack_signing_secret"],
     "A18": ["smtp_host", "smtp_user", "smtp_password"], "A20": ["meta_access_token", "meta_app_secret"],
     "A29": ["payments_api_key", "payments_webhook_secret"], "D2": ["meta_access_token", "meta_app_secret", "google_refresh_token"],
 }
@@ -232,7 +239,9 @@ def rows_for(tenant) -> list[dict]:
         if fields and r["status"] == L:
             st = vault.status(tenant, fields)
             row["missing"] = [k for k, v in st.items() if v != "set"]
-            if not row["missing"] and (r["id"] != "A20" or tenant.get("live_meta_enabled")):
+            switch = "live_meta_enabled" if r["id"] in ("A20", "D2") else "live_channels_enabled" if r["id"] in (
+                "A15", "A16", "A17", "A18") else None
+            if not row["missing"] and (switch is None or tenant.get(switch)):
                 row["status"] = R
         out.append(row)
     return out

@@ -89,3 +89,40 @@ def test_pwa_installable_and_offline_shell(tmp_path):
         assert "Reconnecting to the server" in body or "You're offline" in body, body[:200]
         ctx.set_offline(False)
         browser.close()
+
+
+@pytest.mark.timeout(300)
+def test_one_chat_routes_question_numbers_review_and_csv(tmp_path):
+    from playwright.sync_api import expect, sync_playwright
+
+    from tests.server import running_server
+    from tests.test_router_chat import ADS_CSV
+
+    csv_path = tmp_path / "ads_export.csv"
+    csv_path.write_text(ADS_CSV)
+    with running_server(tmp_path) as base, sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        errors = []
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.goto(f"{base}/t/demo/", wait_until="networkidle")
+        page.get_by_test_id("pitch-demo").get_by_role("button", name="student").click()
+        page.evaluate("location.hash = '#/coach'")
+        box = page.get_by_label("Message")
+        chat = page.get_by_test_id("chat")
+
+        def say(text, expect_text):
+            box.fill(text)
+            box.press("Enter")
+            expect(chat).to_contain_text(expect_text, timeout=20000)
+
+        say("What are the rules for a Thunder Dome test?", "three and five creatives")
+        say("How long should it run?", "follow-up, read in context")
+        say("800 DMs, 40 replies, 20 conversations, 10 links sent, 6 booked, 2 showed, 1 closed, price $3k", "Bottleneck: DM reply rate")
+        say("Review this DM:\nHey! What's your goal? How many clients? Our fee is $3k a month.", "Dm Script scored")
+        page.set_input_files("input[type=file][aria-label='Attach a file']", str(csv_path))
+        expect(chat).to_contain_text("Read-only: nothing was changed in any ad account.", timeout=20000)
+        expect(chat).to_contain_text("winner")
+        assert errors == []
+        page.screenshot(path=str(ROOT / "screens" / "desktop" / "student-coach-one-chat.png"), full_page=True)
+        browser.close()

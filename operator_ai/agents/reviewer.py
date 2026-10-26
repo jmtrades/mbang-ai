@@ -50,6 +50,26 @@ AI_SYSTEM = ("You review marketing and sales assets against a programme rubric. 
              "\"citations\": [\"E1\"]}]}")
 
 
+GUARD_FIX = {
+    "guarantee": "Drop the guarantee. Promise a direction instead (\"here's the plan we follow\"), never a result.",
+    "income_claim": "Remove the income figure. Describe the method or a verified, permissioned result instead.",
+    "fake_testimonial": "Only use real testimonials you have permission to share; otherwise teach how to check the method.",
+    "unverified_result": "Remove the named result or attach the proof and the person's permission.",
+    "fake_shoutout": "Remove the shout-out unless it's real and the person agreed to be named.",
+    "planted_question": "Answer real questions from real attendees only. Never seed the chat.",
+    "invented_credential": "State only what's true about your track record.",
+    "fake_scarcity": "Drop the urgency line, or give the real deadline and why it exists (\"the cohort starts Monday\").",
+    "deadline_no_reason": "Add the reason for the deadline or cap (\"because coaches can only take 20\").",
+    "deceptive_subject": "Use an honest subject line that says what's inside; no \"Re:\" or \"following up\" on a first email.",
+    "outreach_money": "Take the number out. Warm leads may get \"Let me make [Brand] $50k-$100k a month through …\"; cold leads get \"Let me help [Brand] grow through …\".",
+    "outreach_price": "No price, fee or retainer in a DM. Ask one question about their goal, then offer a short call.",
+    "cold_lead_figure": "Cold leads get no figure: \"Let me help [Brand] grow through …\".",
+    "outreach_definite": "Hedge it: \"Let me make [Brand] $50k-$100k a month through …\" — never \"will add\".",
+    "outreach_unhedged": "Hedge it: \"Let me make [Brand] $50k-$100k a month through …\".",
+    "banned_name": "Remove the name; nothing is written as or about a listed person.",
+}
+
+
 def _line_fixes(text: str, crit: list[dict], flags: list[dict]) -> list[dict]:
     lines = text.splitlines() or [text]
     fixes = []
@@ -73,7 +93,7 @@ def _line_fixes(text: str, crit: list[dict], flags: list[dict]) -> list[dict]:
     for f in flags:
         n, ln = locate(f["match"])
         fixes.append({"line_no": n, "line": ln or f["match"], "problem": f["message"],
-                      "fix": "Remove or rewrite this line so it is true and verifiable.", "citations": [],
+                      "fix": GUARD_FIX.get(f["code"], "Remove or rewrite this line so it is true and verifiable."), "citations": [],
                       "severity": f["severity"], "guardrail": f["code"]})
     fixes.sort(key=lambda x: (x["line_no"] or 9999))
     return fixes

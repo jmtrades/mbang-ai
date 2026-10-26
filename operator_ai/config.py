@@ -15,6 +15,7 @@ BOX_ONLY = {
     "live_meta_enabled",
     "meta_allowlist",
     "live_calendar_enabled",
+    "live_channels_enabled",
     "ai_token_budget",
     "critique_token_budget",
 }

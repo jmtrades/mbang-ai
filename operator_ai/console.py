@@ -225,9 +225,24 @@ def embed_snippet(tid: str, slug: str) -> str:
 
 # --------------------------------------------------------------------------- Drive inbox sync
 def drive_inbox(tenant) -> Path:
-    p = tenant.dir / "drive_inbox"
+    """The tenant's inbox folder. On the server it can point at a Google Drive for desktop (or any
+    synced) folder via OPERATOR_DRIVE_INBOX_<TENANT_ID> — server-only, never settable from the API."""
+    import os
+
+    env = os.environ.get(f"OPERATOR_DRIVE_INBOX_{tenant.id.upper().replace('-', '_')}")
+    p = Path(env) if env else tenant.dir / "drive_inbox"
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def drive_auto_sync(tenant, now: float | None = None) -> int:
+    """Daily: fetch and screen new or changed files (they stay staged for the owner's OK)."""
+    now = now or time.time()
+    last = float(tenant.get("drive_last_sync", 0) or 0)
+    if now - last < 86400:
+        return 0
+    tenant.set("drive_last_sync", now)
+    return len([s for s in drive_fetch_and_stage(tenant, "scheduler") if s["status"] == "staged"])
 
 
 def drive_list(tenant) -> dict:
@@ -241,7 +256,12 @@ def drive_list(tenant) -> dict:
         sha = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
         state = "new" if p.name not in known else "changed" if known[p.name] != sha else "unchanged"
         files.append({"filename": p.name, "size": p.stat().st_size, "sha": sha, "state": state})
-    return {"inbox": str(drive_inbox(tenant).relative_to(config.get().data_dir)), "files": files}
+    inbox = drive_inbox(tenant)
+    try:
+        shown = str(inbox.relative_to(config.get().data_dir))
+    except ValueError:
+        shown = "server-configured synced folder"
+    return {"inbox": shown, "files": files, "last_sync": tenant.get("drive_last_sync")}
 
 
 def drive_fetch_and_stage(tenant, actor: str) -> list[dict]:
@@ -306,11 +326,13 @@ INTEGRATIONS = [
                                                                      "google_refresh_token", "google_calendar_id"],
      "live_switch": "live_calendar_enabled"},
     {"key": "instagram", "name": "Instagram messaging", "fields": ["instagram_access_token"]},
-    {"key": "telegram", "name": "Telegram bot", "fields": ["telegram_bot_token", "telegram_webhook_secret"]},
-    {"key": "slack", "name": "Slack app", "fields": ["slack_bot_token", "slack_signing_secret"]},
-    {"key": "sms", "name": "SMS / phone provider", "fields": ["sms_account_sid", "sms_auth_token", "sms_webhook_secret"]},
-    {"key": "email", "name": "Email (SMTP + inbound)", "fields": ["smtp_host", "smtp_user", "smtp_password",
-                                                                  "email_webhook_secret"]},
+    {"key": "telegram", "name": "Telegram bot", "fields": ["telegram_bot_token", "telegram_webhook_secret"],
+     "live_switch": "live_channels_enabled"},
+    {"key": "slack", "name": "Slack app", "fields": ["slack_bot_token", "slack_signing_secret"], "live_switch": "live_channels_enabled"},
+    {"key": "sms", "name": "SMS / phone provider (Twilio-style)", "fields": ["sms_account_sid", "sms_auth_token", "sms_from_number",
+                                                                            "sms_webhook_secret"], "live_switch": "live_channels_enabled"},
+    {"key": "email", "name": "Email (SMTP + inbound)", "fields": ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from",
+                                                                  "email_webhook_secret"], "live_switch": "live_channels_enabled"},
     {"key": "payments", "name": "Payments", "fields": ["payments_api_key", "payments_webhook_secret"]},
     {"key": "crm", "name": "GoHighLevel-style CRM", "fields": ["crm_api_key", "crm_location_id"]},
     {"key": "drive", "name": "Google Drive (inbox sync)", "fields": ["drive_folder_id"]},

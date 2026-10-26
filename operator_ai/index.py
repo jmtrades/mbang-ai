@@ -226,7 +226,27 @@ def invalidate() -> None:
         _cache.clear()
 
 
+_warming = threading.Event()
+
+
+def warm_async() -> None:
+    """Build the course index in the background at startup so the first visitor never waits."""
+    def _go():
+        _warming.set()
+        try:
+            course_index()
+        except Exception:  # noqa: BLE001 - a failed warm-up just means the first request builds it
+            pass
+        finally:
+            _warming.clear()
+
+    threading.Thread(target=_go, name="index-warm", daemon=True).start()
+
+
 def status() -> dict:
+    if _warming.is_set():
+        return {"ok": False, "building": True, "embeddings": embeddings.get().name,
+                "note": "Indexing the course material (first start with a new corpus can take a few minutes)."}
     idx = course_index()
     st = idx.status()
     st["corpus"] = "fixture" if config.get().using_fixture_corpus else "inputs"

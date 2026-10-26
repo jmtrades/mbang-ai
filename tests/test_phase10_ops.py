@@ -213,6 +213,11 @@ def test_golive_flips_when_login_added(demo_tenant):
 
     vault.put(demo_tenant, {"telegram_bot_token": "123:abc"})
     row = next(x for x in scorecard.rows_for(demo_tenant) if x["id"] == "A16")
+    assert row["status"] == "NEEDS_LOGIN" and row["missing"] == []  # login present, switch still off
+    from operator_ai import settings
+
+    settings.set_box(demo_tenant, "live_channels_enabled", True, "test")
+    row = next(x for x in scorecard.rows_for(demo_tenant) if x["id"] == "A16")
     assert row["status"] == "REAL_OK"
 
 

@@ -273,3 +273,50 @@ def voice_note_deck(tenant, transcript: str) -> dict:
                        "citation": retrieval.cite({**hits[0], "id": f"S{len(slides) + 1}"}) if hits else None})
     return {"slides": slides[:12], "source": "voice note transcript",
             "note": "Audio needs a transcription model; paste or upload the transcript (TXT/SRT/VTT)."}
+
+
+# --------------------------------------------------------------------------- phone line (Twilio-style voice webhook)
+def twilio_signature(auth_token: str, url: str, params: dict) -> str:
+    import base64
+
+    data = url + "".join(f"{k}{params[k]}" for k in sorted(params))
+    return base64.b64encode(hmac.new(auth_token.encode(), data.encode(), hashlib.sha1).digest()).decode()
+
+
+def _xml(s: str) -> str:
+    import html as _h
+
+    return _h.escape(s, quote=False)
+
+
+def _twiml(*parts: str) -> str:
+    return '<?xml version="1.0" encoding="UTF-8"?><Response>' + "".join(parts) + "</Response>"
+
+
+def _gather(action: str, prompt: str) -> str:
+    return (f'<Gather input="speech" action="{_xml(action)}" method="POST" speechTimeout="auto" language="en-US">'
+            f'<Say voice="Polly.Joanna">{_xml(prompt)}</Say></Gather>')
+
+
+def voice_call(tenant, url: str, signature: str | None, params: dict) -> str:
+    """Answer a member's spoken question with the cited coach, in a neutral system voice (never a
+    cloned person). Only with the server-only live channels switch, a valid provider signature and an
+    opted-in caller. Returns TwiML."""
+    token = vault.get(tenant, "sms_auth_token")
+    if not tenant.get("live_channels_enabled", False) or not token:
+        return _twiml("<Say>This line is not switched on yet.</Say><Hangup/>")
+    if not signature or not hmac.compare_digest(signature, twilio_signature(token, url, params)):
+        raise ChannelError(401, "Bad voice signature")
+    caller = str(params.get("From", ""))
+    if not opted_in(tenant, "phone", caller) and not opted_in(tenant, "sms", caller):
+        return _twiml("<Say>Sorry, this number isn't registered. Text START to opt in first.</Say><Hangup/>")
+    speech = str(params.get("SpeechResult", "")).strip()
+    if not speech:
+        return _twiml(_gather(url, "Hi, ask me anything about the programme."))
+    _log(tenant, "phone", "in", caller, speech)
+    from .agents import coach
+
+    res = coach.answer(tenant, speech[:500], record=True)
+    spoken = re.sub(r"\s*\[S\d+\]", "", res["answer"])[:900]
+    _log(tenant, "phone", "out", caller, spoken, {"covered": res["covered"], "run_id": res["run_id"]})
+    return _twiml(f'<Say voice="Polly.Joanna">{_xml(spoken)}</Say>', _gather(url, "Anything else?"))

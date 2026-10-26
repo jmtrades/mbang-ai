@@ -18,10 +18,7 @@ class AskBody(BaseModel):
     thread_id: int | None = None
 
 
-@router.post("/coach/ask")
-def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
-    if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
-        raise HTTPException(404, "Thread not found")
+def _check_limit(ctx: Ctx) -> None:
     if ctx.role == "student":
         from .. import console
 
@@ -31,6 +28,13 @@ def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
                           (ctx.user["id"], db.now() - 86400)).fetchone()[0]
         if n >= limit:
             raise HTTPException(429, f"Daily question limit of {limit} reached. It resets in 24 hours.")
+
+
+@router.post("/coach/ask")
+def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
+    if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
+        raise HTTPException(404, "Thread not found")
+    _check_limit(ctx)
     return coach.answer(ctx.tenant, b.question, user=ctx.user, record=True, thread=True, thread_id=b.thread_id)
 
 
@@ -109,3 +113,49 @@ def queries(unanswered: bool = Query(False), ctx: Ctx = Depends(require("console
         else:
             rows = db.rows(c.execute("SELECT * FROM queries ORDER BY id DESC LIMIT 200"))
     return {"items": rows}
+
+
+# ---------------------------------------------------------------- one chat that routes to the right agent
+class ChatBody(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+    thread_id: int | None = None
+
+
+@router.post("/chat")
+def chat(b: ChatBody, ctx: Ctx = Depends(require("coach"))):
+    from ..agents import router as chat_router
+
+    if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
+        raise HTTPException(404, "Thread not found")
+    _check_limit(ctx)
+    return chat_router.handle(ctx.tenant, b.text, ctx.user, b.thread_id)
+
+
+from fastapi import File, Form, UploadFile  # noqa: E402
+
+
+@router.post("/chat/upload")
+async def chat_upload(file: UploadFile = File(...), text: str = Form(""), thread_id: int | None = Form(None),
+                      ctx: Ctx = Depends(require("coach"))):
+    """A screenshot, PDF, transcript or Ads Manager export dropped into the chat."""
+    from .. import uploads
+    from ..agents import router as chat_router
+
+    if thread_id and threads.get(ctx.tenant, thread_id, ctx.user["id"]) is None:
+        raise HTTPException(404, "Thread not found")
+    _check_limit(ctx)
+    data = await file.read(uploads.MAX_BYTES + 1)
+    name = file.filename or "upload"
+    try:
+        ex = uploads.extract(name, data)
+    except uploads.UploadError as e:
+        raise HTTPException(422, str(e))
+    rec = uploads.receipt(name, len(data), ex)
+    raw = data.decode("utf-8", errors="replace") if name.lower().endswith((".csv", ".tsv")) else ex["text"]
+    body = raw if name.lower().endswith((".csv", ".tsv")) else (text.strip() + "\n" if text.strip() else "") + raw
+    if not body.strip():
+        raise HTTPException(422, rec["warnings"][0] if rec["warnings"] else "Nothing readable in that file")
+    out = chat_router.handle(ctx.tenant, body, ctx.user, thread_id, filename=name,
+                             extracted={k: rec[k] for k in ("summary", "warnings", "kind")})
+    out["receipt"] = rec
+    return out

@@ -219,8 +219,9 @@ def reject(tenant, qid: int, actor: str, role: str = "owner", reason: str = "") 
 # --------------------------------------------------------------------------- delivery
 def deliver(tenant, item: dict, actor: str) -> str:
     """Approved items go to a mock transport or are marked ready to send manually.
-    Live delivery exists only for calendar invites when the tenant's live switch is on
-    (see live/chain.py); there is no other real-send path."""
+    Real delivery happens only behind a server-only switch AND a vault login: calendar invites
+    (live_calendar_enabled, live/chain.py) and Telegram / Slack / SMS / email messages
+    (live_channels_enabled, live/senders.py). A failed live send leaves the item undecided."""
     # never-invite list, second check at send time
     if blocked_recipients(tenant, item["recipient_ref"], item["meta"]):
         raise QueueError(409, "Recipient is on the never-invite list")
@@ -229,6 +230,23 @@ def deliver(tenant, item: dict, actor: str) -> str:
         from .live import chain
 
         return chain.deliver_calendar_invite(tenant, item)
+    from .live import senders
+
+    if senders.ready(tenant, ch):
+        try:
+            mid = senders.send(tenant, ch, (item["recipient_ref"] or "").split(" ")[0], item["body"],
+                               subject=item["meta"].get("subject"))
+        except Exception as e:  # noqa: BLE001 - the item stays open; the reason is redacted and audited
+            from .redact import redact
+
+            audit.log(tenant, actor, "action", {"queue_id": item["id"], "live_send": "failed", "channel": ch})
+            raise QueueError(502, redact(f"Live send failed ({type(e).__name__}); nothing was marked sent. Try again."))
+        with tenant.db() as c:
+            c.execute("INSERT INTO channel_messages(channel,direction,ext_id,body,meta,created) VALUES(?,?,?,?,?,?)",
+                      (ch, "out", item["recipient_ref"], item["body"], db.jdump({"queue_id": item["id"], "live": True,
+                                                                                  "provider_id": mid}), db.now()))
+        audit.log(tenant, actor, "action", {"queue_id": item["id"], "live_send": "ok", "channel": ch})
+        return f"live:{ch}:{mid}"
     if ch in MOCK_CHANNELS:
         with tenant.db() as c:
             c.execute("INSERT INTO channel_messages(channel,direction,ext_id,body,meta,created) VALUES(?,?,?,?,?,?)",

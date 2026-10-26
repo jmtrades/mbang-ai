@@ -501,3 +501,18 @@ def test_pwa_manifest_and_service_worker(client):
     sw = client.get("/sw.js")
     assert sw.status_code == 200 and "offline" in sw.text and "/api/" in sw.text
     assert client.get("/offline.html").status_code == 200
+
+
+def test_drive_daily_auto_sync_and_synced_folder(env, tmp_path, monkeypatch):
+    from operator_ai import tenancy as _t
+
+    _t.ensure_defaults()
+    t = _t.get("owner")
+    synced = tmp_path / "Google Drive" / "Course updates"
+    monkeypatch.setenv("OPERATOR_DRIVE_INBOX_OWNER", str(synced))
+    synced.mkdir(parents=True)
+    (synced / "new_sop.txt").write_text("Our new follow-up cadence is two, four and seven days.")
+    assert console.drive_list(t)["inbox"] == "server-configured synced folder"
+    assert console.drive_auto_sync(t, now=time.time()) == 1
+    assert console.drive_auto_sync(t, now=time.time()) == 0  # once a day
+    assert console.drive_staged(t)[0]["status"] == "staged"  # still needs the owner's OK

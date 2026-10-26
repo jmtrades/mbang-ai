@@ -78,7 +78,7 @@ def extractive(question: str, hits: list[dict], max_sentences: int = 4, idf=None
         if len(chosen) >= max_sentences:
             break
     chosen.sort()
-    return " ".join(f"{s} [{sid}]" for _, _, sid, s in chosen)
+    return "\n".join(f"• {s} [{sid}]" for _, _, sid, s in chosen)
 
 
 def verify_citations(answer: str, cited: list[str], allowed: set[str]) -> tuple[str, list[str], list[str]]:
@@ -102,14 +102,29 @@ def _not_used(tenant, hits: list[dict]) -> list[dict]:
     return out
 
 
+FOLLOWUP = re.compile(r"^\s*(and|what about|how about|also|same for|what if|ok|okay|so|then|but|why|how come|and if)\b|"
+                      r"\b(it|that|this|those|them|these|there)\b", re.I)
+
+
+def resolve_followup(question: str, previous: str | None) -> tuple[str, bool]:
+    """A short follow-up ("what about for webinars?", "how long should it run?") is read in the
+    context of the previous question in the thread. Returns (question to search with, used_context)."""
+    if not previous:
+        return question, False
+    words = question.split()
+    if len(words) <= 9 and FOLLOWUP.search(question):
+        return f"{previous.rstrip('?. ')} — {question}", True
+    return question, False
+
+
 def answer(tenant, question: str, user: dict | None = None, record: bool = True, thread: bool = False,
-           thread_id: int | None = None, run: runtime.Run | None = None, k: int = 6) -> dict:
+           thread_id: int | None = None, run: runtime.Run | None = None, k: int = 6, context: str | None = None) -> dict:
     own_run = run is None
     actor = f"{user['username']}({user['role']})" if user else "system"
     if own_run:
         run = runtime.Run(tenant, "coach", f"Coach: {question[:80]}", PLAN, actor)
     try:
-        res = _answer(tenant, question, run, k)
+        res = _answer(tenant, question, run, k, context)
     except Exception as e:
         run.fail(e)
         raise
@@ -128,14 +143,16 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
     return res
 
 
-def _answer(tenant, question: str, run: runtime.Run, k: int) -> dict:
+def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None = None) -> dict:
     lang = run.step("detect_language", {"question": question}, lambda: translate.detect(question), "Detect language")
     q_en = translate.to_english_terms(question, lang) if lang != "en" else question
 
-    # rewrite / decompose (AI when available, else rules keep the original or split clear multi-part)
+    # rewrite / decompose (AI when available, else rules keep the original or split clear multi-part);
+    # short follow-ups are read in the context of the previous question in the thread
     def _rewrite():
-        parts = decompose(q_en)
-        return {"parts": parts, "by": "rules"}
+        q, used = resolve_followup(q_en, context)
+        parts = [q] if used else decompose(q)
+        return {"parts": parts, "by": "rules (follow-up in context)" if used else "rules", "followup": used}
 
     rw = run.step("rewrite", {"question": q_en}, _rewrite, "Rewrite / decompose question")
     parts = rw["parts"]
@@ -224,7 +241,10 @@ def _answer(tenant, question: str, run: runtime.Run, k: int) -> dict:
                     part_hits = [h for h in usable if h["id"] in set(pp["ids"][:5])]
                     bits.append(extractive(pp["part"], part_hits, max_sentences=3 if len(per_part) == 1 else 2,
                                            idf=index.for_tenant(tenant).idf))
-                return " ".join(b for b in bits if b)
+                bits = [b for b in bits if b]
+                if not bits:
+                    return ""
+                return "From the course material:\n" + "\n".join(bits)
 
             text = run.step("answer", {"passages": sorted(allowed), "mode": "extractive"}, _extract,
                             "Answer from passages only")
