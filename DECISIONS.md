@@ -12,3 +12,6 @@ One line each: decision — reason — how to change it.
 - AI token budget is cumulative per tenant (tokens used vs `ai_token_budget`) — simplest fail-closed meter — `scripts/tenant_admin.py set-budget`.
 - Model default `claude-sonnet-5-5` via `OPERATOR_LLM_PROVIDER=anthropic` — current Claude family; any provider works through `llm.py` — set `OPERATOR_LLM_PROVIDER` / `OPERATOR_LLM_MODEL`.
 - No `inputs/` present in this build environment, so the fictional fixture corpus in `tests/fixtures/corpus/` is used for tests and the demo — `OPERATOR_CORPUS_DIR` switches automatically once `inputs/` has files.
+- "Budget 0" is reported before "AI disabled" — the budget is the product-level gate the owner sees — `llm.unavailable_reason`.
+- Rubric pass needs score ≥ 70, no guardrail block and no heavy criterion (weight ≥ 2) under 5 — a weighted average alone let a 3-question DM pass — `critique.critique`.
+- Unknown lead tier is treated as cold for the outreach money rule — safest reading of "cold or unqualified leads get a no-figure line" — pass `lead_tier` in item meta.

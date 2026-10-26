@@ -55,11 +55,11 @@ def used(tenant, key: str = "ai_token_budget") -> int:
 
 def unavailable_reason(tenant, key: str = "ai_token_budget") -> str | None:
     cfg = config.get()
-    if cfg.disable_llm:
-        return "AI disabled on this server (OPERATOR_DISABLE_LLM=1)"
     b = budget(tenant, key)
     if b <= 0:
-        return f"AI off (budget 0)" if key == "ai_token_budget" else "Critique off (critique budget 0)"
+        return "AI off (budget 0)" if key == "ai_token_budget" else "Critique off (critique budget 0)"
+    if cfg.disable_llm:
+        return "AI disabled on this server (OPERATOR_DISABLE_LLM=1)"
     if used(tenant, key) >= b:
         return "AI budget used up"
     if not config.llm_key():

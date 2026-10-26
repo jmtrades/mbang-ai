@@ -72,7 +72,7 @@ DECEPTION_RULES: list[tuple[str, re.Pattern, str]] = [
         r"\b(student|client|member|customer)s? (named |called )?[A-Z][a-z]+ (went from|made|hit|closed|doubled|tripled|10x'?d|grew)\b"),
      "A result about a named person needs verified proof and permission; remove it or attach the proof"),
     ("fake_shoutout", re.compile(
-        r"\bshout[- ]?outs? (to )?[A-Z][a-z]+\b[^.!?\n]{0,40}\b(booked|joined|signed|closed|bought)\b|"
+        r"\b(?i:shout[- ]?outs?) (?i:to )?[A-Z][a-z]+\b[^.!?\n]{0,40}\b(booked|joined|signed|closed|bought)\b|"
         r"\b[A-Z][a-z]+ (just|has just) (booked|joined|signed up|bought|enrolled)\b"),
      "Booking or sign-up shout-outs with names can't be verified here"),
     ("planted_question", re.compile(
