@@ -72,6 +72,9 @@ def claim(tenant) -> dict | None:
 
 
 def run_one(tenant, job: dict) -> None:
+    from . import handlers
+
+    handlers.load()
     fn = HANDLERS.get(job["kind"])
     try:
         if fn is None:

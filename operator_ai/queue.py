@@ -244,6 +244,9 @@ def on_approve(kind: str):
 
 
 def _after_approve(tenant, item: dict, actor: str) -> None:
+    from . import handlers
+
+    handlers.load()
     for fn in _HOOKS.get(item["kind"], []) + _HOOKS.get("*", []):
         fn(tenant, item, actor)
 

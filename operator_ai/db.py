@@ -13,7 +13,7 @@ TENANT_SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, display TEXT, role TEXT NOT NULL,
-  pw_hash TEXT NOT NULL, coach_id INTEGER, active INTEGER DEFAULT 1, created REAL);
+  pw_hash TEXT NOT NULL, coach_id INTEGER, student_id INTEGER, active INTEGER DEFAULT 1, created REAL);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY, user_id INTEGER, created REAL, expires REAL, ip TEXT);
 CREATE TABLE IF NOT EXISTS login_fails (key TEXT, at REAL);

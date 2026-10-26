@@ -152,7 +152,7 @@ def end_session(tenant, token: str | None) -> None:
 
 def user_public(u: dict) -> dict:
     return {"id": u["id"], "username": u["username"], "display": u.get("display") or u["username"],
-            "role": u["role"], "coach_id": u.get("coach_id")}
+            "role": u["role"], "coach_id": u.get("coach_id"), "student_id": u.get("student_id")}
 
 
 def tabs_for(role: str) -> list[str]:

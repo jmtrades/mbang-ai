@@ -96,7 +96,7 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
                      rng.choice(["Booked a discovery call (DEMO)", "Finished my USP (DEMO)", "Sent 50 openers (DEMO)", ""]),
                      rng.choice(["", "Low reply rate (DEMO)", "No-shows (DEMO)", "Not sure what to post (DEMO)"])),
                 )
-        c.execute("UPDATE users SET coach_id=? WHERE id=?", (student_ids[0], users["student"]))
+        c.execute("UPDATE users SET student_id=? WHERE id=?", (student_ids[0], users["student"]))
         counts["students"] = n_students
 
         # leads
