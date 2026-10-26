@@ -8,15 +8,15 @@ T = "tests/"
 
 ROWS: list[dict] = [
     # ---------------------------------------------------------------- A. parity
-    {"id": "A1", "item": "Chat in the creator's voice (cited, honest 'not covered', replay when AI off)", "status": R,
+    {"id": "A1", "item": "Chat in the creator's voice (cited, honest 'not covered', replay when AI off)", "status": A,
      "score": 2, "evidence": [T + "test_phase4_agents.py::test_thunder_dome_cited_sop_answer",
                               T + "test_phase4_agents.py::test_tiktok_shop_not_covered",
                               T + "test_phase4_agents.py::test_ai_answer_then_labelled_replay_when_ai_off"],
      "waiting_for": "AI key + ai_token_budget for voice/style rewriting", "notes": "Rules path: extractive answers from passages; style needs AI."},
-    {"id": "A2", "item": "Files, screenshots, links (uploads + local OCR + receipt)", "status": R, "score": 2,
+    {"id": "A2", "item": "Files, screenshots, links (uploads + local OCR + receipt)", "status": R, "score": 1,
      "evidence": [T + "test_phase8_platform.py::test_upload_kinds_and_receipt", T + "test_phase8_platform.py::test_image_ocr_local",
                   T + "test_phase8_platform.py::test_upload_pdf_and_docx"],
-     "waiting_for": "", "notes": "OCR via tesseract (Docker image) or macOS Vision. Links: paste text; no web fetching (offline by design)."},
+     "waiting_for": "", "notes": "OCR via tesseract (Docker image) or macOS Vision. Links are not fetched (no outbound web access); paste the text instead."},
     {"id": "A3", "item": "Threads and history", "status": R, "score": 2,
      "evidence": [T + "test_phase8_platform.py::test_threads_title_rename_search_archive_share"], "waiting_for": ""},
     {"id": "A4", "item": "Projects and memory (scoped, user-deletable)", "status": R, "score": 2,
@@ -107,7 +107,7 @@ ROWS: list[dict] = [
      "evidence": [T + "test_phase5_ops_agents.py::test_board_2000_students_fast", T + "test_phase5_ops_agents.py::test_interventions_queue_nudges_and_escalate"],
      "waiting_for": ""},
     {"id": "A38", "item": "Mobile (installable PWA, offline shell)", "status": R, "score": 2,
-     "evidence": [T + "test_phase8_platform.py::test_pwa_manifest_and_service_worker", T + "test_ui_playwright.py::test_every_page_every_role"],
+     "evidence": [T + "test_ui_playwright.py::test_pwa_installable_and_offline_shell", T + "test_ui_playwright.py::test_every_page_every_role"],
      "waiting_for": ""},
     # ---------------------------------------------------------------- B. beyond parity
     {"id": "B1", "item": "Studio 7 lines", "status": R, "score": 2,
@@ -189,7 +189,7 @@ ROWS: list[dict] = [
      "waiting_for": "a server to install the systemd timers on"},
     {"id": "D8", "item": "Deploy bundle + preflight_live.py", "status": R, "score": 2,
      "evidence": [T + "test_phase10_ops.py::test_deploy_bundle_lint", T + "test_phase9_live_tenancy.py::test_preflight_lists_missing_without_values"],
-     "waiting_for": "a server, a domain and DNS (not deployed)"},
+     "waiting_for": "a server, a domain and DNS (not deployed)", "notes": "Linted, not built: the Docker image was not built in this environment."},
     {"id": "D9", "item": "Login throttle + session expiry + secure cookies", "status": R, "score": 2,
      "evidence": [T + "test_phase3_auth_demo.py::test_login_throttle_per_ip", T + "test_phase3_auth_demo.py::test_session_expiry",
                   T + "test_phase3_auth_demo.py::test_secure_cookie_when_hosted"], "waiting_for": ""},

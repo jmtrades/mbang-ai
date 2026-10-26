@@ -64,3 +64,28 @@ def test_every_page_every_role(tmp_path):
         browser.close()
     assert visited >= 2 * sum(len(auth.tabs_for(r)) for r in auth.ROLES) - len(problems)
     assert problems == [], "\n".join(problems)
+
+
+@pytest.mark.timeout(300)
+def test_pwa_installable_and_offline_shell(tmp_path):
+    from playwright.sync_api import sync_playwright
+
+    from tests.server import running_server
+
+    with running_server(tmp_path) as base, sync_playwright() as p:
+        browser = p.chromium.launch()
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        page.goto(f"{base}/t/demo/", wait_until="networkidle")
+        manifest = page.evaluate("document.querySelector('link[rel=manifest]').href")
+        assert manifest.endswith("/manifest.webmanifest")
+        assert page.evaluate("navigator.serviceWorker.ready.then(r => !!r.active)")
+        page.reload(wait_until="networkidle")  # navigation now cached by the service worker
+        ctx.set_offline(True)
+        page.reload()
+        page.wait_for_timeout(500)
+        body = page.locator("body").inner_text()
+        # the cached app shell boots offline and shows its designed reconnect state (or the offline page)
+        assert "Reconnecting to the server" in body or "You're offline" in body, body[:200]
+        ctx.set_offline(False)
+        browser.close()

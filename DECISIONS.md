@@ -17,3 +17,10 @@ One line each: decision — reason — how to change it.
 - Unknown lead tier is treated as cold for the outreach money rule — safest reading of "cold or unqualified leads get a no-figure line" — pass `lead_tier` in item meta.
 - Setter cap = 5 new opener conversations per sender per day (the lesson's "five thoughtful conversations a day per sender"); the goal calculator uses the same cap and reports how many senders a goal needs rather than raising one sender's volume — `outreach_loop.DAILY_CAP`, tenant setting `outreach_daily_cap`.
 - Studio/webinar prospect-facing drafts use the placeholder "[their brand]" for the prospect's brand — the programme owner's brand is not the prospect's — edit the draft in the queue.
+- Banned names are also scrubbed by a response middleware on every `/t/<tid>/api` JSON response (except `/api/settings`, where the owner manages the list) — the name-leak sweep found a Studio response echoing a banned name from the brief; a single safety net beats chasing every echo — `app.scrub_banned_names`.
+- Reminders in the show-up ladder go on the conversation's own channel (Instagram DM), not SMS — SMS needs an opt-in first and would be held otherwise — change `channel` in `agents/sales.py` once SMS opt-in is collected.
+- Live leads: with `live_meta_enabled` off, the webhook still verifies the signature and stores the lead, but qualification uses the webhook's own fields (practice) and makes no Graph call — receiving is safe, fetching uses the tenant's token only when the owner switched it on — `live/chain._qualify`.
+- The real Meta Ads adapter forces `status=PAUSED` and zero budget on every create regardless of the caller; the action gate still re-reads — defence in depth — `live/meta.MetaAdsAdapter.create`.
+- Students are linked to their student record by `users.student_id` — `routes/students.py`.
+- Playwright tests use the latest headless Chromium (downloaded once with `playwright install chromium`) — dev tooling only.
+- The dense model (bge-small-en-v1.5) was downloaded once with `scripts/fetch_embeddings.py` for the eval comparison; tests always use the hashed embedding so they stay offline — `OPERATOR_EMBEDDINGS`.
