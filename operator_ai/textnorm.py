@@ -27,12 +27,12 @@ COMPOUNDS: list[tuple[re.Pattern, str]] = [
         (r"\bhigh[\s-]ticket\b", " highticket "),
         (r"\bpaid ads?\b", " paidads "),
         (r"\bfifty to a hundred k\b|\$?50k?\s?(-|to)\s?\$?100k", " agreedrange "),
-        (r"\btwenty[\s-]four hours\b|\b24 ?h(ours)?\b", " 24h "),
-        (r"\btwo hours\b|\b2 ?h(ours)?\b", " 2h "),
-        (r"\bten minutes\b|\b10 ?min(utes)?\b", " 10min "),
-        (r"\bseventy[\s-]two hours\b|\b72 ?h(ours)?\b", " 72h "),
-        (r"\bforty[\s-]eight hours\b|\b48 ?h(ours)?\b", " 48h "),
-        (r"\bone thousand impressions\b|\b1,?000 impressions\b", " 1000impressions "),
+        (r"\btwenty[\s-]four hours\b|\b24 ?h(ours)?\b", " 24h hours "),
+        (r"\btwo hours\b|\b2 ?h(ours)?\b", " 2h hours "),
+        (r"\bten minutes\b|\b10 ?min(utes)?\b", " 10min minutes "),
+        (r"\bseventy[\s-]two hours\b|\b72 ?h(ours)?\b", " 72h hours "),
+        (r"\bforty[\s-]eight hours\b|\b48 ?h(ours)?\b", " 48h hours "),
+        (r"\bone thousand impressions\b|\b1,?000 impressions\b", " 1000impressions impressions "),
     ]
 ]
 
@@ -41,12 +41,22 @@ being do does did doing have has had having i you he she it we they me him her u
 these those what which who whom whose when where why how all any both each few more most other some such no nor not only own
 same so than too very can will just should could would may might must shall s t don now get got go going there here then
 also up down out off again further once like okay ok alright yeah um uh so well really gonna wanna let lets let's thing things
-one two three want need make sure way much many""".split())
+one two three want make sure way much many""".split())
 
 SYNONYMS: dict[str, list[str]] = {
     "price": ["cost", "expensive", "fee", "pricing"],
     "expensive": ["price", "cost"],
     "kill": ["killrule", "switch", "off"],
+    "killrule": ["kill"],
+    "prospect": ["lead"],
+    "lead": ["prospect"],
+    "sign": ["symptom", "show"],
+    "contain": ["include", "add"],
+    "soon": ["fast", "quick", "within"],
+    "broad": ["wide", "narrow"],
+    "delete": ["archive", "remove"],
+    "handle": ["deal", "objection"],
+    "happen": ["book", "within"],
     "winner": ["champion", "best", "win"],
     "remind": ["reminder", "ladder"],
     "reminder": ["remind", "ladder"],
@@ -81,11 +91,23 @@ SYNONYMS: dict[str, list[str]] = {
 _TOKEN = re.compile(r"[a-z0-9]+")
 
 
+ER_KEEP = {"offer", "after", "never", "other", "over", "under", "order", "answer", "number", "water", "paper", "power",
+           "ever", "either", "rather", "whether", "together", "consider", "remember", "deliver", "register", "partner",
+           "cluster", "filter", "letter", "master", "matter", "member", "reminder", "corner", "border", "folder", "later",
+           "better", "buyer", "header", "chapter", "quarter", "minister", "trigger", "printer", "cover", "discover",
+           "ladder", "user", "tier", "lower", "higher", "longer", "fewer", "closer", "setter", "owner", "trainer"}
+
+
 def stem(w: str) -> str:
     if len(w) <= 3 or w.isdigit():
         return w
+    if w.endswith("s") and not w.endswith("ss") and w[:-1] in ER_KEEP:
+        return w[:-1]
+    if w in ER_KEEP:
+        return w
     for suf, rep in (("ational", "ate"), ("ization", "ize"), ("fulness", "ful"), ("iveness", "ive"),
-                     ("ingly", ""), ("edly", ""), ("ies", "y"), ("ied", "y"), ("ing", ""), ("ed", "")):
+                     ("ingly", ""), ("edly", ""), ("ies", "y"), ("ied", "y"), ("ing", ""), ("ed", ""),
+                     ("ers", ""), ("er", "")):
         if w.endswith(suf) and len(w) - len(suf) >= 3:
             w = w[: -len(suf)] + rep
             break
@@ -96,7 +118,7 @@ def stem(w: str) -> str:
             w = w[:-1]
     if w.endswith("ly") and len(w) > 5:
         w = w[:-2]
-    if len(w) > 4 and w[-1] == w[-2] and w[-1] not in "lsz":
+    if len(w) >= 4 and w[-1] == w[-2] and w[-1] not in "lsz":
         w = w[:-1]
     if len(w) > 4 and w.endswith("e"):
         w = w[:-1]
@@ -142,3 +164,14 @@ def expand(toks: list[str]) -> list[tuple[str, float]]:
             if s not in seen:
                 seen[s] = 0.4
     return list(seen.items())
+
+
+# Common English words: when the corpus doesn't use one, it says little about whether the
+# question is on-curriculum (unlike a rare word such as "tiktok" or "shopify").
+COMMON = {stem(w) for w in """handle contain soon sign broad happen start deal include use work keep better good best
+quick fast right wrong mean means know tell say said show look find give take put help try ask call feel time year
+month week day today tomorrow people person thing stuff lot little big small new old first last next long short high
+low many much more most less least few enough every each same different kind type part whole full able possible
+example really actually basically also just even still already ever maybe probably usually often sometimes always
+never again around away back down off out over under through between before after during while since until
+idea point problem question answer reason result case fact way place group number level side end line""".split()}

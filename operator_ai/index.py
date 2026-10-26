@@ -85,7 +85,7 @@ class Index:
             if bm[i] > 0:
                 fused[i] += 1.0 / (RRF_K + r + 1)
         # the hashed fallback embedding is a weaker signal than a real model, so it counts for less
-        dw = 1.0 if self.embedder_name.startswith("bge") else 0.5
+        dw = 1.0 if self.embedder_name.startswith("bge") else 0.3
         for r, i in enumerate(np.argsort(-dew)[:100]):
             fused[i] += dw / (RRF_K + r + 1)
         final = fused
@@ -99,9 +99,15 @@ class Index:
         return out
 
     def known_terms(self, query: str) -> tuple[list[str], list[str]]:
+        """A term is known if the corpus uses it or one of its synonyms."""
         toks = [t for t in dict.fromkeys(textnorm.tokens(query)) if len(t) > 1]
-        known = [t for t in toks if t in self.df]
-        unknown = [t for t in toks if t not in self.df]
+        syn = textnorm._syn()
+        known, unknown = [], []
+        for t in toks:
+            if t in self.df or any(s in self.df for s in syn.get(t, [])):
+                known.append(t)
+            else:
+                unknown.append(t)
         return known, unknown
 
     def status(self) -> dict:

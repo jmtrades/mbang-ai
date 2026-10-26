@@ -50,15 +50,21 @@ def cite(h: dict) -> dict:
     return {k: h[k] for k in ("id", "file", "lines", "ts", "title", "snippet", "kind", "quality") if k in h}
 
 
-def coverage(tenant, query: str, hits: list[dict]) -> dict:
+def coverage(tenant, query: str, hits: list[dict], ignore_unknown: bool = False) -> dict:
     """Lexical coverage judge: what share of the question's key terms (idf-weighted) does the
     corpus know at all, and how strongly do the top passages match?"""
     idx = index.for_tenant(tenant)
     known, unknown = idx.known_terms(query)
+    if ignore_unknown:
+        # translated questions keep some untranslated words; judge on the mapped terms only
+        unknown = [] if len(known) >= 2 else unknown
     if not known and not unknown:
         return {"covered": "no", "ratio": 0.0, "known": [], "unknown": [], "top_bm25": 0.0}
-    w_known = sum(idx.idf(t) for t in known)
-    w_unknown = sum(max(idx.idf(t), 2.5) for t in unknown)  # unseen terms weigh like rare ones
+    from . import textnorm
+
+    w_known = sum(max(idx.idf(t), 0.8) for t in known)
+    # unseen rare words (tiktok, shopify, dns) weigh heavily; unseen common words barely count
+    w_unknown = sum(0.5 if t in textnorm.COMMON else 2.5 for t in unknown)
     ratio = w_known / (w_known + w_unknown) if (w_known + w_unknown) else 0.0
     top = max((h["bm25"] for h in hits[:5]), default=0.0)
     if ratio >= 0.7 and top >= 3.0:
