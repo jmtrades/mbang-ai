@@ -5,8 +5,8 @@ import { EscalationsPanel, InboxPanel } from "./inbox/InboxPanel";
 
 const CHANNELS = [
   { key: "telegram", name: "Telegram", how: "Students link with a code (/link CODE), ask with /ask, check in with /checkin 40 2 2 4. In groups the bot only answers mentions.", hook: "hooks/telegram", sig: "X-Telegram-Bot-Api-Secret-Token" },
-  { key: "slack", name: "Slack", how: "DMs and @mentions. Every request's signature (v0 HMAC) and timestamp are checked.", hook: "hooks/slack", sig: "X-Slack-Signature" },
-  { key: "sms", name: "SMS", how: "Opt-in first: nothing is drafted until the number replies START. STOP, END, QUIT, \"stop please\" and similar opt out at once; START opts back in. Practice mode accepts fictional +1-555-01xx numbers only.", hook: "hooks/sms", sig: "X-Signature + X-Signature-Timestamp" },
+  { key: "slack", name: "Slack", how: "DMs and @mentions. Students link by sending the app a DM: link CODE (the same code as Telegram); linked students get cited answers, anyone else a holding reply for a person. Every request's signature (v0 HMAC) and timestamp are checked.", hook: "hooks/slack", sig: "X-Slack-Signature" },
+  { key: "sms", name: "SMS", how: "Opt-in first: nothing is drafted until the number replies START. STOP, END, QUIT, \"stop please\" and similar opt out at once; START opts back in. A student can text LINK CODE to tie their number to their account. Practice mode accepts fictional +1-555-01xx numbers only.", hook: "hooks/sms", sig: "X-Signature + X-Signature-Timestamp" },
   { key: "phone", name: "Phone", how: "Same opt-in rules as SMS. Only students and members hear course answers; anyone else is thanked and lands in the inbox.", hook: "hooks/phone", sig: "X-Signature + X-Signature-Timestamp" },
   { key: "email", name: "Email (inbound)", how: "Parses the email, strips quoted history and matches the sender. Prospects get a drafted setter reply, students a cited answer, strangers a holding reply for a person.", hook: "hooks/email", sig: "X-Signature + X-Signature-Timestamp" },
 ];
@@ -42,7 +42,7 @@ export default function Channels() {
             <p className="text-sm">{c.how}</p>
             <p className="mt-2 text-xs text-muted">Webhook: <code>/t/{me.tenant.id}/{c.hook}</code> · header <code>{c.sig}</code></p>
             {c.key === "telegram" && <Button size="sm" className="mt-2" onClick={async () => { const r = await guard(() => post("/channels/link-code")); if (r) setCode(r.code); }}>Get my link code</Button>}
-            {c.key === "telegram" && code && <p className="mt-1 text-sm">Send <code>/link {code}</code> to the bot.</p>}
+            {c.key === "telegram" && code && <p className="mt-1 text-sm">Send <code>/link {code}</code> to the bot (or DM <code>link {code}</code> to the Slack app, or text it). It works for an hour.</p>}
           </Card>
         ))}
       </div>

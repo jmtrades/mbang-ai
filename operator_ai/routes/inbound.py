@@ -5,15 +5,17 @@ owner sees all. Triage of unknown senders, the SLA check and alert settings are 
 Drafted replies are approved, edited or rejected through the normal /queue endpoints."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from .. import auth, escalations, inbound, llm
 from ..deps import Ctx, get_ctx, require
 
 router = APIRouter()
+MAX_ID = 2**53 - 1  # ids past this would overflow SQLite: 422, never a 500
+RowId = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _err(e: Exception):
@@ -55,7 +57,7 @@ class CaptureBody(BaseModel):
     channel: Literal["instagram_dm", "linkedin", "facebook", "manual"] = "instagram_dm"
     handle: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1, max_length=4000)
-    prospect_id: int | None = Field(None, ge=1)
+    prospect_id: int | None = Field(None, ge=1, le=MAX_ID)
 
 
 @router.post("/inbox/capture")
@@ -70,11 +72,11 @@ def inbox_capture(b: CaptureBody, ctx: Ctx = Depends(_capture_ctx)):
 
 class AssignBody(BaseModel):
     party_type: Literal["prospect", "lead", "client", "student"]
-    party_id: int = Field(ge=1)
+    party_id: int = Field(ge=1, le=MAX_ID)
 
 
 @router.post("/inbox/{inbound_id}/assign")
-def inbox_assign(inbound_id: int, b: AssignBody, ctx: Ctx = Depends(require("channels"))):
+def inbox_assign(inbound_id: RowId, b: AssignBody, ctx: Ctx = Depends(require("channels"))):
     try:
         return inbound.assign(ctx.tenant, ctx.user, inbound_id, b.party_type, b.party_id, ctx.actor)
     except inbound.InboundError as e:
@@ -87,7 +89,7 @@ class ClassifyBody(BaseModel):
 
 
 @router.post("/inbox/{inbound_id}/classify")
-def inbox_classify(inbound_id: int, b: ClassifyBody, ctx: Ctx = Depends(require("queue"))):
+def inbox_classify(inbound_id: RowId, b: ClassifyBody, ctx: Ctx = Depends(require("queue"))):
     try:
         return inbound.reclassify(ctx.tenant, ctx.user, inbound_id, b.classification, ctx.actor)
     except inbound.InboundError as e:
@@ -95,7 +97,7 @@ def inbox_classify(inbound_id: int, b: ClassifyBody, ctx: Ctx = Depends(require(
 
 
 @router.post("/inbox/{inbound_id}/dismiss")
-def inbox_dismiss(inbound_id: int, ctx: Ctx = Depends(require("queue"))):
+def inbox_dismiss(inbound_id: RowId, ctx: Ctx = Depends(require("queue"))):
     try:
         return inbound.dismiss(ctx.tenant, ctx.user, inbound_id, ctx.actor)
     except inbound.InboundError as e:
@@ -137,7 +139,7 @@ def escalation_list(status: Literal["open", "acked", "resolved", "all"] = "open"
 
 
 @router.post("/escalations/{eid}/ack")
-def escalation_ack(eid: int, ctx: Ctx = Depends(require("queue"))):
+def escalation_ack(eid: RowId, ctx: Ctx = Depends(require("queue"))):
     try:
         return escalations.ack(ctx.tenant, eid, ctx.user, ctx.actor)
     except escalations.EscalationError as e:
@@ -149,7 +151,7 @@ class ResolveBody(BaseModel):
 
 
 @router.post("/escalations/{eid}/resolve")
-def escalation_resolve(eid: int, b: ResolveBody | None = None, ctx: Ctx = Depends(require("queue"))):
+def escalation_resolve(eid: RowId, b: ResolveBody | None = None, ctx: Ctx = Depends(require("queue"))):
     try:
         return escalations.resolve(ctx.tenant, eid, ctx.user, ctx.actor, b.note if b else "")
     except escalations.EscalationError as e:

@@ -26,6 +26,10 @@ const SEVERITY: Record<string, { label: string; tone: any }> = {
   high: { label: "Urgent", tone: "bad" }, medium: { label: "Soon", tone: "warn" }, low: { label: "For your info", tone: "neutral" },
 };
 const ESC_STATUS: Record<string, string> = { open: "Open", acked: "Seen", resolved: "Resolved" };
+const STAGE_LABEL: Record<string, string> = {
+  new: "New", researched: "Researched", contacted: "Contacted", replied: "Replied", call_booked: "Call booked",
+  proposal: "Proposal sent", won: "Won", lost: "Lost", nurture: "Check back later", dnc: "Do not contact",
+};
 const CLASS_OPTIONS = [
   ["positive", "Interested"], ["question", "Asked a question"], ["price_ask", "Asked about price"], ["objection_not_now", "Not right now"],
   ["objection_cost", "Worried about cost"], ["objection_partner", "Needs to check with someone"], ["not_interested", "Not interested"],
@@ -101,7 +105,10 @@ function DraftBox({ m, onChange }: { m: any; onChange: () => void }) {
       )}
       {open && m.citations?.length > 0 && <div className="text-xs text-muted">How the course handles this (for you, not sent): <Citations items={m.citations} /></div>}
       <ErrorBox error={err} />
-      {open && (
+      {open && m.can_decide === false && (
+        <p className="mt-2 text-xs text-muted">The person who owns this conversation approves this reply. You can read it here.</p>
+      )}
+      {open && m.can_decide !== false && (
         <div className="mt-2 flex flex-wrap gap-2">
           {editing ? (
             <>
@@ -176,6 +183,41 @@ function LinkRecord({ inboundId, onDone }: { inboundId: number; onDone: () => vo
   );
 }
 
+// ---------------------------------------------------------------- re-sort: pick a label, then apply (never on change)
+function Resort({ latestIn, busy, onApply, onDismiss }: {
+  latestIn: any; busy: string | null; onApply: (label: string) => void; onDismiss: () => void;
+}) {
+  const current = latestIn.classification || "question";
+  const [label, setLabel] = useState(current);
+  const [confirmStop, setConfirmStop] = useState(false);
+  useEffect(() => { setLabel(current); setConfirmStop(false); }, [latestIn.id, current]);
+  const changed = label !== current;
+  const apply = () => {
+    if (label === "unsubscribe" && !confirmStop) { setConfirmStop(true); return; }
+    onApply(label);
+  };
+  return (
+    <Card title="Sorting wrong?" subtitle="Pick the right label and apply it. The pipeline stage and the drafted reply follow it.">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-full min-w-0 sm:w-auto sm:flex-1">
+          <Select aria-label="Correct label" value={label} options={CLASS_OPTIONS}
+            onChange={(e) => { setLabel(e.target.value); setConfirmStop(false); }} />
+        </div>
+        <Button size="sm" tone={confirmStop ? "danger" : "primary"} disabled={!changed} loading={busy === "classify"} onClick={apply}>
+          {confirmStop ? "Yes, stop all contact" : "Apply"}
+        </Button>
+        <Button size="sm" loading={busy === "dismiss"} onClick={onDismiss}>Dismiss (no reply needed)</Button>
+      </div>
+      {confirmStop && (
+        <p className="mt-2 text-xs text-bad">
+          "Asked to stop" marks them do not contact, adds them to the never-contact list and holds every waiting draft to them.
+          Click again to confirm.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 // ---------------------------------------------------------------- one person's thread
 function Thread({ k, canTriage, onChange }: { k: string; canTriage: boolean; onChange: () => void }) {
   const { toast } = useApp();
@@ -204,7 +246,7 @@ function Thread({ k, canTriage, onChange }: { k: string; canTriage: boolean; onC
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={data.party_type === "unknown" ? "warn" : "brand"}>{data.party_label}</Badge>
-        {data.stage && <Badge>Stage: {human(data.stage)}</Badge>}
+        {data.stage && data.stage !== "dnc" && <Badge>Stage: {STAGE_LABEL[data.stage] || human(data.stage)}</Badge>}
         {data.dnc && <Badge tone="bad">Do not contact</Badge>}
         {isDemo(data.name) && <DemoBadge />}
       </div>
@@ -232,17 +274,9 @@ function Thread({ k, canTriage, onChange }: { k: string; canTriage: boolean; onC
       </ol>
       <ErrorBox error={err} />
       {latestIn && (
-        <Card title="Sorting wrong?" subtitle="Pick the right label. The pipeline stage and the drafted reply follow it.">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="w-full min-w-0 sm:w-auto sm:flex-1">
-              <Select aria-label="Correct label" value={latestIn.classification || "question"} options={CLASS_OPTIONS}
-                onChange={(e) => act("classify", () => post(`/inbox/${latestIn.id}/classify`, { classification: e.target.value }), "Re-sorted")} />
-            </div>
-            <Button size="sm" loading={busy === "dismiss"} onClick={() => act("dismiss", () => post(`/inbox/${latestIn.id}/dismiss`, {}), "Dismissed")}>
-              Dismiss (no reply needed)
-            </Button>
-          </div>
-        </Card>
+        <Resort latestIn={latestIn} busy={busy}
+          onApply={(label) => act("classify", () => post(`/inbox/${latestIn.id}/classify`, { classification: label }), "Re-sorted")}
+          onDismiss={() => act("dismiss", () => post(`/inbox/${latestIn.id}/dismiss`, {}), "Dismissed")} />
       )}
       {data.party_type === "unknown" && canTriage && latestIn && <LinkRecord inboundId={latestIn.id} onDone={refresh} />}
     </div>
@@ -371,7 +405,7 @@ function AlertSettings() {
   return (
     <Card title="Rules and alerts" subtitle={`A positive reply with no approved answer after ${data.sla_minutes} minutes, a draft held for ${data.held_hours} hours, work that keeps failing, complaints and stop requests all raise an escalation here.`}>
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span>Also draft an alert to your own Telegram:</span>
+        <span>Also draft an alert to your own Telegram (urgent and soon items):</span>
         <Badge tone={data.telegram_alerts ? "good" : "neutral"}>{data.telegram_alerts ? "On" : "Off"}</Badge>
         <Button size="sm" loading={busy} onClick={flip}>{data.telegram_alerts ? "Turn off" : "Turn on"}</Button>
       </div>
@@ -433,8 +467,14 @@ export function EscalationsPanel({ owner }: { owner: boolean }) {
               {e.status !== "resolved" && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {e.status === "open" && <Button size="sm" loading={busy === `ack${e.id}`} onClick={() => act(`ack${e.id}`, () => post(`/escalations/${e.id}/ack`, {}), "Marked as seen")}>Mark as seen</Button>}
-                  <Input className="min-w-0 flex-1 sm:max-w-xs" placeholder="What did you do? (optional)" value={notes[e.id] || ""} onChange={(ev) => setNotes({ ...notes, [e.id]: ev.target.value })} aria-label="Resolution note" />
-                  <Button size="sm" tone="primary" loading={busy === `res${e.id}`} onClick={() => act(`res${e.id}`, () => post(`/escalations/${e.id}/resolve`, { note: notes[e.id] || "" }), "Resolved")}>Resolve</Button>
+                  {e.can_resolve === false ? (
+                    <span className="text-xs text-muted">The owner closes legal threats, refund requests and complaints.</span>
+                  ) : (
+                    <>
+                      <Input className="min-w-0 flex-1 sm:max-w-xs" placeholder="What did you do? (optional)" value={notes[e.id] || ""} onChange={(ev) => setNotes({ ...notes, [e.id]: ev.target.value })} aria-label="Resolution note" />
+                      <Button size="sm" tone="primary" loading={busy === `res${e.id}`} onClick={() => act(`res${e.id}`, () => post(`/escalations/${e.id}/resolve`, { note: notes[e.id] || "" }), "Resolved")}>Resolve</Button>
+                    </>
+                  )}
                 </div>
               )}
             </li>

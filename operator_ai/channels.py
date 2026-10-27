@@ -24,6 +24,9 @@ SECRETS = {"telegram": "telegram_webhook_secret", "slack": "slack_signing_secret
            "email": "email_webhook_secret", "phone": "sms_webhook_secret"}
 TOLERANCE = 300  # seconds a signed timestamp may be away from now
 CHECKIN_LIMITS = {"outreach": 100000, "calls_booked": 10000, "calls_showed": 10000}
+LINK_CODE_TTL = 3600  # a link code works for an hour
+LINK_TRIES_PER_HOUR = 10  # link attempts one chat / number / Slack user may make in an hour (no guessing codes)
+_LINK_TEXT = re.compile(r"^/?link\s+([A-Za-z0-9]{4,12})\s*$", re.I)
 
 
 class ChannelError(Exception):
@@ -51,6 +54,23 @@ def link_code(tenant, user_id: int, channel: str = "telegram") -> str:
     return code
 
 
+def _too_many_link_tries(tenant, channel: str, ext_id: str) -> bool:
+    """Every inbound message is logged first, so recent 'link ...' messages from this sender are the tries."""
+    chans = ("sms", "phone") if channel in ("sms", "phone") else (channel,)
+    with tenant.db() as c:
+        n = c.execute(f"SELECT COUNT(*) FROM channel_messages WHERE channel IN ({','.join('?' * len(chans))}) AND "
+                      "direction='in' AND ext_id=? AND created>=? AND lower(ltrim(trim(body),'/')) LIKE 'link%'",
+                      (*chans, str(ext_id), db.now() - 3600)).fetchone()[0]
+    return n > LINK_TRIES_PER_HOUR
+
+
+def _pending_code(c, code: str):
+    """A link code someone generated in the last hour and has not used yet."""
+    return c.execute("SELECT id, user_id, channel FROM channel_links WHERE code=? AND status='pending' AND "
+                     "user_id IS NOT NULL AND created>=? ORDER BY id DESC LIMIT 1",
+                     (str(code or "").upper()[:12], db.now() - LINK_CODE_TTL)).fetchone()
+
+
 def parse_checkin(text: str) -> dict:
     """'/checkin 40 3 2 4' -> outreach, calls booked, calls showed, mood. Absurd numbers are refused, not stored."""
     raw = re.findall(r"\d+", text)[:4]
@@ -76,6 +96,19 @@ def telegram(tenant, secret_header: str | None, update: dict) -> dict:
     uid = update.get("update_id")
     if uid is not None and inbound.seen(tenant, "telegram", uid):
         return _dup("telegram", uid)
+    return _released_on_error(tenant, "telegram", uid, lambda: _telegram_update(tenant, update, uid))
+
+
+def _released_on_error(tenant, provider: str, event_id, fn):
+    """Run the handler; if it fails, forget the event id so the provider's retry is processed, not dropped."""
+    try:
+        return fn()
+    except Exception:
+        inbound.forget(tenant, provider, event_id)
+        raise
+
+
+def _telegram_update(tenant, update: dict, uid) -> dict:
     msg = update.get("message") if isinstance(update.get("message"), dict) else {}
     chat = msg.get("chat") if isinstance(msg.get("chat"), dict) else {}
     chat_id = str(chat.get("id", "") or "")[:64]
@@ -92,11 +125,17 @@ def telegram(tenant, secret_header: str | None, update: dict) -> dict:
     text = re.sub(r"@\w+\s*", "", text).strip()
     if text.lower().startswith("/link"):
         code = text.split()[-1].upper() if len(text.split()) > 1 else ""
+        if chat.get("type") not in (None, "private"):
+            # a linked group would let everyone in it ask, and check in, as this person
+            return {"ok": True, "linked": False, "error": "Link in a private chat with the bot, not in a group."}
+        if _too_many_link_tries(tenant, "telegram", chat_id):
+            return {"ok": True, "linked": False, "error": "Too many tries. Get a new code and try again in an hour."}
         with tenant.db() as c:
-            r = c.execute("SELECT id FROM channel_links WHERE channel='telegram' AND code=? AND status='pending'", (code,)).fetchone()
-            if r is None:
+            r = _pending_code(c, code)
+            if r is None or r["channel"] != "telegram":
                 return {"ok": True, "linked": False}
             c.execute("UPDATE channel_links SET ext_id=?, status='linked' WHERE id=?", (chat_id, r["id"]))
+        audit.log(tenant, f"telegram:{chat_id}", "action", {"channel_link": "telegram"})
         return {"ok": True, "linked": True}
     user = _linked_user(tenant, "telegram", chat_id)
     if text.lower().startswith("/checkin"):
@@ -151,6 +190,10 @@ def slack(tenant, headers: dict, body: bytes, payload: dict) -> dict:
     event_id = payload.get("event_id") or ev.get("client_msg_id")
     if event_id and inbound.seen(tenant, "slack", event_id):
         return _dup("slack", event_id)  # Slack retries anything not answered within 3 s
+    return _released_on_error(tenant, "slack", event_id, lambda: _slack_event(tenant, ev, event_id))
+
+
+def _slack_event(tenant, ev: dict, event_id) -> dict:
     if ev.get("bot_id") or ev.get("subtype") == "bot_message":
         return {"ok": True, "ignored": "bot message"}
     if ev.get("type") == "app_mention" or (ev.get("type") == "message" and ev.get("channel_type") == "im"):
@@ -160,6 +203,9 @@ def slack(tenant, headers: dict, body: bytes, payload: dict) -> dict:
         log_id = _log(tenant, "slack", "in", sender, text)
         if not text:
             return {"ok": True, "ignored": "empty"}
+        m = _LINK_TEXT.match(text)
+        if m and sender != "?":  # "link CODE" in a DM ties this Slack user to their account (students get the Coach)
+            return {"ok": True, **_link_with_code(tenant, "slack", sender, m.group(1))}
         meta = {"reply_ref": reply_to, "log_id": log_id, "provider_id": event_id}
         from . import jobs, llm
 
@@ -215,19 +261,31 @@ def opted_in(tenant, channel: str, number: str) -> bool:
     return bool(r and r["opted_in"])
 
 
-def _link_sms(tenant, channel: str, number: str, code: str) -> bool:
-    key = inbound.canonical_phone(number)
-    was_in = opted_in(tenant, channel, number)
+def _link_with_code(tenant, channel: str, ext_id: str, code: str) -> dict:
+    """'LINK CODE' sent by text or as a Slack DM: ties that number / Slack user to the account that made the
+    code (codes last an hour; ten tries an hour per sender). Linked students get the cited Coach there."""
+    key = inbound.canonical_phone(ext_id) if channel in ("sms", "phone") else str(ext_id)[:64]
+    if not key:
+        return {"linked": False}
+    if _too_many_link_tries(tenant, channel, ext_id):
+        return {"linked": False, "error": "Too many tries. Get a new code and try again in an hour."}
+    was_in = opted_in(tenant, channel, ext_id) if channel in ("sms", "phone") else True
     with tenant.db() as c:
-        r = c.execute("SELECT id, user_id FROM channel_links WHERE code=? AND status='pending' AND user_id IS NOT NULL",
-                      (code.upper(),)).fetchone()
+        r = _pending_code(c, code)
         if r is None:
-            return False
+            return {"linked": False}
         c.execute("UPDATE channel_links SET status='used' WHERE id=?", (r["id"],))
         c.execute("INSERT INTO channel_links(channel,ext_id,user_id,opted_in,status,created) VALUES(?,?,?,?,?,?)",
                   (channel, key, r["user_id"], 1 if was_in else 0, "linked", db.now()))
     audit.log(tenant, f"{channel}:{key}", "action", {"channel_link": channel})
-    return True
+    return {"linked": True}
+
+
+def _ever_opted_out(tenant, channel: str, number: str) -> bool:
+    refs = {str(number or "").strip(), inbound.canonical_phone(number)} - {""}
+    with tenant.db() as c:
+        return c.execute(f"SELECT 1 FROM channel_links WHERE channel=? AND status='opted_out' AND ext_id IN "
+                         f"({','.join('?' * len(refs))}) LIMIT 1", (channel, *sorted(refs))).fetchone() is not None
 
 
 def sms(tenant, sig: str | None, body: bytes, payload: dict, channel: str = "sms", ts: str | None = None) -> dict:
@@ -242,10 +300,14 @@ def sms(tenant, sig: str | None, body: bytes, payload: dict, channel: str = "sms
     mid = payload.get("message_id") or payload.get("MessageSid") or payload.get("id")
     if mid and inbound.seen(tenant, channel, mid):
         return _dup(channel, mid)
+    return _released_on_error(tenant, channel, mid, lambda: _sms_message(tenant, channel, number, text, mid))
+
+
+def _sms_message(tenant, channel: str, number: str, text: str, mid) -> dict:
     log_id = _log(tenant, channel, "in", number, text)
-    m = re.match(r"^/?link\s+([A-Za-z0-9]{4,12})\s*$", text, re.I)
+    m = _LINK_TEXT.match(text)
     if m:
-        return {"ok": True, "linked": _link_sms(tenant, channel, number, m.group(1))}
+        return {"ok": True, **_link_with_code(tenant, channel, number, m.group(1))}
     kw = inbound.opt_keyword(text)
     if kw == "in":
         inbound.reopt_in(tenant, channel, number)
@@ -254,8 +316,10 @@ def sms(tenant, sig: str | None, body: bytes, payload: dict, channel: str = "sms
         res = inbound.route(tenant, channel, number, text, {"opt_out": True, "log_id": log_id, "provider_id": mid,
                                                              "no_draft": True})
         return {"ok": True, **res, "opted_in": False}
-    if re.sub(r"[^A-Za-z]", "", text).upper() == "YES" and not opted_in(tenant, channel, number):
-        inbound.reopt_in(tenant, channel, number)  # YES is a standard opt-in keyword; the reply is still routed
+    if re.sub(r"[^A-Za-z]", "", text).upper() == "YES" and not opted_in(tenant, channel, number) \
+            and not _ever_opted_out(tenant, channel, number):
+        # YES confirms a first opt-in; after a STOP only START / UNSTOP opt back in. The reply is still routed.
+        inbound.reopt_in(tenant, channel, number)
     is_in = opted_in(tenant, channel, number)
     res = inbound.route(tenant, channel, number, text, {"log_id": log_id, "provider_id": mid, "no_draft": not is_in})
     if not is_in and res.get("party_type") == "unknown":
@@ -292,14 +356,25 @@ def parse_email(raw: str) -> dict:
                 from .uploads import _html
 
                 body = _html(body)
-    except (LookupError, ValueError, AttributeError, TypeError):
+    except Exception:  # noqa: BLE001 - a malformed body part is ignored, never a 500
         body = ""
-    raw_from = str(msg.get("From", "") or "")
+
+    def hdr(name: str) -> str:
+        # the stdlib header parser raises on some malformed headers (e.g. 'From: "'); treat those as missing
+        try:
+            return str(msg.get(name, "") or "")
+        except Exception:  # noqa: BLE001
+            try:  # fall back to the unparsed text of the header
+                return next((str(v) for k, v in msg.raw_items() if str(k).lower() == name.lower()), "")
+            except Exception:  # noqa: BLE001
+                return ""
+
+    raw_from = hdr("From")
     name, addr = inbound.parse_address(raw_from)
-    auto = str(msg.get("Auto-Submitted", "") or "").lower()
-    return {"from": addr, "from_name": name, "subject": str(msg.get("Subject", "") or "")[:300],
-            "body": strip_quotes(body), "message_id": str(msg.get("Message-ID", "") or "").strip()[:200],
-            "auto_reply": bool((auto and auto != "no") or msg.get("X-Autoreply") or msg.get("X-Autorespond"))}
+    auto = hdr("Auto-Submitted").lower()
+    return {"from": addr, "from_name": name, "subject": hdr("Subject")[:300],
+            "body": strip_quotes(body), "message_id": hdr("Message-ID").strip()[:200],
+            "auto_reply": bool((auto and auto != "no") or hdr("X-Autoreply") or hdr("X-Autorespond"))}
 
 
 def inbound_email(tenant, sig: str | None, raw: bytes, ts: str | None = None) -> dict:
@@ -309,11 +384,15 @@ def inbound_email(tenant, sig: str | None, raw: bytes, ts: str | None = None) ->
         raise ChannelError(422, "The email has no sender address")
     if p["message_id"] and inbound.seen(tenant, "email", p["message_id"]):
         return _dup("email", p["message_id"])
-    log_id = _log(tenant, "email", "in", p["from"], p["body"], {"subject": p["subject"]})
-    res = inbound.route(tenant, "email", p["from"], p["body"][:4000] or p["subject"],
-                        {"subject": p["subject"], "provider_id": p["message_id"] or None, "display_name": p["from_name"],
-                         "auto_reply": p["auto_reply"], "log_id": log_id})
-    return {"ok": True, "parsed": p, **res}
+
+    def handle() -> dict:
+        log_id = _log(tenant, "email", "in", p["from"], p["body"], {"subject": p["subject"]})
+        res = inbound.route(tenant, "email", p["from"], p["body"][:4000] or p["subject"],
+                            {"subject": p["subject"], "provider_id": p["message_id"] or None, "display_name": p["from_name"],
+                             "auto_reply": p["auto_reply"], "log_id": log_id})
+        return {"ok": True, "parsed": p, **res}
+
+    return _released_on_error(tenant, "email", p["message_id"], handle)
 
 
 # --------------------------------------------------------------------------- web voice

@@ -38,6 +38,9 @@ SEVERITIES = ("low", "medium", "high")
 STATUSES = ("open", "acked", "resolved")
 OPEN_STATES = ("open", "acked")
 DUE_IN = {"high": 3600, "medium": 4 * 3600, "low": 24 * 3600}
+# Legal threats, refund requests and complaints are about the programme itself: whoever they are assigned to
+# can mark them as seen, but only the owner can close them (so they never vanish from the owner's list).
+OWNER_RESOLVES = {"legal", "refund", "complaint"}
 
 
 class EscalationError(Exception):
@@ -105,6 +108,10 @@ def visible_user_ids(tenant, user: dict) -> set[int] | None:
     return ids
 
 
+def can_resolve(user: dict, esc: dict) -> bool:
+    return user["role"] == "owner" or esc.get("kind") not in OWNER_RESOLVES
+
+
 def list_for(tenant, user: dict, status: str = "open", limit: int = 200) -> list[dict]:
     q, args = "SELECT * FROM escalations WHERE 1=1", []
     if status == "open":
@@ -119,7 +126,10 @@ def list_for(tenant, user: dict, status: str = "open", limit: int = 200) -> list
     q += " ORDER BY CASE severity WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, id DESC LIMIT ?"
     args.append(limit)
     with tenant.db() as c:
-        return [_public(r) for r in db.rows(c.execute(q, args))]
+        out = [_public(r) for r in db.rows(c.execute(q, args))]
+    for e in out:
+        e["can_resolve"] = can_resolve(user, e)
+    return out
 
 
 def counts(tenant, user: dict) -> dict:
@@ -151,11 +161,21 @@ def resolve(tenant, eid: int, user: dict | None, actor: str, note: str = "") -> 
         raise EscalationError(404, "Not found")
     if e["status"] == "resolved":
         raise EscalationError(409, "Already resolved")
+    if user is not None and not can_resolve(user, e):
+        raise EscalationError(403, "Only the owner can close a legal threat, refund request or complaint. "
+                                   "Mark it as seen; the owner has it too.")
     with tenant.db() as c:
         c.execute("UPDATE escalations SET status='resolved', resolved_by=?, resolved=?, note=? WHERE id=?",
                   (actor, db.now(), (note or "").strip()[:500], eid))
     audit.log(tenant, actor, "escalation.resolve", {"id": eid})
     return get(tenant, eid)
+
+
+def closed_by_person(tenant, kind: str) -> set[str]:
+    """Refs of escalations of this kind that a person resolved (not the system). Rule checks skip them."""
+    with tenant.db() as c:
+        return {r["ref"] for r in c.execute("SELECT DISTINCT ref FROM escalations WHERE kind=? AND status='resolved' AND "
+                                            "ref IS NOT NULL AND COALESCE(resolved_by,'')!='system'", (kind,))}
 
 
 def auto_resolve(tenant, kind: str, ref: str, why: str) -> int:
@@ -179,10 +199,14 @@ def step_failed(tenant, mission_id: int | None, step_id: int | str, attempts: in
                   assignee_user_id=assignee_user_id, mission_id=mission_id, ref=f"step:{mission_id}:{step_id}")
 
 
-def recover_runs(tenant, older_than: float = 600.0) -> int:
+def recover_runs(tenant, older_than: float = 600.0, started_before: float | None = None) -> int:
     """Runs still marked "running" more than ten minutes after they started cannot be alive after a restart
-    (the run pool is in memory): mark them "interrupted" so nothing waits on them forever."""
+    (the run pool is in memory): mark them "interrupted" so nothing waits on them forever. With started_before
+    (this process's start time, used by the scheduler tick) only runs begun before the restart are touched,
+    once they too are ten minutes old; runs this process started are never cut short."""
     cutoff = db.now() - older_than
+    if started_before is not None:
+        cutoff = min(cutoff, float(started_before))
     with tenant.db() as c:
         n = c.execute("UPDATE runs SET status='interrupted' WHERE status='running' AND created<?", (cutoff,)).rowcount
     if n:
@@ -198,6 +222,8 @@ def _telegram_alert(tenant, eid: int, kind: str, severity: str, detail: str, ass
     """Draft an internal alert to the assignee's own linked Telegram (or the owner's), only when the owner
     switched alerts on. Still a queue item; the recipient approves it; never prospect-facing."""
     if not tenant.get("escalation_telegram_alerts", False):
+        return None
+    if severity == "low":  # for-your-info items (a stop request already honoured, a restart) stay in the app
         return None
     with tenant.db() as c:
         if assignee_user_id is not None:

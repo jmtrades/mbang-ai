@@ -30,7 +30,7 @@ import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
-from . import audit, db, events, guardrails, jobs, queue, runtime
+from . import audit, auth, db, events, guardrails, jobs, queue, runtime
 
 log = logging.getLogger("operator.inbound")
 
@@ -227,7 +227,8 @@ def _ai_label(tenant, text: str) -> dict | None:
         return None
     except Exception:  # noqa: BLE001 - the rules answer stands
         return None
-    guess = re.sub(r"[^a-z_]", "", (out.get("text") or "").strip().lower().split()[0] if out.get("text") else "")
+    words = str((out or {}).get("text") or "").strip().lower().split()
+    guess = re.sub(r"[^a-z_]", "", words[0]) if words else ""  # an empty or whitespace answer is ignored
     if guess not in LABELS:
         return None
     return {**_cls(guess, 0.6, "", "ai" if out.get("mode") == "live" else "replay"), "unclear": False}
@@ -253,6 +254,19 @@ def seen(tenant, provider: str, event_id) -> bool:
         n = c.execute("INSERT OR IGNORE INTO webhook_events(provider,event_id,created) VALUES(?,?,?)",
                       (str(provider)[:40], eid, db.now())).rowcount
     return n == 0
+
+
+def forget(tenant, provider: str, event_id) -> None:
+    """Processing failed after seen() recorded the id: drop it so the provider's retry is handled, not lost
+    (a lost STOP would be worse than a second draft a person can reject)."""
+    eid = str(event_id if event_id is not None else "").strip()[:200]
+    if not eid:
+        return
+    try:
+        with tenant.db() as c:
+            c.execute("DELETE FROM webhook_events WHERE provider=? AND event_id=?", (str(provider)[:40], eid))
+    except Exception:  # noqa: BLE001 - never mask the original error
+        log.warning("could not release a webhook event id")
 
 
 # --------------------------------------------------------------------------- matching
@@ -286,7 +300,8 @@ def _party_row(c, ptype: str, pid: int) -> dict | None:
             return None
         r = dict(r)
         return {"party_type": "prospect", "party_id": r["id"], "owner_user_id": r.get("owner_user_id"), "name": r.get("name"),
-                "stage": r.get("stage"), "tier": r.get("tier") or r.get("lead_tier"), "dnc": bool(r.get("do_not_contact")),
+                "stage": r.get("stage"), "tier": r.get("tier") or r.get("lead_tier"),
+                "dnc": bool(r.get("do_not_contact")) or r.get("stage") == "dnc",
                 "email": r.get("email"), "handle": r.get("handle"), "demo": r.get("demo")}
     if ptype == "lead":
         r = c.execute("SELECT * FROM leads WHERE id=?", (pid,)).fetchone()
@@ -294,7 +309,7 @@ def _party_row(c, ptype: str, pid: int) -> dict | None:
             return None
         r = dict(r)
         return {"party_type": "lead", "party_id": r["id"], "owner_user_id": None, "name": r.get("name"), "stage": r.get("stage"),
-                "tier": r.get("tier"), "dnc": bool(r.get("do_not_contact")), "email": r.get("email"),
+                "tier": r.get("tier"), "dnc": bool(r.get("do_not_contact")) or r.get("stage") == "dnc", "email": r.get("email"),
                 "handle": r.get("handle"), "demo": r.get("demo")}
     if ptype == "client":
         r = c.execute("SELECT * FROM clients WHERE id=?", (pid,)).fetchone()
@@ -533,6 +548,14 @@ def _process(tenant, inbound: dict, party: dict, cls: dict, meta: dict, run: run
         _set_inbound(tenant, inbound["id"], status="drafted" if out.get("queued") else "answered", queue_id=out.get("queued"))
         return res
 
+    # a prospect who was already won is a client now: a person answers, never the setter script
+    if ptype == "prospect" and party.get("stage") == "won":
+        item = None if party.get("dnc") else _holding_draft(tenant, party, inbound, run)
+        res.update(queued=item and item["id"], status=item and item["status"])
+        _set_inbound(tenant, inbound["id"], status="drafted" if item else "handled", queue_id=item and item["id"])
+        _emit_reply(tenant, party, inbound, label, item and item["id"])
+        return res
+
     if sales:
         new_stage = run.step("stage", {"label": label}, lambda: update_stage(tenant, party, label), "Update the pipeline")
         res["stage"] = new_stage
@@ -676,6 +699,7 @@ def apply_dnc(tenant, party: dict, inbound: dict, reason: str = "asked to stop")
                 c.execute("INSERT INTO channel_links(channel,ext_id,opted_in,status,created) VALUES(?,?,0,'opted_out',?)",
                           (ch, key, db.now()))
     _block(tenant, addrs)
+    _suppress_for_delivery(tenant, addrs, channel, party)
     held = _hold_open_items(tenant, party, addrs)
     with tenant.db() as c:
         c.execute("UPDATE conversations SET state='opted_out' WHERE id=?", (inbound["conversation_id"],))
@@ -710,12 +734,35 @@ def _unblock(tenant, addrs: set[str]) -> None:
         tenant.set("blocked_attendees", keep)
 
 
+def _suppress_for_delivery(tenant, addrs: set[str], channel: str, party: dict) -> None:
+    """Also record the opt-out on the delivery feature's suppression list when that feature is installed."""
+    try:
+        from . import delivery  # noqa: PLC0415 - built in parallel; may not exist yet
+    except ImportError:
+        return
+    fn = getattr(delivery, "suppress", None)
+    if fn is None:
+        return
+    ref = (party["party_type"], party["party_id"]) if party.get("party_id") is not None and \
+        party["party_type"] in ("prospect", "lead", "client", "student") else None
+    for a in sorted(addrs):
+        try:
+            fn(tenant, a, channel, "asked to stop (inbound reply)", ref)
+        except Exception:  # noqa: BLE001 - the never-contact list above already blocks them
+            log.warning("delivery suppression skipped for one address")
+
+
+# Waiting, scheduled or "send it by hand" items to a person who opted out are all pulled back.
+HOLD_STATUSES = ("pending", "held", "needs_human", "scheduled", "awaiting_manual_send")
+
+
 def _hold_open_items(tenant, party: dict, addrs: set[str]) -> int:
     pkey = {"prospect": "prospect_id", "lead": "lead_id", "client": "client_id"}.get(party["party_type"])
     flag = {"code": "do_not_contact", "severity": "block", "message": "They asked not to be contacted", "match": ""}
     n = 0
     with tenant.db() as c:
-        rows = db.rows(c.execute("SELECT id, recipient_ref, meta, flags FROM queue WHERE status IN ('pending','held','needs_human')"))
+        rows = db.rows(c.execute(f"SELECT id, recipient_ref, meta, flags FROM queue WHERE status IN "
+                                 f"({','.join('?' * len(HOLD_STATUSES))})", HOLD_STATUSES))
         for r in rows:
             meta = db.jload(r["meta"], {})
             ref = str(r["recipient_ref"] or "").strip()
@@ -925,6 +972,17 @@ def _needs_human(tenant, item: dict) -> None:
     item["status"] = "needs_human" if item["status"] == "pending" else item["status"]
 
 
+def _open_holding(tenant, conversation_id: int, legal: bool) -> dict | None:
+    """The holding reply already waiting for this conversation, so a sender who writes five times gets one
+    draft, not five (a legal holding line is never replaced by a plain one)."""
+    with tenant.db() as c:
+        r = c.execute("SELECT id FROM queue WHERE status IN ('pending','held','needs_human') AND "
+                      "json_extract(meta,'$.holding')=1 AND json_extract(meta,'$.conversation_id')=? AND "
+                      "COALESCE(json_extract(meta,'$.legal'),0)>=? ORDER BY id DESC LIMIT 1",
+                      (conversation_id, 1 if legal else 0)).fetchone()
+    return queue.get(tenant, r["id"], scrub=False) if r is not None else None
+
+
 def _holding_draft(tenant, party: dict, inbound: dict, run: runtime.Run | None, legal: bool = False) -> dict | None:
     """A neutral line for a person to review. Never course material."""
     ptype = party["party_type"]
@@ -934,19 +992,25 @@ def _holding_draft(tenant, party: dict, inbound: dict, run: runtime.Run | None, 
 
         if not channels.opted_in(tenant, ch, ref):
             return None  # we may not text them; the inbox entry is enough
+    existing = _open_holding(tenant, inbound["conversation_id"], legal)
+    if existing is not None:
+        return existing
+    client_like = ptype == "client" or (ptype == "prospect" and party.get("stage") == "won")
     if legal:
         body = HOLDING_LEGAL
-    elif ptype == "client":
+    elif client_like:
         body = HOLDING_CLIENT.format(first=first_name(party.get("name")))
     else:
         body = HOLDING
-    meta = {"needs_human": True, "holding": True, "inbound_id": inbound["id"], "conversation_id": inbound["conversation_id"],
-            "party_type": ptype, "party_id": party.get("party_id"), "prior_contact": True,
-            "source": "Holding reply (no AI, no course material)"}
+    meta = {"needs_human": True, "holding": True, "legal": bool(legal), "inbound_id": inbound["id"],
+            "conversation_id": inbound["conversation_id"], "party_type": ptype, "party_id": party.get("party_id"),
+            "prior_contact": True, "source": "Holding reply (no AI, no course material)"}
     if party.get("owner_user_id") is not None:
         meta["owner_user_id"] = party["owner_user_id"]
-    if ptype in ("prospect", "lead"):
+    if ptype in ("prospect", "lead", "unknown") and not client_like:
+        # a stranger or a prospect gets the strictest (outreach) rules, so an edit can't add a price or a figure
         meta.update(prospect_facing=True, lead_tier=party.get("tier") or "cold")
+    if ptype in ("prospect", "lead"):
         meta["prospect_id" if ptype == "prospect" else "lead_id"] = party.get("party_id")
     if ptype == "client":
         meta["client_id"] = party.get("party_id")
@@ -994,8 +1058,9 @@ def _on_sent(tenant, item: dict, actor: str) -> None:
     with tenant.db() as c:
         c.execute("UPDATE conversations SET last_out=? WHERE id=?", (db.now(), meta["conversation_id"]))
         if meta.get("inbound_id"):
-            c.execute("UPDATE inbound_messages SET status='replied', handled_at=? WHERE id=? AND status IN "
-                      "('new','drafted','triage','escalated')", (db.now(), meta["inbound_id"]))
+            # the message this draft answered, and any later ones that share the same (holding) draft
+            c.execute("UPDATE inbound_messages SET status='replied', handled_at=? WHERE (id=? OR queue_id=?) AND status IN "
+                      "('new','drafted','triage','escalated')", (db.now(), meta["inbound_id"], item.get("id")))
 
 
 @queue.on_approve("*")
@@ -1017,15 +1082,19 @@ def _route_job(tenant, payload: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- SLA checks (scheduler tick)
+# An answer counts once a person approved it (sent, scheduled or waiting to be sent by hand). Rejected,
+# cancelled or failed sends do not.
+ANSWERED = ("approved", "scheduled", "awaiting_manual_send", "sending", "sent")
+
+
 def _responded(c, r) -> bool:
-    open_or_rejected = ("pending", "held", "needs_human", "rejected")
+    ph = ",".join("?" * len(ANSWERED))
     if r["queue_id"]:
         q = c.execute("SELECT status FROM queue WHERE id=?", (r["queue_id"],)).fetchone()
-        if q is not None and q["status"] not in open_or_rejected:
+        if q is not None and q["status"] in ANSWERED:
             return True
-    q = c.execute("SELECT 1 FROM queue WHERE json_extract(meta,'$.conversation_id')=? AND status NOT IN "
-                  "('pending','held','needs_human','rejected') AND COALESCE(decided_at,0)>=? LIMIT 1",
-                  (r["conversation_id"], r["created"])).fetchone()
+    q = c.execute(f"SELECT 1 FROM queue WHERE json_extract(meta,'$.conversation_id')=? AND status IN ({ph}) "
+                  "AND COALESCE(decided_at,0)>=? LIMIT 1", (r["conversation_id"], *ANSWERED, r["created"])).fetchone()
     return q is not None
 
 
@@ -1036,7 +1105,9 @@ def check_slas(tenant) -> dict:
     from . import escalations
 
     now = db.now()
-    out = {"speed_to_lead": 0, "held_item": 0, "step_failed": 0, "resolved": 0}
+    out = {"speed_to_lead": 0, "held_item": 0, "step_failed": 0, "resolved": 0, "runs_interrupted": 0}
+    # a person who resolved one of these decided it; the next tick must not raise it (or alert) again
+    closed = {k: escalations.closed_by_person(tenant, k) for k in ("speed_to_lead", "held_item", "step_failed")}
     with tenant.db() as c:
         rows = db.rows(c.execute(
             "SELECT i.*, cv.display FROM inbound_messages i LEFT JOIN conversations cv ON cv.id=i.conversation_id "
@@ -1051,6 +1122,8 @@ def check_slas(tenant) -> dict:
         ref = f"inbound:{r['id']}"
         if answered[r["id"]]:
             out["resolved"] += escalations.auto_resolve(tenant, "speed_to_lead", ref, "An answer was approved")
+            continue
+        if ref in closed["speed_to_lead"]:
             continue
         mins = int((now - r["created"]) // 60)
         eid = escalations.raise_(tenant, "speed_to_lead", "high",
@@ -1067,6 +1140,8 @@ def check_slas(tenant) -> dict:
         failed = db.rows(c.execute("SELECT id, kind, attempts FROM jobs WHERE status='failed' AND updated>=?", (now - 7 * 86400,)))
         c.execute("DELETE FROM webhook_events WHERE created<?", (now - 30 * 86400,))
     for q in held:
+        if f"queue:{q['id']}" in closed["held_item"]:
+            continue
         hours = int((now - q["created"]) // 3600)
         escalations.raise_(tenant, "held_item", "medium",
                            f"\"{(q['title'] or 'A draft')[:80]}\" has been held by guardrails for {hours} hours. "
@@ -1077,10 +1152,25 @@ def check_slas(tenant) -> dict:
         if e["status"] != "held":
             out["resolved"] += escalations.auto_resolve(tenant, "held_item", e["ref"], "The draft is no longer held")
     for j in failed:
+        if f"job:{j['id']}" in closed["step_failed"]:
+            continue
         escalations.raise_(tenant, "step_failed", "medium",
                            f"A background task ({j['kind']}) failed after {j['attempts']} tries.", ref=f"job:{j['id']}")
         out["step_failed"] += 1
+    # runs that were still "running" when this process started cannot be alive (the run pool is in memory);
+    # the startup check only catches the ones already ten minutes old, this catches the rest once they are
+    boot = _process_started()
+    out["runs_interrupted"] = escalations.recover_runs(tenant, started_before=boot) if boot else 0
     return out
+
+
+def _process_started() -> float | None:
+    try:
+        from .app import STARTED  # noqa: PLC0415 - the web process's start time
+
+        return float(STARTED)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 check_slas.demo_too = True
@@ -1221,7 +1311,9 @@ def thread(tenant, user: dict, key: str) -> dict:
                      "flags": db.jload(o["flags"], []), "created": o["created"], "decided_at": o["decided_at"],
                      "source": meta.get("source"), "playbook": meta.get("playbook"), "citations": meta.get("citations") or [],
                      "owner_user_id": meta.get("owner_user_id"), "inbound_id": meta.get("inbound_id"),
-                     "holding": bool(meta.get("holding"))})
+                     "holding": bool(meta.get("holding")),
+                     # the viewer may approve, edit or reject it (a coach reading a student's thread may not)
+                     "can_decide": auth.can_decide(user["role"], o["kind"], meta.get("owner_user_id"), user["id"])})
     msgs.sort(key=lambda m: (m["created"] or 0, 0 if m["direction"] == "in" else 1))
     from . import escalations as _e
 
