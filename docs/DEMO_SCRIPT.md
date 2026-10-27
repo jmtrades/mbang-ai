@@ -17,13 +17,16 @@ Start: `scripts/run.sh`, open `http://127.0.0.1:8850/t/demo/`. Everything in the
 
 Headless check: `scripts/builder_demo_click.py --times 3` → `CLEAN 3/3`.
 
-## A 5-minute tour
+## A 6-minute tour
 
 1. **Day One**: six outcome cards with live counts.
 2. **Student Coach**: ask "What are the rules for a Thunder Dome test?" → cited answer; click a citation chip →
    the source opens at the cited lines. Ask "How do I set up TikTok Shop?" → "The course material doesn't cover this."
-3. **Approval queue**: a held draft ("we guarantee results") can't be approved; edit it clean → approve → "mock:instagram".
-4. **Bottleneck diagnosis** → Sample → Diagnose → bottleneck with money impact and cited benchmarks → **Next best action** opens the Studio line.
-5. **Ads Ops** → Practice go-live: build PAUSED test → propose go-live → approve → roll back.
-6. **Go-live scorecard**: every acceptance row with its honest status and the key it's waiting for.
-7. **Settings** → Reset demo to clean story (backs up first; refused on the real workspace).
+3. **Approval queue**: a held draft ("we guarantee results") can't be approved; edit it clean → approve → "Waiting for
+   you to send" (an Instagram DM is always sent by a person) → Copy message → **I sent it** → Sent.
+4. **First client** (student): Prospects (DEMO list, an opener waiting for approval, a proposal), Missions ("Your next
+   actions"), Academy (lessons, practice, Role-play tab with a scored transcript), the Inbox tab for their replies.
+5. **Bottleneck diagnosis** → Sample → Diagnose → bottleneck with money impact and cited benchmarks → **Next best action** opens the Studio line.
+6. **Ads Ops** → Practice go-live: build PAUSED test → propose go-live → approve → roll back.
+7. **Go-live scorecard**: every acceptance row with its honest status and the key it's waiting for.
+8. **Settings** → Reset demo to clean story (backs up first; refused on the real workspace).
