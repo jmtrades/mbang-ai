@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from .. import guardrails, index, llm, retrieval, runtime, textnorm, threads, translate
+from .. import guardrails, index, llm, playbooks, retrieval, runtime, textnorm, threads, translate
 
 PLAN = ["Detect language", "Rewrite / decompose question", "Hybrid retrieval per part", "Coverage judge",
         "Answer from passages only", "Verify citations"]
@@ -19,6 +19,15 @@ SYSTEM = ("You are the programme's coach. Answer ONLY from the numbered course p
           "[S#] markers that exist in the list. If the passages don't cover the question, say exactly: "
           "\"The course material doesn't cover this.\" Never invent results, numbers or names. "
           "Reply as JSON: {\"covered\": \"yes|partly|no\", \"answer\": \"...\", \"citations\": [\"S1\", ...]}")
+# External best practice (the 2026 Playbooks): a separate, clearly labelled list [X#], never course material.
+X_SYSTEM = ("You summarise EXTERNAL researched best practice from the numbered entries [X#]. They are dated public "
+            "sources, NOT the programme's course material: never call them the course or the programme. Write 2 to 4 "
+            "short bullets, each ending with the [X#] marker of the entry it comes from. Use only what the entries "
+            "say. No income claims, guarantees, invented numbers or names. "
+            "Reply as JSON: {\"bullets\": [\"... [X1]\", \"... [X2]\"]}")
+X_HEADER = "External best practice (researched {as_of}, not the course material):"
+X_PURPOSE = "coach-external"
+X_MAX_BULLET = 280
 
 
 def decompose(question: str) -> list[str]:
@@ -90,6 +99,136 @@ def verify_citations(answer: str, cited: list[str], allowed: set[str]) -> tuple[
     return clean, kept, stripped
 
 
+def verify_external(text: str, allowed: set[str]) -> tuple[str, list[str], list[str]]:
+    """Strip any [X#] that isn't in the external list. Returns (clean text, kept ids, stripped ids)."""
+    stripped = sorted({c for c in XCITE_RE.findall(text) if c not in allowed})
+    clean = XCITE_RE.sub(lambda m: m.group(0) if m.group(1) in allowed else "", text)
+    clean = re.sub(r"[ \t]{2,}", " ", clean)
+    clean = re.sub(r"[ \t]+([.,;:!?])", r"\1", clean).strip()
+    kept = [c for c in dict.fromkeys(XCITE_RE.findall(clean)) if c in allowed]
+    return clean, kept, stripped
+
+
+def _x_ok(tenant, text: str) -> bool:
+    """Never show external text that the guardrails would block (the library quotes banned phrases as
+    examples of what not to say; those sentences are skipped, not shown)."""
+    return not guardrails.blocked(guardrails.check_for(tenant, text, {"source": "playbooks", "external": True}))
+
+
+def _clip(text: str) -> str:
+    text = " ".join(text.split())
+    if len(text) > X_MAX_BULLET:
+        return text[: X_MAX_BULLET - 1].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text if not text or text[-1] in ".!?…)\"'" else text + "."
+
+
+def external_bullets(tenant, question: str, ext: list[dict], max_bullets: int = 4) -> list[str]:
+    """Rules path: 2-4 bullets picked from the external entries (best-matching statements first, one per
+    entry, a second from the top entry if only one is relevant), each ending with its [X#]."""
+    lib = playbooks.load()
+    idx = lib.index if lib.entries else None
+    qw = dict(textnorm.expand(textnorm.tokens(question)))
+
+    def score(s: str) -> float:
+        st = set(textnorm.tokens(s))
+        return sum(qw[t] * (idx.idf(t) if idx else 1.0) for t in st if t in qw)
+
+    queues: list[tuple[str, list[str]]] = []
+    for c in ext:
+        e = playbooks.entry(c["entry_id"])
+        if e is None:
+            continue
+        cands = [(score(s), i, s) for i, (_, s) in enumerate(playbooks.sentences(e))]
+        cands.sort(key=lambda x: (-x[0], x[1]))
+        queues.append((c["id"], [s for _, _, s in cands] + [e.title]))
+    bullets: list[str] = []
+    used: set[str] = set()
+    for rnd in range(2):
+        for xid, cands in queues:
+            if len(bullets) >= max_bullets or (rnd == 1 and len(bullets) >= 2):
+                break
+            while cands:
+                s = _clip(cands.pop(0))
+                if s.lower() in used or not _x_ok(tenant, s):
+                    continue
+                used.add(s.lower())
+                bullets.append(f"• {s} [{xid}]")
+                break
+    return bullets
+
+
+def _external_ai(tenant, run: runtime.Run, question: str, ext: list[dict]) -> dict | None:
+    """AI path (live or a labelled replay of a saved AI run). None when neither is available."""
+    blocks = []
+    for c in ext:
+        e = playbooks.entry(c["entry_id"])
+        if e is None:
+            continue
+        steps = "\n".join(f"- {s}" for s in e.steps[:5])
+        blocks.append(f"[{c['id']}] {e.title} (researched {e.as_of}, confidence {e.confidence})\n{e.guidance}"
+                      + (f"\nSteps:\n{steps}" if steps else ""))
+    prompt = f"Question: {question}\n\nExternal entries (researched public best practice, not course material):\n\n" + \
+        "\n\n".join(blocks)
+    if llm.unavailable_reason(tenant) is not None and llm.replay(tenant, X_PURPOSE, prompt) is None:
+        return None
+
+    def _ai():
+        out = llm.complete_or_replay(tenant, X_SYSTEM, prompt, X_PURPOSE, run_id=run.id, max_tokens=500)
+        data = llm.parse_json(out["text"])
+        raw = data.get("bullets") if isinstance(data, dict) else None
+        if isinstance(raw, str):
+            raw = [ln for ln in raw.splitlines() if ln.strip()]
+        return {"bullets": [str(b) for b in (raw or []) if str(b).strip()], "mode": out.get("mode", "live"),
+                "label": out.get("label", "AI")}
+
+    return run.step("external_answer", {"entries": [c["id"] for c in ext], "mode": "ai"}, _ai,
+                    "External best practice (AI)", allow_fail=True)
+
+
+def _external_section(tenant, run: runtime.Run, question: str, parts: list[str], ext: list[dict]) -> dict:
+    """The "External best practice (researched <as_of>, not the course material)" block for a question the
+    course doesn't cover: 2-4 bullets, each cited [X#]; invented [X#] stripped; blocked text never shown."""
+    allowed = {c["id"] for c in ext}
+    mode, label, stripped = "rules", "Extractive bullets from the 2026 Playbooks", []
+    bullets: list[str] = []
+    res = _external_ai(tenant, run, question, ext)
+    if res and res.get("bullets"):
+        for b in res["bullets"][:6]:
+            b = CITE_RE.sub("", b)  # course markers never belong in the external list
+            clean, kept, gone = verify_external(b, allowed)
+            stripped += gone
+            body = XCITE_RE.sub("", clean).strip(" •-*\t")
+            if not kept or not body or not _x_ok(tenant, body):
+                continue
+            bullets.append(f"• {_clip(body)} " + " ".join(f"[{k}]" for k in kept))
+            if len(bullets) >= 4:
+                break
+        if len(bullets) >= 2:
+            mode, label = res["mode"], res["label"]
+            run.use_ai(mode)
+        else:
+            bullets = []
+    if not bullets:
+        bullets = run.step("external_answer", {"entries": sorted(allowed), "mode": "extractive"},
+                           lambda: external_bullets(tenant, " ".join(parts) or question, ext),
+                           "External best practice (extractive)")
+    if len(bullets) < 2:
+        return {"text": "", "cited": [], "mode": mode, "label": label, "stripped": sorted(set(stripped))}
+    cited = [c for c in dict.fromkeys(XCITE_RE.findall("\n".join(bullets))) if c in allowed]
+    as_of = playbooks.as_of_label([c["as_of"] for c in ext if c["id"] in cited])
+    text = X_HEADER.format(as_of=as_of) + "\n" + "\n".join(bullets)
+    return {"text": text, "cited": cited, "mode": mode, "label": label, "stripped": sorted(set(stripped))}
+
+
+def _external(tenant, run: runtime.Run, parts: list[str]) -> list[dict]:
+    """Relevant 2026 Playbooks entries as X1..Xn, only when the tenant's third_party_kb switch is on."""
+    if not playbooks.enabled(tenant):
+        return []
+    return run.step("external", {"parts": parts, "library": playbooks.LIBRARY_NAME},
+                    lambda: playbooks.relevant(tenant, parts, k=4),
+                    "External playbooks (researched, not course)", allow_fail=True) or []
+
+
 def _not_used(tenant, hits: list[dict]) -> list[dict]:
     idx = index.for_tenant(tenant)
     out = []
@@ -138,7 +277,9 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
         tid = thread_id or threads.create(tenant, user["id"], question)
         threads.add_message(tenant, tid, "user", question)
         threads.add_message(tenant, tid, "assistant", res["answer"], {"citations": res["citations"], "covered": res["covered"],
-                                                                      "run_id": run.id, "label": res.get("label")})
+                                                                      "external": res.get("external", []),
+                                                                      "run_id": run.id, "label": res.get("label"),
+                                                                      "mode": res.get("mode")})
         res["thread_id"] = tid
     return res
 
@@ -198,9 +339,7 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
     if covered == "no":
         run.note("answer", {"covered": "no"}, {"answer": translate.NOT_COVERED[lang]}, label="Answer from passages only")
         run.note("verify_citations", {}, {"kept": [], "stripped": []}, label="Verify citations")
-        return {"covered": "no", "answer": translate.NOT_COVERED[lang], "citations": [], "external": [], "parts": judged,
-                "lang": lang, "note": None, "mode": "rules", "label": "Honest: not covered by the course material",
-                "not_used": []}
+        return _not_covered(tenant, run, question, parts, judged, lang, [])
 
     passages = "\n\n".join(f"[{h['id']}] ({h['title']}, lines {h['lines']})\n{h['text']}" for h in usable)
     prompt = f"Question: {question}\n\nCourse passages:\n{passages}"
@@ -253,20 +392,51 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
 
     clean, kept, stripped = run.step("verify_citations", {"cited": cited, "allowed": sorted(allowed)},
                                      lambda: verify_citations(text, cited, allowed), "Verify citations")
+    # the course answer never carries external markers: any [X#] here was invented
+    if XCITE_RE.search(clean):
+        stripped = sorted(set(stripped) | set(XCITE_RE.findall(clean)))
+        clean = re.sub(r"[ \t]{2,}", " ", XCITE_RE.sub("", clean)).strip()
     if covered != "no" and not kept and usable and mode != "live":
         # extractive answers always carry their passages
         kept = [usable[0]["id"]]
         clean = f"{clean} [{usable[0]['id']}]".strip()
     if covered == "no" or not clean:
-        clean, kept, covered = translate.NOT_COVERED[lang], [], "no"
+        return _not_covered(tenant, run, question, parts, judged, lang, stripped, base_mode=mode)
     cites = [retrieval.cite(h) for h in usable if h["id"] in kept]
     note = translate.NOTE.get(lang) if lang != "en" and mode != "live" else None
     if covered == "partly":
         missing = [j["part"] for j in judged if j["covered"] == "no"]
         clean += " " + " ".join(f"(Not covered by the course material: \"{m}\")" for m in missing)
-    return {"covered": covered, "answer": guardrails.scrub(clean, names), "citations": cites, "external": [],
+    # after the course answer: a clearly separate list of external [X#] entries (never in citations)
+    ext = _external(tenant, run, parts)
+    return {"covered": covered, "answer": guardrails.scrub(clean, names), "citations": cites, "external": ext,
             "stripped_citations": stripped, "parts": judged, "lang": lang, "note": note, "mode": mode, "label": label,
             "not_used": _not_used(tenant, usable)}
+
+
+def _not_covered(tenant, run: runtime.Run, question: str, parts: list[str], judged: list[dict], lang: str,
+                 stripped: list[str], base_mode: str = "rules") -> dict:
+    """Honest "not covered" first. With the third_party_kb switch on and a playbook that does cover it, add
+    the clearly labelled external section after that sentence (never as course material)."""
+    text = translate.NOT_COVERED[lang]
+    label = "Honest: not covered by the course material"
+    ext = _external(tenant, run, parts)
+    xmode, xlabel = None, None
+    if ext:
+        sec = _external_section(tenant, run, question, parts, ext)
+        stripped = sorted(set(stripped) | set(sec["stripped"]))
+        if sec["text"]:
+            text = f"{text}\n\n{sec['text']}"
+            label += f" · external best practice added ({playbooks.LIBRARY_NAME}, switch on)"
+            xmode, xlabel = sec["mode"], sec["label"]
+        # final safety pass: only X ids from the external list survive anywhere in the answer
+        text, _, gone = verify_external(text, {c["id"] for c in ext})
+        stripped = sorted(set(stripped) | set(gone))
+    names = guardrails.tenant_banned_names(tenant)
+    mode = xmode if xmode in ("live", "replay") else base_mode
+    return {"covered": "no", "answer": guardrails.scrub(text, names), "citations": [], "external": ext,
+            "external_mode": xmode, "external_label": xlabel, "stripped_citations": stripped, "parts": judged,
+            "lang": lang, "note": None, "mode": mode, "label": label, "not_used": []}
 
 
 def _norm_q(q: str) -> str:
