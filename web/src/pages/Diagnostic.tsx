@@ -75,7 +75,7 @@ export default function Diagnostic() {
                   { key: "value", label: "Yours", render: (s) => <span className={cx(s.below && "font-semibold text-bad")}>{fmt(s)}</span> },
                   { key: "benchmark", label: "SOP benchmark", render: (s) => fb(s) },
                   { key: "monthly_cost", label: "Cost / month", render: (s) => s.monthly_cost ? Number(s.monthly_cost).toLocaleString() : "—" },
-                  { key: "realistic", label: "", render: (s) => (!s.realistic ? <Badge>low volume</Badge> : s.key === res.bottleneck?.key ? <Badge tone="bad">bottleneck</Badge> : null) },
+                  { key: "realistic", label: "", render: (s) => (!s.realistic ? <Badge>low volume</Badge> : s.key === res.bottleneck?.key ? <Badge tone="bad">bottleneck</Badge> : s.critical ? <Badge tone="warn">far below</Badge> : null) },
                   { key: "citation", label: "Source", render: (s) => s.citation ? <Citations items={[s.citation]} /> : null },
                 ]} />
               </Card>

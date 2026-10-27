@@ -26,30 +26,97 @@ class ImportError_(ValueError):
     pass
 
 
-def _num(v: str) -> float:
-    s = re.sub(r"[^\d.,-]", "", str(v or ""))
-    if not s:
+_EU_VALUE = re.compile(r"^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+,\d{1,2}$")   # 1.234,56  1.234.567  12,5
+_US_VALUE = re.compile(r"^-?\d{1,3}(,\d{3})+(\.\d+)?$|^-?\d+\.\d{1,2}$")   # 1,234.56  1,234,567  12.5
+
+
+def _clean(v) -> str:
+    return re.sub(r"[^\d.,-]", "", str(v or "").replace("\u00a0", "").replace("\u202f", "").replace(" ", ""))
+
+
+def detect_eu(values: list[str]) -> bool | None:
+    """True when the numbers use a comma as the decimal separator (most of Europe), False for a dot, None when
+    nothing in the file says. Decided per file from the unambiguous values: "1.234,56" or "12,5" says EU,
+    "1,234.56" or "12.5" says US."""
+    eu = us = 0
+    for v in values:
+        s = _clean(v)
+        if "," in s and "." in s:
+            if s.rfind(",") > s.rfind("."):
+                eu += 1
+            else:
+                us += 1
+        elif _EU_VALUE.match(s) and not _US_VALUE.match(s):
+            eu += 1
+        elif _US_VALUE.match(s) and not _EU_VALUE.match(s):
+            us += 1
+    if eu == us:
+        return None
+    return eu > us
+
+
+def _num(v, eu: bool | None = None, integer: bool = False) -> float:
+    """A number from an export cell, whatever the locale: "1,234.56", "1.234,56", "€ 2.345,00", "1 234".
+    eu=None decides from the value alone; integer=True (impressions, clicks, leads) reads "1.234" as 1234."""
+    s = _clean(v)
+    if not s or not re.search(r"\d", s):
         return 0.0
-    if s.count(",") and s.count("."):
-        s = s.replace(",", "")
-    elif s.count(",") == 1 and len(s.split(",")[1]) != 3:
-        s = s.replace(",", ".")
+    if "," in s and "." in s:
+        dec = "," if s.rfind(",") > s.rfind(".") else "."
+    elif "," in s:
+        parts = s.split(",")
+        if eu is True:
+            dec = "," if len(parts) == 2 and not (integer and len(parts[1]) == 3) else None
+        else:
+            dec = "," if len(parts) == 2 and len(parts[1]) != 3 else None
+    elif "." in s:
+        parts = s.split(".")
+        if len(parts) > 2:
+            dec = None  # 1.234.567: thousands
+        elif len(parts[1]) == 3 and (eu or integer):
+            dec = None  # 1.234 in an EU file, or a count column: a thousands separator
+        else:
+            dec = "."
     else:
-        s = s.replace(",", "")
+        dec = None
+    thousands = {",": ".", ".": ",", None: ",."}[dec]
+    for ch in thousands:
+        s = s.replace(ch, "")
+    if dec == ",":
+        s = s.replace(",", ".")
     try:
         return float(s)
     except ValueError:
         return 0.0
 
 
+def _delimiter(head: str) -> str:
+    counts = {d: head.count(d) for d in ("\t", ";", ",")}
+    return max(counts, key=lambda d: (counts[d], d == ","))
+
+
 def looks_like_ads_export(text: str) -> bool:
-    head = (text.splitlines() or [""])[0].lower()
-    return ("," in head or "\t" in head) and ("impression" in head) and ("spent" in head or "spend" in head or "cost" in head)
+    """An export, not a chat message that happens to mention impressions: at least a header and one row, and
+    a header with at least three delimited cells including impressions and spend/cost."""
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    if len(lines) < 2:
+        return False
+    head = lines[0].lower()
+    cells = [c.strip() for c in head.split(_delimiter(head))]
+    if len([c for c in cells if c]) < 3:
+        return False
+    return any("impression" in c for c in cells) and any(("spent" in c or "spend" in c or "cost" in c) for c in cells)
+
+
+# a summary row, not an ad: "Total", "Totals", "Total results", "Results from 4 ads" (an ad merely *named*
+# "Total Transformation Hook" is an ad)
+_TOTAL_ROW = re.compile(r"^(totals?|total results|grand total|results from \d+ (ads?|ad sets?|campaigns?))$", re.I)
 
 
 def parse(text: str) -> list[dict]:
-    dialect = "excel-tab" if "\t" in (text.splitlines() or [""])[0] else "excel"
-    rows = list(csv.reader(io.StringIO(text.lstrip("﻿")), dialect=dialect))
+    text = (text or "").lstrip("\ufeff")
+    first = (text.splitlines() or [""])[0]
+    rows = list(csv.reader(io.StringIO(text), delimiter=_delimiter(first)))
     if len(rows) < 2:
         raise ImportError_("The file has no data rows")
     header = [h.strip().lower() for h in rows[0]]
@@ -63,16 +130,21 @@ def parse(text: str) -> list[dict]:
     if "spend" not in idx or "impressions" not in idx:
         raise ImportError_("Couldn't find the spend and impressions columns. Export from Ads Manager with "
                            "'Amount spent', 'Results' (or 'Leads'), 'Impressions' and 'Link clicks'.")
+    body = [r for r in rows[1:] if any(c.strip() for c in r)]
+    eu = detect_eu([r[idx[k]] for r in body for k in ("spend", "impressions", "leads", "clicks")
+                    if k in idx and idx[k] < len(r)])
+    if eu is None:
+        eu = _delimiter(first) == ";"  # semicolon exports come from comma-decimal locales
     out = []
-    for r in rows[1:]:
-        if not any(c.strip() for c in r):
-            continue
+    for r in body:
         get = lambda k: r[idx[k]] if k in idx and idx[k] < len(r) else ""
-        name = get("name") or f"Row {len(out) + 1}"
-        if name.lower().startswith(("total", "results from")):
-            continue
-        out.append({"name": name.strip(), "spend": _num(get("spend")), "leads": _num(get("leads")),
-                    "impressions": _num(get("impressions")), "clicks": _num(get("clicks")), "status": get("status").strip()})
+        raw_name = get("name").strip()
+        if ("name" in idx and not raw_name) or _TOTAL_ROW.match(raw_name):
+            continue  # the summary row (named "Total", or no ad name at all)
+        name = raw_name or f"Row {len(out) + 1}"
+        out.append({"name": name, "spend": _num(get("spend"), eu), "leads": _num(get("leads"), eu, integer=True),
+                    "impressions": _num(get("impressions"), eu, integer=True),
+                    "clicks": _num(get("clicks"), eu, integer=True), "status": get("status").strip()})
     if not out:
         raise ImportError_("No ad rows found")
     return out

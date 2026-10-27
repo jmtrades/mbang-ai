@@ -20,11 +20,13 @@ export default function KbAdmin() {
     }
   };
   const excluded = (data?.files || []).flatMap((f: any) => f.excluded);
+  const ro = !!data?.read_only;
   return (
     <div>
       <PageHeader title="Knowledge base" subtitle={data ? `Scope: ${data.scope} · ${data.status.docs} files · ${data.status.chunks} passages · embeddings: ${data.status.embeddings}` : ""} />
       <ErrorBox error={err || error} retry={reload} />
       {loading && <Loading rows={6} />}
+      {data?.read_only_reason && <p className="mb-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted" data-testid="kb-read-only">{data.read_only_reason}</p>}
       <Tabs value={tab} onChange={setTab} tabs={[{ key: "files", label: "Files" }, { key: "notused", label: `Not used (${excluded.length})` }, { key: "provenance", label: "Provenance" }]} />
       {data && tab === "files" && (
         <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
@@ -39,10 +41,10 @@ export default function KbAdmin() {
             {sel && (
               <div className="space-y-2">
                 <Button size="sm" onClick={() => openSource({ id: "S", file: sel.file, lines: "1-1", title: sel.title })}>Open source</Button>
-                <Field label="Licence"><Select value={sel.licence} onChange={(e) => { setSel({ ...sel, licence: e.target.value }); save({ licence: e.target.value }); }} options={["course", "own", "third_party_public", "unknown"]} /></Field>
-                <Field label="Provenance"><Select value={sel.provenance} onChange={(e) => { setSel({ ...sel, provenance: e.target.value }); save({ provenance: e.target.value }); }} options={["source_unconfirmed", "owner_confirmed"]} /></Field>
-                <Field label="Priority (0.1 – 3)"><Input value={sel.priority} onChange={(e) => setSel({ ...sel, priority: e.target.value })} onBlur={() => save({ priority: Number(sel.priority) })} /></Field>
-                <Field label="Note"><Input value={sel.note} onChange={(e) => setSel({ ...sel, note: e.target.value })} onBlur={() => save({ note: sel.note })} /></Field>
+                <Field label="Licence"><Select disabled={ro} value={sel.licence} onChange={(e) => { setSel({ ...sel, licence: e.target.value }); save({ licence: e.target.value }); }} options={["course", "own", "third_party_public", "unknown"]} /></Field>
+                <Field label="Provenance"><Select disabled={ro} value={sel.provenance} onChange={(e) => { setSel({ ...sel, provenance: e.target.value }); save({ provenance: e.target.value }); }} options={["source_unconfirmed", "owner_confirmed"]} /></Field>
+                <Field label="Priority (0.1 – 3)"><Input disabled={ro} value={sel.priority} onChange={(e) => setSel({ ...sel, priority: e.target.value })} onBlur={() => !ro && save({ priority: Number(sel.priority) })} /></Field>
+                <Field label="Note"><Input disabled={ro} value={sel.note} onChange={(e) => setSel({ ...sel, note: e.target.value })} onBlur={() => !ro && save({ note: sel.note })} /></Field>
               </div>
             )}
           </Card>
@@ -53,10 +55,12 @@ export default function KbAdmin() {
           <Card title="Passages not used" subtitle="Dropped at index time by the content policy or an owner exclusion.">
             <Table rows={excluded} empty="Nothing excluded" cols={[{ key: "file", label: "File" }, { key: "lines", label: "Lines" }, { key: "label", label: "Why" }]} />
           </Card>
-          <Card title="Add an exclusion (by file and line range)">
-            <div className="flex flex-wrap gap-2"><Input className="max-w-xs" placeholder="sops/thunderdome.txt" value={ex.file} onChange={(e) => setEx({ ...ex, file: e.target.value })} /><Input className="w-32" placeholder="10-12" value={ex.lines} onChange={(e) => setEx({ ...ex, lines: e.target.value })} />
-              <Button onClick={async () => { try { await post("/kb/exclusions", ex); reload(); } catch (e) { setErr(e as ApiError); } }} disabled={!ex.file || !ex.lines}>Exclude</Button></div>
-          </Card>
+          {!ro && (
+            <Card title="Add an exclusion (by file and line range)" subtitle="Applies to this workspace only.">
+              <div className="flex flex-wrap gap-2"><Input className="max-w-xs" placeholder="sops/thunderdome.txt" aria-label="File" value={ex.file} onChange={(e) => setEx({ ...ex, file: e.target.value })} /><Input className="w-32" placeholder="10-12" aria-label="Lines" value={ex.lines} onChange={(e) => setEx({ ...ex, lines: e.target.value })} />
+                <Button onClick={async () => { try { await post("/kb/exclusions", ex); setEx({ file: "", lines: "" }); reload(); } catch (e) { setErr(e as ApiError); } }} disabled={!ex.file || !ex.lines}>Exclude</Button></div>
+            </Card>
+          )}
         </div>
       )}
       {tab === "provenance" && prov.data && (

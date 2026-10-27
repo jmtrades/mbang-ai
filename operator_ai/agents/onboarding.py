@@ -3,6 +3,7 @@ assignment -> milestone tasks -> welcome and kickoff drafted into the queue."""
 from __future__ import annotations
 
 from .. import db, queue, retrieval, runtime
+from ..errors import InputError
 
 SKILLS = {
     "offer": ("Offer and USP", "USP formula who outcome timeframe mechanism pain"),
@@ -63,9 +64,32 @@ PLAN = ["Read intake", "Gap analysis", "Lessons per gap (cited)", "30/60/90-day 
         "Draft welcome and kickoff"]
 
 
+def first_name(name) -> str:
+    """The word to greet someone by; never fails on a blank or odd name."""
+    return (str(name or "").split() or ["there"])[0]
+
+
+def clean_intake(intake: dict) -> dict:
+    """Validate before anything is written: a blank name is refused (422), names and emails are tidied."""
+    if not isinstance(intake, dict):
+        raise InputError("Intake must be an object")
+    name = " ".join(str(intake.get("name") or "").split())
+    if not name:
+        raise InputError("The student's name can't be blank")
+    out = {**intake, "name": name[:120]}
+    email = str(intake.get("email") or "").strip()
+    out["email"] = email or None
+    try:
+        out["clients"] = max(0, min(10000, int(intake.get("clients") or 0)))
+    except (TypeError, ValueError):
+        raise InputError("clients must be a whole number")
+    return out
+
+
 def onboard(tenant, intake: dict, user: dict | None = None) -> dict:
     actor = f"{user['username']}({user['role']})" if user else "system"
-    name = intake.get("name") or "New student"
+    intake = clean_intake(intake)
+    name = intake["name"]
     demo = tenant.is_demo or "(DEMO)" in name
 
     def fn(run: runtime.Run):
@@ -108,7 +132,7 @@ def onboard(tenant, intake: dict, user: dict | None = None) -> dict:
             return ids
 
         tasks = run.step("milestones", {}, _tasks, "Milestone tasks")
-        first = name.split()[0]
+        first = first_name(name)
         coach_name = coach["display"] if coach else "your coach"
 
         def _drafts():

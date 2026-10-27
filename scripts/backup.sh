@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Online backup of every tenant DB, the registry, the demo DB, vaults and KB folders.
+# Online backup of every tenant DB, the registry, the demo DB, encrypted vaults and KB folders.
+# The vault keys go to a separate bundle (backup-keys/), never into the archive. See docs/SECURITY.md.
 # Keeps 20 archives at mode 0600.  Usage: scripts/backup.sh [dest-dir]
 set -euo pipefail
 cd "$(dirname "$0")/.."

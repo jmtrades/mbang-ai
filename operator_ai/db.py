@@ -203,6 +203,11 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [team] tables
 -- [playbooks] tables
 -- [claims] tables
+CREATE TABLE IF NOT EXISTS claims_substantiation (
+  id INTEGER PRIMARY KEY, claim_key TEXT NOT NULL, statement TEXT, typicality_note TEXT NOT NULL,
+  evidence TEXT DEFAULT '[]', status TEXT DEFAULT 'active', created_by TEXT, created REAL, expires REAL,
+  expired_at REAL, expired_by TEXT, expire_reason TEXT, demo INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS claims_substantiation_key ON claims_substantiation(claim_key, status);
 -- [memory] tables
 """
 

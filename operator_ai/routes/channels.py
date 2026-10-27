@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from .. import channels, console, mcp_server, tenancy
-from ..deps import get_tenant
+from ..deps import client_ip, get_tenant
 
 router = APIRouter()  # tenant API (nothing here; everything below is public)
 public_router = APIRouter()
@@ -148,7 +148,7 @@ def mini_page(tid: str, slug: str):
 async def mini_start(tid: str, slug: str, request: Request):
     t = get_tenant(tid)
     d = _json(await _body(request))
-    return _ch(lambda: console.mini_start(t, slug, str(d.get("email", "")), bool(d.get("consent"))))
+    return _ch(lambda: console.mini_start(t, slug, str(d.get("email", "")), bool(d.get("consent")), client_ip(request)))
 
 
 @public_router.post("/m/{tid}/{slug}/ask")
@@ -158,7 +158,7 @@ async def mini_ask(tid: str, slug: str, request: Request):
     q = str(d.get("question", "")).strip()
     if len(q) < 2:
         raise HTTPException(422, "Ask a question")
-    return _ch(lambda: console.mini_ask(t, slug, str(d.get("token", "")), q))
+    return _ch(lambda: console.mini_ask(t, slug, str(d.get("token", "")), q, client_ip(request)))
 
 
 EMBED_JS = """(function(){var s=document.currentScript;var t=s.getAttribute('data-tenant'),m=s.getAttribute('data-mini');

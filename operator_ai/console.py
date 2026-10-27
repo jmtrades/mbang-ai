@@ -68,16 +68,29 @@ def provenance_panel(tenant) -> dict:
 
 
 # --------------------------------------------------------------------------- personality
+def _persona(tenant) -> dict:
+    """The stored persona, whatever was stored before settings were validated (a non-object reads as empty)."""
+    p = tenant.get("persona", {})
+    return p if isinstance(p, dict) else {}
+
+
 def personality(tenant) -> dict:
-    p = tenant.get("persona", {}) or {}
-    return {"display_name": p.get("display_name") or "Coach", "daily_question_limit": p.get("daily_question_limit", 50),
-            "banned_words": p.get("banned_words", []), "style": p.get("style", ""),
+    p = _persona(tenant)
+    limit = p.get("daily_question_limit", 50)
+    if isinstance(limit, bool) or not isinstance(limit, (int, float)) or not 1 <= limit <= 1000:
+        limit = 50
+    style = p.get("style", "")
+    return {"display_name": p.get("display_name") if isinstance(p.get("display_name"), str) and p.get("display_name")
+            else "Coach", "daily_question_limit": int(limit),
+            "banned_words": [w for w in p.get("banned_words", []) if isinstance(w, str)]
+            if isinstance(p.get("banned_words"), list) else [],
+            "style": style if isinstance(style, str) else "",
             "style_note": "Style rewriting needs AI (NEEDS_AI_BUDGET); banned words are always enforced.",
-            "persona_consent": p.get("persona_consent")}
+            "persona_consent": p.get("persona_consent") if isinstance(p.get("persona_consent"), dict) else None}
 
 
 def set_personality(tenant, data: dict, actor: str) -> dict:
-    cur = tenant.get("persona", {}) or {}
+    cur = personality(tenant)
     name = (data.get("display_name") or cur.get("display_name") or "Coach").strip()[:60]
     consent = cur.get("persona_consent")
     if data.get("persona_consent_text"):
@@ -178,14 +191,41 @@ def list_minis(tenant) -> list[dict]:
     return rows
 
 
-def mini_start(tenant, slug: str, email: str, consent: bool) -> dict:
+# Public minis are reachable by anyone: limits per network (in memory) and per email address (in the DB, so a
+# throwaway session token doesn't reset the question limit).
+MINI_SESSIONS_PER_EMAIL_DAY = 3
+MINI_STARTS_PER_IP_HOUR = 10
+MINI_ASKS_PER_IP_HOUR = 60
+OUT_OF_SCOPE = "That's outside what this assistant covers."
+
+
+def _mini_email_rows(tenant, mini_id: int, email: str) -> list[dict]:
+    from .queue import canonical_email
+
+    want = canonical_email(email)
+    with tenant.db() as c:
+        rows = db.rows(c.execute("SELECT id, email, questions FROM mini_sessions WHERE mini_id=? AND created>?",
+                                 (mini_id, db.now() - 86400)))
+    return [r for r in rows if canonical_email(r["email"] or "") == want]
+
+
+def mini_start(tenant, slug: str, email: str, consent: bool, ip: str | None = None) -> dict:
+    from . import ratelimit
+
     m = get_mini(tenant, slug)
     if m is None:
         raise WebhookError(404, "Not found")
     if not consent:
         raise WebhookError(422, "Consent is required to use this assistant")
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email or ""):
+    email = (email or "").strip()
+    if len(email) > 200 or not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         raise WebhookError(422, "A valid email is required")
+    try:
+        ratelimit.hit("mini-start", ip or "?", ratelimit.limit("mini_start", MINI_STARTS_PER_IP_HOUR), 3600)
+    except ratelimit.Limited:
+        raise WebhookError(429, "Too many sessions from this network. Try again later.")
+    if len(_mini_email_rows(tenant, m["id"], email)) >= MINI_SESSIONS_PER_EMAIL_DAY:
+        raise WebhookError(429, "This email has already used this assistant today. Try again tomorrow.")
     tok = secrets.token_urlsafe(16)
     with tenant.db() as c:
         c.execute("INSERT INTO mini_sessions(mini_id,token,email,consent,created) VALUES(?,?,?,?,?)",
@@ -194,7 +234,40 @@ def mini_start(tenant, slug: str, email: str, consent: bool) -> dict:
     return {"token": tok, "question_limit": m["question_limit"], "title": m["title"]}
 
 
-def mini_ask(tenant, slug: str, token: str, question: str) -> dict:
+def _scoped_answer(tenant, question: str, scope: set[str]) -> dict:
+    """Answer only from passages in the mini's chosen files: retrieval is filtered BEFORE the answer is built,
+    so no sentence from another file can appear. Extractive (no AI) and guardrail-checked, with a trace."""
+    from . import retrieval, runtime
+    from .agents import coach
+
+    def fn(run):
+        hits = run.step("retrieve", {"question": question, "scope": sorted(scope)},
+                        lambda: [h for h in retrieval.search(tenant, question, k=40) if h["file"] in scope][:6],
+                        "Retrieval inside the mini's files")
+        hits = [{**h, "id": f"S{i}"} for i, h in enumerate(hits, start=1)]
+        cov = run.step("coverage", {}, lambda: retrieval.coverage(tenant, question, hits), "Coverage judge")
+        if cov["covered"] == "no" or not hits:
+            return {"covered": "no", "answer": OUT_OF_SCOPE, "citations": []}
+        text = run.step("answer", {"mode": "extractive"},
+                        lambda: coach.extractive(question, hits, max_sentences=3, idf=index.for_tenant(tenant).idf),
+                        "Answer from in-scope passages only")
+        lines = [ln for ln in text.splitlines() if ln.strip() and not guardrails.blocked(
+            guardrails.check(ln, "plain", None, None, tenant=tenant))]
+        kept = {c for ln in lines for c in coach.CITE_RE.findall(ln)}
+        if not lines or not kept:
+            return {"covered": "no", "answer": OUT_OF_SCOPE, "citations": []}
+        names = guardrails.tenant_banned_names(tenant)
+        return {"covered": cov["covered"], "answer": guardrails.scrub("From the course material:\n" + "\n".join(lines), names),
+                "citations": [retrieval.cite(h) for h in hits if h["id"] in kept]}
+
+    out = runtime.execute(tenant, "mini", f"Mini: {question[:60]}", ["Retrieval inside the mini's files", "Coverage judge",
+                                                                    "Answer from in-scope passages only"], fn, "mini")
+    return out["result"]
+
+
+def mini_ask(tenant, slug: str, token: str, question: str, ip: str | None = None) -> dict:
+    from . import ratelimit
+
     m = get_mini(tenant, slug)
     if m is None:
         raise WebhookError(404, "Not found")
@@ -204,18 +277,27 @@ def mini_ask(tenant, slug: str, token: str, question: str) -> dict:
         raise WebhookError(401, "Start a session first")
     if s["questions"] >= m["question_limit"]:
         raise WebhookError(429, f"Question limit of {m['question_limit']} reached")
+    # the question limit is per email address per day, not per (free, unlimited) session token
+    if sum(r["questions"] or 0 for r in _mini_email_rows(tenant, m["id"], s["email"] or "")) >= m["question_limit"]:
+        raise WebhookError(429, f"Question limit of {m['question_limit']} reached for today")
+    try:
+        ratelimit.hit("mini-ask", ip or "?", ratelimit.limit("mini_ask", MINI_ASKS_PER_IP_HOUR), 3600)
+    except ratelimit.Limited:
+        raise WebhookError(429, "Too many questions from this network. Try again later.")
     from . import retrieval
     from .agents import coach
 
-    # a lead-magnet mini is public and scoped to chosen course files: never the external 2026 Playbooks
-    res = coach.answer(tenant, question[:1000], record=True, external=False)
-    allowed = set(m["scope"])
-    cites = [c for c in res["citations"] if not allowed or c["file"] in allowed]
-    if res["covered"] != "no" and allowed and not cites:
-        res = {"covered": "no", "answer": "That's outside what this assistant covers.", "citations": []}
+    question = question[:1000]
+    allowed = {f for f in m["scope"] if isinstance(f, str)}
+    if allowed:
+        res = _scoped_answer(tenant, question, allowed)
+        retrieval.record_query(tenant, None, question, res["covered"], "en", None)
+    else:
+        # an unscoped mini answers from the whole course; a public mini never adds the external 2026 Playbooks
+        res = coach.answer(tenant, question, record=True, external=False)
     with tenant.db() as c:
         c.execute("UPDATE mini_sessions SET questions=questions+1 WHERE id=?", (s["id"],))
-    return {"covered": res["covered"], "answer": res["answer"], "citations": cites if res["covered"] != "no" else [],
+    return {"covered": res["covered"], "answer": res["answer"], "citations": res["citations"] if res["covered"] != "no" else [],
             "remaining": m["question_limit"] - s["questions"] - 1}
 
 

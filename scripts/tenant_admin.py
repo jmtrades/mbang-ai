@@ -4,6 +4,7 @@ allowlist and AI budgets (the settings API refuses them with 403).
 
   tenant_admin.py show <tid>
   tenant_admin.py switch <tid> live_meta_enabled|live_calendar_enabled|live_channels_enabled on|off [--owner-yes "<recorded reason>"]
+  tenant_admin.py switch demo demo_course_material on|off [--owner-yes "<reason>"]   (demo reads the real inputs/ course)
   tenant_admin.py allowlist <tid> add|remove|clear [<account_id>] [--owner-yes "<reason>"]
   tenant_admin.py budget <tid> ai|critique <tokens> [--owner-yes "<reason>"]
   tenant_admin.py kb-scope <tid> course|empty|own
@@ -29,7 +30,8 @@ def main(argv=None) -> int:
     s.add_argument("tid")
     s = sub.add_parser("switch")
     s.add_argument("tid")
-    s.add_argument("key", choices=["live_meta_enabled", "live_calendar_enabled", "live_channels_enabled"])
+    s.add_argument("key", choices=["live_meta_enabled", "live_calendar_enabled", "live_channels_enabled",
+                                   "demo_course_material"])
     s.add_argument("state", choices=["on", "off"])
     s.add_argument("--owner-yes", default="")
     s = sub.add_parser("allowlist")

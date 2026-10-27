@@ -25,7 +25,7 @@ domain and the accounts listed by `scripts/preflight_live.py`.
 ## Operations
 
 - Health: `GET /health` (liveness), `GET /ready` (db, index, workers, embeddings, AI state, ads adapter, allowlist, switches, tenants).
-- Backups: `scripts/backup.sh` (SQLite online backup of every tenant, 20 kept, mode 0600); offsite: `deploy/offsite_backup.sh`.
+- Backups: `scripts/backup.sh` (SQLite online backup of every tenant, 20 kept, mode 0600; the vault keys go to a separate `backup-keys/` bundle, never into the archive); offsite: `deploy/offsite_backup.sh` (data archive only). Keep the keys bundle somewhere else; restore steps: `docs/SECURITY.md`.
 - Restore: `scripts/restore.sh backups/operator-<stamp>.tgz --check` then without `--check` (stop the app first).
 - Watchdog (non-systemd hosts): `scripts/watchdog.sh` restarts after 4 failed checks, rotates logs, backs up every 6 h.
 - Preflight: `scripts/preflight_live.py` lists every go-live check as OK / MISSING without printing any value.

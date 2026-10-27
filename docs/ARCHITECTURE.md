@@ -32,7 +32,7 @@ queue.add → guardrails → pending | held | needs_human ──(human approves)
 | Auth | `auth.py` (scrypt passwords, sessions, throttle, ROLE_TABS/ROLE_DECIDE), `deps.py` |
 | Knowledge base | `corpus.py` (load, quality flags, bylines, timestamps, chunking, exclusions), `content_policy.py`, `textnorm.py`, `embeddings.py`, `index.py`, `retrieval.py` |
 | AI | `llm.py` (provider-pluggable, budget gate, retries, replay store, redaction) |
-| Safety | `guardrails.py`, `redact.py`, `audit.py`, `vault.py` |
+| Safety | `guardrails.py`, `claims.py` (proof records for result figures), `ratelimit.py` (public endpoints), `errors.py` (input errors → 4xx), `redact.py`, `audit.py`, `vault.py`; see `docs/SECURITY.md` |
 | Runtime | `runtime.py` (Run/trace), `jobs.py` + `workers.py` (durable queue), `scheduler.py` |
 | Agents | `agents/coach.py`, `reviewer.py`, `coaching.py`, `sales.py`, `onboarding.py`, `accountability.py`, `fulfilment.py`, `ads_ops.py`; `diagnostic.py`, `webinar_chain.py`, `studio.py`, `departments.py`, `outreach_loop.py`, `brief.py` |
 | Actions | `actions.py` (proposal → owner approval → execute with prior state → rollback), `adapters/ads.py` (Mock), `live/meta.py` (MetaAdsAdapter), `crm.py` |

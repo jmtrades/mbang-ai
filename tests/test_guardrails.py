@@ -82,13 +82,26 @@ def test_deceptive_subject_first_touch():
 WARM = {"lead_tier": "warm"}
 
 
-def test_outreach_allowed_hedged_range_for_warm_lead():
+@pytest.fixture
+def proven(tenant):
+    """A workspace holding a current proof record for the outreach range."""
+    from operator_ai import claims
+
+    rec = claims.add(tenant, "outreach_range", "Typical clients see far less; this is the best quartile of 40 clinics.",
+                     90, "owner")
+    claims.add_evidence(tenant, rec["id"], "cohort-summary.pdf", b"%PDF-1.4 fictional test evidence", "owner")
+    return tenant
+
+
+def test_outreach_allowed_hedged_range_for_warm_lead(proven):
     t = "Let me make Acme Physio $50k-$100k a month through our referral-first system."
-    assert g.check(t, "outreach", WARM) == []
+    assert g.check(t, "outreach", WARM, tenant=proven) == []
+    # no proof record (no tenant, or a workspace without one): the range is blocked
+    assert "unsubstantiated_claim" in codes(t, "outreach", WARM)
 
 
-def test_outreach_range_variants_accepted():
-    assert g.check("Let me make Acme $50K–$100K per month through our system.", "outreach", WARM) == []
+def test_outreach_range_variants_accepted(proven):
+    assert g.check("Let me make Acme $50K–$100K per month through our system.", "outreach", WARM, tenant=proven) == []
 
 
 def test_outreach_definite_range_blocks():
@@ -153,3 +166,105 @@ def test_banned_names_empty_by_default(tenant):
 def test_unknown_mode_rejected():
     with pytest.raises(ValueError):
         g.check("x", "nonsense")
+
+
+# ---------------------------------------------------------------- bypass matrix (audit 2026-10-27 + own adversarial pass)
+# Every one of these used to pass (or would have) with no flags. Each must now be blocked.
+MUST_BLOCK_OUTREACH = [
+    # audit: money normalisation
+    "$  3000", "Our rate is 3000/month", "It's 3,000 a month", "It is USD 3000", "€3000 or £2500", "₹50000",
+    "seven thousand dollars", "eight grand", "a million dollars", "Our students make 10 thousand a month",
+    "Most of our clients hit six figures", "$\u200b3000", "guaran\u200btee", "gu\u0430rantee",
+    "full refund if it doesn't work", "pay 2500",
+    # audit: negation window and the allowed range
+    "No pressure, but this offer won't last", "Don't miss out, we guarantee 3x ROI", "Not only do we guarantee results",
+    "I don't want to guarantee anything but we guarantee results.",
+    "Clients we help make $50k-$100k a month through our system.", "Our students can earn $50k-$100k a month with this.",
+    # own pass: spacing, leet, look-alikes, other scripts and encodings
+    "g u a r a n t e e d results", "g.u.a.r.a.n.t.e.e.d results", "gu4rant33d results", "ＧＵＡＲＡＮＴＥＥＤ",
+    "𝐠𝐮𝐚𝐫𝐚𝐧𝐭𝐞𝐞𝐝 results", "gu\u0430r\u0430ntee\u0501", "3 0 0 0 dollars", "3.000 €", "5k/mo", "Investment: 4,997",
+    "100% money back", "risk\u2011free trial", "We'll double your revenue or you don't pay",
+    "Clients typically see $10k+ months", "Earn up to $10,000/month", "three grand", "5 figure months",
+    "It's only 2,500 to start", "&#36;3000 a month", "Our price is 3 000 a month", "No hassle, guaranteed results",
+    "Stop guessing, guaranteed results", "No need to wait for guaranteed results",
+    "We never, ever guarantee results but we promise you'll double bookings",
+    "Let me make you $50k-$100k a month through our system.", "Zero risk: you can cancel anytime",
+    "Make your first $10k this month", "Spots are filling fast", "Act now", "We could help you clear 20 grand",
+    "Only 1,997 upfront", "CAD 4500", "4500cad", "R$ 5000", "Rs. 40000", "you will make six-figure income",
+    "Students are pulling in $15K/mo", "it's 299 per session", "Doors close at midnight",
+    # second round: misspellings, split words, refunds, bare prices, direction overrides
+    "No questions asked refund", "guaranteeed results", "garanteed results", "Guar-antee", "gu-ar-an-tee",
+    "make $$$", "only 1997", "It's 2,997.", "\u202eeetnaraug", "fully refundable if you're not happy",
+]
+
+
+@pytest.mark.parametrize("text", MUST_BLOCK_OUTREACH)
+def test_bypass_strings_blocked_in_outreach(text):
+    flags = g.check(text, "outreach", WARM)
+    assert g.blocked(flags), (text, flags)
+
+
+@pytest.mark.parametrize("text", [
+    "Not saying it's easy, but our clients make $20k a month", "Our students make 10 thousand a month",
+    "Most of our clients hit six figures", "No pressure, but this offer won't last", "gu\u0430rantee\u200bd results",
+    "Not only do we guarantee results", "Our members are banking 15K a month",
+])
+def test_bypass_strings_blocked_in_plain(text):
+    assert g.blocked(g.check(text, "plain")), text
+
+
+@pytest.mark.parametrize("text", [
+    "Never plant questions or invent attendees.", "We never guarantee results; we promise a direction.",
+    "Don't use fake scarcity like saying doors are closing.", "We will never, ever guarantee results.",
+    "I don't want to guarantee anything.", "Stop planting questions in the chat.", "No fake accounts, ever.",
+    "Avoid promising guaranteed results.", "Never promise guaranteed results.",
+    "And please, never put a guarantee in your USP. Promise a direction, not a result.",
+    "Twenty new patient bookings a month is an outcome.", "We shouldn't guarantee results.",
+    "We didn't fake any reviews.", "This isn't a guarantee.", "Never use a non-refundable guarantee-style promise.",
+])
+def test_negation_still_passes_when_it_governs_the_match(text):
+    assert g.check(text, "plain") == [], text
+
+
+@pytest.mark.parametrize("text", [
+    "Let me help Acme grow through our referral system.", "Congrats on 10k followers! Quick question about bookings?",
+    "Here's a 2-minute video on the reminder ladder we use to lift show rates. Worth a look?",
+    "Quick tip from our booking module: confirm every call within five minutes. What does your confirmation look like today?",
+])
+def test_clean_outreach_still_passes(text):
+    assert g.check(text, "outreach", {"lead_tier": "cold"}) == [], text
+
+
+def test_range_only_in_the_range_line_shape(proven):
+    # hedged, warm, recorded, but not "Let me make [Brand] ..." -> blocked
+    assert "outreach_range_shape" in {f["code"] for f in g.check(
+        "We could see $50k-$100k a month together.", "outreach", WARM, tenant=proven)}
+    assert g.blocked(g.check("Let me make you $50k-$100k a month through our system.", "outreach", WARM, tenant=proven))
+    assert g.check("Let me make Acme $50k-$100k a month through our system.", "outreach", WARM, tenant=proven) == []
+
+
+def test_normalisation_folds_invisible_lookalike_and_spaced_text():
+    assert g._norm("gu\u0430ran\u200btee") == "guarantee"
+    assert g._norm("g u a r a n t e e") == "guarantee"
+    assert g._norm("𝐫𝐢𝐬𝐤\u2011free") == "risk-free"
+    assert g._deleet("gu4rant33d") == "guaranteed"
+    assert g.money_hit(g._money_norm("3 0 0 0 dollars"))
+
+
+@pytest.mark.parametrize("text", ["The deposit is non-refundable.", "Refunds follow the terms in your contract.",
+                                  "The programme is $2,997 and includes twelve weeks of coaching.",
+                                  "For clinics that make $1M a year and want more referrals."])
+def test_client_assets_may_state_terms_and_prices(text):
+    assert g.check(text, "client_asset") == [], text
+
+
+def test_hidden_direction_controls_flagged():
+    assert {f["code"]: f["severity"] for f in g.check("\u202eeetnaraug", "plain")}.get("hidden_characters") == "review"
+    assert g.blocked(g.check("Hi \u2066there\u2069", "outreach", {"lead_tier": "cold"}))
+    assert g.check("שלום \u200f friend", "plain") == []  # ordinary RTL text and marks are fine
+
+
+def test_banned_names_scrub_tolerates_invisible_characters_and_bad_settings(tenant):
+    assert g.scrub("Pat\u200b Sample said hi", ["Pat Sample"]) == "[name removed] said hi"
+    tenant.set("banned_names", [123, None, "x", "Pat Sample"])  # written before settings were validated
+    assert g.tenant_banned_names(tenant) == ["Pat Sample"]

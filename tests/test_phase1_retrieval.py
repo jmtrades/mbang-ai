@@ -122,12 +122,14 @@ def test_timestamped_preferred(env, tmp_path, monkeypatch):
     assert c.ts_start == "0:00:01"
 
 
-def test_owner_exclusion_by_line_range(env):
-    index.save_exclusions([{"file": "sops/thunderdome.txt", "lines": "9-10"}])
-    idx = index.course_index()
+def test_owner_exclusion_by_line_range(tenant):
+    # exclusions belong to one tenant (tests/test_hardening.py covers the isolation between tenants)
+    index.save_exclusions(tenant, [{"file": "sops/thunderdome.txt", "lines": "9-10"}])
+    idx = index.for_tenant(tenant)
     assert not any("Rule 1: Test between three and five" in c.text for c in idx.chunks)
     assert any(e.file == "sops/thunderdome.txt" and e.tactic == "an owner exclusion" for e in idx.excluded)
-    index.save_exclusions([])
+    assert any("Rule 1: Test between three and five" in c.text for c in index.course_index().chunks)
+    index.save_exclusions(tenant, [])
 
 
 def test_retrieval_eval_meets_targets(tenant):

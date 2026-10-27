@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 import threading
 from collections import Counter
 from pathlib import Path
@@ -125,25 +126,73 @@ def _empty() -> Index:
     return EMPTY
 
 
-def exclusions_path() -> Path:
+# --------------------------------------------------------------------------- owner exclusions (per tenant)
+def legacy_exclusions_path() -> Path:
+    """Before exclusions were per tenant they lived in one server-wide file applied to every tenant."""
     return config.get().data_dir / "kb_exclusions.json"
 
 
-def load_exclusions() -> list[dict]:
-    p = exclusions_path()
-    if p.exists():
-        try:
-            return json.loads(p.read_text())
-        except ValueError:
-            return []
-    return []
+def exclusions_path(tenant) -> Path:
+    return tenant.dir / "kb_exclusions.json"
 
 
-def save_exclusions(items: list[dict]) -> None:
-    p = exclusions_path()
+_EX_LINES = re.compile(r"^\d{1,6}(-\d{1,6})?$")
+_EX_TS = re.compile(r"^\d{1,2}:\d{2}(:\d{2})?(-\d{1,2}:\d{2}(:\d{2})?)?$")
+
+
+def _clean_exclusions(items) -> list[dict]:
+    """Only well-formed entries survive (a malformed one would otherwise break the index build)."""
+    out = []
+    for it in items if isinstance(items, list) else []:
+        if not isinstance(it, dict) or not isinstance(it.get("file"), str) or not it["file"].strip():
+            continue
+        e = {"file": it["file"][:300]}
+        if isinstance(it.get("lines"), str) and _EX_LINES.match(it["lines"]):
+            e["lines"] = it["lines"]
+        if isinstance(it.get("ts"), str) and _EX_TS.match(it["ts"]):
+            e["ts"] = it["ts"]
+        if len(e) > 1:
+            out.append(e)
+    return out
+
+
+def load_exclusions(tenant) -> list[dict]:
+    """One tenant's own exclusions. The legacy server-wide file is adopted by the real owner workspace only
+    (never by the demo or a client tenant), then renamed so it can't apply anywhere else."""
+    p = exclusions_path(tenant)
+    if not p.exists():
+        legacy = legacy_exclusions_path()
+        if legacy.exists() and tenant.kind == "owner" and tenant.id == config.get().default_tenant:
+            try:
+                items = _clean_exclusions(json.loads(legacy.read_text()))
+            except ValueError:
+                items = []
+            save_exclusions(tenant, items)
+            legacy.rename(legacy.with_suffix(".json.migrated"))
+            return items
+        return []
+    try:
+        return _clean_exclusions(json.loads(p.read_text()))
+    except (ValueError, OSError):
+        return []
+
+
+def save_exclusions(tenant, items: list[dict]) -> None:
+    p = exclusions_path(tenant)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(items, indent=2))
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(_clean_exclusions(items), indent=2))
+    tmp.replace(p)
     invalidate()
+
+
+def course_root(tenant) -> Path:
+    """The course folder a tenant reads. The public demo always reads the fictional fixture corpus, never the
+    real inputs/ course, unless the owner turned on the server-only demo_course_material switch."""
+    cfg = config.get()
+    if tenant is not None and tenant.is_demo and not tenant.get("demo_course_material", False):
+        return config.FIXTURE_CORPUS
+    return cfg.effective_corpus_dir
 
 
 def _build(key: str, docs: list[corpus.Doc], exclusions: list[dict]) -> Index:
@@ -170,11 +219,13 @@ def _build(key: str, docs: list[corpus.Doc], exclusions: list[dict]) -> Index:
     return Index(key, docs, chunks, excluded, vecs, emb.name)
 
 
-def course_index(additions: Path | None = None) -> Index:
-    """The course corpus, plus owner-approved additions (Drive inbox, uploads) when given."""
+def course_index(additions: Path | None = None, exclusions: list[dict] | None = None, root: Path | None = None) -> Index:
+    """The course corpus, plus owner-approved additions (Drive inbox, uploads) when given, minus one
+    tenant's own exclusions. The exclusions are part of the cache key, so one tenant's exclusions never
+    change what another tenant's coach can see."""
     cfg = config.get()
-    root = cfg.effective_corpus_dir
-    exclusions = load_exclusions()
+    root = root or cfg.effective_corpus_dir
+    exclusions = _clean_exclusions(exclusions or [])
     key = "course-" + corpus.fingerprint(root, json.dumps(exclusions, sort_keys=True))
     if additions is not None and additions.exists() and any(additions.glob("*.txt")):
         key += "-plus-" + corpus.fingerprint(additions)
@@ -193,11 +244,12 @@ def course_index(additions: Path | None = None) -> Index:
 
 def own_index(tenant) -> Index:
     kb = tenant.kb_dir
-    key = f"own-{tenant.id}-" + corpus.fingerprint(kb)
+    exclusions = load_exclusions(tenant)
+    key = f"own-{tenant.id}-" + corpus.fingerprint(kb, json.dumps(exclusions, sort_keys=True))
     with _lock:
         if key in _cache:
             return _cache[key]
-        idx = _build(key, corpus.load_uploads(kb, corpus_id=f"own:{tenant.id}"), [])
+        idx = _build(key, corpus.load_uploads(kb, corpus_id=f"own:{tenant.id}"), exclusions)
         _cache[key] = idx
         return idx
 
@@ -209,7 +261,7 @@ def for_tenant(tenant) -> Index:
     scope = tenant.kb_scope
     check_licence(tenant.kind, scope)
     if scope == "course":
-        return course_index(tenant.kb_dir)
+        return course_index(tenant.kb_dir, exclusions=load_exclusions(tenant), root=course_root(tenant))
     if scope == "own":
         return own_index(tenant)
     return _empty()
@@ -218,7 +270,7 @@ def for_tenant(tenant) -> Index:
 def corpus_root_for(tenant) -> Path:
     if tenant.kb_scope == "own":
         return tenant.kb_dir.parent
-    return config.get().effective_corpus_dir
+    return course_root(tenant)
 
 
 def invalidate() -> None:
