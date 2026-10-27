@@ -21,6 +21,7 @@ from .registry import DAY, STATUS_LABEL, TERMINAL, WAITING, StepResult, add_even
 log = logging.getLogger("operator.missions")
 JOB = "missions.step"
 MAX_FAILS = 3
+MAX_OPEN = 20  # running or paused missions per person; each one drafts into the approval queue
 RECHECK = 15 * 60
 APPROVAL_POLL = 10 * 60
 ACTIVE = "active"
@@ -150,7 +151,7 @@ def create(tenant, user: dict, goal: str, template: str | None = None, answers: 
     matched = True
     if not template or template == templates.CUSTOM:
         template, matched = templates.classify(goal, user["role"])
-        for k, v in templates.extract(goal).items():
+        for k, v in templates.extract_clean(goal).items():
             clean.setdefault(k, v)
     tpl = templates.get(template)
     if tpl is None:
@@ -159,6 +160,11 @@ def create(tenant, user: dict, goal: str, template: str | None = None, answers: 
         raise MissionError(403, "Your role can't start this kind of mission")
     if clean.get("client_id") and not _client_ok(tenant, user, clean["client_id"]):
         raise MissionError(404, "Client not found")
+    with tenant.db() as c:
+        n_open = c.execute("SELECT COUNT(*) FROM missions WHERE user_id=? AND status IN ('active','paused')",
+                           (user["id"],)).fetchone()[0]
+    if n_open >= MAX_OPEN:
+        raise MissionError(409, f"You already have {n_open} missions running or paused. Finish or cancel one first.")
     specs = tpl.build(clean)
     now = created or clock()
     ctx = {"answers": clean, "decisions": [], "what_worked": [], "matched_template": matched}
@@ -181,12 +187,32 @@ def create(tenant, user: dict, goal: str, template: str | None = None, answers: 
     return get(tenant, mid)
 
 
+def user_client_ids(tenant, user: dict) -> set[int] | None:
+    """Clients this person may plan for: None means every client (the owner). Otherwise the clients linked to their
+    student record, plus clients they won through one of their own missions (a won client's row may have no
+    student_id yet; the win event names who won it)."""
+    if user["role"] == "owner":
+        return None
+    ids: set[int] = set()
+    with tenant.db() as c:
+        if user.get("student_id"):
+            ids |= {r[0] for r in c.execute("SELECT id FROM clients WHERE student_id=?", (user["student_id"],))}
+        ids |= {int(r[0]) for r in c.execute(
+            "SELECT DISTINCT json_extract(context,'$.client_id') FROM missions WHERE user_id=? AND "
+            "json_extract(context,'$.won')=1 AND json_type(context,'$.client_id')='integer'", (user["id"],))}
+        ids |= {int(r[0]) for r in c.execute(
+            "SELECT DISTINCT json_extract(payload,'$.client_id') FROM app_events WHERE name='client_won' AND "
+            "json_extract(payload,'$.owner_user_id')=? AND json_type(payload,'$.client_id')='integer'", (user["id"],))}
+    return ids
+
+
 def _client_ok(tenant, user: dict, cid: int) -> bool:
     with tenant.db() as c:
-        r = c.execute("SELECT student_id FROM clients WHERE id=?", (int(cid),)).fetchone()
+        r = c.execute("SELECT 1 FROM clients WHERE id=?", (int(cid),)).fetchone()
     if r is None:
         return False
-    return user["role"] == "owner" or (user.get("student_id") and r["student_id"] == user.get("student_id"))
+    allowed = user_client_ids(tenant, user)
+    return allowed is None or int(cid) in allowed
 
 
 def _insert_steps(c, mid: int, specs: list[dict], start_ord: int, now: float) -> list[int]:
@@ -332,6 +358,8 @@ def _execute(tenant, m: dict, step: dict) -> tuple[StepResult, int | None]:
         raise RuntimeError("unknown step type")
     user = _user(tenant, m["user_id"])
     now = clock()
+    if not t.allowed((user or {}).get("role")):
+        return StepResult("skipped", f"'{t.label}' isn't available to your role, so this step was skipped."), None
     if t.needs_cert:
         path, level = t.needs_cert
         if registry.cert_state(tenant, m["user_id"], path, level) == "missing":
@@ -365,8 +393,8 @@ def _apply(tenant, m: dict, step: dict, res: StepResult, run_id: int | None) -> 
     now = clock()
     status = res.status if res.status in registry.STATUSES and res.status not in ("ready", "running", "pending") else "failed"
     qids = list(dict.fromkeys((step["queue_ids"] or []) + [int(q) for q in (res.queue_ids or [])]))
-    if t and t.outbound and status == "done" and q_states(tenant, res.queue_ids or [])["open"]:
-        status = "waiting_approval"  # outbound work never finishes while a draft still waits for approval
+    if t and t.outbound and status in ("done", "skipped") and q_states(tenant, qids)["open"]:
+        status = "waiting_approval"  # outbound work never finishes while one of its drafts still waits for a decision
     output = {**step["output"], **(res.output or {})}
     wait = res.wait or {}
     due = res.due
@@ -592,7 +620,7 @@ def _ev_stage(tenant, name, p):
 @events.on("booking_made")
 @_guard
 def _ev_booking(tenant, name, p):
-    pt, pid, starts = p.get("party_type") or "prospect", p.get("party_id"), p.get("starts_at")
+    pt, pid, starts = p.get("party_type") or "prospect", p.get("party_id"), registry.epoch(p.get("starts_at"))
     for mid in _missions_for_party(tenant, p):
         key = f"{pt}:{pid}"
         if add_event(tenant, mid, "booked", {"party_type": pt, "party_id": pid, "starts_at": starts}, key=key) is None and starts:
@@ -635,10 +663,18 @@ def _ev_cert(tenant, name, p):
         wake(tenant, mid, event="certification_awarded", reason="certification awarded")
 
 
+WIN_GOAL_TEMPLATES = ("first_client",)  # missions whose goal IS a won client; others just count the win
+
+
 def mark_won(tenant, mid: int, client_id: int | None = None, value: float | None = None, source: str = "", by: str = "") -> None:
     now = clock()
     m = get(tenant, mid, steps=False)
     if m is None:
+        return
+    if m["template"] not in WIN_GOAL_TEMPLATES:
+        # e.g. a fill-my-calendar mission: a client win is good news, but the goal is the booked calls
+        add_event(tenant, mid, "won", {"client_id": client_id, "source": source, "by": by, "value": value,
+                                       "goal": False}, key=f"won:{client_id or source}")
         return
     if m["context"].get("won"):
         if client_id and not m["context"].get("client_id"):
@@ -732,13 +768,15 @@ def retry_step(tenant, mid: int, sid: int, actor: str) -> dict:
     return get(tenant, mid)
 
 
-def skip_step(tenant, mid: int, sid: int, actor: str) -> dict:
+def skip_step(tenant, mid: int, sid: int, actor: str, role: str = "owner") -> dict:
     m = get(tenant, mid)
     s = _step(m, sid)
     if s["agent"] == "intake":
         raise MissionError(409, "The intake can't be skipped: the plan needs its answers")
     if s["status"] in TERMINAL:
         raise MissionError(409, "This step is already finished")
+    if s["agent"] == "cert_gate" and role != "owner":
+        raise MissionError(403, "A certification gate can't be skipped: complete it in the Academy, or ask the owner")
     with tenant.db() as c:
         c.execute("UPDATE mission_steps SET status='skipped', due=NULL, message=?, updated=? WHERE id=?",
                   ("Skipped by you.", clock(), sid))
@@ -750,7 +788,7 @@ def skip_step(tenant, mid: int, sid: int, actor: str) -> dict:
 
 
 def mark_done(tenant, mid: int, sid: int, actor: str, outcome: str | None = None, note: str = "",
-              value: float | None = None, numbers: dict | None = None) -> dict:
+              value: float | None = None, numbers: dict | None = None, starts_at: float | None = None) -> dict:
     """The thing this step waits for happened (a reply came in, a call was booked or taken, the client said yes).
     Never sends anything and never stands in for an approval."""
     m = get(tenant, mid)
@@ -765,6 +803,11 @@ def mark_done(tenant, mid: int, sid: int, actor: str, outcome: str | None = None
                                 "there, or skip the step.")
     if t.recurring and not t.human_action:
         raise MissionError(409, "This step repeats until the goal is won. Skip it to stop it.")
+    if not t.human_action:
+        # gates, drafts and automatic steps finish on their own; "done" by hand would fake a certification or a result
+        raise MissionError(409, "This step finishes when its drafts are decided in the approval queue. You can skip it "
+                                "instead." if t.wait_for == "approval" else
+                           "This step finishes on its own when its work is done. You can skip it instead.")
     if t.outcomes and outcome is not None and outcome not in t.outcomes:
         raise MissionError(422, f"Outcome must be one of: {', '.join(t.outcomes)}")
     outcome = outcome or (t.outcomes[0] if t.outcomes else "done")
@@ -777,8 +820,9 @@ def mark_done(tenant, mid: int, sid: int, actor: str, outcome: str | None = None
         wake(tenant, mid, event="reply_received", reason="reply recorded")
         return get(tenant, mid)
     if key == "booking":
+        starts = registry.epoch(starts_at) or (value if value and value > 1e9 else None)
         add_event(tenant, mid, "booked", {**detail, "party_type": "manual", "party_id": f"manual-{n}",
-                                          "starts_at": value if value and value > 1e9 else None})
+                                          "starts_at": starts})
         wake(tenant, mid, event="booking_made", reason="call booked")
         return get(tenant, mid)
     if key == "take_call":
@@ -911,8 +955,13 @@ def detail(tenant, m: dict, user: dict) -> dict:
     tpl = templates.get(m["template"])
     ctx = m["context"]
     mine = can_act(user, m)
+    client = None
+    cid = (ctx.get("answers") or {}).get("client_id") or ctx.get("client_id")
+    if isinstance(cid, int) and not isinstance(cid, bool):
+        with tenant.db() as c:
+            client = db.row(c.execute("SELECT id, name FROM clients WHERE id=?", (cid,)).fetchone())
     return {**summary(tenant, m), "steps": steps, "metrics": met, "plan_vs_actual": evaluator.plan_vs_actual(m, met),
-            "targets": ctx.get("targets"), "answers": ctx.get("answers") or {},
+            "targets": ctx.get("targets"), "answers": ctx.get("answers") or {}, "client": client,
             "memory": {k: ctx.get(k) for k in ("icp", "offer", "opener_move", "decisions", "what_worked", "diagnosis",
                                                "next_best_action") if ctx.get(k)},
             "questions": [q.public() for q in tpl.questions] if tpl else [], "replans": reps, "children": kids,

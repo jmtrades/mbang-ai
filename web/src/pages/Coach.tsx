@@ -10,12 +10,14 @@ const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diag
 function StartMission({ draft }: { draft: any }) {
   const { go, toast } = useApp();
   const [busy, setBusy] = useState(false);
+  const [startedId, setStartedId] = useState<number | null>(null);
   const [err, setErr] = useState<ApiError | null>(null);
   const start = async () => {
     setBusy(true);
     setErr(null);
     try {
       const r = await post("/missions", { goal: draft.goal, template: draft.template, answers: draft.answers || {} });
+      setStartedId(r.id);
       toast("Mission started", "good");
       go(`/missions?id=${r.id}`);
     } catch (e) {
@@ -26,7 +28,11 @@ function StartMission({ draft }: { draft: any }) {
   };
   return (
     <div className="mt-2 space-y-1">
-      <Button size="sm" tone="primary" loading={busy} onClick={start}>Start this mission <ArrowRight className="size-3.5" /></Button>
+      {startedId ? (
+        <Button size="sm" onClick={() => go(`/missions?id=${startedId}`)}>Open the mission <ArrowRight className="size-3.5" /></Button>
+      ) : (
+        <Button size="sm" tone="primary" loading={busy} onClick={start}>Start this mission <ArrowRight className="size-3.5" /></Button>
+      )}
       <ErrorBox error={err} />
     </div>
   );

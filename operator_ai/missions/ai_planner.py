@@ -21,7 +21,8 @@ SYSTEM = ("You plan multi-step missions for a coaching programme's growth operat
           "client is drafted for a person to approve. No guarantees, no income claims, no invented results.")
 MAX_STEPS = 25
 _KEY = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-NEVER_REMOVE = ("intake", "checkpoint")
+_HREF = re.compile(r"^#/[a-z][a-z0-9_\-/]{0,40}(\?[a-z0-9_=&\-]{0,60})?$")
+NEVER_REMOVE = ("intake", "checkpoint", "cert_gate")  # the AI never drops the plan's answers, checks or training gates
 
 
 def availability(tenant) -> dict:
@@ -31,7 +32,7 @@ def availability(tenant) -> dict:
             f"{reason}: the rules template is the plan"}
 
 
-def _coerce(p: registry.Param, v):
+def _coerce(p: registry.Param, v, tenant=None, name: str = ""):
     if p.type == "bool":
         return v if isinstance(v, bool) else None
     if p.type in ("int", "float"):
@@ -44,12 +45,17 @@ def _coerce(p: registry.Param, v):
     if p.type == "enum":
         return v if isinstance(v, str) and v in p.choices else None
     if isinstance(v, str):
-        return v[:200]
+        v = " ".join(v.split())[:200]
+        if name == "href":
+            return v if _HREF.match(v) else None  # only links inside the app
+        if tenant is not None and v and guardrails.blocked(guardrails.check_for(tenant, v, {})):
+            return None  # AI text that fails the guardrails is never shown
+        return v
     return None
 
 
-def validate(tenant, steps, existing: set[str]) -> tuple[list[dict], list[dict]]:
-    """Keep only what the registry allows. Returns (specs, rejected)."""
+def validate(tenant, steps, existing: set[str], role: str | None = None) -> tuple[list[dict], list[dict]]:
+    """Keep only what the registry allows for the mission user's role. Returns (specs, rejected)."""
     specs, rejected, seen = [], [], set(existing)
     if not isinstance(steps, list):
         return [], [{"reason": "No step list in the AI reply"}]
@@ -61,13 +67,16 @@ def validate(tenant, steps, existing: set[str]) -> tuple[list[dict], list[dict]]
         if t is None or not t.planner:
             rejected.append({"index": i, "type": str(s.get("type"))[:40], "reason": "Not a step type this workspace has"})
             continue
+        if role is not None and not t.allowed(role):
+            rejected.append({"index": i, "type": t.key, "reason": "Not a step this person's role can run"})
+            continue
         key = str(s.get("key") or "").strip().lower()
         if not _KEY.match(key):
             key = f"{t.key}_{i + 1}"
         params, dropped = {}, []
         for k, v in (s.get("params") or {}).items() if isinstance(s.get("params"), dict) else []:
             spec = t.params.get(k)
-            val = _coerce(spec, v) if spec else None
+            val = _coerce(spec, v, tenant, str(k)) if spec else None
             if val is None:
                 dropped.append(str(k)[:40])
             else:
@@ -92,11 +101,17 @@ def diff(m: dict, specs: list[dict]) -> dict:
     return {"add": add, "remove": remove, "context": {}}
 
 
+def _role_of(tenant, uid: int) -> str | None:
+    with tenant.db() as c:
+        r = c.execute("SELECT role FROM users WHERE id=?", (uid,)).fetchone()
+    return r["role"] if r else None
+
+
 def propose(tenant, m: dict, actor: str = "system") -> dict:
-    reason = llm.unavailable_reason(tenant)
     tpl = templates.get(m["template"])
+    role = _role_of(tenant, m["user_id"]) or "student"
     cur = [{"key": s["skey"], "type": s["agent"], "title": s["title"], "status": s["status"]} for s in m.get("steps") or []]
-    schema = [t.schema() for t in registry.REGISTRY.values() if t.planner]
+    schema = [t.schema() for t in registry.REGISTRY.values() if t.planner and t.allowed(role)]
     prompt = json.dumps({"goal": m["goal"], "template": tpl.label if tpl else m["template"],
                          "answers": (m.get("context") or {}).get("answers") or {}, "current_plan": cur,
                          "step_types": schema}, default=str)[:24000]
@@ -111,7 +126,7 @@ def propose(tenant, m: dict, actor: str = "system") -> dict:
         return {"available": True, "mode": r.get("mode"), "replan_id": None,
                 "label": "The AI plan couldn't be read, so the rules template stays the plan"}
     specs, rejected = validate(tenant, data.get("steps") if isinstance(data, dict) else None,
-                               {s["skey"] for s in m.get("steps") or []})
+                               {s["skey"] for s in m.get("steps") or []}, role)
     d = diff(m, specs)
     for a in d["add"]:
         t = registry.get_type(a["type"])

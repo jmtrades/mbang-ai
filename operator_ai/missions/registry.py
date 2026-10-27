@@ -78,11 +78,16 @@ class StepType:
     outcomes: tuple[str, ...] = ()        # allowed outcomes for mark-done
     planner: bool = True                  # the optional AI planner may use it
     feature: str | None = None            # optional feature module it prefers
+    roles: tuple[str, ...] | None = None  # roles whose missions may run it (None = every role)
+
+    def allowed(self, role: str | None) -> bool:
+        return self.roles is None or (role or "") in self.roles
 
     def schema(self) -> dict:
         return {"key": self.key, "label": self.label, "description": self.description, "wait_for": self.wait_for,
                 "outbound": self.outbound, "recurring": self.recurring, "success": self.success,
                 "needs_cert": list(self.needs_cert) if self.needs_cert else None,
+                "roles": list(self.roles) if self.roles else None,
                 "params": {k: {"type": p.type, "default": p.default, "min": p.min, "max": p.max,
                                "choices": list(p.choices), "help": p.help} for k, p in self.params.items()}}
 
@@ -198,8 +203,16 @@ def invoke(fn: Callable, tenant, **cands):
     return fn(tenant, **kwargs)
 
 
-def qids_from(tenant, res) -> list[int]:
-    """Queue ids out of whatever a wrapped function returned."""
+def queue_watermark(tenant) -> int:
+    """The newest queue id now. Ids a wrapped function reports are only trusted when they are newer than this, so a
+    step can never claim (and re-own) a draft somebody else made."""
+    with tenant.db() as c:
+        return int(c.execute("SELECT COALESCE(MAX(id), 0) FROM queue").fetchone()[0] or 0)
+
+
+def qids_from(tenant, res, after_id: int | None = None) -> list[int]:
+    """Queue ids out of whatever a wrapped function returned. With after_id, only drafts created after that id (by
+    the call that just ran) count; anything older is ignored."""
     found: list[int] = []
 
     def take(x):
@@ -222,7 +235,7 @@ def qids_from(tenant, res) -> list[int]:
                 take(y)
 
     take(res)
-    ids = sorted({i for i in found if i > 0})
+    ids = sorted({i for i in found if i > (after_id or 0)})
     if not ids:
         return []
     with tenant.db() as c:
@@ -276,17 +289,20 @@ def q_states(tenant, qids: list[int]) -> dict:
     return out
 
 
-def tag_queue(tenant, qids: list[int], mid: int, sid: int, owner_user_id: int) -> None:
-    """Link queue items drafted by a wrapped function back to the mission step (and to the user who drafts for
-    their own prospects/clients, when the function didn't set an owner)."""
+def tag_queue(tenant, qids: list[int], mid: int, sid: int, owner_user_id: int, own: bool = False) -> None:
+    """Link queue items drafted by a wrapped function back to the mission step. With own=True (drafts for the user's
+    OWN prospects or clients) the user also becomes the item's owner when the function didn't set one, so they can
+    approve their own. Drafts from shared tools (Studio, the webinar chain, onboarding, Ads Ops) keep the approval
+    rules they had: the mission never widens who may approve them."""
     if not qids:
         return
     marks = ",".join("?" * len(qids))
     with tenant.db() as c:
         c.execute(f"UPDATE queue SET meta=json_set(COALESCE(meta,'{{}}'),'$.mission_id',?,'$.step_id',?) WHERE id IN ({marks})",
                   [mid, sid, *qids])
-        c.execute(f"UPDATE queue SET meta=json_set(meta,'$.owner_user_id',?) WHERE id IN ({marks}) "
-                  "AND json_extract(meta,'$.owner_user_id') IS NULL", [owner_user_id, *qids])
+        if own:
+            c.execute(f"UPDATE queue SET meta=json_set(meta,'$.owner_user_id',?) WHERE id IN ({marks}) "
+                      "AND json_extract(meta,'$.owner_user_id') IS NULL", [owner_user_id, *qids])
 
 
 def draft(sc: StepCtx, kind: str, body: str, *, channel: str = "manual", recipient: str | None = None, title: str = "",
@@ -328,8 +344,8 @@ def prospect(tenant, pid: int | None, uid: int | None = None) -> dict | None:
         return None
     with tenant.db() as c:
         r = db.row(c.execute("SELECT * FROM prospects WHERE id=?", (pid,)).fetchone())
-    if r is None or (uid is not None and r.get("owner_user_id") not in (uid, None)):
-        return None
+    if r is None or (uid is not None and r.get("owner_user_id") != uid):
+        return None  # only the mission user's own prospects; an unowned row is nobody's to read
     r["research"] = db.jload(r.get("research"), None)
     return r
 
@@ -345,7 +361,30 @@ def day_start(now: float) -> float:
 
 
 def when(ts: float | None) -> str:
-    return time.strftime("%a %d %b %H:%M", time.localtime(ts)) if ts else ""
+    if isinstance(ts, bool) or not isinstance(ts, (int, float)) or not ts or ts != ts or abs(ts) > 1e11:
+        return ""
+    return time.strftime("%a %d %b %H:%M", time.localtime(ts))
+
+
+def epoch(v) -> float | None:
+    """A time from another module's event payload: epoch seconds or an ISO date/time string; anything else is None."""
+    import datetime as _dt
+    import math
+
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        x = float(v)
+        if x > 1e11:  # milliseconds
+            x /= 1000
+        return x if math.isfinite(x) and 1e9 < x < 1e11 else None
+    if isinstance(v, str) and v.strip():
+        try:
+            d = _dt.datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return d.timestamp()
+    return None
 
 
 def money(v) -> str:
@@ -554,6 +593,15 @@ FOLLOWUPS = [
 ]
 
 
+TIMED_LEAD = 3 * 3600  # without the delivery dispatcher, timed messages are drafted this close to their send time
+
+
+def lead_time(with_dispatcher: float) -> float:
+    """How far ahead a timed message may be drafted. The delivery feature's dispatcher holds an approved item until
+    its send_after; without it, approval sends at once, so the draft waits until it's nearly due."""
+    return with_dispatcher if feature_fn("delivery", "dispatch_due") is not None else TIMED_LEAD
+
+
 def daily_cap(sc: StepCtx) -> int:
     from .. import outreach_loop
 
@@ -641,9 +689,10 @@ def _daily_openers(sc: StepCtx) -> StepResult:
     source = "rules"
     if fn is not None:
         try:
+            mark = queue_watermark(sc.tenant)
             res = invoke(fn, sc.tenant, prospect_ids=[p["id"] for p in picks], ids=[p["id"] for p in picks],
                          user=sc.user, owner_user_id=sc.uid, limit=len(picks), mission_id=sc.mid, actor=sc.actor)
-            qids = qids_from(sc.tenant, res)
+            qids = qids_from(sc.tenant, res, mark)
             source = "prospects"
         except Exception:  # noqa: BLE001 - fall back to the generic rules openers
             log.warning("prospects.draft_openers failed; using rules openers")
@@ -652,7 +701,7 @@ def _daily_openers(sc: StepCtx) -> StepResult:
         qids = _fallback_openers(sc, picks)
         source = "rules"
     else:
-        tag_queue(sc.tenant, qids, sc.mid, sc.step["id"], sc.uid)
+        tag_queue(sc.tenant, qids, sc.mid, sc.step["id"], sc.uid, own=True)
         with sc.tenant.db() as c:
             c.execute(f"UPDATE queue SET meta=json_set(meta,'$.first_touch',1) WHERE id IN ({','.join('?' * len(qids))})", qids)
     n = o.get("block", 0) + 1
@@ -697,8 +746,9 @@ def _followups(sc: StepCtx) -> StepResult:
             continue
         days, body = FOLLOWUPS[k]
         due_at = e["created"] + days * DAY
-        if sc.now < due_at - DAY:
-            next_due = min(next_due, due_at - DAY)
+        lead = lead_time(DAY)
+        if sc.now < due_at - lead:
+            next_due = min(next_due, due_at - lead)
             continue
         ch = "instagram_dm" if p.get("handle") else "email"
         item = draft(sc, "followup", body, channel=ch, recipient=p.get("handle") or p.get("email"),
@@ -805,38 +855,50 @@ def _reminder_ladder(sc: StepCtx) -> StepResult:
     if sc.ctx.get("won"):
         return StepResult("done", "Goal won.")
     with sc.tenant.db() as c:
-        have = {r[0] for r in c.execute("SELECT DISTINCT json_extract(meta,'$.party_key') FROM queue WHERE kind='reminder' "
-                                        "AND json_extract(meta,'$.mission_id')=?", (sc.mid,))}
-    new_ids = []
+        have = {(r[0], r[1]) for r in c.execute(
+            "SELECT DISTINCT json_extract(meta,'$.party_key'), json_extract(meta,'$.ladder') FROM queue WHERE kind='reminder' "
+            "AND json_extract(meta,'$.mission_id')=?", (sc.mid,))}
+    new_ids, later = [], None
+    lead = lead_time(float("inf"))  # with the dispatcher the whole ladder is drafted at once and held until due
     for e in events_of(sc.tenant, sc.mid, "booked"):
         d = e["detail"]
-        starts = d.get("starts_at")
-        key = f"{d.get('party_type', 'prospect')}:{d.get('party_id')}:{starts}"
-        if not starts or key in have or starts <= sc.now:
+        starts = epoch(d.get("starts_at"))
+        key = f"{d.get('party_type', 'prospect')}:{d.get('party_id')}:{d.get('starts_at')}"
+        if not starts or starts <= sc.now:
             continue
         p = prospect(sc.tenant, d.get("party_id"), sc.uid)
         rcpt = (p or {}).get("handle") or (p or {}).get("email")
-        if not rcpt:
+        if not rcpt or (p or {}).get("do_not_contact"):
             continue
         base = {"prospect_facing": True, "lead_tier": "warm", "prior_contact": True, "prospect_id": d.get("party_id"),
-                "party_key": key, "cancel_if": ["booking_cancelled"], "starts_at": starts}
+                "party_key": key, "cancel_if": ["booking_cancelled", "prospect_dnc"], "starts_at": starts}
         ch = "instagram_dm" if (p or {}).get("handle") else "email"
         for label, before, body in (
                 ("confirmation", None, f"You're booked for {when(starts)}. Reply here if anything changes."),
                 ("24h", DAY, "Looking forward to tomorrow. One question to think about: what would ten more booked calls "
                              "a month change for you?"),
                 ("2h", 2 * 3600, "See you in two hours. Have your current numbers to hand so we can use the time well.")):
+            if (key, label) in have:
+                continue
             send_after = sc.now if before is None else starts - before
             if send_after < sc.now and before is not None:
+                continue
+            if before is not None and send_after - lead > sc.now:
+                # without the delivery dispatcher an approved item goes at once, so a reminder is only drafted when
+                # it is nearly due; the approver never sees "see you in two hours" two days early
+                later = send_after - lead if later is None else min(later, send_after - lead)
                 continue
             item = draft(sc, "reminder", body, channel=ch, recipient=rcpt, title=f"{label} for {(p or {}).get('name') or 'call'}",
                          meta={**base, "ladder": label, "send_after": send_after})
             new_ids.append(item["id"])
-        have.add(key)
+            have.add((key, label))
     open_ids = q_states(sc.tenant, sc.step.get("queue_ids") or [])["open"] + new_ids
     if open_ids:
         return StepResult("waiting_approval", f"{len(open_ids)} confirmation/reminder message(s) waiting for approval.",
-                          queue_ids=new_ids, cycle=sc.step.get("cycles", 0) == 0, wait={"events": ["booking_made"]})
+                          queue_ids=new_ids, cycle=sc.step.get("cycles", 0) == 0, wait={"events": ["booking_made"]}, due=later)
+    if later:
+        return StepResult("waiting_time", f"Next reminder drafted {when(later)}, close to when it should go.",
+                          due=later, cycle=sc.step.get("cycles", 0) == 0, wait={"events": ["booking_made", "client_won"]})
     return StepResult("waiting_event", "Every booked call has its confirmation and reminders. Waiting for the next booking.",
                       wait={"events": ["booking_made", "client_won"]}, cycle=sc.step.get("cycles", 0) == 0)
 
@@ -875,6 +937,19 @@ def _precall_prep(sc: StepCtx) -> StepResult:
         "rules": "No promised results and no income claims on the call. Only share results you can prove.",
         "citations": cites,
     }
+    lead_id = d.get("party_id") if d.get("party_type") == "lead" else None
+    if isinstance(lead_id, int) and (sc.user or {}).get("role") in ("owner", "setter", "closer"):
+        # an inbound lead (the sales pipeline): the Sales agent's pre-call brief from their qualification answers
+        from ..agents import sales
+
+        try:
+            lead = sales._get_lead(sc.tenant, lead_id)
+            lb = sales.precall_brief(sc.tenant, lead)
+            brief.update(who=lead.get("name") or brief["who"], said=lb.get("said_in_dms") or brief["said"],
+                         goal=lb.get("goal"), main_obstacle=lb.get("main_obstacle"), citations=lb.get("citations") or cites,
+                         source="sales")
+        except Exception:  # noqa: BLE001 - a missing lead falls back to the general brief
+            log.warning("sales pre-call brief unavailable for lead %s", lead_id)
     text = " ".join([brief["who"], brief["what_they_do"], brief["said"]] + [str(f.get("claim") or "") for f in brief["facts"]])
     flags = guardrails.check_for(sc.tenant, text, {})
     if feature("academy") is not None:
@@ -930,11 +1005,12 @@ def _proposal(sc: StepCtx) -> StepResult:
     fn = feature_fn("proposals", "build")
     if fn is not None and pid:
         try:
+            mark = queue_watermark(sc.tenant)
             res = invoke(fn, sc.tenant, prospect_id=pid, user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid,
                          call_notes=sc.ctx.get("call_notes") or "", actor=sc.actor)
-            got = qids_from(sc.tenant, res)
+            got = qids_from(sc.tenant, res, mark)
             if got:
-                tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
+                tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
                 return StepResult("waiting_approval", "Proposal drafted: approve it in the queue.", queue_ids=got,
                                   output={"qids": got, "source": "proposals"})
             return StepResult("blocked_human", "Proposal drafted: review it and send it for approval on the Prospects page.",
@@ -942,6 +1018,9 @@ def _proposal(sc: StepCtx) -> StepResult:
         except Exception:  # noqa: BLE001 - fall back to the rules proposal
             log.warning("proposals.build failed; using the rules proposal")
     p = prospect(sc.tenant, pid, sc.uid) or {}
+    if p.get("do_not_contact"):
+        return StepResult("blocked_human", "This prospect asked not to be contacted, so no proposal is drafted. Skip this "
+                          "step, or Retry once another call has happened.", wait={"events": ["booking_made"]})
     a = sc.answers
     who = p.get("name") or "your business"
     body = (f"Proposal for {who}\n\nWhere you are: {sc.ctx.get('call_notes') or 'what you told me on the call'}.\n"
@@ -1064,9 +1143,10 @@ def _studio_line(sc: StepCtx) -> StepResult:
         line = "outreach"
     a = sc.answers
     brief = {k: a.get(k) for k in ("niche", "offer", "price", "outcome", "audience") if a.get(k)}
+    mark = queue_watermark(sc.tenant)
     res = studio.run_line(sc.tenant, line, brief, sc.user)
-    got = qids_from(sc.tenant, res.get("queue_ids"))
-    tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
+    got = qids_from(sc.tenant, res.get("queue_ids"), mark)
+    tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)  # Studio drafts keep Studio's approval rules
     if not got:
         return StepResult("done", f"Studio ({studio.LINES[line]}) had nothing to queue.", output={"run_id": res.get("run_id")})
     return StepResult("waiting_approval", f"{len(got)} Studio draft(s) for {studio.LINES[line]} waiting for approval.",
@@ -1118,8 +1198,9 @@ def _webinar_chain(sc: StepCtx) -> StepResult:
     brief = {k: a.get(k) for k in ("niche", "offer", "price", "outcome", "audience") if a.get(k)}
     if a.get("event_date"):
         brief["date"] = when(a["event_date"])
+    mark = queue_watermark(sc.tenant)
     res = webinar_chain.run_chain(sc.tenant, brief, sc.user)
-    got = qids_from(sc.tenant, res.get("queue_ids"))
+    got = qids_from(sc.tenant, res.get("queue_ids"), mark)
     tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
     return StepResult("waiting_approval", f"{len(got)} webinar asset(s) drafted: approve them in the queue.", queue_ids=got,
                       output={"qids": got, "chain_id": res.get("chain_id"), "child_run_id": res.get("run_id")},
@@ -1168,7 +1249,7 @@ def _human_task(sc: StepCtx) -> StepResult:
 
 # --------------------------------------------------------------------------- ads
 @step_type("ads_diagnose", "Read the ad account", "Read the ad account (read-only) and apply the kill and winner rules.",
-           success="Kill list and winner named", params={"target_cpl": Param("float", 10.0, 0.5, 10000)})
+           success="Kill list and winner named", params={"target_cpl": Param("float", 10.0, 0.5, 10000)}, roles=("owner",))
 def _ads_diagnose(sc: StepCtx) -> StepResult:
     from ..agents import ads_ops
 
@@ -1182,7 +1263,7 @@ def _ads_diagnose(sc: StepCtx) -> StepResult:
 
 @step_type("ads_propose", "Propose ad changes", "Queue one owner approval per ad that should be paused. Nothing changes "
            "until it's approved.", wait_for="approval", outbound=True, success="Changes decided",
-           params={"target_cpl": Param("float", 10.0, 0.5, 10000)})
+           params={"target_cpl": Param("float", 10.0, 0.5, 10000)}, roles=("owner",))
 def _ads_propose(sc: StepCtx) -> StepResult:
     from ..agents import ads_ops
 
@@ -1192,8 +1273,9 @@ def _ads_propose(sc: StepCtx) -> StepResult:
             return StepResult("done", "No ad needed pausing.")
         return _approval_result(sc, qids, "Ad changes", "Ad changes decided.")
     cpl = float(sc.answers.get("target_cpl") or sc.params.get("target_cpl") or 10.0)
+    mark = queue_watermark(sc.tenant)
     res = ads_ops.propose_changes(sc.tenant, None, cpl, sc.user)
-    got = [p["queue_id"] for p in res.get("proposals", []) if p.get("queue_id")]
+    got = qids_from(sc.tenant, [p["queue_id"] for p in res.get("proposals", []) if p.get("queue_id")], mark)
     tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
     if not got:
         return StepResult("done", "No ad needed pausing.", output={"qids": []})
@@ -1202,15 +1284,16 @@ def _ads_propose(sc: StepCtx) -> StepResult:
 
 
 @step_type("ads_test", "Build a new creative test", "Build a Thunder Dome test (paused, zero budget) from the best hooks.",
-           success="Paused test built", params={"name": Param("str", "Mission test")})
+           success="Paused test built", params={"name": Param("str", "Mission test")}, roles=("owner",))
 def _ads_test(sc: StepCtx) -> StepResult:
     from ..agents import ads_ops
 
     b = _brief(sc)["brief"]
     hooks = [f"Stop relying on {b['pain']}.", f"{b['outcome'][:1].upper() + b['outcome'][1:]} in {b['timeframe']}.",
              f"The {b['mechanism']}, explained."]
+    mark = queue_watermark(sc.tenant)
     res = ads_ops.build_test(sc.tenant, str(sc.params.get("name") or "Mission test")[:60], hooks, None, sc.user)
-    q = res.get("queue_id")
+    q = (qids_from(sc.tenant, [res.get("queue_id")] if res.get("queue_id") else [], mark) or [None])[0]
     if q:
         tag_queue(sc.tenant, [q], sc.mid, sc.step["id"], sc.uid)
     return StepResult("done", "Test built paused with zero budget; going live needs an owner approval."
@@ -1220,7 +1303,7 @@ def _ads_test(sc: StepCtx) -> StepResult:
 # --------------------------------------------------------------------------- students & clients
 @step_type("onboard_student", "Onboard the student", "Intake, gaps, cited lessons, a 30/60/90 plan, a coach and "
            "milestone tasks; the welcome and kickoff are queued for approval.", wait_for="approval", outbound=True,
-           success="Student onboarded")
+           success="Student onboarded", roles=("owner", "coach", "student"))
 def _onboard_student(sc: StepCtx) -> StepResult:
     from ..agents import onboarding
 
@@ -1234,8 +1317,9 @@ def _onboard_student(sc: StepCtx) -> StepResult:
     if not a.get("name"):
         return StepResult("blocked_human", "Enter the student's name to onboard them.", wait={"events": ["context_updated"]})
     intake = {k: a.get(k) for k in ("name", "email", "niche", "clients", "usp") if a.get(k) not in (None, "")}
+    mark = queue_watermark(sc.tenant)
     res = onboarding.onboard(sc.tenant, intake, sc.user)
-    got = qids_from(sc.tenant, res.get("queue_ids"))
+    got = qids_from(sc.tenant, res.get("queue_ids"), mark)
     tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
     return StepResult("waiting_approval" if got else "done", "Student onboarded; the welcome and kickoff wait for approval.",
                       queue_ids=got, output={"qids": got, "student_id": res.get("student_id"), "child_run_id": res.get("run_id")},
@@ -1273,17 +1357,19 @@ def _fulfil_client(sc: StepCtx) -> StepResult:
     fn = feature_fn("client_ops", "start_onboarding")
     if fn is not None:
         try:
+            mark = queue_watermark(sc.tenant)
             res = invoke(fn, sc.tenant, client_id=cl["id"], user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid,
                          actor=sc.actor)
-            got = qids_from(sc.tenant, res)
-            tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
+            got = qids_from(sc.tenant, res, mark)
+            tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
             return StepResult("waiting_approval" if got else "done", "Client onboarding started.", queue_ids=got,
                               output={"qids": got, "source": "client_ops"}, context={"client_id": cl["id"]})
         except Exception:  # noqa: BLE001
             log.warning("client_ops.start_onboarding failed; using fulfilment")
+    mark = queue_watermark(sc.tenant)
     res = fulfilment.fulfil(sc.tenant, cl["id"], sc.user)
-    got = qids_from(sc.tenant, res.get("queue_ids"))
-    tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
+    got = qids_from(sc.tenant, res.get("queue_ids"), mark)
+    tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)  # the user's own client
     return StepResult("waiting_approval" if got else "done", f"Client plan for {cl['name']} drafted: approve it in the queue.",
                       queue_ids=got, output={"qids": got, "child_run_id": res.get("run_id")}, context={"client_id": cl["id"]})
 
@@ -1340,9 +1426,10 @@ def _weekly_client_ops(sc: StepCtx) -> StepResult:
         got: list[int] = []
         if fn is not None:
             try:
+                mark = queue_watermark(sc.tenant)
                 got = qids_from(sc.tenant, invoke(fn, sc.tenant, client_id=cl["id"], user=sc.user, owner_user_id=sc.uid,
-                                                  mission_id=sc.mid, actor=sc.actor))
-                tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)
+                                                  mission_id=sc.mid, actor=sc.actor), mark)
+                tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
             except Exception:  # noqa: BLE001
                 got = []
         if not got:
@@ -1358,6 +1445,47 @@ def _weekly_client_ops(sc: StepCtx) -> StepResult:
         ids += got
     return StepResult("waiting_approval", f"{len(ids)} weekly report(s) drafted for approval.", queue_ids=ids,
                       output={"block_qids": ids, "next_at": None})
+
+
+@step_type("weekly_student_nudges", "Weekly at-risk check", "Every week on the chosen day: score each student's risk from "
+           "their check-ins and draft one nudge per at-risk student for approval.", wait_for="approval", outbound=True,
+           recurring=True, success="Every at-risk student gets a nudge each week",
+           params={"weekday": Param("enum", "monday", choices=WEEKDAYS), "limit": Param("int", 25, 1, 200)},
+           roles=("owner", "coach"))
+def _weekly_student_nudges(sc: StepCtx) -> StepResult:
+    """A skill worker as a recurring step with a data selector: for each at-risk student (the coach's own students,
+    or every student for the owner), drafted from their current check-ins, never from stored inputs."""
+    from ..agents import accountability
+
+    o = sc.out
+    block = o.get("block_qids") or []
+    raw = str(sc.answers.get("weekday") or sc.params.get("weekday") or "monday").lower()
+    wd = WEEKDAYS.index(raw) if raw in WEEKDAYS else 0
+    if block:
+        st = q_states(sc.tenant, block)
+        if st["open"]:
+            return StepResult("waiting_approval", f"{len(st['open'])} nudge(s) waiting for approval.", queue_ids=block)
+        nxt = next_weekday(sc.now, wd)
+        return StepResult("waiting_time", f"This week's nudges decided. Next check {when(nxt)}.",
+                          output={"block_qids": [], "next_at": nxt}, due=nxt, cycle=True)
+    if o.get("next_at") and sc.now < o["next_at"]:
+        return StepResult("waiting_time", f"Next check {when(o['next_at'])}.", due=o["next_at"])
+    role = (sc.user or {}).get("role")
+    b = accountability.board(sc.tenant, sc.uid if role == "coach" else None)
+    at_risk = [s for s in b["students"] if s["level"] != "low" and s["signals"]][:int(sc.params.get("limit") or 25)]
+    ids = []
+    for s in at_risk:
+        top = s["signals"][0]["key"]
+        first = (re.sub(r"\(DEMO\)", "", s["name"] or "").split() or ["there"])[0]
+        ids.append(draft(sc, "nudge", accountability.NUDGES[top].format(first=first), channel="telegram",
+                         recipient=s["name"], title=f"Nudge: {s['name']} ({accountability.SIGNALS[top][0].lower()})",
+                         meta={"student_id": s["id"], "signal": top})["id"])
+    nxt = next_weekday(sc.now, wd)
+    if not ids:
+        return StepResult("waiting_time", f"No student is at risk this week ({b['total']} checked). Next check {when(nxt)}.",
+                          output={"next_at": nxt, "checked": b["total"]}, due=nxt, cycle=True)
+    return StepResult("waiting_approval", f"{len(ids)} at-risk student(s) out of {b['total']}: a nudge each, waiting for "
+                      "approval.", queue_ids=ids, output={"block_qids": ids, "next_at": None, "checked": b["total"]})
 
 
 @step_type("spawn_mission", "Start the next mission", "Start a follow-on mission from a template.",

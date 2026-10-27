@@ -42,7 +42,7 @@ def metrics(tenant, m: dict, now: float | None = None) -> dict:
     booked = len(by.get("booked", []))
     showed, no_show = len(by.get("showed", [])), len(by.get("no_show", []))
     proposals = len(by.get("proposal", []))
-    wins = 1 if ctx.get("won") else 0
+    wins = max(1 if ctx.get("won") else 0, len(by.get("won", [])))
     n_prospects = researched = None
     if m["template"] in templates.OUTREACH_TEMPLATES:
         with tenant.db() as c:
@@ -223,10 +223,13 @@ def apply_replan(tenant, mid: int, rid: int, actor: str, accept: bool = True) ->
         raise engine.MissionError(409, f"The mission is {m['status']}")
     have = {s["skey"] for s in m["steps"]}
     specs = []
+    with tenant.db() as c:
+        ur = c.execute("SELECT role FROM users WHERE id=?", (m["user_id"],)).fetchone()
+    role = ur["role"] if ur else None
     for a in diff.get("add") or []:
         t = registry.get_type(a.get("type"))
-        if t is None:
-            continue
+        if t is None or not t.allowed(role):
+            continue  # a step this person's role can't run is never added, whatever the suggestion said
         key, i = a.get("skey") or a["type"], 2
         while key in have:
             key, i = f"{a.get('skey') or a['type']}_{i}", i + 1

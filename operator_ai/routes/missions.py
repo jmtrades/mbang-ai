@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from .. import db
@@ -15,6 +15,9 @@ from ..missions import ai_planner, engine, evaluator, registry, templates
 
 router = APIRouter()
 TAB = "missions"
+MAX_ID = 2**53  # ids beyond this can't be real rows; they get a 422 instead of an overflow deep in SQLite
+MID = Path(ge=1, le=MAX_ID, description="Mission id")
+SID = Path(ge=1, le=MAX_ID, description="Step id")
 
 
 def _err(e: Exception):
@@ -35,15 +38,15 @@ def _load(ctx: Ctx, mid: int, act: bool = False) -> dict:
 
 
 def _clients_for(ctx: Ctx) -> list[dict]:
+    allowed = engine.user_client_ids(ctx.tenant, ctx.user)
     with ctx.tenant.db() as c:
-        if ctx.role == "owner":
-            rows = db.rows(c.execute("SELECT id, name FROM clients ORDER BY id DESC LIMIT 200"))
-        elif ctx.user.get("student_id"):
-            rows = db.rows(c.execute("SELECT id, name FROM clients WHERE student_id=? ORDER BY id DESC LIMIT 200",
-                                     (ctx.user["student_id"],)))
-        else:
-            rows = []
-    return rows
+        if allowed is None:
+            return db.rows(c.execute("SELECT id, name FROM clients ORDER BY id DESC LIMIT 200"))
+        if not allowed:
+            return []
+        ids = sorted(allowed)[-200:]
+        return db.rows(c.execute(f"SELECT id, name FROM clients WHERE id IN ({','.join('?' * len(ids))}) ORDER BY id DESC",
+                                 ids))
 
 
 @router.get("/missions")
@@ -87,7 +90,7 @@ def create(b: CreateBody, ctx: Ctx = Depends(require(TAB))):
 
 
 @router.get("/missions/{mid}")
-def get_mission(mid: int, ctx: Ctx = Depends(require(TAB))):
+def get_mission(mid: int = MID, ctx: Ctx = Depends(require(TAB))):
     m = _load(ctx, mid)
     if engine.can_act(ctx.user, m) and m["status"] == engine.ACTIVE:
         engine.sync(ctx.tenant, mid)
@@ -97,7 +100,7 @@ def get_mission(mid: int, ctx: Ctx = Depends(require(TAB))):
 
 
 @router.get("/missions/{mid}/events")
-def mission_events(mid: int, limit: int = Query(200, ge=1, le=1000), ctx: Ctx = Depends(require(TAB))):
+def mission_events(mid: int = MID, limit: int = Query(200, ge=1, le=1000), ctx: Ctx = Depends(require(TAB))):
     _load(ctx, mid)
     return {"events": engine._public_events(registry.events_of(ctx.tenant, mid)[-limit:])}
 
@@ -111,17 +114,17 @@ def _status(ctx: Ctx, mid: int, action: str):
 
 
 @router.post("/missions/{mid}/pause")
-def pause(mid: int, ctx: Ctx = Depends(require(TAB))):
+def pause(mid: int = MID, ctx: Ctx = Depends(require(TAB))):
     return _status(ctx, mid, "pause")
 
 
 @router.post("/missions/{mid}/resume")
-def resume(mid: int, ctx: Ctx = Depends(require(TAB))):
+def resume(mid: int = MID, ctx: Ctx = Depends(require(TAB))):
     return _status(ctx, mid, "resume")
 
 
 @router.post("/missions/{mid}/cancel")
-def cancel(mid: int, ctx: Ctx = Depends(require(TAB))):
+def cancel(mid: int = MID, ctx: Ctx = Depends(require(TAB))):
     return _status(ctx, mid, "cancel")
 
 
@@ -130,7 +133,7 @@ class AnswersBody(BaseModel):
 
 
 @router.post("/missions/{mid}/answers")
-def answers(mid: int, b: AnswersBody, ctx: Ctx = Depends(require(TAB))):
+def answers(mid: int = MID, b: AnswersBody = ..., ctx: Ctx = Depends(require(TAB))):
     _load(ctx, mid, act=True)
     try:
         return engine.detail(ctx.tenant, engine.update_answers(ctx.tenant, mid, b.answers, ctx.actor), ctx.user)
@@ -147,26 +150,29 @@ def _step_action(ctx: Ctx, mid: int, sid: int, fn, **kw):
 
 
 @router.post("/missions/{mid}/steps/{sid}/retry")
-def retry(mid: int, sid: int, ctx: Ctx = Depends(require(TAB))):
+def retry(mid: int = MID, sid: int = SID, ctx: Ctx = Depends(require(TAB))):
     return _step_action(ctx, mid, sid, engine.retry_step)
 
 
 @router.post("/missions/{mid}/steps/{sid}/skip")
-def skip(mid: int, sid: int, ctx: Ctx = Depends(require(TAB))):
-    return _step_action(ctx, mid, sid, engine.skip_step)
+def skip(mid: int = MID, sid: int = SID, ctx: Ctx = Depends(require(TAB))):
+    return _step_action(ctx, mid, sid, engine.skip_step, role=ctx.role)
 
 
 class MarkDoneBody(BaseModel):
     outcome: str | None = Field(None, max_length=30, pattern="^[a-z_]+$")
     note: str = Field("", max_length=500)
     value: float | None = Field(None, ge=0, le=100_000_000, allow_inf_nan=False)
+    starts_at: float | None = Field(None, ge=1_000_000_000, le=4_102_444_800, allow_inf_nan=False,
+                                    description="When a booked call starts (epoch seconds)")
     numbers: dict[str, float] | None = Field(None, max_length=20)
 
 
 @router.post("/missions/{mid}/steps/{sid}/mark-done")
-def mark_done(mid: int, sid: int, b: MarkDoneBody | None = None, ctx: Ctx = Depends(require(TAB))):
+def mark_done(mid: int = MID, sid: int = SID, b: MarkDoneBody | None = None, ctx: Ctx = Depends(require(TAB))):
     b = b or MarkDoneBody()
-    return _step_action(ctx, mid, sid, engine.mark_done, outcome=b.outcome, note=b.note, value=b.value, numbers=b.numbers)
+    return _step_action(ctx, mid, sid, engine.mark_done, outcome=b.outcome, note=b.note, value=b.value, numbers=b.numbers,
+                        starts_at=b.starts_at)
 
 
 class ReplanBody(BaseModel):
@@ -174,7 +180,7 @@ class ReplanBody(BaseModel):
 
 
 @router.post("/missions/{mid}/replan")
-def replan(mid: int, b: ReplanBody | None = None, ctx: Ctx = Depends(require(TAB))):
+def replan(mid: int = MID, b: ReplanBody | None = None, ctx: Ctx = Depends(require(TAB))):
     """Suggest plan changes as a diff the user confirms. Rules first; AI only when asked and the budget allows."""
     m = _load(ctx, mid, act=True)
     if m["status"] in ("done", "cancelled"):
@@ -195,12 +201,12 @@ def replan(mid: int, b: ReplanBody | None = None, ctx: Ctx = Depends(require(TAB
 
 
 class ConfirmBody(BaseModel):
-    replan_id: int = Field(ge=1)
+    replan_id: int = Field(ge=1, le=MAX_ID)
     accept: bool = True
 
 
 @router.post("/missions/{mid}/replan/confirm")
-def confirm(mid: int, b: ConfirmBody, ctx: Ctx = Depends(require(TAB))):
+def confirm(mid: int = MID, b: ConfirmBody = ..., ctx: Ctx = Depends(require(TAB))):
     _load(ctx, mid, act=True)
     try:
         m = evaluator.apply_replan(ctx.tenant, mid, b.replan_id, ctx.actor, b.accept)

@@ -26,6 +26,10 @@ const RULE_LABEL: Record<string, string> = {
   low_reply_rate: "Reply rate is low", low_show_rate: "Show rate is low", zero_calls_day14: "No calls booked by day 14",
   ai_plan: "AI suggestion",
 };
+const MOVE_LABEL: Record<string, string> = {
+  question: "Ask one short question", resource: "Offer a free resource", curiosity: "Ask how they find clients now",
+};
+const moveLabel = (m?: string) => (m ? MOVE_LABEL[m] || "A different opener" : "");
 const NUMBER_FIELDS = [
   { key: "dms_sent", label: "DMs sent" }, { key: "replies", label: "Replies" }, { key: "booked", label: "Calls booked" },
   { key: "showed", label: "Calls that showed" }, { key: "closed", label: "Sales closed" },
@@ -98,7 +102,7 @@ function MarkDoneModal({ target, onClose, onDone }: { target: { mission_id: numb
       } else {
         if (chosen) body.outcome = chosen;
         if (chosen === "won" && value.trim()) body.value = Number(value.replace(/[$,]/g, ""));
-        if (chosen === "booked" && callAt) body.value = Math.round(new Date(callAt).getTime() / 1000);
+        if (chosen === "booked" && callAt) body.starts_at = Math.round(new Date(callAt).getTime() / 1000);
       }
       await post(`/missions/${target.mission_id}/steps/${target.step_id}/mark-done`, body);
       toast("Recorded", "good");
@@ -362,7 +366,8 @@ function Overview({ initialGoal }: { initialGoal?: string }) {
 
 // ---------------------------------------------------------------- detail
 function StepRow({ s, m, onChanged, onMark }: { s: any; m: any; onChanged: () => void; onMark: (s: any) => void }) {
-  const { go } = useApp();
+  const { go, me } = useApp();
+  const skippable = s.type !== "intake" && (s.type !== "cert_gate" || me.user.role === "owner");
   const { busy, err, run } = useAct(onChanged);
   const open = !["done", "skipped"].includes(s.status);
   const markable = m.can_act && m.status === "active" && s.human_action && (["blocked_human", "waiting_event", "waiting_time"].includes(s.status));
@@ -406,7 +411,7 @@ function StepRow({ s, m, onChanged, onMark }: { s: any; m: any; onChanged: () =>
               {["failed", "blocked_human"].includes(s.status) && s.type !== "intake" && (
                 <Button size="sm" loading={busy === "retry"} onClick={() => run("retry", () => post(`/missions/${m.id}/steps/${s.id}/retry`, {}))}><RotateCw className="size-3.5" /> Retry</Button>
               )}
-              {open && s.type !== "intake" && <Button size="sm" tone="ghost" loading={busy === "skip"} onClick={() => run("skip", () => post(`/missions/${m.id}/steps/${s.id}/skip`, {}))}><SkipForward className="size-3.5" /> Skip</Button>}
+              {open && skippable && <Button size="sm" tone="ghost" loading={busy === "skip"} onClick={() => run("skip", () => post(`/missions/${m.id}/steps/${s.id}/skip`, {}))}><SkipForward className="size-3.5" /> Skip</Button>}
             </>
           )}
         </div>
@@ -444,17 +449,18 @@ function AnswersForm({ m, onSaved }: { m: any; onSaved: () => void }) {
     }
   };
   if (!m.questions.length) return <Empty title="No questions for this plan" />;
+  const editable = m.can_act && ["active", "paused"].includes(m.status);
   return (
-    <Card title="Planning answers" subtitle="The plan uses these to set targets and draft your offer, openers and proposal.">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <Card title="Planning answers" subtitle={editable ? "The plan uses these to set targets and draft your offer, openers and proposal." : "Read only: only the person running this mission can change its answers."}>
+      <fieldset disabled={!editable} className="grid min-w-0 gap-3 sm:grid-cols-2">
         {m.questions.map((q: any) => (
           <Field key={q.key} label={q.label + (q.required ? " *" : "")} hint={q.help}>
-            <QuestionInput q={q} value={answers[q.key]} onChange={(v) => setAnswers({ ...answers, [q.key]: v })} clients={clients.data?.clients || []} />
+            <QuestionInput q={q} value={answers[q.key]} onChange={(v) => setAnswers({ ...answers, [q.key]: v })} clients={clients.data?.clients?.length ? clients.data.clients : m.client ? [m.client] : []} />
           </Field>
         ))}
-      </div>
+      </fieldset>
       <ErrorBox error={err} />
-      {m.can_act && <div className="mt-3 flex justify-end"><Button tone="primary" loading={busy} onClick={save}>Save answers</Button></div>}
+      {editable && <div className="mt-3 flex justify-end"><Button tone="primary" loading={busy} onClick={save}>Save answers</Button></div>}
     </Card>
   );
 }
@@ -540,7 +546,7 @@ function ChangesTab({ m, onChanged }: { m: any; onChanged: () => void }) {
               </div>
               {r.diff.why && <p className="mt-1 text-sm">{r.diff.why}</p>}
               <ul className="mt-2 space-y-0.5 text-sm">
-                {Object.entries(r.diff.context || {}).map(([k, ch]: any) => <li key={k}>Change {k === "opener_move" ? "the opener move" : k}: <b>{ch.from}</b> → <b>{ch.to}</b></li>)}
+                {Object.entries(r.diff.context || {}).map(([k, ch]: any) => <li key={k}>Change {k === "opener_move" ? "the opener" : "a setting"}: <b>{k === "opener_move" ? moveLabel(ch.from) : String(ch.from)}</b> → <b>{k === "opener_move" ? moveLabel(ch.to) : String(ch.to)}</b></li>)}
                 {(r.diff.add || []).map((a: any) => <li key={a.skey}>Add step: <b>{a.title}</b>{a.outbound ? " (its drafts wait for approval)" : ""}</li>)}
                 {(r.diff.remove || []).map((k: string) => <li key={k}>Remove a step that hasn't started: <b>{m.steps.find((s: any) => s.skey === k)?.title || k}</b></li>)}
               </ul>
@@ -583,13 +589,20 @@ function MemoryTab({ m }: { m: any }) {
   const mem = m.memory || {};
   const ans = Object.entries(m.answers || {});
   const qlabel = (k: string) => m.questions.find((q: any) => q.key === k)?.label || k.replace(/_/g, " ");
+  const show = (k: string, v: any) => {
+    const q = m.questions.find((x: any) => x.key === k);
+    if (q?.kind === "date" && typeof v === "number") return new Date(v * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    if (q?.kind === "client" || k === "client_id") return m.client?.name || "A client you no longer have access to";
+    if (typeof v === "number" && (q?.kind === "money" || k === "price" || k === "offer_price" || k === "target_cpl")) return usd(v);
+    return String(v);
+  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card title="What the mission knows" subtitle="Used by later steps: your audience, offer and what has worked.">
         <dl className="space-y-2 text-sm">
           {ans.length === 0 && <p className="text-muted">No answers yet.</p>}
-          {ans.map(([k, v]) => <div key={k}><dt className="text-xs text-muted">{qlabel(k)}</dt><dd className="break-words">{typeof v === "number" && (k === "price" || k === "offer_price" || k === "target_cpl") ? usd(v) : String(v)}</dd></div>)}
-          {mem.opener_move && <div><dt className="text-xs text-muted">Opener move in use</dt><dd>{mem.opener_move}</dd></div>}
+          {ans.map(([k, v]) => <div key={k}><dt className="text-xs text-muted">{qlabel(k)}</dt><dd className="break-words">{show(k, v)}</dd></div>)}
+          {mem.opener_move && <div><dt className="text-xs text-muted">Opener in use</dt><dd>{moveLabel(mem.opener_move)}</dd></div>}
           {mem.diagnosis?.bottleneck && <div><dt className="text-xs text-muted">Bottleneck found</dt><dd>{mem.diagnosis.bottleneck.label}</dd></div>}
         </dl>
       </Card>

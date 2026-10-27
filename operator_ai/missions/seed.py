@@ -35,7 +35,7 @@ def seed_demo(tenant) -> dict | None:
                                         "offer": {"offer": answers["offer"], "price": answers["price"]},
                                         "opener_move": "question",
                                         "decisions": [{"at": created + 3600, "rule": "intake", "source": "rules",
-                                                       "why": "Started with the 'question' opener move (DEMO)", "by": "demo-student"}],
+                                                       "why": "Started with the 'ask one short question' opener (DEMO)", "by": "demo-student"}],
                                         "what_worked": ["Short openers with one question got the first reply (DEMO)"]})
     by = {s["skey"]: s for s in m["steps"]}
     done = {

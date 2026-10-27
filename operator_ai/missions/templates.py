@@ -250,6 +250,15 @@ _add(Template(
     r"\b90[- ]?days?\b|\bnew student\b|\bonboard (a |the |my )?(new )?student\b",
     ("Plan my first 90 days",), builder=_student_builder))
 
+_add(Template(
+    "at_risk_weekly", "Weekly at-risk check",
+    "Every week on your chosen day: score each of your students from their check-ins and draft one nudge for every "
+    "student at risk, for approval.", "Every at-risk student hears from you each week", ("owner", "coach"), [WEEKDAY],
+    [S("intake", "intake", "Choose the day"),
+     S("nudges", "weekly_student_nudges", "Weekly at-risk check", ["intake"])],
+    r"\bat[- ]risk\b|\bnudges?\b|\bstudents? (who are |that are )?(falling behind|stuck|struggling)\b|\bmissed check[- ]?ins?\b",
+    ("Nudge my at-risk students every week",)))
+
 CUSTOM = "custom"
 CUSTOM_LABEL = "Custom goal (closest plan)"
 OUTREACH_TEMPLATES = ("first_client", "fill_calendar")
@@ -265,7 +274,7 @@ def for_role(role: str) -> list[Template]:
 
 # --------------------------------------------------------------------------- classify a goal
 _ORDER = ["fill_calendar", "first_client", "launch_webinar", "scale_ads", "client_weekly_ops", "client_onboarding",
-          "student_90_day", "fix_bottleneck"]
+          "at_risk_weekly", "student_90_day", "fix_bottleneck"]
 _DEFAULT = {"student": "first_client", "setter": "fill_calendar", "closer": "fill_calendar", "coach": "fix_bottleneck",
             "owner": "fix_bottleneck"}
 
@@ -293,12 +302,15 @@ _MONEY = re.compile(r"^\s*\$?\s*(\d[\d,]*(?:\.\d+)?)\s*([km])?\s*(usd|dollars)?\
 def parse_money(v) -> float | None:
     if isinstance(v, bool):
         return None
-    if isinstance(v, (int, float)):
-        return float(v)
-    m = _MONEY.match(str(v or ""))
-    if not m:
-        return None
-    x = float(m.group(1).replace(",", ""))
+    try:
+        if isinstance(v, (int, float)):
+            return float(v)
+        m = _MONEY.match(str(v or "")[:60])
+        if not m:
+            return None
+        x = float(m.group(1).replace(",", ""))
+    except (OverflowError, ValueError):
+        return None  # a number too big to be a price
     return x * (1000 if (m.group(2) or "").lower() == "k" else 1_000_000 if (m.group(2) or "").lower() == "m" else 1)
 
 
@@ -316,6 +328,20 @@ def extract(text: str) -> dict:
                   r"clinics|founders|trainers|therapists|brands|businesses|owners|practitioners|course creators))\b", low)
     if m:
         out["niche"] = m.group(1).strip()
+    return out
+
+
+def extract_clean(text: str) -> dict:
+    """extract(), with each value checked like a typed answer. A value the question bank wouldn't accept (a price of
+    $0 or one with 400 digits, 999 calls) is left out, so the intake asks for it instead."""
+    out = {}
+    for k, v in extract(text).items():
+        try:
+            val = clean_one(ALL_Q[k], v)
+        except (AnswerError, KeyError):
+            continue
+        if val is not None:
+            out[k] = val
     return out
 
 
@@ -342,7 +368,10 @@ def clean_one(q: Q, v):
     if v is None or (isinstance(v, str) and not v.strip()):
         return None
     if q.kind in ("number", "money"):
-        x = parse_money(v) if not isinstance(v, (int, float)) or isinstance(v, bool) else float(v)
+        try:
+            x = parse_money(v) if not isinstance(v, (int, float)) or isinstance(v, bool) else float(v)
+        except OverflowError:
+            x = None
         if x is None or not math.isfinite(x):
             raise AnswerError(f"{q.label}: enter a number")
         if x < q.min or x > q.max:
@@ -351,9 +380,10 @@ def clean_one(q: Q, v):
     if q.kind == "date":
         return _date(v)
     if q.kind == "client":
-        if isinstance(v, bool) or not str(v).strip().isdigit() or int(str(v).strip()) <= 0:
+        sv = str(v).strip()[:20]
+        if isinstance(v, bool) or isinstance(v, float) or not sv.isdigit() or not 0 < int(sv) < 2**53:
             raise AnswerError(f"{q.label}: choose a client")
-        return int(str(v).strip())
+        return int(sv)
     if not isinstance(v, (str, int, float)) or isinstance(v, bool):
         raise AnswerError(f"{q.label}: enter text")
     s = " ".join(str(v).split())[:200]

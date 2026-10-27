@@ -12,6 +12,7 @@ or an Ads Manager export — the router sends it to the right agent and answers 
 from __future__ import annotations
 
 import csv
+import math
 import re
 
 from .. import ads_import, diagnostic, guardrails, runtime, threads
@@ -36,10 +37,14 @@ RATE_WORDS = [
     (r"close rate|closing rate", ("closed", "showed")), (r"book(ing)? rate", ("booked", "links_sent")),
 ]
 NUM = r"\$?\s?(?P<n>\d[\d,]*(?:\.\d+)?)\s?(?P<k>k)?"
+MAX_METRIC = 1e9  # no funnel has more DMs, leads or dollars than this; bigger is a typo or a probe
 
 
 def _n(v: str, k: str | None) -> float:
-    x = float(v.replace(",", ""))
+    try:
+        x = float(v.replace(",", "")[:40])
+    except (ValueError, OverflowError):
+        return float("nan")
     return x * 1000 if k else x
 
 
@@ -64,7 +69,7 @@ def parse_metrics(text: str) -> dict[str, float]:
     if cpl and "ad_spend" not in out:
         out["leads"] = out.get("leads", 100.0)
         out["ad_spend"] = _n(cpl.group("n"), cpl.group("k")) * out["leads"]
-    return out
+    return {k: v for k, v in out.items() if math.isfinite(v) and 0 <= v <= MAX_METRIC}
 
 
 def looks_like_ads_export(text: str) -> bool:
@@ -107,6 +112,13 @@ _GOAL_START = re.compile(r"^\s*(please\s+)?(get|win|land|sign|book|fill|launch|r
                          r"plan|send)\b", re.I)
 _INTERROGATIVE = re.compile(r"^\s*(how|what|why|when|where|which|who|whom|should|is|are|do|does|did|was|were|will|would)\b",
                             re.I)
+
+
+def looks_like_question(text: str) -> bool:
+    return bool(_QUESTION.search(text or ""))
+
+
+_CANCEL = re.compile(r"^\s*(cancel|stop|never ?mind|forget it|no thanks|not now)\W*$", re.I)
 
 
 def is_goal(text: str) -> bool:
@@ -166,8 +178,9 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
             last = next((m for m in reversed(t["messages"]) if m["role"] == "assistant"), None)
             lm = (last or {}).get("meta") or {}
             if intent == "question" and not filename and lm.get("intent") == "goal" and \
-                    (lm.get("mission_draft") or {}).get("missing"):
-                intent, draft = "goal", lm["mission_draft"]  # the answer to the question the mission intake asked
+                    (lm.get("mission_draft") or {}).get("missing") and not looks_like_question(text):
+                # the answer to the question the mission intake asked; a new question still goes to the coach
+                intent, draft = "goal", lm["mission_draft"]
     shown = text if not filename else (f"[{filename}] " + (text[:200] + ("…" if len(text) > 200 else "")))
     if intent == "question":
         res = coach.answer(tenant, text, user=user, record=True, thread=False, context=previous)
@@ -175,6 +188,11 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
                                       "label": res.get("label"), "mode": res.get("mode"), "note": res.get("note"),
                                       "not_used": res.get("not_used", []), "followup": bool(res["parts"] and previous
                                                                                             and res["parts"][0]["part"].startswith(previous.rstrip("?. ")))}
+        nums = parse_metrics(text) if not filename else {}
+        if len(nums) >= 2:  # numbers inside a question: answer it, and offer the diagnosis
+            reply = (reply.rstrip() + "\n\nWant a full diagnosis? Send your numbers on their own (for example "
+                     "'800 DMs, 40 replies, 6 booked, 2 showed') and I'll find the bottleneck.")
+            meta["offer_diagnostic"] = True
         payload = res
     elif intent == "metrics":
         metrics = parse_metrics(text)
@@ -252,11 +270,20 @@ def goal_reply(tenant, text: str, user: dict, draft: dict | None = None) -> tupl
         problem, first = "", d is None
         if d is None:
             key, matched = mtemplates.classify(text, user["role"])
-            answers = mtemplates.extract(text)
+            answers = mtemplates.extract_clean(text)
             for k, v in parse_metrics(text).items():
                 if k in mtemplates.ALL_Q:
-                    answers.setdefault(k, v)
+                    try:
+                        val = mtemplates.clean_one(mtemplates.ALL_Q[k], v)
+                    except mtemplates.AnswerError:
+                        continue
+                    if val is not None:
+                        answers.setdefault(k, val)
             d = {"template": key, "goal": text[:300], "answers": answers, "matched": matched}
+        elif _CANCEL.match(text):
+            run.note("draft", {"template": d.get("template")}, {"dropped": True}, label="Mission draft")
+            return {"reply": "OK, I've dropped that mission. Ask me anything, or tell me a goal when you're ready.",
+                    "draft": None}
         else:
             d["answers"] = dict(d.get("answers") or {})
             tpl0 = mtemplates.get(d.get("template"))

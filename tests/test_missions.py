@@ -92,7 +92,7 @@ def out_count(t) -> int:
 # =========================================================================== registry & templates
 def test_templates_are_valid_dags_over_the_registry():
     assert set(templates.TEMPLATES) == {"first_client", "fill_calendar", "launch_webinar", "fix_bottleneck", "scale_ads",
-                                        "client_onboarding", "client_weekly_ops", "student_90_day"}
+                                        "client_onboarding", "client_weekly_ops", "student_90_day", "at_risk_weekly"}
     for key, tpl in templates.TEMPLATES.items():
         seen = set()
         assert tpl.steps[0]["type"] == "intake", key
@@ -255,8 +255,19 @@ def test_first_client_end_to_end_student_approves_own_drafts(tenant, clock):
     m = engine.get(tenant, mid)
     st = S(m)
     assert m["context"]["won"] and m["context"]["client_id"] == cid
-    assert st["win"]["status"] == "done" and st["onboarding"]["status"] == "done"
-    assert st["openers"]["status"] == "done" and st["day7"]["status"] == "skipped"
+    assert st["win"]["status"] == "done" and st["onboarding"]["status"] == "done" and st["day7"]["status"] == "skipped"
+    # outbound steps never finish while one of their drafts is still undecided: the person decides the leftovers
+    left = registry.q_states(tenant, st["openers"]["queue_ids"] + st["followups"]["queue_ids"])["open"]
+    if left:
+        assert st["openers"]["status"] == "waiting_approval" or st["followups"]["status"] == "waiting_approval"
+        assert m["status"] == "active" and any(a["kind"] == "approve" for a in engine.next_actions(tenant, stu))
+        for q in left:
+            queue.reject(tenant, q, actor(stu), "student", "goal won", user_id=stu["id"])
+        engine.sync(tenant, mid)
+        engine.pump(tenant, mid)
+        m = engine.get(tenant, mid)
+        st = S(m)
+    assert st["openers"]["status"] == "done" and st["followups"]["status"] == "done"
     with tenant.db() as c:
         child = db.row(c.execute("SELECT * FROM missions WHERE parent_id=?", (mid,)).fetchone())
     assert child and child["template"] == "client_onboarding" and child["user_id"] == stu["id"]
@@ -867,3 +878,383 @@ def test_demo_seed_mission_midway(client):
     assert client.get(f"/t/demo/api/missions/{m['id']}").status_code == 404
     demo_login(client, "owner")
     assert [x["id"] for x in client.get("/t/demo/api/missions?scope=all").json()["missions"]] == [m["id"]]
+
+
+# =========================================================================== review fixes (hostile review)
+def test_wrapped_function_cannot_claim_someone_elses_draft(tenant, monkeypatch):
+    """A feature function that reports an old queue id (a bug, or a prospect id that collides with one) must not let
+    the mission re-own that draft: the student would get approval rights over the owner's item."""
+    stu = mk_user(tenant, "student", "stu1")
+    foreign = queue.add(tenant, "dm_opener", "Hi there, what's the main thing holding back new clients?",
+                        channel="instagram_dm", recipient_ref="@someone_else",
+                        meta={"prospect_facing": True, "lead_tier": "cold"})
+    pids = add_prospects(tenant, stu["id"], 31)
+
+    def draft_openers(tenant, prospect_ids, owner_user_id):
+        mine = queue.add(tenant, "dm_opener", "Hi Casey, quick question: how do new clients find you today?",
+                         channel="instagram_dm", recipient_ref="@prospect_x",
+                         meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": prospect_ids[0]})
+        return {"queue_ids": [foreign["id"], mine["id"]], "items": [{"id": foreign["id"], "kind": "x", "status": "y"}]}
+
+    monkeypatch.setitem(sys.modules, "operator_ai.prospects", types.SimpleNamespace(draft_openers=draft_openers))
+    m = engine.create(tenant, stu, "Get my first client", None, ANS)
+    approve_all(tenant, stu, S(m)["offer_doc"]["queue_ids"])
+    approve_all(tenant, stu, S(engine.get(tenant, m["id"]))["profile"]["queue_ids"])
+    st = S(engine.get(tenant, m["id"]))
+    f = queue.get(tenant, foreign["id"])
+    assert "owner_user_id" not in f["meta"] and "mission_id" not in f["meta"] and "first_touch" not in f["meta"]
+    assert foreign["id"] not in st["openers"]["queue_ids"] and len(st["openers"]["queue_ids"]) == 1
+    with pytest.raises(queue.QueueError) as e:
+        queue.approve(tenant, foreign["id"], actor(stu), "student", user_id=stu["id"])
+    assert e.value.status == 403
+    own = queue.get(tenant, st["openers"]["queue_ids"][0])
+    assert own["meta"]["owner_user_id"] == stu["id"] and own["meta"]["mission_id"] == m["id"] and pids
+
+
+def test_studio_drafts_from_a_student_mission_keep_the_owner_approval(tenant):
+    """Studio is an owner/coach tool. A student's fix_bottleneck mission may run it, but the drafts keep Studio's
+    approval rules: the mission never makes the student the approver of generic opener/follow-up templates."""
+    o = owner_of(tenant)
+    stu = mk_user(tenant, "student", "stu1")
+    m = engine.create(tenant, stu, "Fix my bottleneck", "fix_bottleneck", {"dms_sent": 500, "replies": 10})
+    st = S(m)
+    assert st["fix"]["status"] == "waiting_approval"
+    items = [queue.get(tenant, q) for q in st["fix"]["queue_ids"]]
+    assert {i["kind"] for i in items} >= {"dm_opener", "followup"}
+    for i in items:
+        assert i["meta"]["mission_id"] == m["id"] and "owner_user_id" not in i["meta"]
+        assert not auth.can_decide("student", i["kind"], i["meta"].get("owner_user_id"), stu["id"])
+        with pytest.raises(queue.QueueError):
+            queue.approve(tenant, i["id"], actor(stu), "student", user_id=stu["id"])
+    acts = engine.next_actions(tenant, stu)
+    assert any(a["kind"] == "waiting_owner" for a in acts) and not any(a["kind"] == "approve" for a in acts)
+    approve_all(tenant, o, [i["id"] for i in items])
+    assert S(engine.get(tenant, m["id"]))["fix"]["status"] == "done"
+
+
+def test_ai_planner_respects_roles_and_checks_its_text(tenant, fake_model):
+    stu = mk_user(tenant, "student", "stu1")
+    settings.set_box(tenant, "ai_token_budget", 5000, "owner approved test budget")
+    m = engine.create(tenant, stu, "Get my first client", None, ANS)
+    fake_model.reply = json.dumps({"steps": [
+        {"key": "ads", "type": "ads_diagnose", "title": "Read the owner's ad account"},
+        {"key": "pause_ads", "type": "ads_propose", "title": "Pause ads"},
+        {"key": "task", "type": "human_task", "title": "Your task",
+         "params": {"task": "Tell prospects we guarantee results or your money back", "href": "https://evil.example/x"}},
+        {"key": "task2", "type": "human_task", "title": "Practise", "params": {"task": "Do one opener drill", "href": "#/drills"}},
+    ]})
+    res = ai_planner.propose(tenant, engine.get(tenant, m["id"]), actor(stu))
+    sent = fake_model.calls[-1]
+    assert "ads_diagnose" not in json.dumps(sent)  # the model isn't even offered steps the role can't run
+    added = {a["skey"]: a for a in res["diff"]["add"]}
+    assert "ads" not in added and "pause_ads" not in added
+    assert {r.get("type") for r in res["rejected"]} >= {"ads_diagnose", "ads_propose"}
+    assert added["task"]["params"] == {} and set(added["task"]["dropped_params"]) == {"task", "href"}
+    assert added["task2"]["params"] == {"task": "Do one opener drill", "href": "#/drills"}
+    # a stored plan change can't smuggle an owner-only step into a student's mission either
+    rid = evaluator.store_replan(tenant, m["id"], "ai", "smuggle", {"add": [
+        {"skey": "ads2", "type": "ads_diagnose", "title": "Read ads", "params": {}, "depends": []}], "remove": [], "context": {}})
+    m2 = evaluator.apply_replan(tenant, m["id"], rid, actor(stu))
+    assert "ads2" not in S(m2)
+    # and if one were in the plan anyway, the engine skips it instead of reading the ad account
+    with tenant.db() as c, db.tx(c):
+        engine._insert_steps(c, m["id"], [{"skey": "ads3", "type": "ads_diagnose", "title": "Read ads", "params": {},
+                                           "depends": []}], 99, time.time())
+    engine.advance(tenant, m["id"])
+    engine.pump(tenant, m["id"])
+    s3 = S(engine.get(tenant, m["id"]))["ads3"]
+    assert s3["status"] == "skipped" and "isn't available to your role" in s3["message"] and not s3["run_id"]
+
+
+def test_chat_goal_intake_lets_a_new_question_through_and_can_be_dropped(client):
+    demo_login(client, "student")
+    r = client.post("/t/demo/api/chat", json={"text": "Get my first client"}).json()
+    tid = r["thread_id"]
+    assert r["meta"]["mission_draft"]["missing"][0] == "niche"
+    # a question in the middle of the intake is answered by the coach, not stored as the niche
+    r = client.post("/t/demo/api/chat", json={"text": "How do I write a good opener?", "thread_id": tid}).json()
+    assert r["intent"] == "question" and "mission_draft" not in r["meta"]
+    r = client.post("/t/demo/api/chat", json={"text": "Get my first client", "thread_id": tid}).json()
+    r = client.post("/t/demo/api/chat", json={"text": "fitness coaches", "thread_id": tid}).json()
+    assert r["meta"]["mission_draft"]["answers"]["niche"] == "fitness coaches"
+    r = client.post("/t/demo/api/chat", json={"text": "cancel", "thread_id": tid}).json()
+    assert r["intent"] == "goal" and r["meta"]["mission_draft"] is None and "dropped" in r["answer"]
+    r = client.post("/t/demo/api/chat", json={"text": "Done-for-you DM setting", "thread_id": tid}).json()
+    assert r["intent"] != "goal"  # the dropped draft no longer swallows messages
+
+
+def test_chat_numbers_in_a_question_offer_the_diagnosis_and_huge_numbers_never_500(client):
+    demo_login(client, "student")
+    r = client.post("/t/demo/api/chat", json={"text": "I booked 3 calls and 2 showed, how do I improve my close rate?"})
+    assert r.status_code == 200 and r.json()["intent"] == "question"
+    assert r.json()["meta"]["offer_diagnostic"] and "diagnosis" in r.json()["answer"]
+    for text in ("I sent " + "9" * 400 + " DMs and got 4 replies and 2 booked",
+                 "Get my first client for fitness coaches at $" + "9" * 300,
+                 "Book " + "9" * 3 + " calls this month"):
+        r = client.post("/t/demo/api/chat", json={"text": text})
+        assert r.status_code == 200, (text[:40], r.text[:200])
+        d = (r.json()["meta"].get("mission_draft") or {}).get("answers") or {}
+        assert "price" not in d and d.get("calls_target", 0) <= 500
+        assert all(v <= router.MAX_METRIC for v in (r.json()["meta"].get("metrics") or {}).values())
+
+
+def test_recording_a_booked_call_with_its_time_schedules_the_reminders(client):
+    login(client)
+    t = tenancy.get("owner")
+    o = owner_of(t)
+    m = engine.create(t, o, "Book 5 calls", "fill_calendar", {**ANS, "calls_target": 5})
+    st = S(m)
+    starts = int(time.time()) + 3 * 86400
+    r = client.post(f"/t/owner/api/missions/{m['id']}/steps/{st['booking']['id']}/mark-done",
+                    json={"outcome": "booked", "starts_at": starts})
+    assert r.status_code == 200, r.text[:300]
+    booked = registry.events_of(t, m["id"], "booked")
+    assert booked and booked[-1]["detail"]["starts_at"] == starts and booked[-1]["detail"]["manual"]
+    for bad in ({"outcome": "booked", "starts_at": 5}, {"outcome": "booked", "starts_at": "tomorrow"},
+                {"outcome": "booked", "starts_at": 10**20}):
+        assert client.post(f"/t/owner/api/missions/{m['id']}/steps/{st['booking']['id']}/mark-done",
+                           json=bad).status_code == 422
+    assert out_count(t) == 0  # recording a booking never sends anything
+
+
+def test_won_client_without_a_student_link_starts_onboarding_for_the_winner_only(client):
+    """The prospects feature may insert the won client with student_id NULL. The winner can still plan for it; no
+    other student can."""
+    login(client)
+    t = tenancy.get("owner")
+    stu = mk_user(t, "student", "stuw")
+    other = mk_user(t, "student", "stuo")
+    m = engine.create(t, stu, "Get my first client", None, ANS)
+    with t.db() as c:
+        cid = c.execute("INSERT INTO clients(student_id,name,niche,offer,price,metrics,demo,created) "
+                        "VALUES(NULL,'Won Co','x','y',2000,'{}',0,?)", (time.time(),)).lastrowid
+    events.emit(t, "client_won", {"client_id": cid, "prospect_id": None, "owner_user_id": stu["id"]})
+    m = engine.get(t, m["id"])
+    assert S(m)["onboarding"]["status"] == "done"
+    with t.db() as c:
+        child = db.row(c.execute("SELECT * FROM missions WHERE parent_id=?", (m["id"],)).fetchone())
+    assert child and child["template"] == "client_onboarding"
+    assert json.loads(child["context"])["answers"]["client_id"] == cid
+    assert engine.user_client_ids(t, stu) == {cid} and engine.user_client_ids(t, other) == set()
+    client.cookies.clear()
+    client.post("/t/owner/api/auth/login", json={"username": "stuw", "password": "pw-correct-horse-1"})
+    assert [c["id"] for c in client.get("/t/owner/api/missions/templates").json()["clients"]] == [cid]
+    d = client.get(f"/t/owner/api/missions/{child['id']}").json()
+    assert d["client"] == {"id": cid, "name": "Won Co"}
+    client.cookies.clear()
+    client.post("/t/owner/api/auth/login", json={"username": "stuo", "password": "pw-correct-horse-1"})
+    assert client.get("/t/owner/api/missions/templates").json()["clients"] == []
+    r = client.post("/t/owner/api/missions", json={"goal": "Onboard my new client", "template": "client_onboarding",
+                                                   "answers": {"client_id": cid}})
+    assert r.status_code == 404
+
+
+def test_malformed_numbers_ids_and_goal_text_are_422_or_ignored(client):
+    login(client)
+    t = tenancy.get("owner")
+    o = owner_of(t)
+    m = engine.create(t, o, "Get my first client", None, ANS)
+    mid = m["id"]
+    huge = "1" + "0" * 400
+    for path, raw in (("/missions", '{"goal":"x","answers":{"price": %s}}' % huge),
+                      ("/missions", '{"goal":"x","answers":{"hours_per_day": %s}}' % huge),
+                      (f"/missions/{mid}/answers", '{"answers":{"price": %s}}' % huge),
+                      ("/missions", '{"goal":"Onboard my new client","template":"client_onboarding","answers":{"client_id": %s}}' % ("9" * 30)),
+                      (f"/missions/{mid}/steps/1/mark-done", '{"numbers":{"replies": NaN}}'),
+                      (f"/missions/{mid}/replan/confirm", '{"replan_id": %s}' % ("9" * 30))):
+        r = client.post(f"/t/owner/api{path}", content=raw.encode(), headers={"content-type": "application/json"})
+        assert r.status_code in (404, 409, 422), (path, r.status_code, r.text[:200])
+        assert r.status_code != 500
+    for method, path in (("get", "/missions/" + "9" * 30), ("post", f"/missions/{mid}/steps/{'9' * 30}/skip"),
+                         ("post", "/missions/" + "9" * 30 + "/pause"), ("get", "/missions/0")):
+        assert getattr(client, method)(f"/t/owner/api{path}").status_code == 422, path
+    # numbers pulled out of the goal sentence are checked like typed answers
+    m2 = engine.create(t, o, "Get my first client for fitness coaches at $" + "9" * 300, None, {"offer": "DM setting"})
+    assert "price" not in m2["context"]["answers"] and S(m2)["intake"]["status"] == "blocked_human"
+    m3 = engine.create(t, o, "Book 999 calls this month", None, ANS)
+    assert "calls_target" not in m3["context"]["answers"]
+    assert templates.extract_clean("Book 20 calls for fitness coaches at $3k") == {"calls_target": 20, "price": 3000.0,
+                                                                                   "niche": "fitness coaches"}
+
+
+def test_malformed_event_payloads_never_break_a_mission(tenant):
+    o = owner_of(tenant)
+    pids = add_prospects(tenant, o["id"], 2)
+    m = engine.create(tenant, o, "Book 5 calls", "fill_calendar", {**ANS, "calls_target": 5})
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pids[0], "starts_at": "2026-11-20T10:00:00"})
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pids[1], "starts_at": "next tuesday"})
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pids[1], "starts_at": [1, 2]})
+    booked = registry.events_of(tenant, m["id"], "booked")
+    assert len(booked) == 2 and isinstance(booked[0]["detail"]["starts_at"], float)
+    assert booked[1]["detail"]["starts_at"] is None
+    d = engine.detail(tenant, engine.get(tenant, m["id"]), o)
+    assert any("Call booked for" in e["text"] for e in d["events"])
+    assert registry.when("not a time") == "" and registry.when(float("nan")) == "" and registry.epoch(True) is None
+
+
+def test_missions_read_only_the_users_own_prospects(tenant):
+    o = owner_of(tenant)
+    stu = mk_user(tenant, "student", "stu1")
+    with tenant.db() as c:
+        orphan = c.execute("INSERT INTO prospects(owner_user_id,name,handle,stage,research,demo,created,updated) "
+                           "VALUES(NULL,'Orphan Prospect','@orphan','new','{\"facts\":[{\"claim\":\"private note\"}]}',0,?,?)",
+                           (time.time(), time.time())).lastrowid
+    mine = add_prospects(tenant, stu["id"], 1)[0]
+    assert registry.prospect(tenant, orphan, stu["id"]) is None
+    assert registry.prospect(tenant, mine, stu["id"])["id"] == mine
+    assert registry.prospect(tenant, mine, o["id"]) is None
+
+
+def test_open_mission_cap_per_person(tenant, monkeypatch):
+    monkeypatch.setattr(engine, "MAX_OPEN", 2)
+    stu = mk_user(tenant, "student", "stu1")
+    a = engine.create(tenant, stu, "Get my first client", None, ANS)
+    engine.create(tenant, stu, "Get my first client", None, ANS)
+    with pytest.raises(engine.MissionError) as e:
+        engine.create(tenant, stu, "Get my first client", None, ANS)
+    assert e.value.status == 409 and "Finish or cancel" in str(e.value)
+    engine.set_status(tenant, a["id"], "cancel", actor(stu))
+    assert engine.create(tenant, stu, "Get my first client", None, ANS)["status"] == "active"
+
+
+def test_precall_brief_uses_the_sales_agent_for_an_inbound_lead(tenant):
+    o = owner_of(tenant)
+    with tenant.db() as c:
+        lid = c.execute("INSERT INTO leads(name,handle,source,answers,tier,stage,created,demo) VALUES(?,?,?,?,?,?,?,0)",
+                        ("Jordan Lead", "@jordan_lead", "form", json.dumps({"goal": "20 clients", "obstacle": "no time",
+                                                                              "notes": "asked about pricing"}),
+                         "warm", "new", time.time())).lastrowid
+    m = engine.create(tenant, o, "Get my first client", None, ANS)
+    registry.add_event(tenant, m["id"], "booked", {"party_type": "lead", "party_id": lid, "starts_at": time.time() + 86400})
+    with tenant.db() as c:
+        step = engine._parse_step(db.row(c.execute("SELECT * FROM mission_steps WHERE mission_id=? AND skey='prep'",
+                                                   (m["id"],)).fetchone()))
+    res, run_id = engine._execute(tenant, engine.get(tenant, m["id"], steps=False), step)
+    b = res.output["brief"]
+    assert b["source"] == "sales" and b["who"] == "Jordan Lead" and b["main_obstacle"] == "no time" and run_id
+
+
+def test_timed_reminders_are_drafted_close_to_their_time_without_the_dispatcher(tenant, clock, monkeypatch):
+    """Until the delivery feature's dispatcher holds approved items for their send_after, approving sends at once, so
+    the 24-hour and 2-hour reminders are only drafted when they are nearly due."""
+    o = owner_of(tenant)
+    pid = add_prospects(tenant, o["id"], 1)[0]
+    m = engine.create(tenant, o, "Book 5 calls", "fill_calendar", {**ANS, "calls_target": 5})
+    with tenant.db() as c, db.tx(c):
+        engine._insert_steps(c, m["id"], [{"skey": "reminders", "type": "reminder_ladder", "title": "Reminders",
+                                           "params": {}, "depends": []}], 99, clock[0])
+    starts = clock[0] + 3 * registry.DAY
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pid, "starts_at": starts})
+    rem = S(engine.get(tenant, m["id"]))["reminders"]
+    ladder = [queue.get(tenant, q)["meta"]["ladder"] for q in rem["queue_ids"]]
+    assert ladder == ["confirmation"] and rem["due"] == starts - registry.DAY - registry.TIMED_LEAD
+    clock[0] = starts - registry.DAY - registry.TIMED_LEAD + 60
+    engine.tick(tenant, clock[0])
+    rem = S(engine.get(tenant, m["id"]))["reminders"]
+    ladder = [queue.get(tenant, q)["meta"]["ladder"] for q in rem["queue_ids"]]
+    assert ladder == ["confirmation", "24h"]
+    items = [queue.get(tenant, q) for q in rem["queue_ids"]]
+    assert all(i["meta"]["send_after"] >= i["created"] - 1 or i["meta"]["ladder"] == "confirmation" for i in items)
+    assert all(i["meta"]["cancel_if"] == ["booking_cancelled", "prospect_dnc"] and i["status"] == "pending" for i in items)
+    # with the dispatcher installed, the whole ladder is drafted up front and held until each send_after
+    monkeypatch.setitem(sys.modules, "operator_ai.delivery", types.SimpleNamespace(dispatch_due=lambda t: 0))
+    pid2 = add_prospects(tenant, o["id"], 1, start=5)[0]
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pid2, "starts_at": clock[0] + 3 * registry.DAY})
+    rem = S(engine.get(tenant, m["id"]))["reminders"]
+    ladder2 = [queue.get(tenant, q)["meta"] for q in rem["queue_ids"]]
+    assert sorted(x["ladder"] for x in ladder2 if x["prospect_id"] == pid2) == ["24h", "2h", "confirmation"]
+    assert out_count(tenant) == 0
+
+
+def test_certification_gates_cant_be_faked_by_the_student(tenant, monkeypatch):
+    """With the Academy installed, a student can't mark a certification gate done by hand, skip it, or have the AI
+    drop it; only a real certification (or the owner) moves it."""
+    certified: set = set()
+    academy = types.SimpleNamespace(is_certified=lambda t, uid, path, level: (uid, path, level) in certified,
+                                    assign=lambda t, user_id, path_key, level: True)
+    monkeypatch.setitem(sys.modules, "operator_ai.academy", academy)
+    stu = mk_user(tenant, "student", "stu1")
+    m = engine.create(tenant, stu, "Get my first client", None, ANS)
+    gate = S(m)["offer_lesson"]
+    assert gate["status"] == "waiting_event"
+    with pytest.raises(engine.MissionError) as e:
+        engine.mark_done(tenant, m["id"], gate["id"], actor(stu))
+    assert e.value.status == 409 and S(engine.get(tenant, m["id"]))["offer_lesson"]["status"] == "waiting_event"
+    with pytest.raises(engine.MissionError) as e:
+        engine.skip_step(tenant, m["id"], gate["id"], actor(stu), role="student")
+    assert e.value.status == 403
+    for k in ("prospects", "research"):  # automatic steps can't be marked done by hand either
+        with pytest.raises(engine.MissionError):
+            engine.mark_done(tenant, m["id"], S(engine.get(tenant, m["id"]))[k]["id"], actor(stu))
+    assert "cert_gate" in ai_planner.NEVER_REMOVE
+    d = ai_planner.diff(engine.get(tenant, m["id"]), [])
+    assert all(S(engine.get(tenant, m["id"]))[k]["agent"] != "cert_gate" for k in d["remove"])
+    # the real thing moves it
+    certified.add((stu["id"], "growth_operator", "L1"))
+    events.emit(tenant, "certification_awarded", {"user_id": stu["id"], "path_key": "growth_operator", "level": "L1"})
+    assert S(engine.get(tenant, m["id"]))["offer_lesson"]["status"] == "done"
+    # the owner may still skip a gate (for example for someone certified elsewhere)
+    o = owner_of(tenant)
+    engine.skip_step(tenant, m["id"], S(engine.get(tenant, m["id"]))["dm_cert"]["id"], actor(o), role="owner")
+    assert S(engine.get(tenant, m["id"]))["dm_cert"]["status"] == "skipped"
+
+
+def test_a_client_win_ends_only_a_first_client_mission(tenant):
+    """A won client completes 'win my first client'; a 'fill my calendar' mission counts the win and keeps going."""
+    stu = mk_user(tenant, "student", "stu1")
+    add_prospects(tenant, stu["id"], 31)
+    first = engine.create(tenant, stu, "Get my first client", None, ANS)
+    cal = engine.create(tenant, stu, "Book 10 calls", "fill_calendar", {**ANS, "calls_target": 10})
+    events.emit(tenant, "client_won", {"client_id": None, "prospect_id": None, "owner_user_id": stu["id"]})
+    f, c = engine.get(tenant, first["id"]), engine.get(tenant, cal["id"])
+    assert f["context"]["won"] and not c["context"].get("won") and c["status"] == "active"
+    assert evaluator.metrics(tenant, c)["lagging"]["wins"] == 1
+    assert S(c)["booking"]["status"] not in ("done", "skipped")
+
+
+def test_do_not_contact_stops_reminders_and_proposals(tenant):
+    o = owner_of(tenant)
+    pid = add_prospects(tenant, o["id"], 1)[0]
+    m = engine.create(tenant, o, "Get my first client", None, ANS)
+    with tenant.db() as c, db.tx(c):
+        engine._insert_steps(c, m["id"], [{"skey": "reminders", "type": "reminder_ladder", "title": "Reminders",
+                                           "params": {}, "depends": []}], 99, time.time())
+        c.execute("UPDATE prospects SET do_not_contact=1 WHERE id=?", (pid,))
+    events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pid, "starts_at": time.time() + 3 * 86400})
+    m = engine.get(tenant, m["id"])
+    assert S(m)["reminders"]["queue_ids"] == []
+    registry.add_event(tenant, m["id"], "showed", {"party_type": "prospect", "party_id": pid})
+    with tenant.db() as c:
+        step = engine._parse_step(db.row(c.execute("SELECT * FROM mission_steps WHERE mission_id=? AND skey='proposal'",
+                                                   (m["id"],)).fetchone()))
+    res, _ = engine._execute(tenant, engine.get(tenant, m["id"], steps=False), step)
+    assert res.status == "blocked_human" and not res.queue_ids and "not to be contacted" in res.message
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM queue WHERE kind IN ('reminder','proposal')").fetchone()[0] == 0
+
+
+def test_weekly_at_risk_check_drafts_a_nudge_per_at_risk_student_of_the_coach(tenant, clock):
+    """The skill-worker idea as a recurring mission step with a data selector: each week, for each of THIS coach's
+    at-risk students, a nudge drafted from their current check-ins, waiting for approval."""
+    coach = mk_user(tenant, "coach", "coachr")
+    other_coach = mk_user(tenant, "coach", "coachq")
+    mine = mk_user(tenant, "student", "stur", coach_uid=coach["id"])
+    theirs = mk_user(tenant, "student", "stuq", coach_uid=other_coach["id"])
+    with tenant.db() as c:  # both joined 30 days ago and never checked in: missed check-ins
+        c.execute("UPDATE students SET joined=? WHERE id IN (?,?)", (time.time() - 30 * 86400, mine["student_id"],
+                                                                     theirs["student_id"]))
+    with pytest.raises(engine.MissionError):
+        engine.create(tenant, mine, "Nudge my at-risk students every week", "at_risk_weekly", {})
+    assert templates.classify("Nudge my at-risk students every week", "coach") == ("at_risk_weekly", True)
+    m = engine.create(tenant, coach, "Nudge my at-risk students every week", None, {"weekday": "Friday"})
+    st = S(m)["nudges"]
+    items = [queue.get(tenant, q) for q in st["queue_ids"]]
+    assert st["status"] == "waiting_approval" and len(items) == 1
+    assert items[0]["kind"] == "nudge" and items[0]["meta"]["student_id"] == mine["student_id"]
+    assert "stur" in items[0]["title"] and out_count(tenant) == 0
+    approve_all(tenant, coach, [items[0]["id"]])  # coaches decide nudges
+    st = S(engine.get(tenant, m["id"]))["nudges"]
+    assert st["status"] == "waiting_time" and st["cycles"] == 1 and time.localtime(st["due"]).tm_wday == 4
+    clock[0] = st["due"] + 60
+    engine.tick(tenant, clock[0])
+    assert S(engine.get(tenant, m["id"]))["nudges"]["status"] == "waiting_approval"  # next week's nudges drafted
