@@ -170,8 +170,35 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
     tenant.set("brand", {**(tenant.get("brand", {}) or {}), "name": tenant.get("brand", {}).get("name") or config.get().brand})
     _seed_queue(tenant, rng)
     _seed_questions(tenant)
+    _seed_features(tenant)
     audit.log(tenant, "system", "demo.reset", {"seeded": counts})
     return counts
+
+
+# Feature demo seeders, "module:function" called as fn(tenant) after the base seed. Missing modules are skipped.
+FEATURE_SEEDERS = [
+    "operator_ai.academy:seed_demo", "operator_ai.roleplay:seed_demo", "operator_ai.prospects:seed_demo",
+    "operator_ai.missions:seed_demo", "operator_ai.client_ops:seed_demo", "operator_ai.webinars:seed_demo",
+    "operator_ai.delivery:seed_demo", "operator_ai.inbound:seed_demo", "operator_ai.persona:seed_demo",
+    "operator_ai.team:seed_demo", "operator_ai.claims:seed_demo", "operator_ai.playbooks:seed_demo",
+]
+
+
+def _seed_features(tenant) -> None:
+    import importlib
+
+    if not tenancy.is_demo_db(tenant):
+        return
+    for spec in FEATURE_SEEDERS:
+        mod, _, fn = spec.partition(":")
+        try:
+            f = getattr(importlib.import_module(mod), fn, None)
+        except ModuleNotFoundError as e:
+            if e.name != mod:
+                raise
+            continue
+        if f is not None:
+            f(tenant)
 
 
 def _day_at(ts: float, hour: int) -> float:

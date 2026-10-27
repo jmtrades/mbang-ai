@@ -202,6 +202,8 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [persona] tables
 -- [team] tables
 -- [playbooks] tables
+-- [claims] tables
+-- [memory] tables
 """
 
 # Columns added to existing tables after first release. CREATE TABLE IF NOT EXISTS never alters a table that
@@ -218,6 +220,7 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [persona]
     # [team]
     # [playbooks]
+    # [claims]
 ]
 
 REGISTRY_SCHEMA = """
