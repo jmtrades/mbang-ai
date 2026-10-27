@@ -21,7 +21,7 @@ def _drafts(line: str, b: dict) -> list[dict]:
     if line == "outreach":
         return [
             {"title": "Opener DM (question move)", "asset": "dm_script", "kind": "dm_opener", "channel": "instagram_dm",
-             "body": f"Saw your post about filling the diary. What's the main thing holding new bookings back right now?",
+             "body": f"Quick question: what's the biggest thing standing between you and {o} right now?",
              "meta": {"prospect_facing": True, "lead_tier": "cold"}},
             {"title": "Value-only follow-up", "asset": "followup", "kind": "followup", "channel": "instagram_dm",
              "body": f"Here's a short video on how {n} get {o} without {pain}. Want me to send it over?",
@@ -37,7 +37,7 @@ def _drafts(line: str, b: dict) -> list[dict]:
                                           f"The {mech}, explained."])]
     if line == "funnels":
         return [{"title": "Landing page", "asset": "funnel", "kind": "page", "channel": "manual",
-                 "body": f"Headline: {o.capitalize()} without {pain}.\nSubhead: For {aud} who want a predictable diary.\n"
+                 "body": f"Headline: {o.capitalize()} without {pain}.\nSubhead: For {aud} who want {o} in {b['timeframe']}.\n"
                          f"- The {mech} in plain steps\n- What it costs you to stay where you are\n- Who this is for (and not for)\nRegister now",
                  "meta": {"client_asset": True}}]
     if line == "creatives":
@@ -45,7 +45,7 @@ def _drafts(line: str, b: dict) -> list[dict]:
                  "body": f"Hook: {h}\nVisual: same talking-head setup for every creative (one variable changed: the hook).\n"
                          f"Budget: equal across 3-5 creatives, 72 hours, kill rule at 2x target cost per lead.",
                  "meta": {"client_asset": True}}
-                for i, h in enumerate([f"Your diary shouldn't depend on {pain}.", f"What {n} get wrong about referrals.",
+                for i, h in enumerate([f"Your growth shouldn't depend on {pain}.", f"What most {n} get wrong about {o}.",
                                        f"{o.capitalize()}: the simple version."])]
     if line == "webinars":
         segs = "\n".join(f"Segment {i + 1}: {nm} ({m} min)" for i, (nm, m) in enumerate(

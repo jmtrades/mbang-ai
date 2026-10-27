@@ -62,15 +62,18 @@ def reply_line(lead: dict, tier: str) -> str:
     """Line 1 follows the money rule: warm/hot get the hedged range, cold gets the no-figure line."""
     brand = _brand_of(lead)
     if tier in ("hot", "warm"):
-        return guardrails.range_line(brand, "our booking system")
-    return guardrails.no_figure_line(brand, "our booking system")
+        return guardrails.range_line(brand, "our growth system")
+    return guardrails.no_figure_line(brand, "our growth system")
 
 
 def followups(lead: dict) -> list[str]:
-    goal = (lead.get("answers") or {}).get("goal", "more booked calls")
+    """Value-only follow-ups written from the lead's own answers (their niche and goal), never another niche's words."""
+    a = lead.get("answers") or {}
+    goal = a.get("goal") or "more qualified enquiries"
+    who = a.get("niche") or "businesses like yours"
     return [
-        f"Here's a 2-minute video on how clinics like yours get {goal} without discounting. Want me to send it?",
-        "Quick tip from our booking module: confirm every call within five minutes. What does your confirmation look like today?",
+        f"Here's a 2-minute video on how {who} get {goal}. Want me to send it?",
+        f"One idea that often helps with {goal}: reply to every new enquiry within five minutes. How quickly do replies go out today?",
     ]
 
 
@@ -158,8 +161,8 @@ def process_lead(tenant, lead_id: int, user: dict | None = None, full: bool = Tr
                                  meta={"lead_id": lead_id, "slot": s0, "attendees": [lead["email"]], "owner_only": True},
                                  run_id=run.id, actor=actor, demo=demo)["id"])
             for label, before in LADDER:
-                body = {"24h": "Looking forward to tomorrow. One question to think about: what would ten more booked calls a month change for you?",
-                        "2h": "See you in two hours. Here's a short video worth a look before we talk: how the reminder ladder lifts show rates.",
+                body = {"24h": "Looking forward to tomorrow. One question to think about: what would reaching your main goal this quarter change for you?",
+                        "2h": "See you in two hours. If it helps, jot down your current numbers and the one thing you most want to change.",
                         "10min": "Starting in ten minutes. Quick tip: have your current numbers to hand so we can use the time well."}[label]
                 ids.append(queue.add(tenant, "reminder", body, channel="instagram_dm", recipient_ref=rcpt, title=f"{label} reminder: {lead['name']}",
                                      meta={"lead_id": lead_id, "send_at": s0["start"] - before, "ladder": label},

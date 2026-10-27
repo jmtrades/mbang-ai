@@ -6,10 +6,13 @@ from . import db
 
 FIELDS = ["business", "niche", "audience", "offer", "price", "outcome", "timeframe", "mechanism", "pain", "channels",
           "faq", "date"]
+# Niche-neutral on purpose: a missing field must never drop another niche's words into someone's copy.
+# `missing` tells the caller which fields fell back to these.
 DEFAULTS = {
-    "business": "Your business", "niche": "independent clinics", "audience": "clinic owners", "offer": "done-with-you growth programme",
-    "price": 3000, "outcome": "20 new bookings a month", "timeframe": "90 days", "mechanism": "referral-first system",
-    "pain": "discounting", "channels": "Instagram DMs, Meta ads, webinars", "faq": "", "date": "next Thursday 7pm",
+    "business": "Your business", "niche": "businesses like yours", "audience": "business owners",
+    "offer": "done-with-you growth programme", "price": 3000, "outcome": "more qualified enquiries every month",
+    "timeframe": "90 days", "mechanism": "simple growth system", "pain": "guesswork",
+    "channels": "Instagram DMs, Meta ads, webinars", "faq": "", "date": "next Thursday 7pm",
 }
 
 
@@ -51,3 +54,16 @@ def build(tenant, partial: dict | None = None) -> dict:
     usp = (f"I help {brief['audience']} get {brief['outcome']} in {brief['timeframe']} through our {brief['mechanism']} "
            f"without {brief['pain']}.")
     return {"brief": brief, "missing": missing, "defaults_used": missing, "usp": usp}
+
+
+def for_client(client: dict) -> dict:
+    """The brief for one client: its own record plus its intake answers. Never the operator's own business
+    profile, so a client's copy is about the client's audience and offer."""
+    stored = client.get("brief")
+    stored = db.jload(stored, {}) if isinstance(stored, str) else (stored or {})
+    partial = {"business": client.get("name"), "niche": client.get("niche"), "offer": client.get("offer"),
+               "price": client.get("price")}
+    partial.update({k: v for k, v in (stored or {}).items() if k in FIELDS and v not in (None, "")})
+    out = build(None, partial)
+    out["proof"] = stored.get("proof") if isinstance(stored.get("proof"), dict) else None
+    return out

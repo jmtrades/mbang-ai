@@ -97,9 +97,9 @@ def _make(step: str, b: dict, outs: dict) -> dict:
                   "Subject: We're live\nJoin now; we start with the big mistake most people make."]
         return {"title": "Show-up sequence (4)", "body": "\n\n".join(emails), "data": {"count": len(emails)}}
     if step == "replay_sequence":
-        emails = ["Subject: Your replay\nHere's the replay. It stays up for 48 hours because we refresh the examples for each cohort.",
-                  "Subject: The one slide people asked about\nHere's the mechanism slide again with a short walkthrough.",
-                  "Subject: Replay comes down tonight\nThe replay comes down at midnight because we refresh it for the next cohort."]
+        emails = ["Subject: Your replay\nHere's the replay. It stays up for 48 hours because we update the examples for each live session.",
+                  f"Subject: The one slide people asked about\nHere's the {b['mechanism']} slide again with a short walkthrough.",
+                  "Subject: Replay comes down tonight\nThe replay comes down at midnight because we update it before the next live session."]
         return {"title": "Replay sequence (3)", "body": "\n\n".join(emails), "data": {"count": len(emails)}}
     if step == "run_of_show":
         t = 0
@@ -114,7 +114,9 @@ def _make(step: str, b: dict, outs: dict) -> dict:
                    "Offer moment: 'Would it be useful if I showed you how we can help you do this?' (ask permission first)"]
         return {"title": "Chat and offer-moment prompts", "body": "\n".join(f"- {p}" for p in prompts), "data": {"prompts": prompts}}
     if step == "sales_handoff":
-        dm = f"Thanks for joining the training. Let me help {b['business']} grow through our {b['mechanism']}. What stood out most?"
+        # written to the attendee about their own business, never naming the operator's business as theirs
+        dm = (f"Thanks for joining the training. What stood out most for you? If it's useful, I can show you how the "
+              f"{b['mechanism']} could apply to your business.")
         return {"title": "Hand-off to sales (setter DM)", "body": dm,
                 "data": {"rule": "Anyone who asks about the offer gets a setter DM within one hour."}}
     raise KeyError(step)
