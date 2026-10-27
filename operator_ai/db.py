@@ -201,9 +201,16 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [webinars] tables
 -- [persona] tables
 -- [team] tables
+CREATE TABLE IF NOT EXISTS team_assignments (manager_id INTEGER, member_id INTEGER, PRIMARY KEY(manager_id, member_id));
+CREATE TABLE IF NOT EXISTS team_reset_requests (id INTEGER PRIMARY KEY, user_id INTEGER, created REAL, handled REAL);
+CREATE TABLE IF NOT EXISTS setup_progress (user_id INTEGER, item TEXT, done REAL, PRIMARY KEY(user_id, item));
 -- [playbooks] tables
 -- [claims] tables
 -- [memory] tables
+CREATE TABLE IF NOT EXISTS user_memory (
+  id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, kind TEXT NOT NULL, label TEXT, value TEXT, source TEXT,
+  demo INTEGER DEFAULT 0, created REAL, updated REAL);
+CREATE INDEX IF NOT EXISTS user_memory_user ON user_memory(user_id, kind);
 """
 
 # Columns added to existing tables after first release. CREATE TABLE IF NOT EXISTS never alters a table that
@@ -219,6 +226,16 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [webinars]
     # [persona]
     # [team]
+    ("invites", "kind", "TEXT DEFAULT 'invite'"),
+    ("invites", "display", "TEXT"),
+    ("invites", "user_id", "INTEGER"),
+    ("invites", "coach_id", "INTEGER"),
+    ("invites", "student_id", "INTEGER"),
+    ("invites", "queue_id", "INTEGER"),
+    ("invites", "revoked", "REAL"),
+    ("invites", "demo", "INTEGER DEFAULT 0"),
+    ("users", "email", "TEXT"),
+    ("users", "deleted", "REAL"),
     # [playbooks]
     # [claims]
 ]

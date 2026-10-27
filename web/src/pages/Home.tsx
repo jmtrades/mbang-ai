@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpen, Inbox, Target, Users, Workflow, ShieldCheck } from "lucide-react";
 import { DemoBadge, ErrorBox, Loading, PageHeader, useApi, useApp } from "../components/ui";
+import FirstRun from "../components/FirstRun";
 
 const ICONS: Record<string, any> = { answers: BookOpen, drafts: Inbox, leads: Target, students: Users, runs: Workflow, blocked: ShieldCheck };
 
@@ -11,6 +12,7 @@ export default function Home() {
     <div>
       <PageHeader title={`Day One with ${brand}`} badge={me.is_demo ? <DemoBadge /> : null}
         subtitle="Your programme's AI. It's trained on your material, it speaks under your brand, and it does the work for you and your students. Nothing goes out without your approval." />
+      <FirstRun />
       <ErrorBox error={error} retry={reload} />
       {loading && <Loading rows={4} />}
       {data && (

@@ -3,6 +3,7 @@ import { LogOut, Menu, WifiOff, X, Bot, Sparkles } from "lucide-react";
 import { ApiError, TID, get, onConnection, post } from "./api";
 import { AppCtx, Badge, Button, Citation, ErrorBox, Input, Loading, Me, Pill, SourceModal, TraceDrawer, cx } from "./components/ui";
 import { GROUPS, PAGES } from "./pages/registry";
+import Join from "./components/Join";
 
 class PageBoundary extends React.Component<{ children: React.ReactNode; page: string }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -264,6 +265,7 @@ export default function App() {
       {state === "loading" && <div className="p-8"><Loading rows={4} /></div>}
       {state === "error" && <div className="p-8"><ErrorBox error={err} retry={load} /></div>}
       {state === "signin" && <SignIn onDone={load} />}
+      {location.hash.startsWith("#/join") && <Join onDone={load} />}
       {state === "ready" && me && <Shell me={me} reloadMe={load} />}
     </>
   );

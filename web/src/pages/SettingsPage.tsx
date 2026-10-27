@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, post, put } from "../api";
 import { Badge, Button, Card, ErrorBox, Field, Input, Loading, PageHeader, useApi, useApp } from "../components/ui";
+import MemoryPanel from "../components/MemoryPanel";
 
 export default function SettingsPage() {
   const { me, toast, reloadMe } = useApp();
@@ -65,6 +66,7 @@ export default function SettingsPage() {
         </div>
       )}
       {!owner && <Card><p className="text-sm">Signed in as <b>{me.user.display}</b> ({me.user.role}) in {me.tenant.name}.</p></Card>}
+      {!owner && <div className="mt-4"><MemoryPanel /></div>}
     </div>
   );
 }

@@ -137,6 +137,7 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
     names = guardrails.tenant_banned_names(tenant)
     reply = guardrails.scrub(reply, names)
     meta["intent"] = intent
+    meta["remembered"] = __import__("operator_ai.memory", fromlist=["hint"]).hint(tenant, user, intent)  # [memory]
     if extracted:
         meta["receipt"] = extracted
     tid = thread_id or threads.create(tenant, user["id"], shown if intent == "question" else f"{intent}: {shown}")
