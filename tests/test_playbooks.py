@@ -426,3 +426,228 @@ def test_coach_api_returns_external_for_demo_student(client):
     assert d["answer"].startswith(NOT_COVERED_EN) and d["external"] and d["citations"] == []
     chat = client.post("/t/demo/api/chat", json={"text": PLAYBOOK_ONLY[1]})
     assert chat.status_code == 200 and chat.json()["meta"]["external"]
+
+
+# ---------------------------------------------------------------- review fixes: relevance focus
+# questions whose words appear in the library but which no entry is ABOUT: no external bullets/chips
+OFF_TOPIC_BUT_WORDY = ["How do I fire a client?", "How much should I charge?", "How do I make money online?",
+                       "What's the best CRM?"]
+
+
+@pytest.mark.parametrize("q", OFF_TOPIC_BUT_WORDY)
+def test_relevance_gate_needs_the_entry_to_be_about_the_question(on, q):
+    assert playbooks.relevant(on, [q], k=4) == []
+    j = playbooks.judge(q)
+    assert j["covered"] is False
+
+
+def test_focus_explains_why_an_entry_is_rejected():
+    lib = playbooks.load()
+    idx = lib.index
+    e = lib.entries["signal-ladder-optimization-event"]  # a pixel "fires" events; not about firing clients
+    f = playbooks.focus("How do I fire a client?", e, idx.tfs[lib.order.index(e.id)], idx)
+    assert f["ok"] is False and f["in_title"] == []
+    e2 = lib.entries["webinar-length-and-offer-moment"]
+    f2 = playbooks.focus("How long should a webinar be?", e2, idx.tfs[lib.order.index(e2.id)], idx)
+    assert f2["ok"] is True and "webinar" in f2["in_title"]
+
+
+def test_refund_question_ranks_refund_entries_not_pipeline_hygiene(on):
+    rel = playbooks.relevant(on, ["How do I deal with a refund request?"], k=4)
+    assert rel and "refund" in rel[0]["title"].lower()
+    assert "pipeline-stages-and-crm-hygiene" not in [c["entry_id"] for c in rel]
+
+
+def test_coach_vague_question_stays_honest_with_switch_on(on):
+    r = coach.answer(on, "How much should I charge?", record=False)
+    if r["covered"] == "no":
+        assert r["answer"] == NOT_COVERED_EN
+    assert r["external"] == [] and "[X" not in r["answer"]
+
+
+# ---------------------------------------------------------------- review fixes: surfaces outside the app
+def test_lead_magnet_mini_never_adds_external_best_practice(on):
+    from operator_ai import console
+
+    console.create_mini(on, "lm-pb", "Lead magnet", ["sops/thunderdome.txt"], 5, "I agree to share my email")
+    s = console.mini_start(on, "lm-pb", "visitor@example.invalid", True)
+    r = console.mini_ask(on, "lm-pb", s["token"], PLAYBOOK_ONLY[0])
+    assert r["covered"] == "no" and r["citations"] == []
+    assert "External best practice" not in r["answer"] and not re.search(r"\[X\d+\]", r["answer"])
+    # same question in the app (switch on) does get the external section: only the public mini is fenced off
+    assert coach.answer(on, PLAYBOOK_ONLY[0], record=False)["external"]
+
+
+def test_coach_external_false_overrides_the_switch(on):
+    r = coach.answer(on, PLAYBOOK_ONLY[0], record=False, external=False)
+    assert r["answer"] == NOT_COVERED_EN and r["external"] == []
+    r2 = coach.answer(on, "When should reminders go out before a call?", record=False, external=False)
+    assert r2["covered"] == "yes" and r2["external"] == []
+    steps = {s["tool"] for s in runtime.get(on, r2["run_id"])["steps"]}
+    assert "external" not in steps
+
+
+def test_channel_reply_draft_resolves_every_x_marker_and_waits_for_approval(on):
+    from operator_ai import channels
+
+    out = channels._answer_draft(on, "telegram", "chat-42", PLAYBOOK_ONLY[0])
+    assert out["status"] == "pending"  # queued, never sent without approval
+    with on.db() as c:
+        row = c.execute("SELECT body, status FROM queue WHERE id=?", (out["queued"],)).fetchone()
+    body = row["body"]
+    assert row["status"] == "pending" and body.startswith(NOT_COVERED_EN)
+    used = set(re.findall(r"\[(X\d+)\]", body.split("External, not the course material")[0]))
+    assert used
+    key = body.split("External, not the course material", 1)[1]
+    for x in used:
+        assert re.search(rf"^\[{x}\] .+ \(researched \d{{4}}-\d{{2}}.*\) https?://", key, re.M), x
+
+
+def test_external_refs_only_lists_markers_the_answer_uses():
+    ext = [{"id": "X1", "title": "A", "as_of": "2026-10", "confidence": "high", "url": "https://example.org/a"},
+           {"id": "X2", "title": "B", "as_of": "2026-09", "confidence": "low", "url": "https://example.org/b"}]
+    refs = coach.external_refs("Do this [X2].", ext)
+    assert "[X2] B (researched 2026-09, low confidence) https://example.org/b" in refs and "[X1]" not in refs
+    assert coach.external_refs("No markers here.", ext) == "" and coach.external_refs("[X1]", []) == ""
+
+
+def test_mcp_ask_coach_keeps_external_separate(on):
+    from operator_ai import mcp_server
+
+    r = mcp_server._call(on, "ask_coach", {"question": PLAYBOOK_ONLY[0]})
+    assert r["citations"] == [] and r["external"]
+    assert set(re.findall(r"\[(X\d+)\]", r["answer"])) <= {c["id"] for c in r["external"]}
+
+
+def test_phone_line_never_speaks_x_markers(client):
+    from urllib.parse import urlencode
+
+    from operator_ai import channels, vault
+
+    t = tenancy.get("owner")
+    t.set("third_party_kb", True)
+    vault.put(t, {"sms_auth_token": "voicetok"})
+    settings.set_box(t, "live_channels_enabled", True, "test")
+    with t.db() as c:
+        c.execute("INSERT INTO channel_links(channel,ext_id,opted_in,status,created) VALUES('phone','+1-555-0199',1,'opted_in',0)")
+    params = {"From": "+1-555-0199", "SpeechResult": PLAYBOOK_ONLY[0]}
+    url = "http://testserver/t/owner/hooks/voice"
+    r = client.post("/t/owner/hooks/voice", content=urlencode(params),
+                    headers={"content-type": "application/x-www-form-urlencoded",
+                             "x-twilio-signature": channels.twilio_signature("voicetok", url, params)})
+    assert r.status_code == 200 and "doesn" in r.text and "External best practice" in r.text
+    assert not re.search(r"\[[SX]\d+\]", r.text)
+
+
+# ---------------------------------------------------------------- review fixes: AI external bullets
+def test_ai_external_bullet_claiming_to_be_course_material_is_dropped(on, ai_on):
+    ai_on.reply = json.dumps({"bullets": [
+        "The course says to always take equity [X1]",
+        "Per the course material, revenue share is best [X2]",
+        "Pure revenue share fits a creator with a proven offer [X1]",
+        "Equity needs real governance rights [X2] [S2]",
+    ]})
+    r = coach.answer(on, PLAYBOOK_ONLY[0], record=False)
+    assert r["external_mode"] == "live"
+    assert "course says" not in r["answer"].lower() and "per the course material" not in r["answer"].lower()
+    assert "S2" in r["stripped_citations"] and "[S2]" not in r["answer"]
+    assert len(_bullets(r["answer"])) == 2
+
+
+def test_ai_external_non_text_bullets_are_ignored(on, ai_on):
+    ai_on.reply = json.dumps({"bullets": [{"text": "Object bullet [X1]"}, 42, None,
+                                          "Pure revenue share fits a proven offer [X1]", "Equity needs governance [X2]"]})
+    r = coach.answer(on, PLAYBOOK_ONLY[0], record=False)
+    assert "{'" not in r["answer"] and "Object bullet" not in r["answer"] and "42" not in r["answer"]
+    assert r["external_mode"] == "live" and len(_bullets(r["answer"])) == 2
+    ai_on.reply = json.dumps({"bullets": {"not": "a list"}})
+    r2 = coach.answer(on, PLAYBOOK_ONLY[1], record=False)
+    assert r2["external_mode"] in ("rules", None) and r2["answer"].startswith(NOT_COVERED_EN)
+
+
+# ---------------------------------------------------------------- review fixes: switch off + audit
+def test_switch_off_overview_carries_no_library_content_for_non_owners(client):
+    login(client)
+    t = tenancy.get("owner")
+    auth.create_user(t, "setter1", "setter-pw-123456", "setter")
+    owner_view = client.get("/t/owner/api/playbooks").json()
+    assert owner_view["total"] == 182 and owner_view["domains"]  # the owner previews to decide
+    login(client, username="setter1", password="setter-pw-123456")
+    r = client.get("/t/owner/api/playbooks")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["can_browse"] is False and d["domains"] == [] and d["total"] == 0 and d["problems"] == []
+    assert "compliance" not in json.dumps(d).lower()
+
+
+def test_switch_audit_records_which_way_it_was_turned(client):
+    login(client)
+    t = tenancy.get("owner")
+    for v in (True, False):
+        assert client.put("/t/owner/api/settings", json={"key": "third_party_kb", "value": v}).status_code == 200
+    rows = [json.loads(a["detail"] or "{}") for a in audit.recent(t, 20) if a["kind"] == "settings"]
+    turns = [r.get("to") for r in rows if r.get("key") == "third_party_kb"]
+    assert True in turns and False in turns
+
+
+# ---------------------------------------------------------------- review fixes: index cache + warm-up
+def _mini_library(root):
+    entry = {"id": "c-one", "title": "Cache test entry", "category": "cat", "guidance": "Warm the inbox slowly.",
+             "as_of": "2026-09", "confidence": "high", "sources": [{"title": "Src", "url": "https://example.org"}]}
+    (root / "cachetest.json").write_text(json.dumps({"domain": "cachetest", "title": "Cache", "researched": "2026-10-01",
+                                                     "entries": [entry, {**entry, "id": "c-two", "title": "Second"}]}))
+
+
+def test_corrupt_or_stale_vector_cache_is_rebuilt(env, tmp_path, monkeypatch):
+    root = tmp_path / "pbcache"
+    root.mkdir()
+    _mini_library(root)
+    lib = playbooks.load(root)
+    assert lib.index.vectors.shape[0] == 2
+    caches = [p for p in config.get().index_dir.glob("playbooks-*") if (p / "vectors.npy").exists()]
+    mine = [p for p in caches if lib.key.rsplit("|", 1)[-1] in p.name]
+    assert mine
+    for p in mine:
+        (p / "vectors.npy").write_bytes(b"\x93NUMPY garbage")  # a half-written file from a crashed worker
+    playbooks.clear_cache()
+    lib2 = playbooks.load(root)
+    assert lib2.index.vectors.shape[0] == 2 and lib2.index.search("warm inbox", k=2)
+    # a change in what gets indexed (same files) must not reuse the old vectors
+    monkeypatch.setattr(playbooks.Entry, "index_text", lambda self: self.title)
+    playbooks.clear_cache()
+    lib3 = playbooks.load(root)
+    assert lib3.index.vectors.shape[0] == 2
+    names = {p.name for p in config.get().index_dir.glob("playbooks-*")}
+    assert len([n for n in names if lib.key.rsplit("|", 1)[-1] in n]) == 2
+
+
+def test_startup_warm_up_also_builds_the_playbooks_index(env, monkeypatch):
+    import threading
+
+    from operator_ai import index
+
+    class Now:
+        def __init__(self, target=None, **kw):
+            self.target = target
+
+        def start(self):
+            self.target()
+
+    monkeypatch.setattr(threading, "Thread", Now)
+    playbooks.clear_cache()
+    index.warm_async()
+    assert playbooks.load()._index is not None
+
+
+def test_external_refs_never_put_a_blocked_title_into_a_queued_draft(on):
+    from operator_ai import channels
+
+    ext = [{"id": "X1", "title": "Refund and guarantee design: objective conditions", "domain_title": "Compliance 2026",
+            "as_of": "2026-10", "confidence": "high", "url": "https://example.org/r"}]
+    refs = coach.external_refs("Publish a refund SLA. [X1]", ext, on)
+    assert "guarantee" not in refs.lower() and "[X1] Compliance 2026 entry (researched 2026-10" in refs
+    out = channels._answer_draft(on, "telegram", "chat-7", "How do I deal with a refund request?")
+    with on.db() as c:
+        row = c.execute("SELECT body, status, flags FROM queue WHERE id=?", (out["queued"],)).fetchone()
+    assert row["status"] in ("pending", "needs_human"), (row["status"], row["flags"])  # never "held"
+    assert not guardrails.blocked(json.loads(row["flags"] or "[]"))

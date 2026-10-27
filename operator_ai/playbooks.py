@@ -20,6 +20,7 @@ of it for an answer is run through ``guardrails.check_for`` and dropped if block
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -318,15 +319,20 @@ def _build_index(lib: Library) -> Index:
                                    provenance="researched_public", corpus_id="playbooks"))
     emb = embeddings.get()
     fp = lib.key.rsplit("|", 1)[-1]
-    cache = config.get().index_dir / f"playbooks-{fp}-{emb.name}"
+    texts = [f"{c.title}\n{c.text}" for c in chunks]
+    # keyed by the files AND the exact indexed text, so a change in how entries are indexed never reuses
+    # stale vectors
+    th = hashlib.sha256("\x1e".join(texts).encode()).hexdigest()[:12]
+    cache = config.get().index_dir / f"playbooks-{fp}-{th}-{emb.name}"
     vecs = None
     try:
         if (cache / "vectors.npy").exists() and json.loads((cache / "meta.json").read_text()).get("n") == len(chunks):
             vecs = np.load(cache / "vectors.npy")
-    except (OSError, ValueError):
+            if vecs.shape[0] != len(chunks):
+                vecs = None
+    except Exception:  # noqa: BLE001 - a missing, partial or corrupt cache is rebuilt
         vecs = None
     if vecs is None:
-        texts = [f"{c.title}\n{c.text}" for c in chunks]
         vecs = emb.embed(texts) if texts else np.zeros((0, embeddings.DIM), dtype=np.float32)
         try:
             cache.mkdir(parents=True, exist_ok=True)
@@ -440,9 +446,38 @@ def match_fraction(idx: Index, query: str, chunk_id: int) -> tuple[float, list[s
     return (got / total if total else 0.0), missing
 
 
+def _has(term: str, toks) -> bool:
+    return term in toks or any(s in toks for s in textnorm._syn().get(term, []))
+
+
+FOCUS_DF = 0.3  # a term in more than this share of entries ("client", "email", "lead") can't anchor a match
+
+
+def focus(query: str, e: Entry, tf, idx: Index | None = None) -> dict:
+    """Is the entry ABOUT the question, not just sharing its words? A distinctive question term (one used
+    by at most FOCUS_DF of the entries, so not "client", "email" or "lead") must be in the entry's title or
+    category (what it is about), and two specific (non-common) question terms must be in its text unless
+    the question has only one. So "How do I fire a client?" doesn't match an entry about pixels that
+    "fire" events, and a vague "How much should I charge?" doesn't match a payment-rail entry that only
+    mentions charges."""
+    toks = [t for t in dict.fromkeys(textnorm.tokens(query)) if len(t) > 1]
+    sig = [t for t in toks if t not in textnorm.COMMON]
+    if idx is not None and idx.N:
+        anchors = [t for t in toks if idx.df.get(t, 0) / idx.N <= FOCUS_DF] or sig
+    else:
+        anchors = sig
+    head = set(textnorm.tokens(f"{e.title} {e.category.replace('-', ' ')}"))
+    in_head = [t for t in anchors if _has(t, head)]
+    in_body = [t for t in sig if _has(t, tf)]
+    ok = bool(sig) and bool(in_head) and (len(in_body) >= 2 or len(sig) == 1)
+    return {"ok": ok, "specific": sig, "in_title": in_head, "in_entry": in_body}
+
+
 def judge(query: str, lib: Library | None = None, k: int = 4) -> dict:
     """Does the library really answer this question? An entry qualifies when it holds most of the
-    question's weighted terms (MIN_MATCH) and matches strongly (MIN_BM25). Ranked by bm25 x match."""
+    question's weighted terms (MIN_MATCH), matches strongly (MIN_BM25) and is about the question
+    (``focus``: a specific question term in its title/category, and two in its text unless the question
+    has only one). Ranked by bm25 x match."""
     lib = lib or load()
     if not lib.entries or not (query or "").strip():
         return {"covered": False, "matches": [], "best_match": 0.0, "top_bm25": 0.0}
@@ -450,8 +485,9 @@ def judge(query: str, lib: Library | None = None, k: int = 4) -> dict:
     rows = []
     for e, h in _hits(query, max(k, 6), lib):
         frac, missing = match_fraction(idx, query, h["chunk"].id)
-        rows.append({"entry": e, "hit": h, "match": frac, "missing": missing})
-    good = [r for r in rows if r["match"] >= MIN_MATCH and r["hit"]["bm25"] >= MIN_BM25]
+        rows.append({"entry": e, "hit": h, "match": frac, "missing": missing,
+                     "focus": focus(query, e, idx.tfs[h["chunk"].id], idx)})
+    good = [r for r in rows if r["match"] >= MIN_MATCH and r["hit"]["bm25"] >= MIN_BM25 and r["focus"]["ok"]]
     if good:
         top = max(r["hit"]["bm25"] for r in good)
         good = [r for r in good if r["hit"]["bm25"] >= top * KEEP_FRACTION]

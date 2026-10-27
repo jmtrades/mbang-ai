@@ -43,6 +43,10 @@ def overview(ctx: Ctx = Depends(require("playbooks"))):
     })
     if not is_owner:
         ov["problems"] = []  # loader notes are for the owner
+    if not ov["can_browse"]:
+        # switched off: other roles get the state only, not the library's domains, notes or categories
+        ov.update({"domains": [], "total": 0, "researched": [], "latest_researched": None,
+                   "confidence": {c: 0 for c in playbooks.CONFIDENCE}})
     return ov
 
 

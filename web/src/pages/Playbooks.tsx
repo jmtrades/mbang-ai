@@ -248,7 +248,7 @@ export default function Playbooks({ query }: { query?: URLSearchParams }) {
               <div className={cx("min-w-0 space-y-3", entryId && "hidden lg:block")}>
                 <form className="relative" onSubmit={(e) => { e.preventDefault(); setTerm(q.trim()); }} role="search">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-                  <Input className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search: speed to lead, show rate, warm-up, refunds…" aria-label="Search the playbooks" />
+                  <Input className="pl-9" value={q} maxLength={300} onChange={(e) => setQ(e.target.value)} placeholder="Search: speed to lead, show rate, warm-up, refunds…" aria-label="Search the playbooks" />
                 </form>
                 {!searching && (
                   <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Domains">
