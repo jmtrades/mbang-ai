@@ -35,6 +35,12 @@ def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
     if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
         raise HTTPException(404, "Thread not found")
     _check_limit(ctx)
+    try:  # [academy] the coach pauses while this person has a certification exam open
+        from ..academy import exam_open
+    except ImportError:
+        exam_open = None
+    if exam_open is not None and exam_open(ctx.tenant, ctx.user["id"]):
+        raise HTTPException(423, "The coach is paused while your certification exam is open. Submit the exam first.")
     return coach.answer(ctx.tenant, b.question, user=ctx.user, record=True, thread=True, thread_id=b.thread_id)
 
 

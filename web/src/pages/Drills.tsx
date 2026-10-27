@@ -22,7 +22,8 @@ export default function Drills() {
       <PageHeader title="Objection drills" subtitle="Spaced repetition (SM-2) on the objections that come up on real calls, answered from the course." />
       <ErrorBox error={err || error} retry={reload} />
       {loading && <Loading />}
-      {data && !card && <Empty title="Nothing due" hint={`${data.cards.length} cards in your bank. Come back when the next one is due.`} />}
+      {data && !card && (data.cards.length ? <Empty title="Nothing due" hint={`${data.cards.length} cards in your bank. Come back when the next one is due.`} />
+        : <Empty title="No drills yet" hint="Drills are built from the course material when the owner builds the Academy, and from reviewed calls." />)}
       {card && (
         <Card title={<span>Objection: “{card.objection}” <Badge>{due.length} due</Badge></span>}>
           {!show ? <Button tone="primary" onClick={() => setShow(true)}>Show the course answer</Button> : (
