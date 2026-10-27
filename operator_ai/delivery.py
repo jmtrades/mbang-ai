@@ -593,6 +593,8 @@ def manual_reason(tenant, item: dict) -> str:
         return f"{label}s can't be sent automatically. Copy the message, send it from your own account, then press I sent it."
     if ch == "calendar":
         return "Send the calendar invite from your own calendar, then press I sent it."
+    if ch == "manual":
+        return "Copy the reply, send it where their message came in, then press I sent it."
     return f"{label} sending isn't connected for this workspace. Copy the message, send it yourself, then press I sent it."
 
 

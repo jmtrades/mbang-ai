@@ -14,7 +14,7 @@ withdrawal), attribution.py (who said which line), mine.py (offline style profil
 from __future__ import annotations
 
 from .apply import (badge, frame, framing, honesty_kind, neutral, preview, retrieval_boost, style_template,  # noqa: F401
-                    surface)
+                    styled_meta, surface)
 from .attribution import DRAFT_WORDS, STABLE_WORDS, coverage, set_doc_speaker  # noqa: F401
 from .consent import (NOT_OFFERED, SCOPES, PersonaError, active, cache_clear, consents, decide_phrase,  # noqa: F401
                       designate_subject, identity, latest_profile, legacy_consent, names, neutral_voice, phrases,

@@ -170,7 +170,9 @@ def _extractive_answer(tenant, objection: str, hits: list[dict]) -> tuple[str, d
     first_id = re.search(r"\[S(\d+)\]", text)
     h = hits[int(first_id.group(1)) - 1] if first_id else hits[0]
     sentences = [re.sub(r"\s*\[S\d+\]\s*$", "", s.lstrip("• ").strip()) for s in text.split("\n") if s.strip()]
-    answer = " ".join(sentences) or h["snippet"]
+    # a drill answer is something a rep will say to a prospect: never a guarantee or an income claim from the material
+    answer = " ".join(sentences) or (h["snippet"] if not coach.claim_sentence(h["snippet"] or "") else
+                                     "Not covered by the course material.")
     cite = retrieval.cite({**h, "id": "S1"})
     if sentences:
         doc = index.for_tenant(tenant).docs.get(h["file"])

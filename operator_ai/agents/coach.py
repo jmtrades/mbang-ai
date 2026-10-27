@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 
 from .. import guardrails, index, llm, playbooks, retrieval, runtime, textnorm, threads, translate
+from ..content_policy import SKIP_IN_KB
 
 PLAN = ["Detect language", "Rewrite / decompose question", "Hybrid retrieval per part", "Coverage judge",
         "Answer from passages only", "Verify citations"]
@@ -58,8 +59,20 @@ def _sentences(text: str) -> list[str]:
     return out
 
 
+# The index keeps course lines that state guarantees, income claims or results about a named person, because
+# teaching material quotes them (content_policy.SKIP_IN_KB). They are never served as an answer on their own: an AI
+# answer drops them sentence by sentence (guard_sentences), and the extractive answer skips them and takes the next
+# best sentence, so a student (or a stranger on a public mini) never reads "most of our students make $10k a month".
+CLAIM_CODES = frozenset(SKIP_IN_KB)
+
+
+def claim_sentence(s: str) -> bool:
+    return any(f["severity"] == "block" and f["code"] in CLAIM_CODES for f in guardrails.check(s, "plain"))
+
+
 def extractive(question: str, hits: list[dict], max_sentences: int = 4, idf=None) -> str:
-    """Pick the passage sentences that best match the question (idf-weighted), keep their [S#]."""
+    """Pick the passage sentences that best match the question (idf-weighted), keep their [S#]. Never a sentence that
+    makes a guarantee, an income claim or a claim about a named person's results (CLAIM_CODES)."""
     qw = dict(textnorm.expand(textnorm.tokens(question)))
     idf = idf or (lambda t: 1.0)
     scored = []
@@ -86,6 +99,8 @@ def extractive(question: str, hits: list[dict], max_sentences: int = 4, idf=None
         if key in seen:
             continue
         seen.add(key)
+        if claim_sentence(s):
+            continue
         chosen.append((rank, i, sid, s))
         if len(chosen) >= max_sentences:
             break
@@ -531,8 +546,9 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
                             lambda: _extractive_text(tenant, per_part, judged, usable), "Extractive answer instead")
             clean, kept, _ = verify_citations(text, [], allowed)
             mode, label = "rules", "Extractive answer from course passages (the AI answer had no valid citations)"
-    if covered != "no" and not kept and usable and mode not in ("live", "replay"):
-        # extractive answers always carry their passages
+    if covered != "no" and not kept and usable and mode not in ("live", "replay") and clean:
+        # extractive answers always carry their passages (an empty one, e.g. only claim sentences matched, is
+        # "not covered" below, never a bare citation)
         kept = [usable[0]["id"]]
         clean = f"{clean} [{usable[0]['id']}]".strip()
     if covered == "no" or not clean:

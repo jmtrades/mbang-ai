@@ -85,8 +85,9 @@ _RANGE_HINT = re.compile(r"\$\s?50\s?k", re.I)
 
 
 def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
-    """In prospect outreach the $50k-$100k range needs a current proof record (none by default)."""
-    if mode != "outreach" or not _RANGE_HINT.search(text or ""):
+    """In prospect outreach and in client assets (proposals, webinar pages and emails, funnel copy: all read by
+    prospects) the $50k-$100k range needs a current proof record (none by default)."""
+    if mode not in ("outreach", "client_asset") or not _RANGE_HINT.search(text or ""):
         return []
     if not guardrails._ALLOWED_RANGE.search(guardrails._money_norm(text)):
         return []
