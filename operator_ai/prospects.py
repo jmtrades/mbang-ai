@@ -35,6 +35,7 @@ STAGE_LABELS = {"new": "New", "researched": "Researched", "contacted": "Contacte
                 "call_booked": "Call booked", "proposal": "Proposal sent", "won": "Won", "lost": "Lost",
                 "nurture": "Nurture", "dnc": "Do not contact"}
 EARLY = ("new", "researched")
+RELEASED_STAGES = ("lost", "nurture")  # all a holder may still do with a prospect the owner released
 MOVES = ["question", "compliment", "resource", "mutual"]
 MOVE_LABELS = {"question": "Question", "compliment": "Compliment with a specific", "resource": "Resource offer",
                "mutual": "Mutual connection"}
@@ -58,6 +59,7 @@ REPLY_KINDS = {"interested": "Interested", "question": "Asked a question", "not_
                "not_interested": "Not interested", "unsubscribe": "Asked not to be contacted", "other": "Other"}
 OPEN_QUEUE = ("pending", "held", "needs_human", "scheduled", "awaiting_manual_send")
 MAX_IMPORT_ROWS = 5000
+MAX_COUNT = 10_000_000_000  # follower counts above this are treated as unknown (and never overflow SQLite)
 
 
 class ProspectError(Exception):
@@ -132,8 +134,8 @@ def parse_count(v) -> int | None:
     if v is None or isinstance(v, bool):
         return None
     if isinstance(v, (int, float)):
-        return int(v) if v >= 0 and math.isfinite(v) else None
-    m = re.match(r"^\s*([\d,]*\.?\d+)\s*([kKmM])?\+?\s*$", str(v))
+        return int(v) if 0 <= v <= MAX_COUNT and math.isfinite(v) else None
+    m = re.match(r"^\s*([\d,]*\.?\d+)\s*([kKmM])?\+?\s*$", str(v)[:60])
     if not m:
         return None
     try:
@@ -141,7 +143,19 @@ def parse_count(v) -> int | None:
     except ValueError:
         return None
     mult = {"k": 1e3, "m": 1e6}.get((m.group(2) or "").lower(), 1)
-    return int(round(n * mult))
+    out = n * mult
+    return int(round(out)) if math.isfinite(out) and out <= MAX_COUNT else None
+
+
+def safe_url(s: str | None) -> str | None:
+    """An http(s) link to the given website, or None. Anything else (javascript:, data:, ftp: ...) is never
+    turned into a link."""
+    s = (s or "").strip()
+    if not s or not canon_domain(s):
+        return None
+    if "://" not in s:
+        return f"https://{s}"
+    return s if re.match(r"^https?://", s, re.I) else None
 
 
 def ads_active(v) -> bool | None:
@@ -316,8 +330,7 @@ def field_facts(p: dict, source: str, at: float) -> list[dict]:
         h = canon_handle(p["handle"])
         add(f"Instagram: @{h or p['handle']}", p["handle"], f"https://instagram.com/{h}" if h else None)
     if p.get("website"):
-        url = p["website"] if "://" in p["website"] else f"https://{p['website']}"
-        add(f"Website: {canon_domain(p['website']) or p['website']}", p["website"], url if canon_domain(p["website"]) else None)
+        add(f"Website: {canon_domain(p['website']) or p['website']}", p["website"], safe_url(p["website"]))
     if p.get("offer"):
         add(f"Offer: {p['offer']}", p["offer"])
     if p.get("ad_activity"):
@@ -334,17 +347,21 @@ def _facts(p: dict) -> list[dict]:
 
 
 def facts_corpus(tenant, p: dict, icp: dict | None = None) -> str:
-    """Everything an opener may reference: the prospect's own fields, the research facts, the author's own
-    ICP / sender details and the workspace brand."""
+    """Everything a message may reference: the prospect's own fields, the research facts, what they told us in
+    their replies, the author's own ICP / sender details (name, business, postal address, reply email) and the
+    workspace brand."""
     bits = [p.get(k) or "" for k in ("name", "business", "handle", "website", "niche", "offer", "notes", "ad_activity")]
     if p.get("followers") is not None:
         bits += [str(p["followers"]), f"{int(p['followers']):,}"]
     for f in _facts(p):
         bits += [f.get("claim") or "", f.get("quote") or ""]
+    if tenant is not None and p.get("id"):
+        bits += [e["detail"].get("text") or "" for e in timeline(tenant, p["id"], 100) if e["kind"] == "reply"]
     if tenant is not None and p.get("owner_user_id"):
         icp = icp or get_icp(tenant, p["owner_user_id"])
         s = sender_of(tenant, p["owner_user_id"])
-        bits += [icp.get("niche") or "", icp.get("offer") or "", s.get("name") or "", s.get("business") or ""]
+        bits += [icp.get("niche") or "", icp.get("offer") or ""]
+        bits += [s.get(k) or "" for k in ("name", "business", "postal_address", "reply_email")]
     if tenant is not None:
         bits.append(((tenant.get("brand") or {}) or {}).get("name") or "")
     return "\n".join(str(b) for b in bits)
@@ -516,7 +533,8 @@ def public(p: dict, owner_names: dict | None = None) -> dict:
     out["stage_label"] = STAGE_LABELS.get(p.get("stage") or "new", p.get("stage"))
     out["lawful_basis_label"] = LAWFUL_BASES.get(p.get("lawful_basis") or "", p.get("lawful_basis") or "")
     out["fit_breakdown"] = p.get("fit_breakdown") or []
-    out["facts"] = _facts(p)
+    out["facts"] = [{**f, "source_url": f.get("source_url") if re.match(r"^https?://", f.get("source_url") or "", re.I)
+                     else None} for f in _facts(p)]
     out["web"] = (p.get("research") or {}).get("web")
     if owner_names is not None:
         out["owner_name"] = owner_names.get(p.get("owner_user_id"), "")
@@ -961,6 +979,36 @@ def research(tenant, user: dict, pid: int, web: bool = False) -> dict:
 
 
 _UA = "OperatorAI-Research/1.0 (one page, robots.txt honoured)"
+_LOCAL_SUFFIXES = (".localhost", ".local", ".internal", ".lan", ".home.arpa", ".localdomain", ".intranet", ".corp")
+
+
+def public_host(domain: str) -> bool:
+    """Only public websites are read: never an IP literal that isn't public, a local or internal name, or (on the
+    real network) a name that resolves to a private, loopback or link-local address."""
+    import ipaddress
+    import socket
+
+    host = (domain or "").strip("[]").lower()
+    if not host:
+        return False
+    try:
+        return ipaddress.ip_address(host).is_global
+    except ValueError:
+        pass
+    if host == "localhost" or host.endswith(_LOCAL_SUFFIXES):
+        return False
+    from .live import net
+
+    if net._transport is not None:  # an in-process fake transport: nothing real is resolved or reached
+        return True
+    try:
+        infos = socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
+    except (OSError, UnicodeError):
+        return False
+    try:
+        return bool(infos) and all(ipaddress.ip_address(i[4][0].split("%")[0]).is_global for i in infos)
+    except ValueError:
+        return False
 
 
 def web_research(tenant, p: dict) -> dict:
@@ -969,6 +1017,8 @@ def web_research(tenant, p: dict) -> dict:
     domain = canon_domain(p.get("website"))
     if not domain:
         return {"status": "no_website", "message": "No website on record for this prospect.", "facts": []}
+    if not public_host(domain):
+        return {"status": "blocked", "message": "That address isn't a public website; nothing fetched.", "facts": []}
     from urllib.robotparser import RobotFileParser
 
     from .live import net
@@ -1070,6 +1120,9 @@ def set_stage(tenant, pid: int, stage: str, actor: str, reason: str = "", user: 
         return set_dnc(tenant, pid, actor, reason or "Marked do not contact")
     if p["stage"] == "dnc" or p["do_not_contact"]:
         raise ProspectError(409, "This prospect asked not to be contacted; the stage can't change")
+    if user is not None and p.get("claim_released") and stage not in RELEASED_STAGES and stage != p["stage"]:
+        raise ProspectError(409, "The owner released this prospect to the team. From this list it can only be marked "
+                                 "lost or nurture.")
     if stage == "won":
         return mark_won(tenant, pid, actor, via="manual", note=reason)
     if p["stage"] == stage:
@@ -1297,11 +1350,24 @@ def _recipient(p: dict, channel: str) -> str | None:
     return f"@{h}" if h else None
 
 
-def _check_contactable(p: dict, channel: str) -> None:
+def never_invited(tenant, p: dict) -> bool:
+    """True when the prospect's email or Instagram handle is on the workspace's never-invite list (checked
+    live, so a name added after the import still counts)."""
+    bl = queue.blocked_list(tenant)
+    if not bl:
+        return False
+    email = p.get("canon_email") or canon_email(p.get("email"))
+    handle = p.get("canon_handle") or canon_handle(p.get("handle"))
+    return bool((email and email in bl) or (handle and (handle in bl or f"@{handle}" in bl)))
+
+
+def _check_contactable(p: dict, channel: str, tenant=None) -> None:
     if channel not in CHANNELS:
         raise ProspectError(422, "Choose Instagram DM or email")
     if p["do_not_contact"]:
         raise ProspectError(409, "This prospect asked not to be contacted")
+    if tenant is not None and never_invited(tenant, p):
+        raise ProspectError(409, REASONS["never_invite"])
     if p.get("claim_released"):
         raise ProspectError(409, "The owner released this prospect to the team; it can't be messaged from this list")
     if p["stage"] in ("won", "lost"):
@@ -1312,7 +1378,7 @@ def _check_contactable(p: dict, channel: str) -> None:
 
 def suggestions(tenant, user: dict, pid: int, channel: str = "instagram_dm", use_ai: bool = False) -> dict:
     p = visible(tenant, user, pid)
-    _check_contactable(p, channel)
+    _check_contactable(p, channel, tenant)
     actor = _actor(user)
 
     def fn(run: runtime.Run):
@@ -1416,10 +1482,19 @@ def _has_open_opener(tenant, pid: int) -> bool:
             (pid, *OPEN_QUEUE)).fetchone() is not None
 
 
+def had_contact(tenant, pid: int) -> bool:
+    """True when there really was contact: a message to them was confirmed sent, or they replied. Only then may a
+    message say "following up" or carry a "Re:" subject."""
+    with tenant.db() as c:
+        return c.execute(
+            "SELECT 1 FROM prospect_touches WHERE prospect_id=? AND sent_at IS NOT NULL UNION ALL "
+            "SELECT 1 FROM prospect_events WHERE prospect_id=? AND kind='reply' LIMIT 1", (pid, pid)).fetchone() is not None
+
+
 def draft_opener(tenant, user: dict, pid: int, channel: str, move: str, text: str | None = None,
                  subject: str | None = None) -> dict:
     p = visible(tenant, user, pid)
-    _check_contactable(p, channel)
+    _check_contactable(p, channel, tenant)
     if move not in MOVES:
         raise ProspectError(422, "Unknown opener style")
     if p["stage"] not in EARLY + ("nurture",):
@@ -1462,11 +1537,10 @@ def draft_openers_bulk(tenant, user: dict, channel: str = "instagram_dm", ids: l
     rng = random.Random(seed)
 
     def fn(run: runtime.Run):
+        # Bulk drafting always works on the caller's own list, the owner included: it must never fill a
+        # teammate's approval queue or use up their daily cap.
         sql, args = "SELECT * FROM prospects WHERE stage IN ('new','researched') AND do_not_contact=0 AND " \
-                    "COALESCE(claim_released,0)=0", []
-        if user["role"] != "owner":
-            sql += " AND owner_user_id=?"
-            args.append(user["id"])
+                    "COALESCE(claim_released,0)=0 AND owner_user_id=?", [user["id"]]
         if ids:
             sql += f" AND id IN ({','.join('?' * len(ids))})"
             args += ids
@@ -1483,6 +1557,9 @@ def draft_openers_bulk(tenant, user: dict, channel: str = "instagram_dm", ids: l
                 break
             if not _recipient(p, channel):
                 skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": "No contact detail for this channel"})
+                continue
+            if never_invited(tenant, p):
+                skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": REASONS["never_invite"]})
                 continue
             if _has_open_opener(tenant, p["id"]):
                 skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": "Already has a first message"})
@@ -1525,6 +1602,7 @@ def draft_followups(tenant, pid: int, base_time: float, actor: str = "system") -
         subj = (q or {}).get("meta", {}).get("subject")
     icp = get_icp(tenant, p["owner_user_id"])
     niche = (p.get("niche") or icp.get("niche") or "businesses like yours").strip().lower()
+    prior = had_contact(tenant, pid)  # "following up" wording only when a first message really went out
     ids = []
 
     def fn(run: runtime.Run):
@@ -1534,7 +1612,7 @@ def draft_followups(tenant, pid: int, base_time: float, actor: str = "system") -
             text = f"Hi {first}, {_lower_first(line)}" if first else line
             body = email_body(tenant, p, text) if channel == "email" else text
             item = _queue_touch(tenant, p, channel, "followup", body, f"Day {days} follow-up to {p['name']}", actor, run.id,
-                                step=i, extra_meta={"prior_contact": True, "send_after": base_time + days * 86400,
+                                step=i, extra_meta={"prior_contact": prior, "send_after": base_time + days * 86400,
                                                     "cancel_if": list(CANCEL_IF), "followup_day": days,
                                                     **({"subject": subj} if subj else {})})
             ids.append(item["id"])
@@ -1741,7 +1819,7 @@ def book(tenant, user: dict, pid: int, mode: str, start: float | None = None, mi
     actor = _actor(user)
     if mode == "offer":
         channel = channel or ("instagram_dm" if _recipient(p, "instagram_dm") else "email")
-        _check_contactable(p, channel)
+        _check_contactable(p, channel, tenant)
         fresh = slots(tenant, 3)
         if not fresh:
             raise ProspectError(409, "No free times in the next two weeks. Free up some time in the calendar, or agree a "
@@ -1755,7 +1833,7 @@ def book(tenant, user: dict, pid: int, mode: str, start: float | None = None, mi
                                                          "send me a time that does."
             body = email_body(tenant, p, text) if channel == "email" else text
             item = _queue_touch(tenant, p, channel, "booking", body, f"Call times for {p['name']}", actor, run.id,
-                                extra_meta={"prior_contact": True, "slots": fresh, "lead_tier": "warm",
+                                extra_meta={"prior_contact": had_contact(tenant, pid), "slots": fresh,
                                             **({"subject": "Times for a short call"} if channel == "email" else {})})
             run.note("queue", {}, {"queue_id": item["id"], "status": item["status"]}, label="Queue the times for approval")
             return {"queue_id": item["id"], "status": item["status"], "slots": fresh}
@@ -1857,7 +1935,6 @@ def stats(tenant, user: dict) -> dict:
 
 # --------------------------------------------------------------------------- guardrail plug-in
 _PLACEHOLDER = re.compile(r"\[\[[^\]\n]{1,160}\]\]")
-_SIG = re.compile(r"(?m)^--\s*$")
 _TIME = re.compile(r"\b\d{1,2}:\d{2}\b(\s?[ap]\.?m\.?)?|\b\d{1,2}\s?[ap]\.?m\.?\b", re.I)
 _DURATION = re.compile(r"\b\d+\s?-?\s?(minutes?|mins?|hours?|hrs?|seconds?|secs?)\b", re.I)
 _MONTHS = r"(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*"
@@ -1945,8 +2022,14 @@ def _cap_phrases(text: str) -> list[str]:
     return out
 
 
+_TEMPLATE_TOKEN = re.compile(r"\{\{[a-z_]{1,40}\}\}")
+
+
 def _unverified(text: str, corpus: str) -> list[str]:
-    body = _SIG.split(text, maxsplit=1)[0]
+    # The whole text is checked, footer included: the sender's own details (name, business, postal address,
+    # reply email) are part of the corpus, so a real footer passes and anything slipped in after "--" doesn't.
+    # Placeholders are flagged on their own (unfilled_placeholder), so they are left out here.
+    body = _TEMPLATE_TOKEN.sub(" ", _PLACEHOLDER.sub(" ", text))
     body = guardrails._ALLOWED_RANGE.sub(" ", body)
     body = _DATE.sub(" ", _DURATION.sub(" ", _TIME.sub(" ", body)))
     corpus_low = _norm_phrase(corpus)
@@ -1974,8 +2057,11 @@ def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
     """Plugged into guardrails.check (guardrails.RULE_PLUGINS). Codes:
     unfilled_placeholder (block): a [[...]] placeholder is still in a prospects draft or proposal.
     do_not_contact (block): the prospect opted out. claim_released (block): the owner released this prospect.
-    unverified_personalisation (block): an opener/follow-up names a number, a quoted phrase or a named offer that
-    isn't in the prospect's research facts."""
+    unverified_personalisation (block): an opener, follow-up or call-times message names a number, a quoted
+    phrase or a named offer that isn't in the prospect's research facts (or their replies).
+    never_invite (block): the prospect's email or handle is on the never-invite list (checked live).
+    daily_cap (block): a first message or follow-up that would go out now, after today's cap of confirmed sends on
+    that channel is used up."""
     flags: list[dict] = []
     meta = meta or {}
     ours = meta.get("feature") == FEATURE or bool(meta.get("proposal_id"))
@@ -1989,23 +2075,49 @@ def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
         return flags
     try:
         p = _row(tenant, int(pid))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return flags
     if p is not None and p.get("do_not_contact"):
         flags.append(guardrails._flag("do_not_contact", "block", "This prospect asked not to be contacted", p.get("name") or ""))
     if p is not None and ours and p.get("claim_released"):
         flags.append(guardrails._flag("claim_released", "block",
                                       "The owner released this prospect to the team; it can't be messaged from this list"))
+    if p is not None and never_invited(tenant, p):
+        flags.append(guardrails._flag("never_invite", "block", "Recipient is on the never-invite list", "[blocked attendee]"))
     touch = meta.get("touch")
-    applies = touch in ("opener", "followup") or (touch is None and meta.get("prospect_facing") and not ours)
+    if p is not None and ours and touch in ("opener", "followup"):
+        flags += _cap_flags(tenant, p, meta)
+    applies = touch in ("opener", "followup", "booking") or (touch is None and meta.get("prospect_facing") and not ours)
     if applies and mode == "outreach":
         corpus = facts_corpus(tenant, p) if p is not None else ""
+        if touch == "booking":  # the offered times are part of what this message may say
+            corpus += "\n" + "\n".join(str(s.get("label") or "") for s in (meta.get("slots") or []) if isinstance(s, dict))
         for item in _unverified(text or "", corpus):
             flags.append(guardrails._flag(
                 "unverified_personalisation", "block",
                 "Mentions something that isn't in this prospect's research. Add it as a researched fact with its source, "
                 "or take it out", item))
     return flags
+
+
+def _cap_flags(tenant, p: dict, meta: dict) -> list[dict]:
+    """Caps are checked again when a message would actually go out (at approval), not only when it is drafted:
+    a draft written earlier can't push today's confirmed sends past the cap. A follow-up that isn't due yet is
+    left to its own day."""
+    due = meta.get("send_after")
+    try:
+        if due is not None and float(due) > time.time():
+            return []
+    except (TypeError, ValueError):
+        pass
+    fam = meta.get("channel_family") if meta.get("channel_family") in DEFAULT_CAPS else "dm"
+    u = usage(tenant, p["owner_user_id"]).get(fam)
+    if not u or u["sent_today"] < u["cap"]:
+        return []
+    what = "emails" if fam == "email" else "Instagram DMs"
+    return [guardrails._flag("daily_cap", "block",
+                             f"Today's cap of {u['cap']} {what} is used up. Approve this tomorrow, or ask the owner to "
+                             "change the cap.", f"{u['sent_today']} sent today")]
 
 
 # --------------------------------------------------------------------------- demo seed

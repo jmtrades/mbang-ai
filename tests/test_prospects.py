@@ -273,7 +273,9 @@ def test_unverified_personalisation_guard(world):
     assert "unverified_personalisation" in codes('Hi Mara, your line "Strong is the new skinny" stood out.')
     assert "unverified_personalisation" not in codes("Hi Mara, open to a 15-minute chat next week?")
     sig = "Hi Mara, quick question about your webinar?\n\nAva\n--\n12 High Street, Example City\nReply no to opt out."
-    assert "unverified_personalisation" not in codes(sig)
+    assert "unverified_personalisation" in codes(sig)  # the footer is checked too: that address isn't on record
+    world.as_("stu_a").put(f"{API}/prospects/icp", json={"sender": {"name": "Ava", "postal_address": "12 High Street, Example City"}})
+    assert "unverified_personalisation" not in codes(sig)  # it's the sender's own postal address
     # booking messages carry times; the rule is for openers and follow-ups only
     assert "unverified_personalisation" not in codes("Would Thu 29 Oct 10:00 suit?", {**meta, "touch": "booking"})
     # other features' practice prospects and leads aren't checked against this table
@@ -900,3 +902,301 @@ def test_email_signature_uses_sender_details(world):
     body = queue.get(t, d["queue_id"])["body"]
     assert "Sam Sender\nSender Growth Co\nsam@example.invalid\n--\n12 High Street, Example City" in body
     assert d["status"] == "pending"
+
+
+# --------------------------------------------------------------------------- review fixes (hostile review)
+def _contacted(world, who="stu_a", name="Mara Quill"):
+    """Import, draft and approve the opener, so the day 2/4/7 follow-ups exist."""
+    _import(world, who)
+    a = world.as_(who)
+    pid = _pid(world, who, name)
+    d = a.post(f"{API}/prospects/{pid}/drafts", json={"move": "question"}).json()
+    assert a.post(f"{API}/queue/{d['queue_id']}/approve").status_code == 200
+    fus = [x for x in a.get(f"{API}/prospects/{pid}").json()["drafts"] if x["touch"] == "followup"]
+    return pid, fus
+
+
+def test_setters_and_closers_never_see_or_decide_a_students_own_followups(world):
+    t = world.t
+    pid, fus = _contacted(world)
+    assert len(fus) == 3
+    fu = fus[0]["id"]
+    for who in ("setter1",):
+        s = world.as_(who)
+        assert fu not in {i["id"] for i in s.get(f"{API}/queue").json()["items"]}
+        assert s.get(f"{API}/queue/{fu}").status_code == 404
+        assert s.post(f"{API}/queue/{fu}/approve").status_code == 403
+        assert s.put(f"{API}/queue/{fu}", json={"body": "Hi, edited by someone else"}).status_code == 403
+        assert s.post(f"{API}/queue/{fu}/reject").status_code == 403
+    closer = auth.create_user(t, "closer1", "pw-closer1-123456", "closer")
+    assert not auth.can_decide("closer", "booking_dm", world.users["stu_a"]["id"], closer)
+    assert queue.get(t, fu)["status"] == "pending" and with_one_send(t)
+    # the author and the owner still decide; a setter's own items and the programme's leads are unchanged
+    assert world.as_("stu_a").get(f"{API}/queue/{fu}").status_code == 200
+    assert world.as_("owner").get(f"{API}/queue/{fu}").status_code == 200
+    lead_fu = queue.add(t, "followup", "Here's the short video on show rates. Want it?", channel="instagram_dm",
+                        recipient_ref="@lead", meta={"lead_id": 1, "prospect_facing": True, "prior_contact": True})
+    assert lead_fu["id"] in {i["id"] for i in world.as_("setter1").get(f"{API}/queue").json()["items"]}
+    assert auth.can_decide("setter", "followup", world.users["setter1"]["id"], world.users["setter1"]["id"])
+
+
+def with_one_send(t) -> bool:
+    with t.db() as c:
+        return c.execute("SELECT COUNT(*) FROM channel_messages WHERE direction='out'").fetchone()[0] == 1
+
+
+def test_signature_line_does_not_hide_invented_claims(world):
+    t = world.t
+    _import(world, "stu_a")
+    p = P._row(t, _pid(world, "stu_a", "Mara Quill"))
+
+    def codes(text, **m):
+        return {f["code"] for f in guardrails.check_for(t, text, _opener_meta(p, **m))}
+
+    sneaky = "Hi Mara, quick question?\n--\nCongrats on the Peak Shred Challenge and your 50,000 followers!"
+    assert "unverified_personalisation" in codes(sneaky)
+    # a real footer still passes: the sender's own details are known
+    world.as_("stu_a").put(f"{API}/prospects/icp", json={"sender": {
+        "name": "Sam Sender", "business": "Sender Growth Co", "postal_address": "12 High Street, Example City",
+        "reply_email": "sam@example.invalid"}})
+    p = P._row(t, p["id"])
+    footer = P.email_body(t, p, "Hi Mara,\n\nQuick question about your webinar?")
+    assert "unverified_personalisation" not in codes(footer)
+    # a missing postal address is flagged once, as a placeholder (not as an invented claim)
+    world.as_("stu_a").put(f"{API}/prospects/icp", json={"sender": {"name": "Sam Sender"}})
+    got = codes(P.email_body(t, P._row(t, p["id"]), "Hi Mara, quick question?"))
+    assert "unfilled_placeholder" in got and "unverified_personalisation" not in got
+
+
+def test_call_times_message_is_checked_against_research_too(world):
+    t = world.t
+    _import(world, "stu_a")
+    a = world.as_("stu_a")
+    pid = _pid(world, "stu_a", "Mara Quill")
+    a.post(f"{API}/prospects/{pid}/reply", json={"text": "We run the Spring Reset Bootcamp twice a year"})
+    off = a.post(f"{API}/prospects/{pid}/book", json={"mode": "offer"}).json()
+    q = queue.get(t, off["queue_id"])
+    assert q["status"] == "pending" and q["flags"] == []  # the offered times themselves pass
+    r = a.put(f"{API}/queue/{off['queue_id']}",
+              json={"body": q["body"] + " Congrats on the Peak Shred Challenge selling 300 places!"}).json()
+    assert r["status"] == "held" and "unverified_personalisation" in {f["code"] for f in r["flags"]}
+    # what they told us in a reply counts as known
+    r = a.put(f"{API}/queue/{off['queue_id']}", json={"body": q["body"] + " Happy to talk about the Spring Reset Bootcamp."}).json()
+    assert r["status"] == "pending", r["flags"]
+
+
+def test_javascript_website_is_never_a_link(world):
+    a = world.as_("stu_a")
+    r = a.post(f"{API}/prospects", json={**LB, "name": "Js Person", "website": "javascript://example.com/%0aalert(1)"})
+    assert r.status_code == 200
+    assert all(not (f["source_url"] or "").lower().startswith("javascript") for f in r.json()["prospect"]["facts"])
+    pid = r.json()["prospect"]["id"]
+    # an older record that already holds a bad link is cleaned on the way out
+    with world.t.db() as c:
+        c.execute("UPDATE prospects SET research=? WHERE id=?", (db.jdump({"facts": [
+            {"claim": "x", "source": "y", "source_url": "javascript:alert(1)", "quote": "x", "fetched_at": 1}]}), pid))
+    got = a.get(f"{API}/prospects/{pid}").json()["prospect"]["facts"]
+    assert got[0]["source_url"] is None
+    assert P.safe_url("https://ok.example.invalid") == "https://ok.example.invalid"
+    assert P.safe_url("ok.example.invalid/x") == "https://ok.example.invalid/x" and P.safe_url("data:text/html,x") is None
+
+
+def test_huge_numbers_and_ids_are_422_or_ignored_never_500(world):
+    a = world.as_("stu_a")
+    r = a.post(f"{API}/prospects", json={**LB, "name": "Huge", "followers": 10**30})
+    assert r.status_code == 200 and r.json()["prospect"]["followers"] is None
+    r = a.post(f"{API}/prospects", json={**LB, "name": "Huge2", "followers": "99999999999999999999999k"})
+    assert r.status_code == 200 and r.json()["prospect"]["followers"] is None
+    s = _import(world, "stu_a", csv_text="Name,Followers\nBig Row,99999999999999999999999\n")
+    assert s["imported"] == 1
+    big = "99999999999999999999999"
+    assert a.get(f"{API}/prospects/{big}").status_code == 422
+    assert a.post(f"{API}/prospects/{big}/stage", json={"stage": "lost"}).status_code == 422
+    assert a.get(f"{API}/prospects/proposals/{big}").status_code == 422
+    assert a.post(f"{API}/prospects/draft-openers", json={"ids": [10**30]}).status_code == 422
+    assert world.as_("owner").get(f"{API}/prospects", params={"owner_id": big}).status_code == 422
+    assert a.post(f"{API}/prospects/proposals", json={"prospect_id": 10**30, "pricing": {"retainer": 1}}).status_code == 422
+    # approving goes through the queue routes, which must answer 422 too
+    assert a.post(f"{API}/queue/{big}/approve").status_code == 422 and a.get(f"{API}/queue/{big}").status_code == 422
+    assert a.get(f"{API}/runs/{big}").status_code == 422
+    pid = _pid(world, "stu_a", "Huge")
+    for numbers in ('{"leads": 100, "booked": 10, "offer_price": NaN}', '{"leads": Infinity}'):
+        body = '{"prospect_id": %d, "numbers": %s, "pricing": {"retainer": 1000}}' % (pid, numbers)
+        r = a.post(f"{API}/prospects/proposals", content=body.encode(), headers={"content-type": "application/json"})
+        assert r.status_code == 422, (numbers, r.status_code)
+
+
+def test_owner_bulk_drafting_never_touches_a_students_list(world):
+    t = world.t
+    _import(world, "stu_a")
+    r = world.as_("owner").post(f"{API}/prospects/draft-openers", json={"limit": 5}).json()
+    assert r["queued"] == []
+    assert P.usage(t, world.users["stu_a"]["id"])["dm"]["waiting"] == 0
+    # even when the owner names a student's prospects explicitly
+    pid = _pid(world, "stu_a", "Mara Quill")
+    assert world.as_("owner").post(f"{API}/prospects/draft-openers", json={"ids": [pid]}).json()["queued"] == []
+
+
+def test_never_invite_added_after_import_is_honoured(world):
+    t = world.t
+    _import(world, "stu_a")
+    a = world.as_("stu_a")
+    pid = _pid(world, "stu_a", "Mara Quill")
+    d = a.post(f"{API}/prospects/{pid}/drafts", json={"move": "question"}).json()
+    assert d["status"] == "pending"
+    t.set("blocked_attendees", ["@StrongMums_X"])
+    r = a.post(f"{API}/queue/{d['queue_id']}/approve")
+    assert r.status_code == 409 and "never_invite" in {f["code"] for f in queue.get(t, d["queue_id"])["flags"]}
+    a.post(f"{API}/queue/{d['queue_id']}/reject")
+    r = a.post(f"{API}/prospects/{pid}/drafts", json={"move": "question"})
+    assert r.status_code == 409 and "never-invite" in r.json()["detail"]
+    b = a.post(f"{API}/prospects/draft-openers", json={"channel": "instagram_dm"}).json()
+    assert pid not in {q["prospect_id"] for q in b["queued"]}
+    assert with_no_send(t)
+
+
+def test_caps_are_checked_again_at_approval(world):
+    t = world.t
+    world.as_("owner").put(f"{API}/prospects/config", json={"caps": {"dm": 2}})
+    rows = "\n".join(f"Lead {i},@lead_{i}" for i in range(3))
+    _import(world, "stu_a", csv_text=f"Name,Instagram\n{rows}\n")
+    a = world.as_("stu_a")
+    r = a.post(f"{API}/prospects/draft-openers", json={"limit": 2}).json()
+    assert len(r["queued"]) == 2
+    # the owner lowers the cap after the drafts were written; one confirmed send uses it up
+    world.as_("owner").put(f"{API}/prospects/config", json={"caps": {"dm": 1}})
+    assert a.post(f"{API}/queue/{r['queued'][0]['queue_id']}/approve").status_code == 200
+    second = r["queued"][1]["queue_id"]
+    resp = a.post(f"{API}/queue/{second}/approve")
+    assert resp.status_code == 409 and "daily_cap" in {f["code"] for f in queue.get(t, second)["flags"]}
+    assert P.usage(t, world.users["stu_a"]["id"])["dm"]["sent_today"] == 1
+    # follow-ups that aren't due yet aren't held by today's cap
+    pid = r["queued"][0]["prospect_id"]
+    fus = [x for x in a.get(f"{API}/prospects/{pid}").json()["drafts"] if x["touch"] == "followup"]
+    assert fus and all(f["status"] == "pending" for f in fus)
+    # the next day the held draft can be approved
+    with t.db() as c:
+        c.execute("UPDATE prospect_touches SET sent_at=sent_at-86400*2 WHERE sent_at IS NOT NULL")
+    assert a.post(f"{API}/queue/{second}/approve").status_code == 200
+
+
+def test_released_prospect_can_only_be_closed_by_its_old_holder(world):
+    _import(world, "stu_a")
+    pid = _pid(world, "stu_a", "Mara Quill")
+    assert world.as_("owner").post(f"{API}/prospects/{pid}/release").status_code == 200
+    a = world.as_("stu_a")
+    r = a.post(f"{API}/prospects/{pid}/stage", json={"stage": "won"})
+    assert r.status_code == 409 and "released" in r.json()["detail"]
+    with world.t.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM clients").fetchone()[0] == 0
+    assert a.post(f"{API}/prospects/{pid}/stage", json={"stage": "lost"}).json()["prospect"]["stage"] == "lost"
+
+
+def test_web_research_never_reads_private_addresses(world, site):
+    t = world.t
+    P.set_web_research(t, True, "owner agreed in writing")
+    s = site(_Site())
+    a = world.as_("stu_a")
+    for host in ("127.0.0.1", "169.254.169.254", "10.0.0.5", "intranet.corp", "printer.local"):
+        r = _add(world, "stu_a", name=f"Host {host}", website=f"http://{host}/")
+        assert r.status_code == 200, r.text
+        res = a.post(f"{API}/prospects/{r.json()['prospect']['id']}/research", json={"web": True}).json()
+        assert res["web"]["status"] == "blocked", (host, res["web"])
+    assert s.calls == []
+    assert P.public_host("8.8.8.8") and not P.public_host("::1") and not P.public_host("localhost")
+
+
+def test_public_page_throttles_wrong_tokens_and_dedupes_views(world):
+    t = world.t
+    _import(world, "stu_a")
+    pid, pr = _proposal(world)
+    a = world.as_("stu_a")
+    s = a.post(f"{API}/prospects/proposals/{pr['id']}/send", json={"channel": "email"}).json()
+    a.post(f"{API}/queue/{s['queue_id']}/approve")
+    with t.db() as c:
+        token = c.execute("SELECT token FROM proposals WHERE id=?", (pr["id"],)).fetchone()["token"]
+    page = f"/t/owner/p/{token}"
+    for _ in range(3):
+        r = world.anon.get(page)
+        assert r.status_code == 200
+    assert r.headers["x-frame-options"] == "DENY" and "frame-ancestors 'none'" in r.headers["content-security-policy"]
+    assert a.get(f"{API}/prospects/proposals/{pr['id']}").json()["proposal"]["views"] == 1  # refreshes count once
+    from operator_ai.routes import prospects as RP
+
+    for i in range(RP.FAIL_MAX):
+        assert world.anon.get(f"/t/owner/p/guess{i}").status_code == 404
+    r = world.anon.get("/t/owner/p/guess-more")
+    assert r.status_code == 429 and "Too many attempts" in r.text and r.headers["retry-after"]
+    r = world.anon.post(page + "/accept", json={"name": "Mara Quill", "agree": True, "option": "pilot"})
+    assert r.status_code == 429 and P._row(t, pid)["stage"] != "won"
+
+
+def test_proposal_dm_keeps_the_link_and_currency_stays_consistent(world):
+    t = world.t
+    _import(world, "stu_a")
+    _, pr = _proposal(world)
+    a = world.as_("stu_a")
+    r = a.put(f"{API}/prospects/proposals/{pr['id']}", json={"pricing": {**PRICING, "currency": "USD"}})
+    assert r.status_code == 422 and "currency" in r.json()["detail"]
+    assert a.put(f"{API}/prospects/proposals/{pr['id']}", json={"pricing": {**PRICING, "retainer": 2500}}).status_code == 200
+    s = a.post(f"{API}/prospects/proposals/{pr['id']}/send", json={"channel": "instagram_dm", "message": "x " * 700}).json()
+    body = queue.get(t, s["queue_id"])["body"]
+    with t.db() as c:
+        token = c.execute("SELECT token FROM proposals WHERE id=?", (pr["id"],)).fetchone()["token"]
+    assert len(body) <= 990 and body.endswith(f"/t/owner/p/{token}")
+
+
+def test_web_research_switch_from_the_server_cli(tenant, owner):
+    import subprocess
+    import sys
+
+    from operator_ai import audit, config, tenancy
+
+    run = lambda *a: subprocess.run([sys.executable, str(config.ROOT / "scripts" / "tenant_admin.py"), *a],
+                                    capture_output=True, text=True)
+    assert run("switch", "owner", "prospect_web_research", "on").returncode == 4  # needs a recorded yes
+    r = run("switch", "owner", "prospect_web_research", "on", "--owner-yes", "owner agreed on 2026-10-27")
+    assert r.returncode == 0, r.stderr
+    tenancy.clear_cache()
+    t = tenancy.get("owner")
+    assert P.web_research_enabled(t) and "owner agreed" in audit.recent(t, 5, "switch")[0]["detail"]
+    assert '"prospect_web_research": true' in run("show", "owner").stdout
+    assert run("switch", "owner", "prospect_web_research", "off").returncode == 0
+    tenancy.clear_cache()
+    assert not P.web_research_enabled(tenancy.get("owner"))
+    # the settings API can't flip it
+    assert owner.put("/t/owner/api/settings", json={"key": "prospect_web_research", "value": True}).status_code == 422
+    tenancy.clear_cache()
+    assert not P.web_research_enabled(tenancy.get("owner"))
+
+
+def test_following_up_wording_needs_real_earlier_contact(world):
+    t = world.t
+    _import(world, "stu_a")
+    a = world.as_("stu_a")
+    pid = _pid(world, "stu_a", "Mara Quill")
+    # marked "contacted" by hand, nothing sent through the system: follow-ups may not pretend otherwise
+    a.post(f"{API}/prospects/{pid}/stage", json={"stage": "contacted"})
+    ids = a.post(f"{API}/prospects/{pid}/followups").json()["queued"]
+    assert queue.get(t, ids[0])["meta"]["prior_contact"] is False
+    r = a.put(f"{API}/queue/{ids[0]}", json={"body": "Just following up on my last message!"}).json()
+    assert r["status"] == "held" and "deceptive_subject" in {f["code"] for f in r["flags"]}
+    # after a real send, follow-ups may refer back to it
+    _, fus = _contacted(world, name="Jonas Pell")
+    q = queue.get(t, fus[0]["id"])
+    assert q["meta"]["prior_contact"] is True
+    r = a.put(f"{API}/queue/{fus[0]['id']}", json={"body": "Just following up on my last message, Jonas."}).json()
+    assert "deceptive_subject" not in {f["code"] for f in r["flags"]}
+
+
+def test_call_times_to_someone_who_never_replied_stay_cold(world):
+    t = world.t
+    _import(world, "stu_a")
+    a = world.as_("stu_a")
+    pid = _pid(world, "stu_a", "Mara Quill")
+    q = queue.get(t, a.post(f"{API}/prospects/{pid}/book", json={"mode": "offer"}).json()["queue_id"])
+    assert q["meta"]["lead_tier"] == "cold" and q["meta"]["prior_contact"] is False
+    a.post(f"{API}/queue/{q['id']}/reject")
+    a.post(f"{API}/prospects/{pid}/reply", json={"text": "Sure, send times"})
+    q = queue.get(t, a.post(f"{API}/prospects/{pid}/book", json={"mode": "offer"}).json()["queue_id"])
+    assert q["meta"]["lead_tier"] == "warm" and q["meta"]["prior_contact"] is True

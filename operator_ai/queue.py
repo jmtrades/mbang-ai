@@ -156,6 +156,11 @@ def list_items(tenant, status: str | None = None, kind: str | None = None, run_i
             pargs += [own_user_id, *sorted(auth.OWN_DECIDE)]
         q += " AND (" + " OR ".join(parts) + ")"
         args += pargs
+        # someone else's own outreach (meta.owner_user_id set to another user) is never listed for a non-owner
+        q += " AND (json_extract(meta,'$.owner_user_id') IS NULL" + (
+            " OR json_extract(meta,'$.owner_user_id')=?)" if own_user_id is not None else ")")
+        if own_user_id is not None:
+            args.append(own_user_id)
     q += " ORDER BY id DESC LIMIT ?"
     args.append(limit)
     names = guardrails.tenant_banned_names(tenant)

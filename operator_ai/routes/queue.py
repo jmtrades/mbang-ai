@@ -1,15 +1,17 @@
 """Approval queue, runs/traces, audit log, guardrail check, settings."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from .. import audit, auth, guardrails, queue, runtime, settings
 from ..deps import Ctx, get_ctx, require, require_owner
 
 router = APIRouter()
+# an id too big for the database is malformed input (422), never an overflow (500)
+QId = Annotated[int, Path(ge=1, le=9_007_199_254_740_991)]
 
 
 def _qerr(e: queue.QueueError):
@@ -29,11 +31,12 @@ def list_queue(status: str | None = Query(None, max_length=20), kind: str | None
 
 
 @router.get("/queue/{qid}")
-def get_item(qid: int, ctx: Ctx = Depends(require("queue"))):
+def get_item(qid: QId, ctx: Ctx = Depends(require("queue"))):
     item = queue.get(ctx.tenant, qid)
     kinds = queue.decidable_kinds(ctx.role)
     own = item is not None and item["meta"].get("owner_user_id") == ctx.user["id"] and item["kind"] in auth.OWN_DECIDE
-    if item is None or (kinds is not None and item["kind"] not in kinds and not own):
+    if item is None or (kinds is not None and item["kind"] not in kinds and not own) or \
+            not auth.owns_or_shared(ctx.role, item["meta"].get("owner_user_id"), ctx.user["id"]):
         raise HTTPException(404, "Not found")
     return item
 
@@ -43,7 +46,7 @@ class EditBody(BaseModel):
 
 
 @router.put("/queue/{qid}")
-def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
+def edit_item(qid: QId, b: EditBody, ctx: Ctx = Depends(require("queue"))):
     try:
         return queue.edit(ctx.tenant, qid, b.body, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
@@ -51,7 +54,7 @@ def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
 
 
 @router.post("/queue/{qid}/approve")
-def approve(qid: int, ctx: Ctx = Depends(require("queue"))):
+def approve(qid: QId, ctx: Ctx = Depends(require("queue"))):
     try:
         return queue.approve(ctx.tenant, qid, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
@@ -63,7 +66,7 @@ class RejectBody(BaseModel):
 
 
 @router.post("/queue/{qid}/reject")
-def reject(qid: int, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
+def reject(qid: QId, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
     try:
         return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"])
     except queue.QueueError as e:
@@ -81,7 +84,7 @@ def runs(agent: str | None = Query(None, max_length=40), limit: int = Query(50, 
 
 
 @router.get("/runs/{run_id}")
-def run(run_id: int, ctx: Ctx = Depends(get_ctx)):
+def run(run_id: QId, ctx: Ctx = Depends(get_ctx)):
     r = runtime.get(ctx.tenant, run_id)
     if r is None:
         raise HTTPException(404, "Not found")

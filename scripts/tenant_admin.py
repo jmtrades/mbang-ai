@@ -3,7 +3,7 @@
 allowlist and AI budgets (the settings API refuses them with 403).
 
   tenant_admin.py show <tid>
-  tenant_admin.py switch <tid> live_meta_enabled|live_calendar_enabled|live_channels_enabled on|off [--owner-yes "<recorded reason>"]
+  tenant_admin.py switch <tid> live_meta_enabled|live_calendar_enabled|live_channels_enabled|prospect_web_research on|off [--owner-yes "<recorded reason>"]
   tenant_admin.py allowlist <tid> add|remove|clear [<account_id>] [--owner-yes "<reason>"]
   tenant_admin.py budget <tid> ai|critique <tokens> [--owner-yes "<reason>"]
   tenant_admin.py kb-scope <tid> course|empty|own
@@ -29,7 +29,8 @@ def main(argv=None) -> int:
     s.add_argument("tid")
     s = sub.add_parser("switch")
     s.add_argument("tid")
-    s.add_argument("key", choices=["live_meta_enabled", "live_calendar_enabled", "live_channels_enabled"])
+    s.add_argument("key", choices=["live_meta_enabled", "live_calendar_enabled", "live_channels_enabled",
+                                   "prospect_web_research"])
     s.add_argument("state", choices=["on", "off"])
     s.add_argument("--owner-yes", default="")
     s = sub.add_parser("allowlist")
@@ -59,7 +60,13 @@ def main(argv=None) -> int:
     try:
         if a.cmd == "show":
             v = settings.public_view(t)
-            print(json.dumps({"tenant": t.to_dict(), "server_only": v["server_only"]}, indent=1))
+            server_only = {**v["server_only"], "prospect_web_research": bool(t.get("prospect_web_research", False))}
+            print(json.dumps({"tenant": t.to_dict(), "server_only": server_only}, indent=1))
+        elif a.cmd == "switch" and a.key == "prospect_web_research":
+            from operator_ai import prospects  # one page of a prospect's own site, robots.txt honoured
+
+            prospects.set_web_research(t, a.state == "on", a.owner_yes)
+            print(f"{a.key} = {a.state}")
         elif a.cmd == "switch":
             settings.set_box(t, a.key, a.state == "on", a.owner_yes)
             print(f"{a.key} = {a.state}")

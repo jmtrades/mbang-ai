@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import math
 import os
 import re
 import secrets
@@ -81,7 +82,7 @@ def clean_numbers(numbers: dict | None) -> dict:
             f = float(v)
         except (TypeError, ValueError):
             raise ProposalError(422, f"{NUMBER_KEYS[k]} must be a number")
-        if f < 0 or f > 1e9:
+        if not math.isfinite(f) or f < 0 or f > 1e9:
             raise ProposalError(422, f"{NUMBER_KEYS[k]} must be between 0 and a billion")
         out[k] = f
     return out
@@ -96,7 +97,7 @@ def clean_pricing(pricing: dict | None) -> dict:
         retainer = float(p.get("retainer"))
     except (TypeError, ValueError):
         raise ProposalError(422, "Set your monthly fee")
-    if not (0 < retainer <= 1_000_000):
+    if not math.isfinite(retainer) or not (0 < retainer <= 1_000_000):
         raise ProposalError(422, "Set your monthly fee")
 
     def num(key, default, lo, hi):
@@ -107,7 +108,7 @@ def clean_pricing(pricing: dict | None) -> dict:
             f = float(v)
         except (TypeError, ValueError):
             raise ProposalError(422, f"{key.replace('_', ' ')} must be a number")
-        if not (lo <= f <= hi):
+        if not math.isfinite(f) or not (lo <= f <= hi):
             raise ProposalError(422, f"{key.replace('_', ' ')} must be between {lo:g} and {hi:g}")
         return f
 
@@ -398,6 +399,10 @@ def update(tenant, user: dict, prop_id: int, sections: list[dict] | None = None,
     terms = r["terms"]
     if pricing is not None:
         pr = clean_pricing(pricing)
+        old_cur = (terms.get("pricing") or {}).get("currency")
+        if old_cur and pr["currency"] != old_cur:
+            raise ProposalError(422, f"This proposal is in {old_cur}: its costs and projection use that currency. "
+                                     "Build a new proposal to use a different currency.")
         opts = options_for(pr)
         terms = {**terms, "pricing": pr, "options": opts}
         secs = [{**s, "text": "\n".join(f"- {o['label']}: {o['summary']}" for o in opts)} if s["key"] == "options" else s
@@ -430,7 +435,7 @@ def send(tenant, user: dict, prop_id: int, channel: str = "email", message: str 
     if p is None:
         raise ProposalError(404, "Not found")
     try:
-        P._check_contactable({**p, "stage": "replied" if p["stage"] in ("won", "lost") else p["stage"]}, channel)
+        P._check_contactable({**p, "stage": "replied" if p["stage"] in ("won", "lost") else p["stage"]}, channel, tenant)
     except P.ProspectError as e:
         raise ProposalError(e.status, str(e))
     flags = _check(tenant, r["title"], r["sections"], r["prospect_id"], prop_id)
@@ -450,7 +455,10 @@ def send(tenant, user: dict, prop_id: int, channel: str = "email", message: str 
     if channel == "email":
         body = f"{greet}\n\n{cover}\n\n{url}\n\n{sig}\n\n---\n{compile_text(r['title'], r['sections'])}"
     else:
-        body = f"{greet} {cover} {url}"[:990]
+        # a DM has a length limit: shorten the cover note, never the link
+        room = max(0, 990 - len(greet) - len(url) - 2)
+        short = cover if len(cover) <= room else cover[: max(0, room - 3)].rstrip() + "..."
+        body = f"{greet} {short} {url}"
     actor = P._actor(user)
     meta = {"feature": P.FEATURE, "owner_user_id": p["owner_user_id"], "prospect_id": p["id"], "proposal_id": prop_id,
             "client_asset": True, "prior_contact": True, "touch": "proposal",
@@ -517,10 +525,25 @@ def by_token(tenant, token: str) -> dict | None:
     return r if r["status"] in ("published", "accepted") else None
 
 
-def record_view(tenant, r: dict, count: bool) -> None:
+VIEW_DEDUPE_S = 30 * 60
+_recent_views: dict[tuple, float] = {}
+
+
+def record_view(tenant, r: dict, count: bool, ip: str | None = None) -> None:
+    """Counts an opening of the page. The team's own views don't count, and repeat loads from the same network
+    address within 30 minutes count once (so a refresh doesn't inflate the number)."""
     if not count or r["status"] != "published":
         return
     now = db.now()
+    if ip is not None:
+        key = (tenant.id, r["id"], _ip_hash(tenant, ip or "?"))
+        last = _recent_views.get(key)
+        if last is not None and now - last < VIEW_DEDUPE_S:
+            return
+        if len(_recent_views) > 20_000:
+            for k in [k for k, v in _recent_views.items() if now - v >= VIEW_DEDUPE_S]:
+                _recent_views.pop(k, None)
+        _recent_views[key] = now
     with tenant.db() as c:
         c.execute("UPDATE proposals SET views=COALESCE(views,0)+1, first_viewed=COALESCE(first_viewed,?), last_viewed=? "
                   "WHERE id=?", (now, now, r["id"]))

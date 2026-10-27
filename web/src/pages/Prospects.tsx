@@ -39,6 +39,8 @@ const EVENT_LABEL: Record<string, string> = {
 const when = (ts?: number | null) => (ts ? new Date(ts * 1000).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
 const plainName = (s?: string) => (s || "").replace(" (DEMO)", "");
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+// only ever link to http(s) pages: a stored "javascript:" or "data:" address is shown as text, never as a link
+const safeLink = (u?: string | null) => (u && /^https?:\/\//i.test(u) ? u : undefined);
 
 function useAct() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -286,7 +288,7 @@ function BulkModal({ open, onClose, overview, onDone }: { open: boolean; onClose
   return (
     <Modal open={open} onClose={() => { setRes(null); onClose(); }} title="Draft first messages">
       <div className="space-y-3">
-        <p className="text-sm text-muted">Drafts one first message for each new or researched prospect, best fit first. The style is picked automatically: each style is tried until it has enough sends, then the ones that get more replies are picked more often. Nothing is sent until you approve it.</p>
+        <p className="text-sm text-muted">Drafts one first message for each of your own new or researched prospects, best fit first. The style is picked automatically: each style is tried until it has enough sends, then the ones that get more replies are picked more often. Nothing is sent until you approve it.</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Channel"><Select value={channel} onChange={(e) => setChannel(e.target.value)} options={(overview?.channels || []).map((c) => ({ value: c.key, label: c.label }))} /></Field>
           <Field label="How many"><Input type="number" min={1} max={100} value={limit} onChange={(e) => setLimit(e.target.value)} /></Field>
@@ -565,6 +567,7 @@ function ProspectDrawer({ id, initialTab, overview, onClose, onChanged }: { id: 
   const locked = p && (p.do_not_contact || p.claim_released);
   const setStage = async (stage: string) => {
     if (!stage) return;
+    if (stage === "won" && !window.confirm("Mark as won? This adds them to your clients.")) return;
     const reason = stage === "lost" ? window.prompt("Why was it lost? (optional)") || "" : "";
     if (await act("stage", () => post(`/prospects/${id}/stage`, { stage, reason }))) refresh();
   };
@@ -601,7 +604,7 @@ function ProspectDrawer({ id, initialTab, overview, onClose, onChanged }: { id: 
               <div className="w-full sm:w-48">
                 <Field label="Move to stage">
                   <Select value="" onChange={(e) => setStage(e.target.value)} disabled={busy === "stage"}
-                    options={[{ value: "", label: "Choose…" }, ...(overview?.stages || []).filter((s) => s.key !== p.stage && s.key !== "dnc").map((s) => ({ value: s.key, label: s.label }))]} />
+                    options={[{ value: "", label: "Choose…" }, ...(overview?.stages || []).filter((s) => s.key !== p.stage && s.key !== "dnc" && (!p.claim_released || ["lost", "nurture"].includes(s.key))).map((s) => ({ value: s.key, label: s.label }))]} />
                 </Field>
               </div>
               <Button tone="danger" size="sm" loading={busy === "dnc"} onClick={dnc}>Do not contact</Button>
@@ -658,7 +661,7 @@ function ResearchPanel({ p, webOn, onChanged }: { p: any; webOn: boolean; onChan
                 {f.quote && f.quote !== f.claim && <div className="mt-0.5 break-words text-xs text-muted">“{f.quote}”</div>}
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted">
                   <span>Source: {f.source}</span>
-                  {f.source_url && <a className="inline-flex items-center gap-0.5 text-brand" href={f.source_url} target="_blank" rel="noreferrer noopener">link <ExternalLink className="size-3" /></a>}
+                  {safeLink(f.source_url) && <a className="inline-flex items-center gap-0.5 text-brand" href={safeLink(f.source_url)} target="_blank" rel="noreferrer noopener">Open source <ExternalLink className="size-3" /></a>}
                   {f.fetched_at && <span>{when(f.fetched_at)}</span>}
                 </div>
               </li>
@@ -750,7 +753,7 @@ function MessagesPanel({ p, drafts, usage, locked, aiLabel, onChanged }: { p: an
         </Card>
       )}
       {!locked && p.stage === "contacted" && !hasFollowups && (
-        <Card><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm">No follow-ups yet. They're added on day 2, 4 and 7 after the first message goes out, and stop if they reply.</p><Button size="sm" loading={busy === "fu"} onClick={followups}>Draft follow-ups now</Button></div></Card>
+        <Card><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm">No follow-ups yet. They're added on day 2, 4 and 7 after the first message goes out, and stop if they reply.</p><Button size="sm" loading={busy === "fu"} onClick={followups}>Draft follow-ups now</Button></div><ErrorBox error={err} /></Card>
       )}
       <Card title="Messages for this prospect">
         {drafts.length === 0 ? <Empty title="Nothing drafted yet" /> : (
