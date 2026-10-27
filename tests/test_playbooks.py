@@ -505,10 +505,23 @@ def test_coach_external_false_overrides_the_switch(on):
     assert "external" not in steps
 
 
-def test_channel_reply_draft_resolves_every_x_marker_and_waits_for_approval(on):
-    from operator_ai import channels
+def _linked_student(t, channel: str, ext_id: str, username: str = "chat-student") -> int:
+    """Channel replies go through inbound.route: only a sender linked to a student/member gets the cited Coach
+    (a stranger gets a holding reply), so these tests link the chat first, as a student would with a link code."""
+    uid = auth.create_user(t, username, "x" * 16, "student")
+    with t.db() as c:
+        sid = c.execute("INSERT INTO students(name,email) VALUES('Chat Student','chat.student@example.invalid')").lastrowid
+        c.execute("UPDATE users SET student_id=? WHERE id=?", (sid, uid))
+        c.execute("INSERT INTO channel_links(channel,ext_id,user_id,opted_in,status,created) VALUES(?,?,?,1,'linked',1)",
+                  (channel, ext_id, uid))
+    return uid
 
-    out = channels._answer_draft(on, "telegram", "chat-42", PLAYBOOK_ONLY[0])
+
+def test_channel_reply_draft_resolves_every_x_marker_and_waits_for_approval(on):
+    from operator_ai import inbound
+
+    _linked_student(on, "telegram", "chat-42")
+    out = inbound.route(on, "telegram", "chat-42", PLAYBOOK_ONLY[0], {})
     assert out["status"] == "pending"  # queued, never sent without approval
     with on.db() as c:
         row = c.execute("SELECT body, status FROM queue WHERE id=?", (out["queued"],)).fetchone()
@@ -546,8 +559,7 @@ def test_phone_line_never_speaks_x_markers(client):
     t.set("third_party_kb", True)
     vault.put(t, {"sms_auth_token": "voicetok"})
     settings.set_box(t, "live_channels_enabled", True, "test")
-    with t.db() as c:
-        c.execute("INSERT INTO channel_links(channel,ext_id,opted_in,status,created) VALUES('phone','+1-555-0199',1,'opted_in',0)")
+    _linked_student(t, "phone", "+1-555-0199", "caller-student")  # only a known caller hears course answers
     params = {"From": "+1-555-0199", "SpeechResult": PLAYBOOK_ONLY[0]}
     url = "http://testserver/t/owner/hooks/voice"
     r = client.post("/t/owner/hooks/voice", content=urlencode(params),
@@ -664,7 +676,10 @@ def test_external_refs_never_put_a_blocked_title_into_a_queued_draft(on):
             "as_of": "2026-10", "confidence": "high", "url": "https://example.org/r"}]
     refs = coach.external_refs("Publish a refund SLA. [X1]", ext, on)
     assert "guarantee" not in refs.lower() and "[X1] Compliance 2026 entry (researched 2026-10" in refs
-    out = channels._answer_draft(on, "telegram", "chat-7", "How do I deal with a refund request?")
+    from operator_ai import inbound
+
+    _linked_student(on, "telegram", "chat-7")
+    out = inbound.route(on, "telegram", "chat-7", "How do I deal with a refund request?", {})
     with on.db() as c:
         row = c.execute("SELECT body, status, flags FROM queue WHERE id=?", (out["queued"],)).fetchone()
     assert row["status"] in ("pending", "needs_human"), (row["status"], row["flags"])  # never "held"

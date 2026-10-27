@@ -126,9 +126,11 @@ def payment_webhook(tenant, sig: str | None, body: bytes) -> dict:
         raise WebhookError(401, "Bad signature")
     try:
         ev = json.loads(body)
-        eid, kind, email = str(ev["id"]), str(ev["type"]), str(ev["data"]["email"]).lower()
+        eid, kind, email = str(ev["id"]), str(ev["type"]), str(ev["data"]["email"]).strip().lower()
     except (ValueError, KeyError, TypeError):
         raise WebhookError(422, "Malformed event")
+    if not re.fullmatch(r"[^@\s<>\"']+@[^@\s<>\"']+\.[a-z]{2,}", email) or len(email) > 254 or len(eid) > 200:
+        raise WebhookError(422, "The event needs a valid customer email")
     with tenant.db() as c:
         try:
             c.execute("INSERT INTO payment_events(event_id,kind,email,data,created) VALUES(?,?,?,?,?)",
@@ -139,23 +141,34 @@ def payment_webhook(tenant, sig: str | None, body: bytes) -> dict:
               "subscription.cancelled": "cancelled", "payment.refunded": "cancelled"}.get(kind)
     if status is None:
         return {"ok": True, "ignored": kind}
+    plan = ev["data"].get("plan", "core") if isinstance(ev.get("data"), dict) else "core"
     with tenant.db() as c:
         c.execute("INSERT INTO members(email,status,plan,updated,demo) VALUES(?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET "
                   "status=excluded.status, updated=excluded.updated",
-                  (email, status, ev["data"].get("plan", "core"), db.now(), 1 if tenant.is_demo else 0))
-        u = c.execute("SELECT id FROM users WHERE username=?", (email,)).fetchone()
-    invite = None
-    if status == "active" and u is None:
+                  (email, status, str(plan)[:60], db.now(), 1 if tenant.is_demo else 0))
+        # Payment events only ever change STUDENT accounts linked to this email: the member account (username is
+        # the email) or a student whose record carries the email. Owner and staff accounts are never touched.
+        same_name = c.execute("SELECT id, role FROM users WHERE lower(username)=?", (email,)).fetchone()
+        students = [r["id"] for r in c.execute(
+            "SELECT u.id FROM users u LEFT JOIN students s ON s.id=u.student_id WHERE u.role='student' AND "
+            "(lower(u.username)=? OR lower(COALESCE(s.email,''))=?)", (email, email))]
+    invite, account = None, "updated" if students else "none"
+    if same_name is not None and same_name["role"] != "student":
+        account = "unchanged (staff account; payments never change it)"
+        students = [s for s in students if s != same_name["id"]]
+    if status == "active" and same_name is None and not students:
         pw = secrets.token_urlsafe(12)
         auth.create_user(tenant, email, pw, "student", display=email.split("@")[0])
         invite = "member account created (invite sent manually by the owner; password never shown)"
-    elif u is not None:
+        account = "created"
+    elif students:
         with tenant.db() as c:
-            c.execute("UPDATE users SET active=? WHERE id=?", (1 if status == "active" else 0, u["id"]))
-            if status != "active":
-                c.execute("DELETE FROM sessions WHERE user_id=?", (u["id"],))
-    audit.log(tenant, "payments-webhook", "payment", {"event": eid, "kind": kind, "status": status})
-    return {"ok": True, "member_status": status, "access": status == "active", "invite": invite}
+            for uid in students:
+                c.execute("UPDATE users SET active=? WHERE id=? AND role='student'", (1 if status == "active" else 0, uid))
+                if status != "active":
+                    c.execute("DELETE FROM sessions WHERE user_id=?", (uid,))
+    audit.log(tenant, "payments-webhook", "payment", {"event": eid, "kind": kind, "status": status, "account": account})
+    return {"ok": True, "member_status": status, "access": status == "active", "invite": invite, "account": account}
 
 
 def members(tenant) -> list[dict]:

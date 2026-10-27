@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { ApiError, post } from "../api";
-import { Badge, Button, Card, Citations, ErrorBox, Field, PageHeader, TextArea, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, ErrorBox, Field, PageHeader, Tabs, TextArea, useApp } from "../components/ui";
+import { EscalationsPanel, InboxPanel } from "./inbox/InboxPanel";
 
 const CHANNELS = [
   { key: "telegram", name: "Telegram", how: "Students link with a code (/link CODE), ask with /ask, check in with /checkin 40 2 2 4. In groups the bot only answers mentions.", hook: "hooks/telegram", sig: "X-Telegram-Bot-Api-Secret-Token" },
-  { key: "slack", name: "Slack", how: "DMs and @mentions. Every request's signature (v0 HMAC) and timestamp are checked.", hook: "hooks/slack", sig: "X-Slack-Signature" },
-  { key: "sms", name: "SMS", how: "Opt-in first: nothing is answered until the number replies START. STOP opts out. Practice mode accepts fictional +1-555-01xx numbers only.", hook: "hooks/sms", sig: "X-Signature" },
-  { key: "phone", name: "Phone", how: "Same opt-in rules as SMS (mock transcript in, drafted reply out).", hook: "hooks/phone", sig: "X-Signature" },
-  { key: "email", name: "Email (inbound)", how: "Parses the email, strips quoted history, drafts a cited reply. Drafts only.", hook: "hooks/email", sig: "X-Signature" },
+  { key: "slack", name: "Slack", how: "DMs and @mentions. Students link by sending the app a DM: link CODE (the same code as Telegram); linked students get cited answers, anyone else a holding reply for a person. Every request's signature (v0 HMAC) and timestamp are checked.", hook: "hooks/slack", sig: "X-Slack-Signature" },
+  { key: "sms", name: "SMS", how: "Opt-in first: nothing is drafted until the number replies START. STOP, END, QUIT, \"stop please\" and similar opt out at once; START opts back in. A student can text LINK CODE to tie their number to their account. Practice mode accepts fictional +1-555-01xx numbers only.", hook: "hooks/sms", sig: "X-Signature + X-Signature-Timestamp" },
+  { key: "phone", name: "Phone", how: "Same opt-in rules as SMS. Only students and members hear course answers; anyone else is thanked and lands in the inbox.", hook: "hooks/phone", sig: "X-Signature + X-Signature-Timestamp" },
+  { key: "email", name: "Email (inbound)", how: "Parses the email, strips quoted history and matches the sender. Prospects get a drafted setter reply, students a cited answer, strangers a holding reply for a person.", hook: "hooks/email", sig: "X-Signature + X-Signature-Timestamp" },
 ];
 
 export default function Channels() {
   const { me } = useApp();
+  const [tab, setTab] = useState("inbox");
   const [code, setCode] = useState<string | null>(null);
   const [voice, setVoice] = useState<any>(null);
   const [vtext, setVtext] = useState("What are the rules for a Thunder Dome test?");
@@ -28,7 +30,11 @@ export default function Channels() {
   };
   return (
     <div>
-      <PageHeader title="Channels" subtitle="Mock channels. Every reply is drafted into the approval queue; approved replies go to a mock transport. Webhooks are signature-checked." />
+      <PageHeader title="Channels" subtitle="Every reply that comes in is matched to a person, sorted and answered with a draft you approve. Webhooks are signature-checked and retries are ignored." />
+      <Tabs value={tab} onChange={setTab} tabs={[{ key: "inbox", label: "Inbox" }, { key: "escalations", label: "Escalations" }, { key: "setup", label: "Channel setup" }]} />
+      {tab === "inbox" && <InboxPanel />}
+      {tab === "escalations" && <EscalationsPanel owner={me.user.role === "owner"} />}
+      {tab === "setup" && <>
       <ErrorBox error={err} />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {CHANNELS.map((c) => (
@@ -36,7 +42,7 @@ export default function Channels() {
             <p className="text-sm">{c.how}</p>
             <p className="mt-2 text-xs text-muted">Webhook: <code>/t/{me.tenant.id}/{c.hook}</code> · header <code>{c.sig}</code></p>
             {c.key === "telegram" && <Button size="sm" className="mt-2" onClick={async () => { const r = await guard(() => post("/channels/link-code")); if (r) setCode(r.code); }}>Get my link code</Button>}
-            {c.key === "telegram" && code && <p className="mt-1 text-sm">Send <code>/link {code}</code> to the bot.</p>}
+            {c.key === "telegram" && code && <p className="mt-1 text-sm">Send <code>/link {code}</code> to the bot (or DM <code>link {code}</code> to the Slack app, or text it). It works for an hour.</p>}
           </Card>
         ))}
       </div>
@@ -62,6 +68,7 @@ export default function Channels() {
           {deck && <ol className="mt-3 space-y-2">{deck.slides.map((s: any) => <li key={s.n} className="rounded-lg border border-line p-2 text-sm"><b>{s.n}. {s.title}</b><ul className="list-disc pl-5 text-xs">{s.bullets.map((b: string) => <li key={b}>{b}</li>)}</ul>{s.citation && <Citations items={[s.citation]} />}</li>)}</ol>}
         </Card>
       </div>
+      </>}
     </div>
   );
 }

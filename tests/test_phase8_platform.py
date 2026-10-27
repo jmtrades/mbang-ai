@@ -274,7 +274,9 @@ def test_sms_opt_in_first_and_fictional_numbers(demo_tenant, client):
     assert client.post("/t/demo/hooks/sms", content=body, headers=h).json()["opted_in"] is True
     body, h = _signed(secret, {"from": "+1-555-0142", "body": "What's the USP formula?"})
     q = client.post("/t/demo/hooks/sms", content=body, headers=h).json()["queued"]
-    assert queue.get(demo_tenant, q)["status"] == "pending"
+    # an unknown number never gets course material: a neutral holding reply for a person (inbound.route)
+    item = queue.get(demo_tenant, q)
+    assert item["status"] == "needs_human" and item["meta"]["holding"] and "Sources:" not in item["body"]
     body, h = _signed(secret, {"from": "+44 7700 900123", "body": "hi"})
     assert client.post("/t/demo/hooks/sms", content=body, headers=h).status_code == 422  # not a fictional number
     # outbound SMS to someone who never opted in is held
@@ -287,6 +289,8 @@ def test_sms_opt_in_first_and_fictional_numbers(demo_tenant, client):
 
 def test_email_inbound_parse_quote_strip_drafts_only(demo_tenant, client):
     secret = vault.ensure_practice_secret(demo_tenant, "email_webhook_secret")
+    with demo_tenant.db() as c:  # a known student keeps the cited Coach (unknown senders get a holding reply)
+        c.execute("INSERT INTO students(name,email,demo) VALUES('Lee (DEMO)','lee@example.invalid',1)")
     raw = (b"From: Lee <lee@example.invalid>\nSubject: Show rates\nContent-Type: text/plain\n\n"
            b"What show rate should I aim for on booked calls?\n\nOn Mon, someone wrote:\n> old quoted text\n")
     r = client.post("/t/demo/hooks/email", content=raw, headers={"x-signature": channels.sign_body(secret, raw)})

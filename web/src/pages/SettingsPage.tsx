@@ -3,6 +3,7 @@ import { ApiError, post, put } from "../api";
 import { Lock, Monitor, Moon, RotateCcw, Sun } from "lucide-react";
 import { Avatar, Badge, Button, Card, ErrorBox, Field, Input, Loading, PageHeader, Segmented, cx, humanize, useApi, useApp } from "../components/ui";
 import { type ThemePref, useTheme } from "../theme";
+import { LinkChats } from "./inbox/LinkChats";
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -186,6 +187,8 @@ export default function SettingsPage() {
             )}
           </>
         )}
+
+        <LinkChats />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 """Public (un-authenticated, signature-checked) endpoints: channel webhooks, payment webhook,
-MCP, lead-magnet minis and the embed script."""
+MCP, lead-magnet minis and the embed script. Channel webhooks route every message through
+inbound.route; SMS / phone / email accept X-Signature-Timestamp (required outside the practice workspace)."""
 from __future__ import annotations
 
 import json
@@ -32,12 +33,20 @@ def _json(body: bytes) -> dict:
     return d
 
 
+def _ts(request: Request) -> str | None:
+    return request.headers.get("x-signature-timestamp")
+
+
 def _ch(fn):
+    from .. import inbound
+
     try:
         return fn()
     except channels.ChannelError as e:
         raise HTTPException(e.status, str(e))
     except console.WebhookError as e:
+        raise HTTPException(e.status, str(e))
+    except inbound.InboundError as e:
         raise HTTPException(e.status, str(e))
 
 
@@ -56,19 +65,19 @@ async def slack(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
 @public_router.post("/t/{tid}/hooks/sms")
 async def sms(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
     body = await _body(request)
-    return _ch(lambda: channels.sms(tenant, request.headers.get("x-signature"), body, _json(body), "sms"))
+    return _ch(lambda: channels.sms(tenant, request.headers.get("x-signature"), body, _json(body), "sms", _ts(request)))
 
 
 @public_router.post("/t/{tid}/hooks/phone")
 async def phone(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
     body = await _body(request)
-    return _ch(lambda: channels.sms(tenant, request.headers.get("x-signature"), body, _json(body), "phone"))
+    return _ch(lambda: channels.sms(tenant, request.headers.get("x-signature"), body, _json(body), "phone", _ts(request)))
 
 
 @public_router.post("/t/{tid}/hooks/email")
 async def email_in(request: Request, tenant: tenancy.Tenant = Depends(get_tenant)):
     body = await _body(request)
-    return _ch(lambda: channels.inbound_email(tenant, request.headers.get("x-signature"), body))
+    return _ch(lambda: channels.inbound_email(tenant, request.headers.get("x-signature"), body, _ts(request)))
 
 
 @public_router.post("/t/{tid}/hooks/payments")
