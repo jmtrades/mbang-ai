@@ -3,24 +3,28 @@ import {
   Home, Gauge, Sunrise, MessageCircle, MessagesSquare, ClipboardCheck, PenLine, Target, Send, PhoneCall, Repeat,
   Users, UserPlus, CalendarCheck, Briefcase, Activity, Presentation, Megaphone, Sparkles, Network, Inbox, ListTree,
   ScrollText, Library, FlaskConical, ShieldCheck, SlidersHorizontal, Plug, Radio, Server, Contact, Gift, FolderSync,
-  Wand2, IdCard, FolderKanban, Settings,
+  Wand2, IdCard, FolderKanban, Settings, Rocket, GraduationCap, BookOpenCheck, UserSearch, UsersRound, ListChecks,
 } from "lucide-react";
 
 export type PageDef = { key: string; label: string; group: string; icon: React.ComponentType<{ className?: string }>; C: React.LazyExoticComponent<React.ComponentType<any>> };
 
 const p = (f: () => Promise<{ default: React.ComponentType<any> }>) => lazy(f);
 
-export const GROUPS = ["Overview", "Coach", "Work", "Sales", "Students", "Clients", "Studio", "Owner", "Settings"];
+export const GROUPS = ["Overview", "Academy", "Coach", "Work", "Sales", "Students", "Clients", "Studio", "Owner", "Settings"];
 
 export const PAGES: PageDef[] = [
   { key: "home", label: "Day One", group: "Overview", icon: Home, C: p(() => import("./Home")) },
+  { key: "missions", label: "Missions", group: "Overview", icon: Rocket, C: p(() => import("./Missions")) },
   { key: "command", label: "Command Centre", group: "Overview", icon: Gauge, C: p(() => import("./CommandCentre")) },
   { key: "brief", label: "Morning brief", group: "Overview", icon: Sunrise, C: p(() => import("./MorningBrief")) },
+  { key: "academy", label: "Academy", group: "Academy", icon: GraduationCap, C: p(() => import("./Academy")) },
+  { key: "playbooks", label: "2026 Playbooks", group: "Academy", icon: BookOpenCheck, C: p(() => import("./Playbooks")) },
   { key: "coach", label: "Student Coach", group: "Coach", icon: MessageCircle, C: p(() => import("./Coach")) },
   { key: "threads", label: "Threads", group: "Coach", icon: MessagesSquare, C: p(() => import("./Threads")) },
   { key: "review", label: "Work Reviewer", group: "Work", icon: ClipboardCheck, C: p(() => import("./Reviewer")) },
   { key: "coaching", label: "Coaching mode", group: "Work", icon: PenLine, C: p(() => import("./Coaching")) },
   { key: "sales", label: "Leads & booking", group: "Sales", icon: Target, C: p(() => import("./Sales")) },
+  { key: "prospects", label: "Prospects", group: "Sales", icon: UserSearch, C: p(() => import("./Prospects")) },
   { key: "outreach", label: "Outreach loop", group: "Sales", icon: Send, C: p(() => import("./Outreach")) },
   { key: "calls", label: "Call review", group: "Sales", icon: PhoneCall, C: p(() => import("./Calls")) },
   { key: "drills", label: "Objection drills", group: "Sales", icon: Repeat, C: p(() => import("./Drills")) },
@@ -48,6 +52,8 @@ export const PAGES: PageDef[] = [
   { key: "drive", label: "Source sync", group: "Owner", icon: FolderSync, C: p(() => import("./Drive")) },
   { key: "skills", label: "Skills & workers", group: "Owner", icon: Wand2, C: p(() => import("./Skills")) },
   { key: "profile", label: "Business profile", group: "Owner", icon: IdCard, C: p(() => import("./Profile")) },
+  { key: "team", label: "Team & invites", group: "Owner", icon: UsersRound, C: p(() => import("./Team")) },
+  { key: "setup", label: "Workspace setup", group: "Owner", icon: ListChecks, C: p(() => import("./Setup")) },
   { key: "projects", label: "Projects & files", group: "Settings", icon: FolderKanban, C: p(() => import("./Projects")) },
   { key: "settings", label: "Settings", group: "Settings", icon: Settings, C: p(() => import("./SettingsPage")) },
 ];

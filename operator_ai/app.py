@@ -21,6 +21,7 @@ STARTED = time.time()
 ROUTE_MODULES = [
     "core", "search", "queue", "agents", "sales", "students", "clients", "studio", "ads", "outreach",
     "builder", "platform", "owner", "channels", "live", "reports",
+    "academy", "missions", "prospects", "playbooks", "team", "setup",
 ]
 
 

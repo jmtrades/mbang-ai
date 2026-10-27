@@ -13,14 +13,14 @@ def test_five_roles_and_tab_matrix():
     assert "audit" not in auth.tabs_for("coach") and "queue" in auth.tabs_for("coach")
     assert "students" not in auth.tabs_for("setter") and "outreach" in auth.tabs_for("setter")
     assert "calls" in auth.tabs_for("closer") and "outreach" not in auth.tabs_for("closer")
-    assert auth.tabs_for("student") == ["home", "coach", "threads", "review", "coaching", "drills", "checkin",
-                                        "projects", "settings"] or set(auth.tabs_for("student")) == {
-        "home", "coach", "threads", "review", "coaching", "checkin", "drills", "projects", "settings"}
+    student = set(auth.tabs_for("student"))
+    assert {"academy", "missions", "prospects", "coach", "checkin", "queue"} <= student
+    assert not ({"audit", "kb", "golive", "students", "team", "setup"} & student)
 
 
 @pytest.mark.parametrize("role,path,status", [
     ("student", "/audit", 403), ("coach", "/audit", 403), ("owner", "/audit", 200),
-    ("student", "/queue", 403), ("setter", "/queue", 200), ("coach", "/queue", 200),
+    ("student", "/queue", 200), ("setter", "/queue", 200), ("coach", "/queue", 200),
     ("student", "/settings", 200),
 ])
 def test_rbac_api(client, role, path, status):
@@ -176,3 +176,19 @@ def test_demo_whoami_label(client):
     demo_login(client, "owner")
     me = client.get("/t/demo/api/me").json()
     assert me["user"]["display"] == "Owner (DEMO)" and me["is_demo"]
+
+
+
+def test_student_queue_shows_only_own_outreach(client):
+    from operator_ai import queue, tenancy
+
+    demo_login(client, "student")
+    me = client.get("/t/demo/api/me").json()["user"]["id"]
+    t = tenancy.get("demo")
+    mine = queue.add(t, "prospect_dm", "Quick question about your clinic's bookings?", channel="instagram_dm",
+                     meta={"prospect_facing": True, "owner_user_id": me})
+    other = queue.add(t, "prospect_dm", "Quick question?", channel="instagram_dm", meta={"prospect_facing": True, "owner_user_id": 999})
+    ids = {i["id"] for i in client.get("/t/demo/api/queue").json()["items"]}
+    assert mine["id"] in ids and other["id"] not in ids
+    assert client.post(f"/t/demo/api/queue/{other['id']}/approve").status_code in (403, 404)
+    assert client.post(f"/t/demo/api/queue/{mine['id']}/approve").json()["status"] == "approved"

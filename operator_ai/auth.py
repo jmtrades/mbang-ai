@@ -12,25 +12,30 @@ ROLES = ("owner", "coach", "setter", "closer", "student")
 
 # Every UI tab is also the permission its API routes require.
 ALL_TABS = [
-    "home", "command", "brief",
+    "home", "missions", "command", "brief",
+    "academy", "playbooks",
     "coach", "threads",
     "review", "coaching",
-    "sales", "outreach", "calls", "drills",
+    "sales", "prospects", "outreach", "calls", "drills",
     "students", "onboarding", "checkin",
     "clients", "diagnostic", "webinar", "ads",
     "studio", "builder",
     "queue", "runs", "audit", "kb", "evals", "golive", "console", "integrations", "channels", "mcp", "crm",
     "minis", "drive", "skills", "profile",
+    "team", "setup",
     "projects", "settings",
 ]
 
 ROLE_TABS: dict[str, set[str]] = {
     "owner": set(ALL_TABS) - {"checkin"},
-    "coach": {"home", "brief", "coach", "threads", "review", "coaching", "students", "onboarding", "studio",
-              "queue", "runs", "calls", "drills", "projects", "settings"},
-    "setter": {"home", "coach", "threads", "sales", "outreach", "drills", "queue", "projects", "settings"},
-    "closer": {"home", "coach", "threads", "sales", "calls", "drills", "queue", "projects", "settings"},
-    "student": {"home", "coach", "threads", "review", "coaching", "checkin", "drills", "projects", "settings"},
+    "coach": {"home", "missions", "brief", "academy", "playbooks", "coach", "threads", "review", "coaching", "students",
+              "onboarding", "studio", "queue", "runs", "calls", "drills", "projects", "settings"},
+    "setter": {"home", "missions", "academy", "playbooks", "coach", "threads", "sales", "prospects", "outreach", "drills",
+               "queue", "projects", "settings"},
+    "closer": {"home", "missions", "academy", "playbooks", "coach", "threads", "sales", "prospects", "calls", "drills",
+               "queue", "projects", "settings"},
+    "student": {"home", "missions", "academy", "playbooks", "coach", "threads", "review", "coaching", "prospects", "checkin",
+                "drills", "queue", "projects", "settings"},
 }
 
 # Queue kinds a non-owner role may approve or reject. Everything else is owner-only
@@ -42,6 +47,12 @@ ROLE_DECIDE: dict[str, set[str]] = {
     "student": set(),
 }
 
+# Outreach a user drafted for their OWN prospects/clients (queue item meta.owner_user_id == user id):
+# any role may decide these — a student running their growth-operator business approves their own
+# DMs and emails. Guardrails still run on every approval.
+OWN_DECIDE: set[str] = {"dm_opener", "followup", "prospect_dm", "prospect_email", "booking_dm", "proposal",
+                        "reminder", "client_report", "channel_reply", "mission_draft"}
+
 LOGIN_WINDOW = 15 * 60
 LOGIN_MAX_FAILS = 8
 
@@ -50,8 +61,10 @@ def has_tab(role: str, tab: str) -> bool:
     return tab in ROLE_TABS.get(role, set())
 
 
-def can_decide(role: str, kind: str) -> bool:
+def can_decide(role: str, kind: str, item_owner: int | None = None, user_id: int | None = None) -> bool:
     if role == "owner":
+        return True
+    if item_owner is not None and user_id is not None and item_owner == user_id and kind in OWN_DECIDE:
         return True
     return kind in ROLE_DECIDE.get(role, set())
 

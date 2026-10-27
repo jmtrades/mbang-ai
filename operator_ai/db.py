@@ -146,6 +146,48 @@ CREATE TABLE IF NOT EXISTS kb_notes (
 CREATE TABLE IF NOT EXISTS chain_steps (
   id INTEGER PRIMARY KEY, chain_id TEXT, step TEXT, deps TEXT, output TEXT, queue_id INTEGER, run_id INTEGER,
   version INTEGER DEFAULT 1, created REAL);
+CREATE TABLE IF NOT EXISTS academy_lessons (
+  id INTEGER PRIMARY KEY, path_key TEXT, ord INTEGER, title TEXT, body TEXT, key_points TEXT, citations TEXT,
+  source_file TEXT, source_kind TEXT, created REAL);
+CREATE TABLE IF NOT EXISTS academy_quiz_items (
+  id INTEGER PRIMARY KEY, lesson_id INTEGER, kind TEXT, prompt TEXT, options TEXT, answer TEXT, explanation TEXT,
+  citation TEXT, created REAL);
+CREATE TABLE IF NOT EXISTS academy_progress (
+  id INTEGER PRIMARY KEY, user_id INTEGER, lesson_id INTEGER, status TEXT, score REAL, attempts INTEGER DEFAULT 0,
+  updated REAL, UNIQUE(user_id, lesson_id));
+CREATE TABLE IF NOT EXISTS academy_attempts (
+  id INTEGER PRIMARY KEY, user_id INTEGER, quiz_item_id INTEGER, answer TEXT, correct INTEGER, created REAL);
+CREATE TABLE IF NOT EXISTS academy_review (
+  id INTEGER PRIMARY KEY, user_id INTEGER, quiz_item_id INTEGER, ease REAL DEFAULT 2.5, interval REAL DEFAULT 0,
+  reps INTEGER DEFAULT 0, due REAL, UNIQUE(user_id, quiz_item_id));
+CREATE TABLE IF NOT EXISTS roleplays (
+  id INTEGER PRIMARY KEY, user_id INTEGER, scenario_key TEXT, transcript TEXT, state TEXT, score TEXT, status TEXT,
+  created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS certifications (
+  id INTEGER PRIMARY KEY, user_id INTEGER, path_key TEXT, level TEXT, awarded REAL, evidence TEXT,
+  UNIQUE(user_id, path_key, level));
+CREATE TABLE IF NOT EXISTS missions (
+  id INTEGER PRIMARY KEY, user_id INTEGER, goal TEXT, template TEXT, status TEXT, plan TEXT, context TEXT,
+  progress TEXT, metrics TEXT, created REAL, updated REAL, next_check REAL);
+CREATE TABLE IF NOT EXISTS mission_steps (
+  id INTEGER PRIMARY KEY, mission_id INTEGER, ord INTEGER, title TEXT, agent TEXT, params TEXT, depends TEXT,
+  status TEXT, run_id INTEGER, output TEXT, queue_ids TEXT, due REAL, created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS mission_events (
+  id INTEGER PRIMARY KEY, mission_id INTEGER, kind TEXT, detail TEXT, created REAL);
+CREATE TABLE IF NOT EXISTS prospects (
+  id INTEGER PRIMARY KEY, owner_user_id INTEGER, list_name TEXT, name TEXT, handle TEXT, email TEXT, website TEXT,
+  niche TEXT, followers INTEGER, offer TEXT, notes TEXT, research TEXT, fit_score INTEGER, stage TEXT, source TEXT,
+  lawful_basis TEXT, do_not_contact INTEGER DEFAULT 0, demo INTEGER DEFAULT 0, mission_id INTEGER, created REAL,
+  updated REAL);
+CREATE INDEX IF NOT EXISTS prospects_owner ON prospects(owner_user_id, stage);
+CREATE TABLE IF NOT EXISTS proposals (
+  id INTEGER PRIMARY KEY, owner_user_id INTEGER, prospect_id INTEGER, title TEXT, body TEXT, terms TEXT, status TEXT,
+  queue_id INTEGER, created REAL);
+CREATE TABLE IF NOT EXISTS persona_profiles (
+  id INTEGER PRIMARY KEY, person TEXT, status TEXT, consent TEXT, profile TEXT, created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS invites (
+  id INTEGER PRIMARY KEY, email TEXT, role TEXT, token_hash TEXT UNIQUE, created_by TEXT, created REAL, expires REAL,
+  used REAL);
 """
 
 REGISTRY_SCHEMA = """

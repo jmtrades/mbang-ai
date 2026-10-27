@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .. import audit, guardrails, queue, runtime, settings
+from .. import audit, auth, guardrails, queue, runtime, settings
 from ..deps import Ctx, get_ctx, require, require_owner
 
 router = APIRouter()
@@ -23,7 +23,8 @@ def list_queue(status: str | None = Query(None, max_length=20), kind: str | None
                ctx: Ctx = Depends(require("queue"))):
     id_list = [int(x) for x in ids.split(",") if x.strip().isdigit()] if ids else None
     items = queue.list_items(ctx.tenant, status=status, kind=kind, run_id=run_id, chain_id=chain_id, ids=id_list,
-                             kinds=queue.decidable_kinds(ctx.role), tag=tag)
+                             kinds=queue.decidable_kinds(ctx.role), tag=tag,
+                             own_user_id=None if ctx.role == "owner" else ctx.user["id"])
     return {"items": items, "counts": queue.counts(ctx.tenant)}
 
 
@@ -31,7 +32,8 @@ def list_queue(status: str | None = Query(None, max_length=20), kind: str | None
 def get_item(qid: int, ctx: Ctx = Depends(require("queue"))):
     item = queue.get(ctx.tenant, qid)
     kinds = queue.decidable_kinds(ctx.role)
-    if item is None or (kinds is not None and item["kind"] not in kinds):
+    own = item is not None and item["meta"].get("owner_user_id") == ctx.user["id"] and item["kind"] in auth.OWN_DECIDE
+    if item is None or (kinds is not None and item["kind"] not in kinds and not own):
         raise HTTPException(404, "Not found")
     return item
 
@@ -43,7 +45,7 @@ class EditBody(BaseModel):
 @router.put("/queue/{qid}")
 def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
     try:
-        return queue.edit(ctx.tenant, qid, b.body, ctx.actor, ctx.role)
+        return queue.edit(ctx.tenant, qid, b.body, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
         _qerr(e)
 
@@ -51,7 +53,7 @@ def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
 @router.post("/queue/{qid}/approve")
 def approve(qid: int, ctx: Ctx = Depends(require("queue"))):
     try:
-        return queue.approve(ctx.tenant, qid, ctx.actor, ctx.role)
+        return queue.approve(ctx.tenant, qid, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
         _qerr(e)
 
@@ -63,7 +65,7 @@ class RejectBody(BaseModel):
 @router.post("/queue/{qid}/reject")
 def reject(qid: int, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
     try:
-        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""))
+        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"])
     except queue.QueueError as e:
         _qerr(e)
 

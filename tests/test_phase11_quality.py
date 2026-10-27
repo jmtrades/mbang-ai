@@ -33,7 +33,8 @@ def test_malformed_bodies_get_422(client):
 
 # ---------------------------------------------------------------- RBAC matrix (A28)
 TAB_PROBE = {
-    "home": "/day-one", "command": "/command-centre", "brief": "/brief", "coach": "/voice-note/deck", "threads": "/threads",
+    "home": "/day-one", "missions": "/missions", "academy": "/academy", "playbooks": "/playbooks", "prospects": "/prospects",
+    "team": "/team", "setup": "/setup", "command": "/command-centre", "brief": "/brief", "coach": "/voice-note/deck", "threads": "/threads",
     "review": "/review/types", "coaching": "/coaching", "sales": "/leads", "outreach": "/outreach", "calls": "/calls",
     "drills": "/drills", "students": "/students", "onboarding": "/onboarding", "checkin": "/checkin/mine",
     "clients": "/clients", "diagnostic": "/diagnose/stages", "webinar": "/webinar/chains", "ads": "/ads",

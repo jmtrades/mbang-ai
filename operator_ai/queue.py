@@ -119,7 +119,7 @@ def get(tenant, qid: int, scrub: bool = True) -> dict | None:
 
 def list_items(tenant, status: str | None = None, kind: str | None = None, run_id: int | None = None,
                chain_id: str | None = None, ids: list[int] | None = None, kinds: set[str] | None = None,
-               limit: int = 200, tag: str | None = None) -> list[dict]:
+               limit: int = 200, tag: str | None = None, own_user_id: int | None = None) -> list[dict]:
     q = "SELECT * FROM queue WHERE 1=1"
     args: list = []
     if status == "open":
@@ -143,10 +143,19 @@ def list_items(tenant, status: str | None = None, kind: str | None = None, run_i
         q += f" AND id IN ({','.join('?' * len(ids))})"
         args += ids
     if kinds is not None:
-        if not kinds:
+        own = (f"(json_extract(meta,'$.owner_user_id')=? AND kind IN ({','.join('?' * len(auth.OWN_DECIDE))}))"
+               if own_user_id is not None else None)
+        if not kinds and own is None:
             return []
-        q += f" AND kind IN ({','.join('?' * len(kinds))})"
-        args += sorted(kinds)
+        parts, pargs = [], []
+        if kinds:
+            parts.append(f"kind IN ({','.join('?' * len(kinds))})")
+            pargs += sorted(kinds)
+        if own:
+            parts.append(own)
+            pargs += [own_user_id, *sorted(auth.OWN_DECIDE)]
+        q += " AND (" + " OR ".join(parts) + ")"
+        args += pargs
     q += " ORDER BY id DESC LIMIT ?"
     args.append(limit)
     names = guardrails.tenant_banned_names(tenant)
@@ -159,13 +168,18 @@ def list_items(tenant, status: str | None = None, kind: str | None = None, run_i
     return out
 
 
-def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patch: dict | None = None) -> dict:
+def _may(role: str, item: dict, user_id: int | None) -> bool:
+    return auth.can_decide(role, item["kind"], item["meta"].get("owner_user_id"), user_id)
+
+
+def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patch: dict | None = None,
+         user_id: int | None = None) -> dict:
     item = get(tenant, qid, scrub=False)
     if item is None:
         raise QueueError(404, "Not found")
     if item["status"] not in OPEN:
         raise QueueError(409, f"Item is already {item['status']}")
-    if not auth.can_decide(role, item["kind"]):
+    if not _may(role, item, user_id):
         raise QueueError(403, "Your role can't edit this item")
     meta = {**item["meta"], **(meta_patch or {})}
     flags = _check(tenant, item["title"] or "", body, meta, item["recipient_ref"], item["channel"])
@@ -177,11 +191,11 @@ def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patc
     return get(tenant, qid)
 
 
-def approve(tenant, qid: int, actor: str, role: str = "owner") -> dict:
+def approve(tenant, qid: int, actor: str, role: str = "owner", user_id: int | None = None) -> dict:
     item = get(tenant, qid, scrub=False)
     if item is None:
         raise QueueError(404, "Not found")
-    if not auth.can_decide(role, item["kind"]):
+    if not _may(role, item, user_id):
         raise QueueError(403, "Your role can't approve this kind of item")
     if item["status"] not in OPEN:
         raise QueueError(409, f"Item is already {item['status']}")
@@ -202,11 +216,11 @@ def approve(tenant, qid: int, actor: str, role: str = "owner") -> dict:
     return get(tenant, qid)
 
 
-def reject(tenant, qid: int, actor: str, role: str = "owner", reason: str = "") -> dict:
+def reject(tenant, qid: int, actor: str, role: str = "owner", reason: str = "", user_id: int | None = None) -> dict:
     item = get(tenant, qid, scrub=False)
     if item is None:
         raise QueueError(404, "Not found")
-    if not auth.can_decide(role, item["kind"]):
+    if not _may(role, item, user_id):
         raise QueueError(403, "Your role can't reject this kind of item")
     if item["status"] not in OPEN:
         raise QueueError(409, f"Item is already {item['status']}")
