@@ -879,7 +879,9 @@ def _reply_route(tenant, party: dict, inbound: dict) -> tuple[str, str]:
                 return "email", party["email"]
             if party.get("handle"):
                 return "instagram_dm", party["handle"]
-    if ch in ("manual", "facebook"):
+    if ch == "facebook":
+        return "facebook_dm", ref  # sent by a person from the page's inbox, then confirmed with "I sent it"
+    if ch == "manual":
         return "manual", ref
     return ch, ref
 

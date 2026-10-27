@@ -644,6 +644,9 @@ def test_proposal_send_approve_public_page_accept_win(world):
     assert b.post(f"{API}/queue/{s['queue_id']}/approve").status_code in (403, 404)
     assert b.get(f"{API}/prospects/proposals/{pr['id']}").status_code == 404
     assert a.post(f"{API}/queue/{s['queue_id']}/approve").status_code == 200
+    # approved and live, but not "Proposal sent" until the email really went out ("I sent it" here: no live sender)
+    assert P._row(t, pid)["stage"] != "proposal"
+    assert a.post(f"{API}/queue/{s['queue_id']}/sent", json={}).status_code == 200
     assert P._row(t, pid)["stage"] == "proposal"
     r = world.anon.get(page)
     assert r.status_code == 200 and "Proposal for" in r.text and "don&#x27;t guarantee" in r.text

@@ -49,6 +49,18 @@ NUDGES = {
 }
 
 
+def student_user(tenant, student_id) -> dict | None:
+    """The sign-in account of a student record, if they have one: their own choices (a neutral voice) apply to what
+    the system writes to them."""
+    try:
+        with tenant.db() as c:
+            r = c.execute("SELECT id, username, role FROM users WHERE student_id=? AND deleted IS NULL ORDER BY id LIMIT 1",
+                          (student_id,)).fetchone()
+    except Exception:  # noqa: BLE001 - no account (or an older schema): template text for them is styled per consent
+        return None
+    return {"id": r["id"], "username": r["username"], "role": r["role"]} if r else None
+
+
 def _load(tenant, student_ids: list[int] | None = None) -> tuple[list[dict], dict[int, list[dict]]]:
     with tenant.db() as c:
         if student_ids:
@@ -189,10 +201,13 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
                     from .. import persona
 
                     # [persona] word preferences on the template text, only under a signed student_nudges consent
-                    body = persona.style_template(tenant, NUDGES[top].format(first=_first(s.get("name"))), "student_nudges")
+                    # ...and never for a student who chose a neutral voice
+                    plain = NUDGES[top].format(first=_first(s.get("name")))
+                    body = persona.style_template(tenant, plain, "student_nudges", user=student_user(tenant, s["id"]))
                     q = queue.add(tenant, "nudge", body, channel="telegram",
                                   recipient_ref=name, title=f"Nudge: {name} — {SIGNALS[top][0]}",
-                                  meta={"student_id": s["id"], "signal": top, "citation": cites.get(top)}, run_id=run.id,
+                                  meta={"student_id": s["id"], "signal": top, "citation": cites.get(top),
+                                        **persona.styled_meta(tenant, plain, body)}, run_id=run.id,
                                   actor=actor, demo=bool(s["demo"]))
                 except Exception:  # noqa: BLE001 - one bad student row must not stop everyone else's nudge
                     log.exception("nudge skipped for student %s", s.get("id"))

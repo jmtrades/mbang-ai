@@ -348,6 +348,16 @@ def sign_consent(tenant, user: dict, statement: str, scopes: list[str], profile_
     return consents(tenant, user["id"], 1)[0]
 
 
+def _unstyle_drafts(c) -> int:
+    """Drafts styled from templates under a consent (persona.styled_meta) that nobody has approved or edited yet go back
+    to their neutral wording, so nothing styled is approved or sent after the consent ended. (A person's own edit is
+    their wording and is left alone.)"""
+    return c.execute("UPDATE queue SET body=json_extract(meta,'$.persona_neutral'), "
+                     "meta=json_remove(meta,'$.persona_neutral','$.persona_consent_id') "
+                     "WHERE status IN ('pending','held','needs_human') AND original_body IS NULL "
+                     "AND json_extract(meta,'$.persona_neutral') IS NOT NULL").rowcount
+
+
 def _purge(c) -> int:
     """Styled replays only ('coach-q:p<version>'). Neutral 'coach-q' replays are never touched: they are never written
     from persona-ranked retrieval (the +10% boost only applies to extractive answers, with the AI off)."""
@@ -362,6 +372,7 @@ def withdraw(tenant, actor: str, delete_profile: bool = False, reason: str = "")
         n = c.execute("UPDATE persona_consents SET withdrawn_at=?, withdrawn_by=? WHERE withdrawn_at IS NULL",
                       (now, actor[:120])).rowcount
         purged = _purge(c)
+        unstyled = _unstyle_drafts(c)
         deleted = 0
         if delete_profile:
             c.execute("DELETE FROM persona_phrases")
@@ -369,8 +380,8 @@ def withdraw(tenant, actor: str, delete_profile: bool = False, reason: str = "")
             deleted = c.execute("UPDATE persona_profiles SET status='deleted', profile=NULL WHERE status!='deleted'").rowcount
     cache_clear(tenant)
     audit.log(tenant, actor, "persona.withdraw", {"withdrawn": n, "replays_purged": purged, "profile_deleted": deleted,
-                                                  "reason": (reason or "")[:200]})
-    return {"ok": True, "withdrawn": n, "replays_purged": purged, "profiles_deleted": deleted}
+                                                  "drafts_unstyled": unstyled, "reason": (reason or "")[:200]})
+    return {"ok": True, "withdrawn": n, "replays_purged": purged, "profiles_deleted": deleted, "drafts_unstyled": unstyled}
 
 
 def _expire(tenant, consent_id: int, expires_at: float) -> None:
@@ -378,9 +389,11 @@ def _expire(tenant, consent_id: int, expires_at: float) -> None:
         n = c.execute("UPDATE persona_consents SET withdrawn_at=?, withdrawn_by='expired' WHERE id=? AND withdrawn_at IS NULL",
                       (expires_at, consent_id)).rowcount
         purged = _purge(c) if n else 0
+        unstyled = _unstyle_drafts(c) if n else 0
     cache_clear(tenant)
     if n:
-        audit.log(tenant, "system", "persona.expired", {"consent_id": consent_id, "replays_purged": purged})
+        audit.log(tenant, "system", "persona.expired", {"consent_id": consent_id, "replays_purged": purged,
+                                                        "drafts_unstyled": unstyled})
 
 
 def _compute_active(tenant) -> dict | None:

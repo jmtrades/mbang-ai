@@ -53,7 +53,7 @@ A negator only counts when it governs the match: in the same clause and within a
 | Rule | Code | Severity | Notes |
 |---|---|---|---|
 | Guarantees, money back, risk-free, "no risk", "full refund if it doesn't work", "no questions asked", "refundable", "or you don't pay", "promise you'll get…", "we promise results", "100% success rate", "results warranty" | `guarantee` | block | negation-aware as above; "non-refundable" passes |
-| Income claims ("students make $100k a month", "most of our clients hit six figures", "100K+", "$30k months", "earn up to $10k a month", "our clients made 40,000 last month") | `income_claim` | block | any currency symbol or code, k / thousand / grand / figures, spelled-out amounts, and a bare amount after an earning verb (grouped thousands or 4+ digits, not a year, followed by money words like "last month" / "in sales", never a count like "5000 cold calls"). Runs on the unaltered text in every mode: the $50k-$100k range is never exempt |
+| Income claims ("students make $100k a month", "most of our clients hit six figures", "100K+", "$30k months", "earn up to $10k a month", "our clients made 40,000 last month") | `income_claim` | block | any currency symbol or code, k / thousand / grand / figures, spelled-out amounts, and a bare amount after an earning verb (grouped thousands or 4+ digits, not a year, followed by money words like "last month" / "in sales", never a count like "5000 cold calls"). Runs on the unaltered text in every mode: the $50k-$100k range is never exempt. Outside outreach, "let me make <a person> <amount>" ("let me make you $40k a month") is an income claim too |
 | Invented testimonials / reviews / case studies / results | `fake_testimonial` | block | |
 | Results about a named person | `unverified_result` | block | needs proof + permission |
 | Booking shout-outs with names | `fake_shoutout` | block | |
@@ -98,7 +98,10 @@ A negator only counts when it governs the match: in the same clause and within a
   `agents.sales.reply_line(lead, tier, tenant)` and the Studio call offer write the range only while a current proof
   record exists, else the no-figure line "Let me help [Brand] grow through …".
 
-Client assets (VSL, webinar script, pages, that funnel's emails) may state the student's own offer price.
+Client assets (VSL, webinar script, pages, that funnel's emails) may state the student's own offer price. Prospects
+read client assets too (proposals, webinar pages and emails), so the range keeps its own rules there: a current proof
+record (`unsubstantiated_claim`), hedged, never definite, only in the "Let me make [Brand] …" shape about a business,
+and not for a cold lead when the item names the tier.
 
 ### Proof records (claims substantiation)
 
@@ -119,7 +122,10 @@ max), and a typicality note of at least 20 characters saying what typical result
   dropped. If nothing cited survives, the answer falls back to the extractive answer from the same passages
   (labelled "the AI answer had no valid citations"), or to "not covered".
 - Extractive answers quote the owner's own indexed material verbatim (already screened by the content policy at
-  index time), so they are not rewritten.
+  index time), so they are not rewritten. The index keeps lines that state a guarantee, an income claim or a named
+  person's result (teaching material quotes them, `content_policy.SKIP_IN_KB`): those sentences are never picked as
+  an answer (the next best sentence is used, or the answer is "not covered"), and never become an objection-drill
+  line.
 - A short question is read as a follow-up to the previous one only when it really refers back: no content words of
   its own, a pronoun standing in for the earlier subject, or "what about / and …" with at most a couple of its own
   content words. "Is there a kill rule for ads?" after a USP question is a new question.
@@ -129,7 +135,10 @@ max), and a typicality note of at least 20 characters saying what typical result
 A mini scoped to chosen files answers **only** from passages in those files: retrieval is filtered before the
 answer is built (extractive, guardrail-checked, traced as agent `mini`). Limits: the question limit counts per email
 address per day (canonical form, so `a+1@…` is the same address), 3 sessions per email per day, 10 session starts and
-60 questions per network per hour (`OPERATOR_LIMIT_MINI_START`, `OPERATOR_LIMIT_MINI_ASK`).
+60 questions per network per hour (`OPERATOR_LIMIT_MINI_START`, `OPERATOR_LIMIT_MINI_ASK`). Nobody approves a mini's
+answers and its visitors are prospects, so every line it shows (scoped or not) must pass the guardrails and carry no
+money figure at all (the cold-lead outreach rule): no income line and no $50k-$100k range, however the material
+phrases it. Nothing left: "That's outside what this assistant covers."
 
 ## Other enforced guardrails
 
@@ -139,7 +148,9 @@ address per day (canonical form, so `a+1@…` is the same address), 3 sessions p
   workspace) until they confirm "I sent it"; or sends it through a live sender behind the server-only switch
   (`sent` / `send_failed`). Mock transports run only in the demo workspace. The scheduled dispatcher re-runs the
   guardrails and the never-invite check and evaluates `meta.cancel_if` (and the hard deadline `meta.send_before`)
-  before anything goes. Stage moves, caps and stats count `sent`, never `approved`. Prospect email carries a footer
+  before anything goes. Stage moves, caps and stats count `sent`, never `approved` (an approved proposal's page is live
+  so its link works, but the prospect moves to "Proposal sent" only when the message went out). A reply to a message
+  someone pasted in (Facebook or "other") waits for "I sent it" like any DM. Prospect email carries a footer
   naming the real sender (a student's own outreach: their business and postal address from Sender details), an
   unsubscribe link and List-Unsubscribe headers; `/u/{token}` (guessing is throttled, a real link always works,
   applied once) sets do-not-contact and suppresses the address.
@@ -161,7 +172,9 @@ address per day (canonical form, so `a+1@…` is the same address), 3 sessions p
   `persona_in_outreach` (the name or an approved phrase of 3+ words in outreach, client assets or own-prospect items),
   `persona_autobio` (first-person stories in styled output) and `speculative_attribution` ("X would say…", "according
   to X…" without an [S#]). "Are you X?" and questions about "your clients" get "I'm an AI assistant trained on X's
-  material, not X." The old owner-typed consent is shown as invalid.
+  material, not X." The old owner-typed consent is shown as invalid. Nudges styled from templates respect the
+  student's own neutral-voice choice, and a withdrawal or expiry puts the neutral wording back on styled drafts that
+  nobody has approved yet.
 - **Settings have shapes.** Every API-editable setting is validated (`settings.validate`): banned names are a list of
   2-80 character strings, colours are `#rrggbb`, switches are true/false, numbers are finite and in range, anything
   else is plain JSON under 20 KB. A wrong shape is a 422, never stored.

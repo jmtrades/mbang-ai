@@ -254,6 +254,37 @@ def mini_start(tenant, slug: str, email: str, consent: bool, ip: str | None = No
     return {"token": tok, "question_limit": m["question_limit"], "title": m["title"]}
 
 
+def public_line_ok(tenant, line: str) -> bool:
+    """May a public mini show this line to a stranger? Nobody approves a mini's answers and its visitors are
+    prospects, so a line must be clean under the guardrails AND carry no money figure: course material quoted verbatim
+    can state an income ("most of our students make $10k a month") or the $50k-$100k range, which a prospect may only
+    ever read in an approved, hedged message backed by a proof record."""
+    from .agents import coach
+
+    text = coach.CITE_RE.sub("", line or "")
+    if not text.strip():
+        return True
+    if guardrails.blocked(guardrails.check(text, "plain", None, None, tenant=tenant)):
+        return False
+    return guardrails.money_figure(text) is None
+
+
+def _public_answer(tenant, res: dict) -> dict:
+    """A course answer made safe for a public mini (public_line_ok on every line). Nothing cited left: out of scope,
+    with no citations and no persona styling."""
+    from .agents import coach
+
+    if res.get("covered") == "no":
+        return res
+    lines = [ln for ln in (res.get("answer") or "").split("\n") if public_line_ok(tenant, ln)]
+    kept = {c for ln in lines for c in coach.CITE_RE.findall(ln)}
+    if not kept:
+        out = {k: v for k, v in res.items() if k != "persona"}
+        return {**out, "covered": "no", "answer": OUT_OF_SCOPE, "citations": []}
+    return {**res, "answer": "\n".join(lines).strip(), "citations": [c for c in res.get("citations") or []
+                                                                       if c.get("id") in kept]}
+
+
 def _scoped_answer(tenant, question: str, scope: set[str]) -> dict:
     """Answer only from passages in the mini's chosen files: retrieval is filtered BEFORE the answer is built,
     so no sentence from another file can appear. Extractive (no AI) and guardrail-checked, with a trace."""
@@ -271,8 +302,7 @@ def _scoped_answer(tenant, question: str, scope: set[str]) -> dict:
         text = run.step("answer", {"mode": "extractive"},
                         lambda: coach.extractive(question, hits, max_sentences=3, idf=index.for_tenant(tenant).idf),
                         "Answer from in-scope passages only")
-        lines = [ln for ln in text.splitlines() if ln.strip() and not guardrails.blocked(
-            guardrails.check(ln, "plain", None, None, tenant=tenant))]
+        lines = [ln for ln in text.splitlines() if ln.strip() and public_line_ok(tenant, ln)]
         kept = {c for ln in lines for c in coach.CITE_RE.findall(ln)}
         if not lines or not kept:
             return {"covered": "no", "answer": OUT_OF_SCOPE, "citations": []}
@@ -316,6 +346,7 @@ def mini_ask(tenant, slug: str, token: str, question: str, ip: str | None = None
         else:
             # an unscoped mini answers from the whole course; a public mini never adds the external 2026 Playbooks
             res = coach.answer(tenant, question, record=True, external=False)
+    res = _public_answer(tenant, res)
     with tenant.db() as c:
         c.execute("UPDATE mini_sessions SET questions=questions+1 WHERE id=?", (s["id"],))
     out = {"covered": res["covered"], "answer": res["answer"], "citations": res["citations"] if res["covered"] != "no" else [],

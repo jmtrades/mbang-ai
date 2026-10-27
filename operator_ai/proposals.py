@@ -312,6 +312,9 @@ def view(tenant, r: dict, include_text: bool = True) -> dict:
                                  "views", "first_viewed", "last_viewed", "accepted_at", "accepted_name", "accepted_option",
                                  "sent_at", "demo", "run_id", "call_notes")}
     out["status_label"] = STATUS_LABELS.get(r["status"], r["status"])
+    if r["status"] == "published" and not r.get("sent_at"):
+        # approved and live, but nobody has confirmed the message went out yet
+        out["status_label"] = "Approved: link is live, waiting to be sent"
     out["sections"] = r["sections"]
     out["options"] = r["terms"].get("options", [])
     out["pricing"] = r["terms"].get("pricing", {})
@@ -490,6 +493,9 @@ def withdraw(tenant, user: dict, prop_id: int) -> dict:
 
 @queue.on_approve("proposal")
 def _approved(tenant, item: dict, actor: str) -> None:
+    """Approval puts the page live (so the link works when the message goes out). It is not "sent": a DM, or an email
+    without a live sender, waits for the person's "I sent it" (or the live provider), and only then does the prospect
+    move to "Proposal sent" (_sent)."""
     pid_ = (item.get("meta") or {}).get("proposal_id")
     if not pid_:
         return
@@ -499,18 +505,25 @@ def _approved(tenant, item: dict, actor: str) -> None:
         r = c.execute("SELECT prospect_id FROM proposals WHERE id=?", (int(pid_),)).fetchone()
     if not n or r is None:
         return
-    P._event(tenant, r["prospect_id"], "proposal_sent", {"proposal_id": int(pid_), "queue_id": item["id"]}, actor)
-    p = P._row(tenant, r["prospect_id"])
-    if p and not p["do_not_contact"] and p["stage"] in P.EARLY + ("contacted", "replied", "call_booked", "nurture"):
-        P.set_stage(tenant, p["id"], "proposal", actor)
+    P._event(tenant, r["prospect_id"], "proposal_live", {"proposal_id": int(pid_), "queue_id": item["id"]}, actor)
 
 
 @queue.on_sent("proposal")
 def _sent(tenant, item: dict, actor: str) -> None:
+    """The proposal message really went out (a live provider took it, the demo's mock did, or a person confirmed
+    "I sent it"): the stage move and the timeline count it from here, never from the approval."""
     pid_ = (item.get("meta") or {}).get("proposal_id")
-    if pid_:
-        with tenant.db() as c:
-            c.execute("UPDATE proposals SET sent_at=COALESCE(sent_at, ?) WHERE id=?", (db.now(), int(pid_)))
+    if not pid_:
+        return
+    with tenant.db() as c:
+        n = c.execute("UPDATE proposals SET sent_at=? WHERE id=? AND sent_at IS NULL", (db.now(), int(pid_))).rowcount
+        r = c.execute("SELECT prospect_id FROM proposals WHERE id=?", (int(pid_),)).fetchone()
+    if not n or r is None:
+        return
+    P._event(tenant, r["prospect_id"], "proposal_sent", {"proposal_id": int(pid_), "queue_id": item["id"]}, actor)
+    p = P._row(tenant, r["prospect_id"])
+    if p and not p["do_not_contact"] and p["stage"] in P.EARLY + ("contacted", "replied", "call_booked", "nurture"):
+        P.set_stage(tenant, p["id"], "proposal", actor)
 
 
 # --------------------------------------------------------------------------- the public page

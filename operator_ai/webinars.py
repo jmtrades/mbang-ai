@@ -25,7 +25,7 @@ import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from . import audit, db, events, jobs, queue, runtime
+from . import audit, db, events, guardrails, jobs, queue, runtime
 from . import brief as brief_mod
 from .redact import redact
 
@@ -258,6 +258,12 @@ def create(tenant, data: dict, user: dict | None = None) -> dict:
             raise WebinarError(404, "Webinar chain not found")
     if not title:
         raise WebinarError(422, "Give the webinar a title")
+    # the title goes on the public page and into every email as it is, outside the page copy a person approves and
+    # edits, so it may carry no claim the guardrails block in client assets
+    bad = sorted({f["code"] for f in guardrails.check_for(tenant, title, {"client_asset": True}) if f["severity"] == "block"})
+    if bad:
+        raise WebinarError(422, "The title can't carry that (" + ", ".join(c.replace("_", " ") for c in bad) + "). "
+                                "Use a title that names the topic, without promises or figures.")
     demo = tenant.is_demo
     when = when_label(starts, tz)
 

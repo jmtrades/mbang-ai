@@ -589,6 +589,15 @@ def style_template(tenant, text: str, surface_name: str, user: dict | None = Non
         return text
 
 
+def styled_meta(tenant, neutral_text: str, styled_text: str) -> dict:
+    """Queue meta for a draft whose template text was styled: the neutral wording and the consent it was styled under,
+    so a withdrawal (or expiry) can put the neutral wording back on drafts nobody has approved yet. {} when unstyled."""
+    if styled_text == neutral_text:
+        return {}
+    p = consent.active(tenant)
+    return {"persona_neutral": neutral_text, "persona_consent_id": p["consent_id"] if p else None}
+
+
 # --------------------------------------------------------------------------- owner/subject preview
 def _offline(tenant):
     """The same workspace with the AI budget read as 0, so a preview never calls a provider, never spends budget and

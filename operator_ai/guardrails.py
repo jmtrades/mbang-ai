@@ -510,6 +510,16 @@ def check(text: str, mode: str = "plain", meta: dict | None = None, banned_names
 
     if mode == "outreach":
         flags.extend(_outreach_money(t, meta))
+    else:
+        # "let me make <person> <amount>" is exempt from the income rule only as the range line about a brand, which
+        # the outreach money rule judges; outside outreach nothing else would, so a person's income here is a claim
+        flags.extend(_income_promise(t))
+        if mode == "client_asset":
+            # client assets reach prospects too (proposals, webinar pages and emails, the client's own funnel): the
+            # range keeps its rules there, and needs a proof record like anywhere else (claims.guard_rules)
+            mt = _money_norm(t)
+            tier = meta.get("lead_tier") or meta.get("tier")
+            flags.extend(_range_flags(mt, list(_ALLOWED_RANGE.finditer(mt)), str(tier).lower() if tier else None))
     for rule in _rule_plugins():
         flags.extend(rule(t, mode, meta, tenant) or [])
     return _dedupe(flags)
@@ -535,6 +545,31 @@ def money_hit(text: str) -> re.Match | None:
     return None
 
 
+_LET_MAKE = re.compile(rf"\b(?:let me|let us|let's)\s+(?:help\s+)?make\s+(?!sure\b|certain\b)(?P<slot>[^.!?\n]{{1,40}}?)"
+                       rf"\s*{AMOUNT}", re.I)
+_NOT_INCOME_SLOT = re.compile(r"\b(?:offer|deal|discount|price|quote|budget|deposit|payment|plan|invoice|refund)s?\b", re.I)
+
+
+def _income_promise(t: str) -> list[dict]:
+    for v in dict.fromkeys((t, _joined(t))):
+        for m in _LET_MAKE.finditer(v):
+            slot = m.group("slot")
+            if negated(v, m.start()) or len(slot.split()) > 5 or _NOT_INCOME_SLOT.search(slot):
+                continue
+            if _RANGE_PERSON.search(slot.strip()) or _RANGE_PERSON_ANY.search(slot):
+                return [_flag("income_claim", "block", "Promising a person an income (\"let me make you $...\") is an "
+                                                       "income claim", m.group(0))]
+    return []
+
+
+def money_figure(text: str) -> str | None:
+    """The first money figure in raw text (normalised the way the outreach rule sees it), or None. A surface that
+    talks to strangers with nobody approving each answer (public minis) shows no figures at all: that is the cold-lead
+    outreach rule, and it keeps income lines and the $50k-$100k range off it however the material phrases them."""
+    m = money_hit(_money_norm(_norm(text or "")))
+    return m.group(0) if m else None
+
+
 def _outreach_money(t: str, meta: dict) -> list[dict]:
     flags = []
     tier = str(meta.get("lead_tier") or meta.get("tier") or "cold").lower()
@@ -550,11 +585,18 @@ def _outreach_money(t: str, meta: dict) -> list[dict]:
             continue
         flags.append(_flag("outreach_price", "block", "No price, fee or retainer wording in prospect outreach", m.group(0)))
         break
+    return flags + _range_flags(t, ranges, tier)
+
+
+def _range_flags(t: str, ranges: list[re.Match], tier: str | None) -> list[dict]:
+    """The $50k-$100k range's own rules, wherever it appears: not for cold leads (when the tier is known: tier None
+    skips that check), hedged, never definite, and only in the "Let me make [Brand] ..." shape about a business."""
+    flags = []
     for m in ranges:
         sent = _sentence_at(t, m.start(), m.end())
         s = max(t.rfind(".", 0, m.start()), t.rfind("!", 0, m.start()), t.rfind("?", 0, m.start()), t.rfind("\n", 0, m.start()))
         shape = _RANGE_SHAPE.search(t[s + 1:m.start()])
-        if tier in ("cold", "unqualified", "unknown", "nurture"):
+        if tier is not None and tier in ("cold", "unqualified", "unknown", "nurture"):
             flags.append(_flag("cold_lead_figure", "block",
                                "Cold or unqualified leads get the no-figure line (\"Let me help [Brand] grow through ...\")",
                                m.group(0)))

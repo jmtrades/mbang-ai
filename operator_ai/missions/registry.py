@@ -1498,10 +1498,13 @@ def _weekly_student_nudges(sc: StepCtx) -> StepResult:
         first = (re.sub(r"\(DEMO\)", "", s["name"] or "").split() or ["there"])[0]
         from .. import persona
 
-        nudge_text = persona.style_template(sc.tenant, accountability.NUDGES[top].format(first=first), "student_nudges")
+        plain = accountability.NUDGES[top].format(first=first)
+        nudge_text = persona.style_template(sc.tenant, plain, "student_nudges",
+                                            user=accountability.student_user(sc.tenant, s["id"]))
         ids.append(draft(sc, "nudge", nudge_text, channel="telegram",
                          recipient=s["name"], title=f"Nudge: {s['name']} ({accountability.SIGNALS[top][0].lower()})",
-                         meta={"student_id": s["id"], "signal": top})["id"])
+                         meta={"student_id": s["id"], "signal": top,
+                               **persona.styled_meta(sc.tenant, plain, nudge_text)})["id"])
     nxt = next_weekday(sc.now, wd)
     if not ids:
         return StepResult("waiting_time", f"No student is at risk this week ({b['total']} checked). Next check {when(nxt)}.",

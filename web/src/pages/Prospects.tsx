@@ -33,7 +33,8 @@ const EVENT_LABEL: Record<string, string> = {
   added: "Added", updated: "Details updated", researched: "Research refreshed", fact_added: "Fact added", stage: "Stage changed",
   drafted: "Message drafted", sent: "Message sent", reply: "Reply recorded", booked: "Call booked", dnc: "Marked do not contact",
   released: "Claim released by the owner", won: "Won", proposal_created: "Proposal drafted", proposal_queued: "Proposal sent for approval",
-  proposal_sent: "Proposal approved and live", proposal_viewed: "Proposal opened", proposal_accepted: "Proposal accepted",
+  proposal_live: "Proposal approved and live", proposal_sent: "Proposal sent", proposal_viewed: "Proposal opened",
+  proposal_accepted: "Proposal accepted",
   proposal_withdrawn: "Proposal withdrawn",
 };
 

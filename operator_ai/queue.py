@@ -677,6 +677,9 @@ def _route(tenant, item: dict, actor: str) -> dict:
         # live OR copied by hand, the unsubscribe link in a prospect email must work for the person who gets it
         raise QueueError(409, "Prospect emails need the server's public web address so the unsubscribe link works. "
                               "Ask whoever runs the server to set OPERATOR_PUBLIC_URL.")
+    if ch == "manual" and (meta.get("inbound_id") or meta.get("conversation_id")):
+        # a reply to a message someone pasted in: a person sends it where it came in and confirms, like any DM
+        return {"status": "awaiting_manual_send", "reason": delivery.manual_reason(tenant, item)}
     if ch in INTERNAL_CHANNELS:
         return {"status": "approved", "delivered": "action" if ch in ("ads", "crm") else "ready to send manually"}
     if ch in MANUAL_CHANNELS:
