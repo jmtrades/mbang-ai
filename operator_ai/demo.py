@@ -44,6 +44,10 @@ def ensure_seeded(tenant) -> None:
     with _lock:
         tenancy.ensure_demo_budget(tenant)
         if tenant.get("seeded_at"):
+            if tenancy.is_demo_db(tenant) and tenant.get("demo_features") != FEATURE_SEEDERS:
+                # seeded by an older build: features added since would show empty pages, so start the demo fresh
+                _reset_locked(tenant, "system:upgrade")
+                return
             if tenant.get("third_party_kb") is None and tenancy.is_demo_db(tenant):
                 tenant.set("third_party_kb", True)  # demo seeded before the playbooks existed
             if tenancy.is_demo_db(tenant):
@@ -188,6 +192,7 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
     _seed_queue(tenant, rng)
     _seed_questions(tenant)
     _seed_features(tenant)
+    tenant.set("demo_features", FEATURE_SEEDERS)
     audit.log(tenant, "system", "demo.reset", {"seeded": counts})
     return counts
 
@@ -331,29 +336,35 @@ def reset(tenant, actor: str = "system") -> dict:
     if not tenancy.is_demo_db(tenant):
         raise DemoResetRefused("Refused: demo resets only run against the demo database, never the real workspace.")
     with _lock:
-        bk = backup(tenant)
-        with tenant.db() as c:
-            tables = [r["name"] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")]
-            with db.tx(c):
-                for t in tables:
-                    if t in ("settings", "audit"):
-                        continue
-                    c.execute(f"DELETE FROM {t}")
-                c.execute(f"DELETE FROM settings WHERE key NOT IN ({','.join('?' * len(RESET_KEEP))})", RESET_KEEP)
-        try:
-            from . import claims
+        return _reset_locked(tenant, actor)
 
-            claims.reset_files(tenant)
-        except ImportError:  # pragma: no cover
-            pass
-        # anything added to the demo's own knowledge-base folder (before KB writes were refused there) goes too
-        if tenant.kb_dir.exists() and any(tenant.kb_dir.glob("*.txt")):
-            from . import index
 
-            for f in tenant.kb_dir.glob("*.txt"):
-                f.unlink(missing_ok=True)
-            index.invalidate()
-        tenancy.ensure_demo_budget(tenant)
-        counts = seed(tenant)
+def _reset_locked(tenant, actor: str) -> dict:
+    if not tenancy.is_demo_db(tenant):
+        raise DemoResetRefused("Refused: demo resets only run against the demo database, never the real workspace.")
+    bk = backup(tenant)
+    with tenant.db() as c:
+        tables = [r["name"] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+        with db.tx(c):
+            for t in tables:
+                if t in ("settings", "audit"):
+                    continue
+                c.execute(f"DELETE FROM {t}")
+            c.execute(f"DELETE FROM settings WHERE key NOT IN ({','.join('?' * len(RESET_KEEP))})", RESET_KEEP)
+    try:
+        from . import claims
+
+        claims.reset_files(tenant)
+    except ImportError:  # pragma: no cover
+        pass
+    # anything added to the demo's own knowledge-base folder (before KB writes were refused there) goes too
+    if tenant.kb_dir.exists() and any(tenant.kb_dir.glob("*.txt")):
+        from . import index
+
+        for f in tenant.kb_dir.glob("*.txt"):
+            f.unlink(missing_ok=True)
+        index.invalidate()
+    tenancy.ensure_demo_budget(tenant)
+    counts = seed(tenant)
     audit.log(tenant, actor, "demo.reset", {"backup": bk.name})
     return {"ok": True, "backup": bk.name, "seeded": counts}
