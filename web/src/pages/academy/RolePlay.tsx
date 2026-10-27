@@ -201,10 +201,12 @@ function SessionView({ id, onExit, onOpen }: { id: number; onExit: () => void; o
       setBusy(false);
     }
   };
-  const again = async (key: string) => {
+  // "Practise again" repeats the same kind of attempt; a drill is always practice (hints on, never an exam).
+  const again = async (key: string, practice = false) => {
     setBusy(true);
     try {
-      const v = await post<Session>("/academy/roleplays", { scenario_key: key, exam: data?.exam || false, hints: data ? data.hints : true, mode: data?.mode === "ai" ? "ai" : "rules" });
+      const exam = !practice && !!data?.exam;
+      const v = await post<Session>("/academy/roleplays", { scenario_key: key, exam, hints: exam ? false : practice || !data || data.hints || data.exam, mode: data?.mode === "ai" && !exam ? "ai" : "rules" });
       onOpen(v.id);
     } catch (e) {
       setErr(e as ApiError);
@@ -278,7 +280,7 @@ function SessionView({ id, onExit, onOpen }: { id: number; onExit: () => void; o
           try {
             const r = await post<any>(`/academy/roleplays/${id}/drill`, { criterion: crit });
             if (r.card) toast(`Added "${r.card.objection}" to your objection drills`, "good");
-            await again(r.scenario_key);
+            await again(r.scenario_key, true);
           } catch (e) {
             setErr(e as ApiError);
           }
@@ -389,12 +391,12 @@ function Scorecard({ s, busy, onAgain, onDrill, onSigned }: { s: Session; busy: 
   };
   return (
     <div className="space-y-4" data-testid="roleplay-scorecard">
-      <Card title="Scorecard" subtitle={`Scored by the rules (${sc.scorer}). Seed ${sc.seed} replays this exact session.`}
-        actions={<><TraceLink runId={s.run_id} />{s.is_learner && <Button tone="primary" size="sm" onClick={onAgain} loading={busy}><RotateCw className="size-3.5" /> Practise again</Button>}</>}>
+      <Card title="Scorecard" subtitle="Scored by fixed rules, turn by turn: the same lines always get the same score."
+        actions={<><TraceLink runId={s.run_id} />{s.is_learner && <Button tone="primary" size="sm" onClick={onAgain} loading={busy}><RotateCw className="size-3.5" /> {s.exam ? "Retake the exam" : "Practise again"}</Button>}</>}>
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <div className={cx("text-4xl font-semibold tabular-nums", sc.passed ? "text-good" : sc.total >= 50 ? "text-warn" : "text-bad")}>{sc.total}<span className="text-base text-muted">/100</span></div>
-            <div className="text-xs text-muted">Pass mark {sc.pass_mark}</div>
+            <div className="text-xs text-muted">Pass: {sc.pass_mark}+ and the right outcome</div>
           </div>
           <div className="space-y-1 text-sm">
             <div className="flex flex-wrap gap-1.5">
@@ -410,7 +412,7 @@ function Scorecard({ s, busy, onAgain, onDrill, onSigned }: { s: Session; busy: 
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-900">Compliance gate: something you said is never allowed (a guarantee, an income promise, invented proof, pressure or steering into debt), so this session scores 0.</p>
         )}
         {!!sc.integrity_flags?.length && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Keyword stuffing on {sc.integrity_flags.length} turn(s): those turns earn no credit and cost points.</p>
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Crammed turns ({sc.integrity_flags.length}): stage keywords, or answers to several different objections, packed into one line. Those turns earn no credit and cost points.</p>
         )}
         {!!focus.length && (
           <div className="mt-4">
@@ -622,7 +624,7 @@ function ScenarioEditor() {
                 <div className="mb-2 text-sm font-semibold">Test run</div>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
                   <TextArea rows={4} value={lines} onChange={(e) => setLines(e.target.value)} placeholder="One learner line per row" aria-label="Lines to play" />
-                  <Field label="Seed"><Input value={seed} inputMode="numeric" onChange={(e) => setSeed(e.target.value.replace(/\D/g, ""))} /></Field>
+                  <Field label="Variation" hint="Same number, same replies"><Input value={seed} inputMode="numeric" onChange={(e) => setSeed(e.target.value.replace(/\D/g, ""))} /></Field>
                 </div>
                 <Button className="mt-2" onClick={testRun} loading={busy}>Run the draft</Button>
                 {result && (
@@ -708,7 +710,7 @@ function RubricEditor() {
                       {r.ok ? <Badge tone="good">Citation checks out</Badge> : <Badge tone="warn">Needs checking</Badge>}
                     </span>
                   </div>
-                  {r.quote && <p className="break-words text-[11px] text-muted">“{r.quote.slice(0, 220)}” <span className="whitespace-nowrap">({r.source_title || r.cite_file}{r.cite_lines ? `, ${r.cite_lines}` : ""})</span></p>}
+                  {r.quote && <p className="break-words text-[11px] text-muted">“{r.quote.slice(0, 220)}” <span className="break-words">({r.source_title || r.cite_file}{r.cite_lines ? `, ${r.cite_lines}` : ""})</span></p>}
                   {!r.ok && <p className="text-xs text-warn">{r.issues.join("; ")}</p>}
                   {data.can_edit && <Button size="sm" onClick={() => openEdit(r)}>Edit</Button>}
                 </li>

@@ -9,6 +9,7 @@ shipped with the product ("playbook:<domain>/<entry>", lines "steps:2", "do:1" o
 from __future__ import annotations
 
 import json
+import math
 import re
 from functools import lru_cache
 
@@ -22,18 +23,16 @@ PB_TRAIN = "playbook:training-science"
 
 # rule_key: (label, weight, params, cite_file, cite_lines, must_contain, kind)
 DEFAULTS: dict[str, tuple] = {
-    "discovery": ("Discovery: goal, current numbers, what they tried, why now", 30,
-                  {"min_question_words": 3, "one_dimension_per_turn": True, "before_offer": True},
+    "discovery": ("Discovery: goal, current numbers, what they tried, why now", 30, {},
                   P_CALL, "4", ["goal", "current numbers", "tried", "why now"], "criterion"),
     "decision_check": ("Decision check: who decides and how they'd fund it", 10, {},
                        f"{PB_SALES}/setter-qualification-criteria", "steps:6", ["fund", "never suggest opening new credit"],
                        "criterion"),
-    "gap": ("Gap played back with facts they gave you", 15, {"min_facts": 1, "min_dimensions": 2},
-            P_CALL, "5", ["gap", "play back"], "criterion"),
+    "gap": ("Gap played back with facts they gave you", 15, {}, P_CALL, "5", ["gap", "play back"], "criterion"),
     "offer_order": ("Offer only after the gap is clear", 10, {}, P_CALL, "6", ["gap is clear", "offer"], "criterion"),
     "objection_think": ("\"Think about it\": ask what specifically", 15, {"retry_credit": 0.5},
                         P_CALL, "8", ["what specifically"], "objection"),
-    "objection_price": ("\"Too expensive\": back to the gap and the cost of staying", 15, {"retry_credit": 0.5, "needs_fact": True},
+    "objection_price": ("\"Too expensive\": back to the gap and the cost of staying", 15, {"retry_credit": 0.5},
                         P_CALL, "10", ["gap", "cost of staying"], "objection"),
     "objection_partner": ("\"Ask my partner\": a follow-up call with both", 15, {"retry_credit": 0.5},
                           P_CALL, "13", ["both"], "objection"),
@@ -52,7 +51,7 @@ DEFAULTS: dict[str, tuple] = {
                        "objection"),
     "objection_plant": ("Planted questions: refuse and name the rule", 20, {"retry_credit": 0.5},
                         "sops/mastering_webinars.txt", "17", ["never plant questions"], "objection"),
-    "outcome": ("Outcome: the right next step", 15, {"min_trust": 40}, P_CALL, "2", ["next step"], "criterion"),
+    "outcome": ("Outcome: the right next step", 15, {}, P_CALL, "2", ["next step"], "criterion"),
     "talk_ratio": ("They talk at least 40% of the time", 5, {"max_share": 0.6, "min_turns": 3},
                    f"{PB_SALES}/closing-call-structure-discovery-gap-offer", "do:1", ["40%"], "criterion"),
     "trust": ("Rapport and control (trust built)", 10, {"full_gain": 20},
@@ -72,6 +71,59 @@ DEFAULTS: dict[str, tuple] = {
 }
 PLAYBOOK_DIR = None  # resolved lazily
 
+# The parameters each rule really uses, with their type and allowed range. Anything else is refused (an editable
+# number that changes nothing would mislead the owner), and a bad value is refused instead of breaking scoring.
+_RETRY = {"retry_credit": (float, 0.0, 1.0)}
+PARAM_SPEC: dict[str, dict[str, tuple]] = {
+    **{k: _RETRY for k, v in DEFAULTS.items() if v[6] == "objection"},
+    "talk_ratio": {"max_share": (float, 0.2, 0.95), "min_turns": (int, 1, 30)},
+    "trust": {"full_gain": (float, 1.0, 100.0)},
+    "dm_one_question": {"max_questions": (int, 1, 5)},
+    "dm_length": {"max_words": (int, 10, 300)},
+    "no_discount": {"per_occurrence": (float, 0.0, 50.0), "cap": (float, 0.0, 100.0)},
+    "monologue": {"max_words": (int, 30, 600), "per_occurrence": (float, 0.0, 30.0)},
+}
+_NUM_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+class RuleError(ValueError):
+    """A rule edit the owner needs to fix (422)."""
+
+
+def clean_params(rule_key: str, params) -> dict:
+    """Check an owner's parameters against the rule's spec; returns typed values or raises RuleError."""
+    if not isinstance(params, dict):
+        raise RuleError("Parameters must be an object, for example {\"max_words\": 60}")
+    spec = PARAM_SPEC.get(rule_key, {})
+    out = {}
+    for k, v in params.items():
+        if k not in spec:
+            allowed = ", ".join(sorted(spec)) or "none"
+            raise RuleError(f"'{k}' isn't a setting this rule uses (it uses: {allowed})")
+        typ, lo, hi = spec[k]
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+            raise RuleError(f"'{k}' must be a number")
+        if not lo <= v <= hi:
+            raise RuleError(f"'{k}' must be between {lo:g} and {hi:g}")
+        if typ is int and float(v) != int(v):
+            raise RuleError(f"'{k}' must be a whole number")
+        out[k] = typ(v)
+    return out
+
+
+def param_terms(rule_key: str, params: dict) -> list[list[str]]:
+    """The parameter values the cited SOP lines must state (each inner list: any one of these spellings)."""
+    out = []
+    if rule_key in ("dm_length", "monologue") and "max_words" in params:
+        out.append([str(int(params["max_words"]))])
+    if rule_key == "dm_one_question" and "max_questions" in params:
+        n = int(params["max_questions"])
+        out.append([str(n)] + ([_NUM_WORDS[n]] if n in _NUM_WORDS else []))
+    if rule_key == "talk_ratio" and "max_share" in params:
+        share = float(params["max_share"])
+        out.append([f"{round(share * 100)}%", f"{round((1 - share) * 100)}%"])
+    return out
+
 
 def _now() -> float:
     return db.now()
@@ -90,7 +142,9 @@ def ensure(tenant) -> None:
 
 def _row(r) -> dict:
     d = dict(r)
-    d["params"] = db.jload(d.get("params"), {}) or {}
+    raw = db.jload(d.get("params"), {}) or {}
+    spec = PARAM_SPEC.get(d["rule_key"], {})
+    d["params"] = {k: v for k, v in raw.items() if k in spec} if isinstance(raw, dict) else {}
     d["must_contain"] = db.jload(d.get("must_contain"), []) or []
     d["confirmed"] = d.get("status") == "confirmed"
     return d
@@ -111,6 +165,8 @@ def update(tenant, rule_key: str, patch: dict, actor: str) -> dict:
         if r is None:
             raise KeyError(rule_key)
         cur = _row(r)
+        if patch.get("params") is not None:
+            patch = {**patch, "params": clean_params(rule_key, patch["params"])}
         for k in ("label", "weight", "params", "cite_file", "cite_lines", "must_contain"):
             if k in patch and patch[k] is not None:
                 cur[k] = patch[k]
@@ -215,6 +271,11 @@ def validate_rule(tenant, rule: dict) -> dict:
         for term in rule.get("must_contain") or []:
             if str(term).lower() not in low:
                 issues.append(f"The cited lines no longer contain \"{term}\"")
+        # The rule's own numbers must be what the SOP says (a 45-word limit can't cite a line that says 60).
+        for options in param_terms(rule["rule_key"], rule.get("params") or {}):
+            if not any(re.search(r"(?<![\w.])" + re.escape(o.lower()) + r"(?![\w])" if not o.endswith("%")
+                                 else r"(?<![\w.])" + re.escape(o.lower()), low) for o in options):
+                issues.append(f"The cited lines don't state the rule's value ({options[0]})")
     return {"rule_key": rule["rule_key"], "ok": not issues, "issues": issues, "quote": (res["text"] or "")[:300],
             "title": res["title"]}
 

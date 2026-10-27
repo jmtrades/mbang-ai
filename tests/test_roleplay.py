@@ -811,3 +811,196 @@ def test_real_workspace_is_never_seeded(client, tenant):
     assert items and "(DEMO)" not in json.dumps(items)
     r = client.post("/t/owner/api/academy/roleplays", json={"scenario_key": "discovery_call"})
     assert r.status_code == 200 and r.json()["demo"] is False
+
+
+# ======================================================================= review fixes: gaming, crashes, exam integrity
+KITCHEN_SINK = ("Totally fair. What specifically is on your mind? You said {f}. Compared with the cost of staying where you are, "
+                "and honestly no one can guarantee results, shall we book a short call with both of you together, so I can "
+                "walk you through what would be most useful?")
+
+
+@pytest.mark.parametrize("key", ["objection_think", "objection_price", "objection_partner", "objection_send_info", "webinar_qa"])
+def test_a_kitchen_sink_line_answering_every_objection_earns_nothing(tenant, stu, key):
+    # One line bundling the SOP move for every objection used to win every objection drill (80+, "passed").
+    sc = scenarios.builtin(key)
+    f = next((sc["facts"][k]["keywords"][0] for k in sc.get("pre_revealed", [])), "that")
+    line = KITCHEN_SINK.format(f=f)
+    assert acts.is_hedging(line)
+    v = play(tenant, stu, key, [line, line, line], seed=2)
+    s = v["score"]
+    assert not s["passed"] and s["outcome"] != "won"
+    assert all(c["points"] == 0 for c in s["criteria"] if c["key"].startswith("objection_"))
+    assert s["integrity_flags"] and s["integrity_flags"][0]["code"] == "kitchen_sink"
+    learner = [t for t in v["turns"] if t["speaker"] == "learner"]
+    assert learner[0]["color"] == "red" and any("several objections" in n for n in learner[0]["notes"])
+    persona = [t for t in v["turns"] if t["speaker"] == "persona"]
+    assert any("which" in t["text"].lower() or "answer" in t["text"].lower() for t in persona[1:])
+
+
+def test_real_objection_answers_are_not_mistaken_for_a_kitchen_sink():
+    for key, lines in GOOD.items():
+        for line in lines:
+            assert not acts.is_hedging(line), (key, line)
+    assert not acts.is_hedging("Fair. Compared with the cost of staying where you are, what specifically worries you?")
+
+
+def test_a_pass_needs_the_scenarios_outcome(tenant, stu):
+    # Discovery, gap and offer done well, then the learner ends the session as soon as the price objection lands.
+    v = play(tenant, stu, "discovery_call", GOOD["discovery_call"][:6], seed=3, exam=True)
+    s = v["score"]
+    assert s["outcome"] == "ended" and s["total"] >= 70
+    assert s["passed"] is False and s["certifiable"] is False
+    assert crit(v, "objection_price")["points"] == 0
+
+
+def _raw_client(app):
+    from fastapi.testclient import TestClient
+
+    return TestClient(app, raise_server_exceptions=False)
+
+
+def test_malformed_scenario_json_gets_422_never_500(app, tenant):
+    from tests.conftest import login
+
+    base = scenarios.builtin("cold_dm_coach")
+    bad = [
+        {**base, "dims": 5}, {**base, "dims": "goal"}, {**base, "pre_revealed": [{"a": 1}]}, {**base, "opening": 5},
+        {**base, "opening": [1, 2]}, {**base, "skill": ["dm"]}, {**base, "skill": {"a": 1}},
+        {**base, "persona": {**base["persona"], "business": 5}}, {**base, "difficulty": True}, {**base, "patience": False},
+        {**base, "lines": {"neutral": ["Hi {fact.__class__}"]}}, {**base, "lines": {"neutral": ["{0} there"]}},
+        {**base, "title": "Make $100k a month, guaranteed results"}, {**base, "summary": "x" * 401},
+        {**base, "notes": "y" * 70_000},
+    ]
+    with _raw_client(app) as client:
+        login(client)
+        for d in bad:
+            r = client.put("/t/owner/api/academy/scenarios/probe_bad", json={"data": d})
+            assert r.status_code == 422, (d.get("title"), r.status_code, r.text[:200])
+            r = client.post("/t/owner/api/academy/scenarios/cold_dm_coach/test-run", json={"lines": ["hi there"], "data": d})
+            assert r.status_code == 422, r.text[:200]
+        ok = {**base, "lines": {"neutral": ["Okay. {concern}"]}}
+        assert client.put("/t/owner/api/academy/scenarios/probe_ok", json={"data": ok}).status_code == 200
+
+
+def test_bad_rule_parameters_are_refused_and_scoring_survives_old_values(app, tenant, stu):
+    from tests.conftest import login
+
+    with _raw_client(app) as client:
+        login(client)
+        put = lambda k, body: client.put(f"/t/owner/api/academy/roleplays/rubric/{k}", json=body)  # noqa: E731
+        for k, p in (("objection_think", {"retry_credit": "abc"}), ("objection_think", {"retry_credit": 3}),
+                     ("talk_ratio", {"max_share": "x"}), ("trust", {"full_gain": None}), ("dm_length", {"max_words": 4.5}),
+                     ("dm_length", {"max_words": True}), ("discovery", {"min_question_words": 3}),
+                     ("dm_length", {"nope": 1})):
+            r = put(k, {"params": p})
+            assert r.status_code == 422, (k, p, r.text)
+        assert put("talk_ratio", {"params": {"max_share": 0.55}}).status_code == 200
+        assert client.put("/t/owner/api/academy/roleplays/rubric/discovery", content=b'{"weight": NaN}',
+                          headers={"content-type": "application/json"}).status_code == 422
+    # A malformed value already in the database (an older build, a hand edit) can't break scoring.
+    with tenant.db() as c:
+        c.execute("UPDATE roleplay_rubrics SET params=? WHERE rule_key='objection_think'", (json.dumps({"retry_credit": "abc"}),))
+        c.execute("UPDATE roleplay_rubrics SET params=? WHERE rule_key='trust'", (json.dumps({"full_gain": "x"}),))
+    v = play(tenant, stu, "objection_think", ["No problem at all.", GOOD["objection_think"][0], GOOD["objection_think"][1]])
+    assert v["status"] == "complete" and crit(v, "objection_think")["points"] == crit(v, "objection_think")["max"] / 2
+
+
+def test_a_session_the_rules_ended_but_scoring_missed_recovers(tenant, stu):
+    v = sessions.start(tenant, stu, "objection_think", seed=4)
+    with tenant.db() as c:
+        row = c.execute("SELECT state FROM roleplays WHERE id=?", (v["id"],)).fetchone()
+        st = json.loads(row["state"])
+        st["st"]["outcome"], st["st"]["end_reason"] = "lost", "unconvinced"
+        c.execute("UPDATE roleplays SET state=? WHERE id=?", (json.dumps(st), v["id"]))
+    v = sessions.turn(tenant, stu, v["id"], "Hello again?")
+    assert v["status"] == "complete" and v["score"] is not None
+
+
+def test_validator_checks_the_rules_own_numbers(tenant):
+    res = {r["rule_key"]: r for r in rubric.validate(tenant)}
+    assert res["talk_ratio"]["ok"] and res["dm_one_question"]["ok"]
+    rubric.update(tenant, "talk_ratio", {"params": {"max_share": 0.7}}, "owner(owner)")
+    v = rubric.validate_rule(tenant, rubric.rules(tenant)["talk_ratio"])
+    assert not v["ok"] and "70%" in v["issues"][0]
+    rubric.update(tenant, "dm_one_question", {"params": {"max_questions": 2}}, "owner(owner)")
+    assert not rubric.validate_rule(tenant, rubric.rules(tenant)["dm_one_question"])["ok"]
+    with pytest.raises(rubric.RuleError):
+        rubric.update(tenant, "dm_length", {"params": {"max_words": "sixty"}}, "owner(owner)")
+
+
+def test_exam_traces_carry_no_live_scoring_until_scored(client, tenant):
+    mk(tenant, "examiner1", "student")
+    as_user(client, "examiner1")
+    v = client.post("/t/owner/api/academy/roleplays", json={"scenario_key": "discovery_call", "exam": True}).json()
+    r = client.post(f"/t/owner/api/academy/roleplays/{v['id']}/turn", json={"text": STUFFED})
+    assert r.status_code == 200
+    assert all(f["severity"] == "block" for t in r.json()["turns"] for f in t.get("flags", []))  # no "no credit" hint
+    run = client.get(f"/t/owner/api/runs/{v['run_id']}").json()
+    blob = json.dumps(run["steps"])
+    assert '"acts"' not in blob and '"events"' not in blob and "keyword_stuffing" not in blob and '"trust"' not in blob
+    client.post(f"/t/owner/api/academy/roleplays/{v['id']}/end")
+    run = client.get(f"/t/owner/api/runs/{v['run_id']}").json()
+    assert run["steps"][-1]["tool"] == "score"
+    # practice sessions keep the full trace
+    p = client.post("/t/owner/api/academy/roleplays", json={"scenario_key": "discovery_call"}).json()
+    client.post(f"/t/owner/api/academy/roleplays/{p['id']}/turn", json={"text": GOOD["discovery_call"][0]})
+    assert '"acts"' in json.dumps(client.get(f"/t/owner/api/runs/{p['run_id']}").json()["steps"])
+
+
+def test_certifiable_needs_confirmed_rules_whose_citations_still_check_out(tenant, stu):
+    for k in ("objection_partner", "trust"):
+        rubric.update(tenant, k, {"confirmed": True}, "owner(owner)")
+    v = play(tenant, stu, "objection_partner", GOOD["objection_partner"], exam=True)
+    assert v["score"]["passed"] and not v["score"]["unconfirmed_rules"] and not v["score"]["flagged_rules"]
+    assert v["score"]["certifiable"] is True
+    # the owner confirmed it, but the cited playbook step no longer exists: not certifiable any more
+    rubric.update(tenant, "trust", {"cite_lines": "steps:99", "confirmed": True}, "owner(owner)")
+    v = play(tenant, stu, "objection_partner", GOOD["objection_partner"], exam=True)
+    assert v["score"]["flagged_rules"] == ["trust"] and v["score"]["certifiable"] is False
+
+
+def test_score_text_refuses_very_long_pastes(client, tenant):
+    mk(tenant, "learner11", "student")
+    as_user(client, "learner11")
+    text = "\n".join(f"Rep: what is your goal number {i}?" for i in range(121))
+    r = client.post("/t/owner/api/academy/roleplays/score-text", json={"text": text})
+    assert r.status_code == 422
+    assert client.post("/t/owner/api/academy/roleplays/score-text", json={"text": "\n".join(text.splitlines()[:120])}).status_code == 200
+
+
+SPOKEN_VIOLATIONS = [
+    ("You'll 10x your revenue in 90 days.", "earnings_promise"),
+    ("I promise you'll fill the second room by spring.", "earnings_promise"),
+    ("You'll definitely get 20 new members.", "earnings_promise"),
+    ("Most of our clients hit six figures within a year.", "results_claim"),
+    ("Every single client of ours has doubled their revenue.", "results_claim"),
+    ("There are only two spots left this month.", "false_urgency"),
+    ("The price goes up tomorrow, so decide now.", "false_urgency"),
+    ("Just put it on your Amex.", "debt_steer"),
+    ("Max out your credit card, it's worth it.", "debt_steer"),
+    ("Borrow from family if you have to.", "debt_steer"),
+    ("Don't worry about your partner, this is your decision.", "hide_from_partner"),
+    ("Leave your husband out of this one.", "hide_from_partner"),
+]
+SPOKEN_FINE = [
+    "No one can guarantee results.", "I can't promise you'll fill the room.", "I promise I'll send the recap tonight.",
+    "Please don't put this on a credit card.", "I would never tell you to borrow from family.",
+    "Would it help if your partner joined the next call?", "Most of our clients are coaches like you.",
+    "Where do most of your members come from right now?", "We have space for new clients this month.",
+]
+
+
+def test_spoken_compliance_rules_catch_common_call_violations(tenant, stu):
+    sc = scenarios.builtin("discovery_call")
+    for line, code in SPOKEN_VIOLATIONS:
+        c = acts.classify(line, sc, {"turn_no": 2})
+        assert c["blocked"] and code in [f["code"] for f in c["flags"]], (line, c["flags"])
+    for line in SPOKEN_FINE:
+        assert not acts.classify(line, sc, {"turn_no": 2})["blocked"], line
+    v = play(tenant, stu, "discovery_call", GOOD["discovery_call"][:5] + ["There are only two spots left this month."])
+    assert v["score"]["total"] == 0 and v["score"]["gate"] == "compliance"
+    # model lines and hints are held to the same rules
+    lines = list(score.MODEL_Q.values()) + list(score.MODEL_OBJ.values()) + list(score.MODEL_OUTCOME.values()) + \
+        list(score.MOVE_HINT.values())
+    for line in lines:
+        assert not acts.spoken_flags(line.format(q="you get four trial sign-ups a week")), line

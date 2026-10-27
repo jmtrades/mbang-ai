@@ -79,6 +79,18 @@ DRILL_SCENARIO = {"discovery": "discovery_call", "gap": "discovery_call", "offer
                   "objection_plant": "coach_plant_questions"}
 
 
+def _p(r: dict, key: str, default: float, lo: float, hi: float) -> float:
+    """A rule parameter as a number in range; a missing or malformed value falls back to the default so scoring
+    can never break on an owner's edit (edits are validated too, this is the second line of defence)."""
+    try:
+        v = float((r.get("params") or {}).get(key, default))
+    except (TypeError, ValueError):
+        return float(default)
+    if v != v or v in (float("inf"), float("-inf")):
+        return float(default)
+    return max(lo, min(hi, v))
+
+
 def _q(text: str, n: int = 140) -> str:
     t = " ".join((text or "").split())
     return t if len(t) <= n else t[: n - 1] + "…"
@@ -243,7 +255,7 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
                         ev_txt = ev_txt or "Session ended right after the objection"
                         continue
                     ok = not nxt.get("stuffing") and not nxt.get("blocked") and bool(MOVES[typ] & set(nxt["acts"]))
-                    factor = (r["params"].get("retry_credit", 0.5) if is_retry else 1.0)
+                    factor = (_p(r, "retry_credit", 0.5, 0.0, 1.0) if is_retry else 1.0)
                     if typ == "plant" and ok and "refusal_cited" not in nxt["acts"]:
                         factor *= 0.5  # refused without naming the rule
                     if ok:
@@ -288,11 +300,11 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
     # ---- talk ratio (calls)
     if "talk_ratio" in rub and sc["kind"] == "call":
         r = rule("talk_ratio")
-        mx_share = float(r["params"].get("max_share", 0.6))
+        mx_share = _p(r, "max_share", 0.6, 0.2, 0.95)
         lw = sum(t.get("words", len(A.words(t["text"]))) for t in L)
         pw = sum(len(A.words(t["text"])) for t in turns if t["speaker"] == "persona")
         share = lw / (lw + pw) if (lw + pw) else 1.0
-        if len(L) < int(r["params"].get("min_turns", 3)):
+        if len(L) < int(_p(r, "min_turns", 3, 1, 30)):
             add("talk_ratio", "talk_ratio", 0, r["weight"], f"Too short to judge ({len(L)} turns)",
                 tip="Have a real conversation: ask, then listen.")
         else:
@@ -304,7 +316,7 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
     if "trust" in rub:
         r = rule("trust")
         gain = (state.get("trust", 0) - state.get("trust_start", 0))
-        full = float(r["params"].get("full_gain", 20)) or 20
+        full = _p(r, "full_gain", 20, 1, 100)
         pts = 0 if state.get("end_reason") in ("trust", "compliance") else r["weight"] * max(0.0, min(1.0, gain / full))
         add("trust", "trust", pts, r["weight"], f"Trust moved from {state.get('trust_start', 0)} to {state.get('trust', 0)}",
             tip="" if pts >= r["weight"] else "Use their words back to them, ask before you tell, and never push.")
@@ -324,14 +336,14 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
                 model_line="" if ok else f"Loved your recent post about {kw}. Is that the main thing you're focused on right now?")
         if "dm_one_question" in rub and L:
             r = rule("dm_one_question")
-            mq = int(r["params"].get("max_questions", 1))
+            mq = int(_p(r, "max_questions", 1, 1, 5))
             good = [t for t in L if t["text"].count("?") <= mq and not t.get("stuffing")]
             add("dm_one_question", "dm_one_question", r["weight"] * len(good) / len(L), r["weight"],
                 f"{len(good)} of {len(L)} messages had at most {mq} question", [t["idx"] for t in L if t not in good],
                 tip="" if len(good) == len(L) else "One question per message. If you ask three, they answer none.")
         if "dm_length" in rub and L:
             r = rule("dm_length")
-            mw = int(r["params"].get("max_words", sc.get("max_words", 60)))
+            mw = int(_p(r, "max_words", sc.get("max_words", 60), 10, 300))
             good = [t for t in L if t.get("words", 0) <= mw]
             add("dm_length", "dm_length", r["weight"] * len(good) / len(L), r["weight"],
                 f"{len(good)} of {len(L)} messages were {mw} words or fewer", [t["idx"] for t in L if t not in good],
@@ -341,23 +353,25 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
     penalties = []
     stuffed = [t for t in L if t.get("stuffing")]
     for t in stuffed:
-        notes[t["idx"]].append("Keyword stuffing: no credit for this turn")
+        notes[t["idx"]].append("Answers to several objections crammed together: no credit for this turn" if t.get("hedging")
+                               else "Keyword stuffing: no credit for this turn")
     if stuffed:
-        penalties.append({"key": "stuffing", "label": "Keyword stuffing", "points": 10 * len(stuffed),
+        penalties.append({"key": "stuffing", "label": "Crammed turns (keyword stuffing)", "points": 10 * len(stuffed),
                           "evidence": f"Turns {', '.join(str(t['idx']) for t in stuffed)}"})
     disc = [t for t in L if "discount" in t["acts"]]
     if disc:
         r = rule("no_discount")
-        per, cap = float(r["params"].get("per_occurrence", 10)), float(r["params"].get("cap", 20))
+        per, cap = _p(r, "per_occurrence", 10, 0, 50), _p(r, "cap", 20, 0, 100)
         penalties.append({"key": "no_discount", "label": r["label"], "points": min(cap, per * len(disc)),
                           "evidence": f"Turn {disc[0]['idx']}: \"{_q(disc[0]['text'], 80)}\"", "rule_key": "no_discount"})
         for t in disc:
             notes[t["idx"]].append("Discounted to close")
     if sc["kind"] == "call":
         r = rule("monologue")
-        mono = [t for t in L if "monologue" in t["acts"]]
+        mw = int(_p(r, "max_words", sc.get("max_words", 120), 30, 600))
+        mono = [t for t in L if t.get("words", len(A.words(t["text"]))) > mw]
         if mono:
-            penalties.append({"key": "monologue", "label": r["label"], "points": float(r["params"].get("per_occurrence", 3)) * len(mono),
+            penalties.append({"key": "monologue", "label": r["label"], "points": _p(r, "per_occurrence", 3, 0, 30) * len(mono),
                               "evidence": f"Turns {', '.join(str(t['idx']) for t in mono)}", "rule_key": "monologue"})
             for t in mono:
                 notes[t["idx"]].append("Monologue")
@@ -413,6 +427,7 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
         if c.get("model_line"):
             fl = guardrails.check_for(tenant, c["model_line"], meta) if tenant is not None else \
                 guardrails.check(c["model_line"], guardrails.mode_for(meta), meta)
+            fl = fl + A.spoken_flags(c["model_line"])  # the same spoken-call rules the learner is held to
             c["model_flags"] = fl
             if guardrails.blocked(fl):
                 c["model_line"] = ""
@@ -423,8 +438,10 @@ def score_session(scenario: dict, turns: list[dict], state: dict, rules: dict[st
         "compliance_citation": compliance_cite,
         "criteria": criteria, "penalties": penalties, "scenario_key": sc["key"], "mode": "ai" if mode == "ai" else "rules",
         "seed": seed, "signoff": None, "outcome": state.get("outcome") or "ended", "end_reason": state.get("end_reason"),
-        "passed": total >= PASS_SCORE and not block_flags, "pass_mark": PASS_SCORE,
-        "integrity_flags": [{"turn": t["idx"], "code": "keyword_stuffing"} for t in stuffed],
+        # A pass needs the scenario's own outcome too: ending the session to dodge an objection never passes.
+        "passed": total >= PASS_SCORE and not block_flags and state.get("outcome") == "won", "pass_mark": PASS_SCORE,
+        "integrity_flags": [{"turn": t["idx"], "code": "kitchen_sink" if t.get("hedging") else "keyword_stuffing"}
+                            for t in stuffed],
         "annotations": annotations, "citations": cites, "focus": [c["key"] for c in focus],
         "unconfirmed_rules": unconfirmed, "scorer": "turn-aware rules v1",
     }

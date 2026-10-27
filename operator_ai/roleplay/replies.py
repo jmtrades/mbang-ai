@@ -39,6 +39,8 @@ BANK: dict[tuple, list[str]] = {
     ("monologue",): ["Sorry, I lost you there. What are you actually asking?", "That's a lot. What's the question?",
                      "Okay... I'm not sure what you want from me."],
     ("stuffing",): ["Sorry, I didn't follow that at all.", "I'm not sure what you mean.", "That didn't really make sense to me."],
+    ("hedge",): ["That's a lot of different answers at once. Which part was actually for me?",
+                 "Hang on, which of those was a reply to what I said?", "I'm not sure that answered my question."],
     ("too_short",): ["Sorry, what do you mean?", "Can you say that as a full question?", "Meaning what, exactly?"],
     ("gap_agree", "low"): ["...Yeah. That's about right.", "I suppose that's it, yes."],
     ("gap_agree",): ["Yeah, that's exactly it.", "When you put it like that... yes.", "That's it. That's what's bugging me."],

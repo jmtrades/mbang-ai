@@ -377,6 +377,15 @@ def _str(v, n: int) -> bool:
     return isinstance(v, str) and 0 < len(v.strip()) <= n
 
 
+def _int(v, lo: int, hi: int) -> bool:
+    """A whole number in range (JSON true/false are not numbers here)."""
+    return isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
+
+
+_PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
+LINE_FIELDS = {"fact", "fact_lc", "concern"}
+
+
 def persona_lines(s: dict) -> list[str]:
     """Every fixed line the persona can say in this scenario (openings, fact lines, overrides)."""
     out = list(s.get("opening") or [])
@@ -406,9 +415,9 @@ def validate(data, tenant=None) -> dict:
     if s.get("kind") not in KINDS:
         errs.append("kind: 'call' or 'dm'")
     s.setdefault("skill", "discovery")
-    if s.get("skill") not in SKILLS:
+    if not isinstance(s.get("skill"), str) or s["skill"] not in SKILLS:
         errs.append(f"skill: one of {', '.join(SKILLS)}")
-    if not isinstance(s.get("difficulty"), int) or not 1 <= s["difficulty"] <= 3:
+    if not _int(s.get("difficulty"), 1, 3):
         errs.append("difficulty: 1 (starter), 2 (standard) or 3 (hard)")
     p = s.get("persona")
     if not isinstance(p, dict):
@@ -418,6 +427,9 @@ def validate(data, tenant=None) -> dict:
             if not _str(p.get(f), 80):
                 errs.append(f"persona.{f}: required text")
         p.setdefault("business", p.get("name", ""))
+        if not _str(p.get("business"), 80):
+            errs.append("persona.business: text")
+            p["business"] = ""
         if p.get("temperament") not in TEMPERAMENTS:
             errs.append(f"persona.temperament: one of {', '.join(TEMPERAMENTS)}")
         pub = p.get("public", [])
@@ -441,7 +453,8 @@ def validate(data, tenant=None) -> dict:
     for f in ("dims", "pre_revealed"):
         v = s.setdefault(f, [])
         if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
-            errs.append(f"{f}: a list")
+            errs.append(f"{f}: a list of fact keys")
+            s[f] = []
     for d in s.get("dims", []):
         if d not in DIMS:
             errs.append(f"dims: '{d}' is not one of {', '.join(DIMS)}")
@@ -457,24 +470,33 @@ def validate(data, tenant=None) -> dict:
         errs.append("start_pending: an objection type or null")
     if s.get("start") not in ("persona", "learner"):
         errs.append("start: 'persona' or 'learner'")
-    if s.get("start") == "persona" and not (isinstance(s.get("opening"), list) and s["opening"]
-                                           and all(_str(x, 300) for x in s["opening"])):
+    op = s.setdefault("opening", [])
+    if not isinstance(op, list) or len(op) > 8 or not all(_str(x, 300) for x in op):
+        errs.append("opening: a list of up to 8 lines")
+        s["opening"] = []
+    elif s.get("start") == "persona" and not op:
         errs.append("opening: at least one line when the persona speaks first")
     ra = s.setdefault("raise_at", "offer")
     if not (ra in ("offer", "handled") or isinstance(ra, int) and 1 <= ra <= 10):
         errs.append("raise_at: 'offer', 'handled' or a learner turn number")
-    if not isinstance(s.get("patience"), int) or not 3 <= s["patience"] <= 30:
+    if not _int(s.get("patience"), 3, 30):
         errs.append("patience: 3-30 turns")
-    if not isinstance(s.get("max_words"), int) or not 20 <= s["max_words"] <= 300:
+    if not _int(s.get("max_words"), 20, 300):
         errs.append("max_words: 20-300")
     if s.get("win") not in WINS:
         errs.append(f"win: one of {', '.join(WINS)}")
     s["budget_ok"] = bool(s.get("budget_ok", True))
     s["offer_made"] = bool(s.get("offer_made", False))
     s["gap_confirmed"] = bool(s.get("gap_confirmed", False))
-    if "lines" in s and not (isinstance(s["lines"], dict) and all(
-            isinstance(v, list) and v and all(_str(x, 300) for x in v) for v in s["lines"].values())):
+    if "lines" in s and not (isinstance(s["lines"], dict) and len(s["lines"]) <= 60 and all(
+            isinstance(v, list) and v and len(v) <= 8 and all(_str(x, 300) for x in v) for v in s["lines"].values())):
         errs.append("lines: an object of event -> list of lines")
+    elif "lines" in s:
+        for ev, ls in s["lines"].items():
+            for x in ls:
+                bad = [m for m in _PLACEHOLDER.findall(x) if m not in LINE_FIELDS]
+                if bad or x.count("{") != x.count("}"):
+                    errs.append(f"lines.{ev}: only {{fact}}, {{fact_lc}} or {{concern}} may appear in braces: \"{x[:60]}\"")
     if s.get("win") == "disqualify" and (s["budget_ok"] or "budget" not in facts):
         errs.append("win 'disqualify' needs budget_ok=false and a 'budget' fact")
     rub = s.setdefault("rubric", ["discovery", "gap", "offer_order", "objections", "outcome"])
@@ -495,14 +517,16 @@ def validate(data, tenant=None) -> dict:
         v = s.get(f)
         if not isinstance(v, list) or len(v) > 12 or not all(_str(x, 60) and (allowed is None or x in allowed) for x in v):
             errs.append(f"{f}: a list of short text values")
-    if s.get("trust_start") is not None and not (isinstance(s["trust_start"], int) and 5 <= s["trust_start"] <= 95):
+    if s.get("trust_start") is not None and not _int(s["trust_start"], 5, 95):
         errs.append("trust_start: 5-95 or null")
     if errs:
         raise ScenarioError(errs)
     # Persona lines must be clean (a scenario may allow the specific flag it is testing, e.g. a planted-question ask).
     banned = guardrails.tenant_banned_names(tenant) if tenant is not None else []
     allow = set(s.get("allow_persona_flags") or [])
-    for line in persona_lines(s) + [p["name"], p.get("business", "")] + list(p.get("public", [])):
+    shown = [s[f] for f in ("title", "summary", "learner_role", "objective")] + [p["niche"], p["channel"]] + \
+        list(s.get("public_keywords") or [])
+    for line in persona_lines(s) + [p["name"], p.get("business", "")] + list(p.get("public", [])) + shown:
         for f in guardrails.check(line, "plain", {}, banned, tenant=tenant):
             if f["code"] not in allow:
                 errs.append(f"Persona text is blocked by the guardrails ({f['message']}): \"{line[:80]}\"")

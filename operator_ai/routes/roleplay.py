@@ -59,6 +59,16 @@ def get_scenario(key: str, ctx: Ctx = Depends(require("academy"))):
     return out
 
 
+MAX_SCENARIO_BYTES = 60_000
+
+
+def _check_size(data: dict | None) -> None:
+    import json
+
+    if data is not None and len(json.dumps(data, default=str)) > MAX_SCENARIO_BYTES:
+        raise HTTPException(422, [{"loc": ["body", "data"], "msg": "The scenario is too large (60 KB at most)"}])
+
+
 class ScenarioBody(BaseModel):
     data: dict[str, Any]
     active: bool = True
@@ -69,6 +79,7 @@ def put_scenario(key: str, b: ScenarioBody, ctx: Ctx = Depends(require("academy"
     _owner(ctx)
     if not re.match(KEY, key):
         raise HTTPException(422, [{"loc": ["path", "key"], "msg": "key: 3-40 characters of a-z, 0-9 or _"}])
+    _check_size(b.data)
     s = _call(scenarios.upsert, ctx.tenant, key, b.data, ctx.actor, b.active)
     return {"ok": True, "scenario": scenarios.public(s, ctx.role), "version": s["_version"], "source": s["_source"]}
 
@@ -96,6 +107,7 @@ def test_run(key: str, b: TestRunBody, ctx: Ctx = Depends(require("academy"))):
     if any(len(x) > 1500 for x in b.lines):
         raise HTTPException(422, [{"loc": ["body", "lines"], "msg": "Each line can be at most 1,500 characters"}])
     if b.data is not None:
+        _check_size(b.data)
         if ctx.role != "owner":
             raise HTTPException(403, "Only the owner can test-run a draft scenario")
         data = {**b.data, "key": key}
@@ -143,6 +155,8 @@ def put_rule(rule_key: str, b: RulePatch, ctx: Ctx = Depends(require("academy"))
         r = rubric.update(ctx.tenant, rule_key, b.model_dump(), ctx.actor)
     except KeyError:
         raise HTTPException(404, "Not found")
+    except rubric.RuleError as e:
+        raise HTTPException(422, [{"loc": ["body", "params"], "msg": str(e)}])
     return {"ok": True, "rule": r, "check": rubric.validate_rule(ctx.tenant, r)}
 
 
@@ -158,8 +172,16 @@ class ScoreTextBody(BaseModel):
     scenario_key: str | None = Field(None, pattern=KEY)
 
 
+MAX_TRANSCRIPT_LINES = 120
+
+
 @router.post("/academy/roleplays/score-text")
 def score_text(b: ScoreTextBody, ctx: Ctx = Depends(require("academy"))):
+    # Scoring is quadratic in the number of turns (each playback is checked against every earlier answer), so a
+    # long paste is refused rather than tying up the server.
+    if sum(1 for line in b.text.splitlines() if line.strip()) > MAX_TRANSCRIPT_LINES:
+        raise HTTPException(422, [{"loc": ["body", "text"],
+                                   "msg": f"Paste at most {MAX_TRANSCRIPT_LINES} lines (one line per turn)"}])
     sc = None
     if b.scenario_key:
         sc = scenarios.get(ctx.tenant, b.scenario_key)

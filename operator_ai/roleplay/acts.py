@@ -114,24 +114,49 @@ _STAGE_RX = {k: re.compile(v, re.I) for k, v in STAGE_WORDS.items()}
 
 # Simulator-only compliance rules for things a closer might say out loud that the outreach guardrails don't model.
 # (code, pattern, message, negation-aware)
+_PARTNER_WORDS = r"(your |the )?(partner|wife|husband|spouse|co-?owner|co-?founder|business partner)"
+_RESULT_UNITS = (r"(\$|£|€|\b\d[\d,.]*\s?[kK]\b|\bmoney\b|\brevenue\b|\bincome\b|\bprofits?\b|\b(six|seven)[- ]figures?\b|"
+                 r"\bclients\b|\bmembers\b|\bcustomers\b|\bsales\b|\bleads\b|\bresults\b)")
 SPOKEN_RULES = [
     ("earnings_promise", re.compile(
         r"\byou('ll| will| would| could| can)? (make|earn|bring in|clear|hit|double|triple)\b[^.?!\n]{0,30}"
         r"(\$|£|€|\b\d[\d,.]*\s?[kK]\b|\bmoney\b|\brevenue\b|\bincome\b|\bprofit)|"
-        r"\b(make|get|earn) (your|the|that) (money|investment) back\b|\bpays? for itself\b|\breplace your income\b", re.I),
-     "Earnings promises to a prospect aren't allowed", True),
+        r"\b(make|get|earn) (your|the|that) (money|investment) back\b|\bpays? for itself\b|\breplace your income\b|"
+        # "you'll definitely get 20 new members", "you will easily make 10k"
+        r"\byou('ll| will|'re going to| are going to) (definitely|easily|certainly|absolutely|surely|for sure) "
+        r"(make|earn|get|hit|add|bring in|double|triple|fill|grow)\b|"
+        # "I promise you'll fill the room", "I can promise twenty new members"
+        r"\b(i|we) (can |will )?promise( you)?( that)? (you'?ll|you will|you'?re going to|\d|ten|twenty|thirty|fifty|a hundred|"
+        r"results|more|new|to (fill|double|triple|grow|get))\b|"
+        # "you'll 10x your revenue"
+        r"\b\d+\s?x (your|their|the)? ?(revenue|income|business|sales|profits?|leads|clients|members)\b", re.I),
+     "Earnings or results promises to a prospect aren't allowed", True),
+    ("results_claim", re.compile(
+        r"\b(every|each|all|most|nearly all|almost all|\d+ ?%) (single )?(of )?(our |my |the )?(single )?"
+        r"(clients?|students?|customers?|members?)( of (ours|mine))?\b"
+        r"[^.?!\n]{0,50}\b(double[sd]?|triple[sd]?|10x(ed)?|made|make|hit|hits|reach(ed|es)?|earn(ed|s)?)\b[^.?!\n]{0,30}"
+        + _RESULT_UNITS, re.I),
+     "Claims about other clients' results need proof and permission: don't make them on a call", True),
     ("debt_steer", re.compile(
         r"\b(open|get|take out|apply for|use) (a |another |a new |some )?(new )?(credit cards?|loans?|line of credit|finance)\b|"
-        r"\bput it on (a|your) (credit )?card\b|\bborrow (it|the money)\b", re.I),
+        r"\bput it on (a|your|the) (credit |amex |visa |mastercard )?card\b|\bput it on (your|an|the) (amex|visa|mastercard)\b|"
+        r"\bborrow (it|the money|some money|from)\b|\bmax(ing)? out (your|a|the) (credit )?cards?\b|"
+        r"\b(finance|fund|pay for|cover) (it|this|the programme|the program) (with|through|using|on) (a |your |some )?"
+        r"(loan|credit|klarna|afterpay|financing|credit card|card)\b|"
+        r"\b(use|using|charge it to|split it across) (a |your |the |some )?(savings (and|or) (a |your )?)?(new )?credit cards?\b", re.I),
      "Never steer a prospect into new debt", True),
     ("hide_from_partner", re.compile(
-        r"\b(don'?t|no need to|you don'?t have to|you don'?t need to) (tell|ask|mention|involve|check with) "
-        r"(your |the )?(partner|wife|husband|spouse|co-?owner|business partner)\b", re.I),
+        r"\b(don'?t|no need to|you don'?t have to|you don'?t need to) (tell|ask|mention|involve|check with|worry about|wait for|"
+        r"run it by|bother) " + _PARTNER_WORDS + r"\b|\bleave " + _PARTNER_WORDS + r" out\b|"
+        r"\bwithout (telling|asking|involving) " + _PARTNER_WORDS + r"\b", re.I),
      "Never coach a prospect to leave a partner out of the decision", False),
     ("false_urgency", re.compile(
-        r"\b(only|just) (today|tonight|on this call)\b|\b(price|offer|spot|bonus)s? (goes up|go up|disappears?|expires?) "
-        r"(tonight|today|after this call|at midnight)\b|\bdecide (now|today|on this call) or\b", re.I),
-     "Invented urgency on a call isn't allowed", True),
+        r"\b(only|just) (today|tonight|on this call)\b|\b(price|offer|spot|bonus|discount)s? (goes up|go up|is going up|will go up|"
+        r"disappears?|expires?|ends?) (tonight|today|tomorrow|after this call|at midnight|this week|next week|on (monday|tuesday|"
+        r"wednesday|thursday|friday|saturday|sunday)|soon)\b|\bdecide (now|today|on this call) or\b|"
+        r"\bonly (\d+|one|two|three|four|five|a few|a couple of) (spots?|places?|seats?|slots?) (left|remaining)\b|"
+        r"\b(this|the) (price|offer|deal|bonus|discount) is only (for|valid|good|available) (today|tonight|now|on this call)\b", re.I),
+     "Invented urgency or scarcity on a call isn't allowed", True),
 ]
 
 ACT_LABELS = {
@@ -197,6 +222,36 @@ def is_stuffing(text: str) -> bool:
     return hits / n >= 0.3 or len(found) >= 5
 
 
+# The SOP move for each objection family, read regardless of which objection is on the table. A real answer to one
+# objection uses one of these (sometimes two, e.g. a reframe plus a clarifying question); a line that bundles the
+# moves for three or more different objections is a kitchen-sink answer written to match whatever was raised.
+GUARANTEE_DISCLAIMER = _rx(r"\b(can'?t|cannot|won'?t|don'?t|never|no (one|body) can) (promise|guarantee)\b", r"\bno guarantees?\b",
+                           r"\bnot guaranteed\b", r"\bresults (vary|depend)\b")
+
+
+def move_families(text: str) -> set[str]:
+    qs = [s for s in sentences(text) if s.endswith("?")]
+    fam: set[str] = set()
+    if any(PROBE.search(q) and len(words(q)) >= 3 for q in qs):
+        fam.add("probe")
+    if REFRAME.search(text):
+        fam.add("price")
+    if PARTNER.search(text) and MEET.search(text):
+        fam.add("partner")
+    if INFO.search(text):
+        fam.add("info")
+    if GUARANTEE_DISCLAIMER.search(text):
+        fam.add("guarantee")
+    if DEFER_PRICE.search(text) and re.search(r"\b(price|cost|investment|numbers)\b", text, re.I):
+        fam.add("defer_price")
+    return fam
+
+
+def is_hedging(text: str) -> bool:
+    """Answers to three or more different objections crammed into one turn."""
+    return len(move_families(text)) >= 3
+
+
 def spoken_flags(text: str) -> list[dict]:
     flags = []
     t = guardrails._norm(text)
@@ -238,9 +293,15 @@ def classify(text: str, scenario: dict, ctx: dict, tenant=None) -> dict:
     blocked = guardrails.blocked(flags)
 
     stuffing = is_stuffing(text)
+    hedging = not stuffing and is_hedging(text)
     if stuffing:
         flags.append(guardrails._flag("keyword_stuffing", "review",
                                       "Three or more stage cues crammed into one turn: this turn earns no credit", text[:80]))
+    elif hedging:
+        flags.append(guardrails._flag("keyword_stuffing", "review",
+                                      "Answers to several different objections crammed into one turn: this turn earns no credit",
+                                      text[:80]))
+        stuffing = True
     # discovery: real questions only (ends in '?', at least 3 words); the first dimension in the turn is the one asked
     short_q = False
     found: dict[str, tuple[int, int]] = {}
@@ -314,4 +375,4 @@ def classify(text: str, scenario: dict, ctx: dict, tenant=None) -> dict:
     if not acts:
         acts.append("statement")
     return {"acts": acts, "dims": dims, "flags": flags, "questions": len(qs), "words": n_words, "stuffing": stuffing,
-            "cited": cited, "blocked": blocked}
+            "hedging": hedging, "cited": cited, "blocked": blocked}

@@ -117,9 +117,13 @@ PLAN = ["Start the scenario (persona card, seed, meters)", "Each learner turn: c
         "Score the session (turn-aware rules, cited)"]
 
 
-def _turn_out(t: dict) -> dict:
-    return {k: t.get(k) for k in ("idx", "speaker", "text", "acts", "events", "flags", "source", "note", "stuffing")
-            if t.get(k) is not None}
+def _turn_out(t: dict, exam: bool = False) -> dict:
+    """A turn as recorded in the run trace. The learner can read their own traces, so during an exam the trace
+    carries no live scoring (acts, events, flags): that would be a hint channel the exam is meant to remove. The
+    full scoring lands in the trace when the session is scored."""
+    keys = ("idx", "speaker", "text", "source") if exam else ("idx", "speaker", "text", "acts", "events", "flags", "source",
+                                                              "note", "stuffing")
+    return {k: t.get(k) for k in keys if t.get(k) is not None}
 
 
 # --------------------------------------------------------------------------- lifecycle
@@ -140,7 +144,8 @@ def start(tenant, user: dict, scenario_key: str, seed: int | None = None, mode: 
     title = f"Role-play: {sc['title']}"
     run = runtime.Run(tenant, "roleplay", title, PLAN, actor)
     run.step("start", {"scenario": sc["key"], "seed": seed, "mode": s.mode, "exam": s.exam},
-             lambda: {"opening": [_turn_out(t) for t in s.turns], "trust": s.st["trust"], "patience": s.st["patience"]},
+             lambda: ({"opening": [_turn_out(t, True) for t in s.turns]} if s.exam else
+                      {"opening": [_turn_out(t) for t in s.turns], "trust": s.st["trust"], "patience": s.st["patience"]}),
              label="Start the scenario")
     with tenant.db() as c, db.tx(c):
         rid = c.execute("INSERT INTO roleplays(user_id,scenario_key,transcript,state,score,status,created,updated,seed,mode,exam,"
@@ -166,9 +171,14 @@ def turn(tenant, user: dict, rid: int, text: str) -> dict:
         s = _session(tenant, r)
         actor = _actor(user)
         run = _reopen_run(tenant, r["run_id"], actor, f"Role-play: {s.scenario['title']}")
+        if s.over:
+            # The rules already ended it but scoring didn't finish (for example the server stopped mid-turn):
+            # score it now instead of failing every later request.
+            _finish(tenant, rid, s, run, user)
+            return view(tenant, user, rid)
         n = s.st["learner_turns"] + 1
         new = run.step("turn", {"turn": n, "learner": text},
-                       lambda: [_turn_out(t) for t in engine.step(s, text, tenant)], label=f"Turn {n}")
+                       lambda: [_turn_out(t, s.exam) for t in engine.step(s, text, tenant)], label=f"Turn {n}")
         new_turns = s.turns[-len(new):]
         if any(t.get("source") == "live" for t in new_turns):
             run.use_ai("live")
@@ -218,7 +228,13 @@ def _finish(tenant, rid: int, s: engine.Session, run: runtime.Run, user: dict) -
                   lambda: score_session(s.scenario, s.turns, s.st, rules, tenant, s.mode, s.seed),
                   label="Score the session (turn-aware rules, cited)")
     sc["exam"] = s.exam
-    sc["certifiable"] = bool(s.exam and sc["passed"] and not sc["unconfirmed_rules"])
+    sc["flagged_rules"] = []
+    if s.exam:
+        # Certification only counts rules the owner confirmed AND whose SOP citation still checks out today
+        # (the cited file could have changed since the owner confirmed the rule).
+        used = {c["rule_key"] for c in sc["criteria"]} | {p["rule_key"] for p in sc["penalties"] if p.get("rule_key")}
+        sc["flagged_rules"] = sorted(k for k in used if k in rules and not rubric.validate_rule(tenant, rules[k])["ok"])
+    sc["certifiable"] = bool(s.exam and sc["passed"] and not sc["unconfirmed_rules"] and not sc["flagged_rules"])
     ann = {a["idx"]: a for a in sc["annotations"]}
     with tenant.db() as c, db.tx(c):
         c.execute("UPDATE roleplays SET score=?, status='complete', total=?, state=?, updated=? WHERE id=?",
@@ -293,7 +309,9 @@ def view(tenant, viewer: dict, rid: int) -> dict:
             item["note"] = t.get("note") or ""
             item["flags"] = [f for f in t.get("flags", [])]
         else:
-            item["flags"] = t.get("flags", [])
+            # During an exam only blocking problems show (they end the session anyway); review flags such as
+            # "keyword stuffing: no credit" would be live scoring hints.
+            item["flags"] = [f for f in t.get("flags", []) if not (s.exam and not complete and f.get("severity") != "block")]
             if show_acts:
                 item["acts"] = t.get("act_labels") or [acts_mod.ACT_LABELS.get(a, a) for a in t.get("acts", [])
                                                        if a != "statement"]

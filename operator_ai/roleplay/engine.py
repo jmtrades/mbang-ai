@@ -127,7 +127,7 @@ def _decide(s: Session, cls: dict) -> list[dict]:
         return [_seg("violation_end")]
     if cls["stuffing"]:
         trust(-5)
-        return [_seg("stuffing")]
+        return [_seg("hedge" if cls.get("hedging") else "stuffing")]
     if "monologue" in acts:
         trust(-3)
     if "multi_question" in acts:
