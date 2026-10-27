@@ -156,7 +156,40 @@ def scrub(text: str, names: Iterable[str]) -> str:
     return s
 
 
-def check(text: str, mode: str = "plain", meta: dict | None = None, banned_names: Iterable[str] | None = None) -> list[dict]:
+# Feature rule plug-ins, "module:function", called as fn(text, mode, meta, tenant) -> list[flag] with the
+# normalised text; tenant is None when check() runs without one. A module that does not exist yet is skipped.
+# Each feature owns its own rules module so rules from parallel work never collide in this file.
+RULE_PLUGINS = [
+    "operator_ai.persona:guard_rules",     # impersonation, invented autobiography, persona in outreach, attribution
+    "operator_ai.prospects:guard_rules",   # personalisation must cite researched facts
+    "operator_ai.delivery:guard_rules",    # prospect email needs an unsubscribe line and a postal address
+    "operator_ai.claims:guard_rules",      # result and revenue figures need a substantiation record
+]
+_plugins: list | None = None
+
+
+def _rule_plugins() -> list:
+    global _plugins
+    if _plugins is None:
+        import importlib
+
+        found = []
+        for spec in RULE_PLUGINS:
+            mod, _, fn = spec.partition(":")
+            try:
+                f = getattr(importlib.import_module(mod), fn, None)
+            except ModuleNotFoundError as e:
+                if e.name != mod:
+                    raise
+                f = None
+            if f is not None:
+                found.append(f)
+        _plugins = found
+    return _plugins
+
+
+def check(text: str, mode: str = "plain", meta: dict | None = None, banned_names: Iterable[str] | None = None,
+          tenant=None) -> list[dict]:
     if mode not in MODES:
         raise ValueError(f"unknown mode {mode}")
     meta = meta or {}
@@ -200,6 +233,8 @@ def check(text: str, mode: str = "plain", meta: dict | None = None, banned_names
 
     if mode == "outreach":
         flags.extend(_outreach_money(t, meta))
+    for rule in _rule_plugins():
+        flags.extend(rule(t, mode, meta, tenant) or [])
     return _dedupe(flags)
 
 
@@ -285,7 +320,7 @@ def tenant_banned_names(tenant) -> list[str]:
 
 def check_for(tenant, text: str, meta: dict | None = None) -> list[dict]:
     """check() with the tenant's banned names and banned words, mode chosen from meta."""
-    return check(text, mode_for(meta), meta, tenant_banned_names(tenant))
+    return check(text, mode_for(meta), meta, tenant_banned_names(tenant), tenant=tenant)
 
 
 _banned_cache: dict[str, tuple[float, list[str]]] = {}

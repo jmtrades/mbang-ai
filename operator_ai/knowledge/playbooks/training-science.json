@@ -1,0 +1,1232 @@
+{
+ "domain": "training-science",
+ "title": "Training science",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "spacing-schedule-by-retention-horizon",
+   "title": "Space reviews according to how long the skill has to last",
+   "category": "learning-science",
+   "guidance": "Spaced study beats cramming, and the best gap between reviews grows with how long the material has to be remembered. In a study of more than 1,350 learners, the best gap was roughly 20-40% of the test delay when the test was a week away. When the test was a year away, it fell to about 5-10%. Operators need scripts, offer terms and objection responses for months, so one onboarding day is the wrong shape. Use short gaps in week one and gaps of several weeks after that. Most of this evidence comes from verbal and factual material, so treat it as a strong starting point for conversation skills rather than proof.",
+   "steps": [
+    "Break each skill into small items a learner can recall: opener lines, qualifying questions, offer terms, and the steps for handling each objection.",
+    "Schedule the first reviews about 1, 3, 7, 14, 30 and 60 days after first learning. Lengthen the gap after a correct recall and shorten it after a miss.",
+    "For a 90-day ramp, keep the later gaps at about 1-3 weeks, roughly 10-20% of the time left.",
+    "Deliver each review as a 2-5 minute burst in a channel the learner already uses (app push, Telegram, Slack), not as a new login.",
+    "Retire an item only after several correct recalls with long gaps between them, and bring it back if live-call scores on that behaviour drop."
+   ],
+   "do": [
+    "Set each item's spacing from the date it has to be retained by",
+    "Use adaptive scheduling that responds to each learner's misses"
+   ],
+   "dont": [
+    "Count re-watching a video as a review",
+    "Front-load all content into a single bootcamp week with no follow-up"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Optimal gap between study sessions as a share of the test delay",
+     "value": "About 20-40%",
+     "context": "1-week retention test (Cepeda et al., 2008)"
+    },
+    {
+     "metric": "Optimal gap between study sessions as a share of the test delay",
+     "value": "About 5-10%",
+     "context": "1-year retention test (Cepeda et al., 2008)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Spacing effects in learning: a temporal ridgeline of optimal retention (Psychological Science); also Distributed practice in verbal recall tasks (Psychological Bulletin) - Europe PMC records",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19076480%20OR%20EXT_ID:24986855%20OR%20EXT_ID:16507066%20OR%20EXT_ID:16719566&resultType=core&format=json",
+     "publisher": "Psychological Science / Psychological Bulletin via Europe PMC",
+     "date": "2008-11 (ridgeline study); 2006-05 (meta-analysis)"
+    },
+    {
+     "title": "Improving Students' Learning With Effective Learning Techniques - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:25150680%20OR%20EXT_ID:31556629%20OR%20EXT_ID:26173288%20OR%20EXT_ID:26148023%20OR%20EXT_ID:26173279&resultType=core&format=json",
+     "publisher": "Psychological Science in the Public Interest via Europe PMC",
+     "date": "2013-01"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "retrieval-practice-over-rewatching",
+   "title": "Have learners produce answers from memory instead of re-reading or re-watching",
+   "category": "learning-science",
+   "guidance": "A major review of ten study techniques rated practice testing and spaced practice as the most useful. It rated rereading, highlighting and summarising as low-utility. On tests taken 2 days or 1 week later, learners who were tested beat learners who restudied, even though restudying looked better on a test 5 minutes later. That means learners and coaches who judge by an immediate check will choose the wrong method. Free recall, where the learner says or types the answer, helps more than recognition formats such as multiple choice. Every lesson should end with the operator performing the move: saying the opener aloud, typing the reframe, or answering a spoken objection.",
+   "steps": [
+    "After each micro-lesson, ask for a voice or typed answer before showing the model answer.",
+    "Show the model answer with a one-line note on what was missed or out of order.",
+    "Send missed items back into the spacing queue.",
+    "Use multiple choice only for quick fact checks such as price points, policy or compliance wording.",
+    "Judge lessons by delayed recall (2+ days later), not by scores right after the lesson."
+   ],
+   "do": [
+    "Make recall effortful, using voice-first prompts for spoken skills",
+    "Give feedback after each recall attempt"
+   ],
+   "dont": [
+    "Count video completion as learning",
+    "Judge whether a method works from a test taken right after the lesson"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Techniques rated high utility",
+     "value": "Practice testing, distributed practice",
+     "context": "Review of 10 techniques (Dunlosky et al., 2013)"
+    },
+    {
+     "metric": "Techniques rated low utility",
+     "value": "Rereading, highlighting, summarisation, keyword mnemonic, imagery for text",
+     "context": "Dunlosky et al., 2013"
+    },
+    {
+     "metric": "Testing vs restudy",
+     "value": "Testing better at 2-day and 1-week delays; restudy better at 5 minutes",
+     "context": "Roediger & Karpicke, 2006"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Test-enhanced learning: taking memory tests improves long-term retention - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19076480%20OR%20EXT_ID:24986855%20OR%20EXT_ID:16507066%20OR%20EXT_ID:16719566&resultType=core&format=json",
+     "publisher": "Psychological Science via Europe PMC",
+     "date": "2006-03"
+    },
+    {
+     "title": "Effective learning techniques review; testing-effect meta-analysis (recall > recognition) - Europe PMC records",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:25150680%20OR%20EXT_ID:31556629%20OR%20EXT_ID:26173288%20OR%20EXT_ID:26148023%20OR%20EXT_ID:26173279&resultType=core&format=json",
+     "publisher": "Psychological Science in the Public Interest; Psychological Bulletin",
+     "date": "2013-01; 2014-11"
+    },
+    {
+     "title": "Rethinking the Use of Tests: A Meta-Analysis of Practice Testing (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.3102/0034654316689306?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Review of Educational Research via OpenAlex",
+     "date": "2017-02"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "interleave-objection-drills-after-blocking",
+   "title": "Teach each objection in a block first, then mix objection types in drills",
+   "category": "practice-design",
+   "guidance": "A meta-analysis of interleaved learning found a moderate overall benefit (g = 0.42). The benefit was larger when categories were easy to confuse and the material was complex, and blocked practice won for simple word learning. Sales objections such as price, timing, needing to ask a partner, trust and 'I'll do it myself' often sound alike on the surface, so mixed drills train the operator to work out which objection is really in play. Teach each response in a block until the operator can perform it, then switch to randomised mixed drills. Scores during mixed drills will drop, so judge progress on delayed and real-call performance.",
+   "steps": [
+    "Phase 1 (blocked): 5-10 reps of a single objection type until the operator meets the scorecard criteria twice in a row.",
+    "Phase 2 (interleaved): AI buyer sessions that raise 3-5 objection types in random order, including disguised forms ('send me some info' meaning lack of trust).",
+    "Score whether the operator correctly identified the real objection, separately from how well they handled it.",
+    "Recheck performance a few days later, not only inside the drill session."
+   ],
+   "do": [
+    "Interleave objections that sound similar",
+    "Score whether the operator identified the objection correctly"
+   ],
+   "dont": [
+    "Interleave before each response is learned",
+    "Read a lower score during mixed drills as regression"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Overall interleaving effect",
+     "value": "Hedges' g = 0.42 (59 studies, 238 effect sizes)",
+     "context": "Brunmair & Richter, 2019; larger for confusable, complex categories; blocking better for word lists (g = -0.39)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Similarity matters: A meta-analysis of interleaved learning and its moderators - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:25150680%20OR%20EXT_ID:31556629%20OR%20EXT_ID:26173288%20OR%20EXT_ID:26148023%20OR%20EXT_ID:26173279&resultType=core&format=json",
+     "publisher": "Psychological Bulletin via Europe PMC",
+     "date": "2019-09 (online), 2019-11 (print)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "deliberate-practice-on-sub-skills",
+   "title": "Build reps around specific sub-skills, and track rep quality rather than hours",
+   "category": "practice-design",
+   "guidance": "Deliberate practice means effortful sessions designed to fix a specific weakness, with feedback and rising difficulty, and it is the right way to structure practice. Its predictive power differs a lot by field, though. In one meta-analysis it explained about 26% of performance variance in games, 21% in music, 18% in sports, 4% in education and under 1% in professions. Hours of practice should therefore never be a headline KPI or presented as a route to results. When practice is tightly targeted and measured, the gains are real: medical skills training that used simulation with deliberate practice beat traditional on-the-job education, with an effect size of 0.71 across 14 studies. Operator AI should measure how many reps met the criteria on a scorecard, not minutes logged.",
+   "steps": [
+    "Pick one sub-skill per session, for example 'ask two consequence questions before presenting the offer'.",
+    "Write a pass criterion that can be observed, for example both questions asked, open-ended, and before any pitch.",
+    "Run 5-10 short reps of 2-4 minutes, with feedback after each one.",
+    "Raise the difficulty once the criterion is met 3 times in a row: a tougher buyer persona, more objections, or less time.",
+    "Log reps that met the criterion against the scorecard item, and send the weakest item to the next session."
+   ],
+   "do": [
+    "Make difficulty adaptive to each operator",
+    "Pair every rep with immediate feedback on specific behaviours"
+   ],
+   "dont": [
+    "Use 'hours practised' as a success metric",
+    "Imply that practice volume guarantees income"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Variance in performance explained by deliberate practice",
+     "value": "26% games, 21% music, 18% sports, 4% education, under 1% professions",
+     "context": "Macnamara, Hambrick & Oswald, 2014"
+    },
+    {
+     "metric": "Simulation with deliberate practice vs traditional clinical education",
+     "value": "Effect size 0.71 (95% CI 0.65-0.76), 14 studies",
+     "context": "Medical skill acquisition (McGaghie et al., 2011)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Deliberate practice and performance in music, games, sports, education, and professions: a meta-analysis - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19076480%20OR%20EXT_ID:24986855%20OR%20EXT_ID:16507066%20OR%20EXT_ID:16719566&resultType=core&format=json",
+     "publisher": "Psychological Science via Europe PMC",
+     "date": "2014-07 (online)"
+    },
+    {
+     "title": "Does simulation-based medical education with deliberate practice yield better results than traditional clinical education? (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1097/ACM.0b013e318217e119?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Academic Medicine via OpenAlex",
+     "date": "2011"
+    },
+    {
+     "title": "The role of deliberate practice in the acquisition of expert performance (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1037/0033-295X.100.3.363?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Psychological Review via OpenAlex",
+     "date": "1993"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "simulation-roleplay-as-supplement",
+   "title": "Use role-play simulation as a supplement with unlimited replay, not as the only instruction",
+   "category": "practice-design",
+   "guidance": "Simulation training reliably improves knowledge, skills and on-the-job behaviour. In a synthesis of 609 health-professions studies, effects against no training were large for knowledge and skills (about 1.1-1.2) and moderate-to-large for behaviours (about 0.8). Direct patient outcomes were smaller (0.50), a reminder that results shrink as you move from practice to real-world outcomes. A meta-analysis of computer-based simulation games (65 studies) found gains of about 14% in procedural knowledge and 9% in retention. These games worked best when learners could replay without limit, when learning was active, and when the simulation added to other instruction rather than replacing it. Publication bias was detected, so expect real-world gains to be smaller than the headline numbers.",
+   "steps": [
+    "Pair each role-play scenario with a short teaching unit and a model call, so the simulation is not the only instruction.",
+    "Allow unlimited replays of every scenario at any time.",
+    "Require active production (the operator speaks the call) rather than choosing branches in a menu.",
+    "Expect the gain to shrink at each step from simulation score to live-call behaviour to booked or closed outcomes, and measure all three."
+   ],
+   "do": [
+    "Offer 24/7 replay",
+    "Measure behaviour on real calls as well as simulator scores"
+   ],
+   "dont": [
+    "Replace teaching and modelling with simulation alone",
+    "Present simulator score gains as revenue gains"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Simulation vs no intervention, pooled effect",
+     "value": "Knowledge 1.20; skills about 1.09-1.18; behaviours about 0.79-0.81; direct patient effects 0.50",
+     "context": "609 studies, 35,226 trainees (Cook et al., 2011)"
+    },
+    {
+     "metric": "Simulation games vs comparison instruction",
+     "value": "+14% procedural knowledge, +11% declarative, +9% retention, +20% self-efficacy",
+     "context": "65 studies, N = 6,476; publication bias detected (Sitzmann, 2011)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Technology-enhanced simulation for health professions education: a systematic review and meta-analysis (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1001/jama.2011.1234?select=title,publication_date,abstract_inverted_index",
+     "publisher": "JAMA via OpenAlex",
+     "date": "2011-09"
+    },
+    {
+     "title": "A Meta-Analytic Examination of the Instructional Effectiveness of Computer-Based Simulation Games (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1111/j.1744-6570.2011.01190.x?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Personnel Psychology via OpenAlex",
+     "date": "2011-05-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "behavior-modeling-training-protocol",
+   "title": "Run modelling-based training: good and bad example calls, named steps, the operator's own scenarios, goals, and manager follow-through",
+   "category": "practice-design",
+   "guidance": "A meta-analysis of 117 behaviour-modelling training studies found the largest effects on learning, smaller effects on job behaviour, and the smallest on business results. Skill and behaviour gains held steady or grew over time, while knowledge gains faded. Transfer to the job was strongest when trainees saw both effective and ineffective models, practised with scenarios they wrote themselves, and set goals. It was also strongest when their supervisors had been trained too and the workplace rewarded using the skill. Skill gains were larger when the learning points were given as short named rules and when training ran longer. For operators, this means showing a strong call next to a weak one, naming each step, and drilling on the operator's real prospects.",
+   "steps": [
+    "Show two recorded or simulated calls: one that meets the standard and one that fails at a specific step.",
+    "Sum each step up as a short named rule the operator can recall under pressure.",
+    "Have each operator build role-play scenarios from their own pipeline (niche, typical objections, price point).",
+    "Each operator sets a specific goal for applying the skill in the next 5 live calls.",
+    "Brief the operator's coach or manager on the same rules, and have them check for those rules in call reviews.",
+    "Recognise or reward use of the skill on real calls, not only simulator scores."
+   ],
+   "do": [
+    "Include a deliberately flawed example call",
+    "Train coaches on the same scorecard as operators"
+   ],
+   "dont": [
+    "Show only polished best-case recordings",
+    "Run operator training without involving managers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Studies synthesised",
+     "value": "117 studies, 6 outcome types",
+     "context": "Taylor, Russ-Eft & Chan, 2005; ordering of effects: learning > job behaviour > results"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "A meta-analytic review of behavior modeling training - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22behavior%20modeling%20training%22%20AND%20AUTH:%22Taylor%22&resultType=core&format=json",
+     "publisher": "Journal of Applied Psychology via Europe PMC",
+     "date": "2005-07"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "roleplay-scorecard-design",
+   "title": "Score role-plays with a behaviour checklist plus anchored overall ratings, and check reliability",
+   "category": "assessment-certification",
+   "guidance": "A meta-analysis of 45 simulation-assessment studies found that task checklists and global rating scales had similar inter-rater reliability (0.81 vs 0.78). Global ratings held up better across different scenarios (0.80 vs 0.69) and were more internally consistent. Checklists separated trainees well but need writing for each task, while global ratings carry over between tasks and pick up nuance. The two correlated at about 0.76, so they measure overlapping but not identical things. A good operator scorecard combines both: observable yes/no behaviours for each scenario, plus a few anchored overall ratings. Common reliability guidance treats an ICC below 0.50 as poor, 0.50-0.75 as moderate, 0.75-0.90 as good, and above 0.90 as excellent.",
+   "steps": [
+    "For each scenario, write 6-10 observable checklist items, for example 'asked permission to ask questions' or 'restated the prospect's goal in their words'.",
+    "Add 3-5 global ratings on a 1-5 scale with written anchors for 1, 3 and 5 (rapport and control, discovery depth, objection handling, close).",
+    "Have two raters score the same 20-30 role-plays and compute the ICC. Revise items with poor agreement before using the scorecard for decisions.",
+    "Score every operator across several different scenarios, because a single scenario is a weak basis for judging skill."
+   ],
+   "do": [
+    "Combine scenario-specific checklists with ratings that carry across scenarios",
+    "Report which ICC form was used, with its confidence interval"
+   ],
+   "dont": [
+    "Rely on one overall 'vibe' score",
+    "Certify someone from a single scenario"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Inter-rater reliability, checklist vs global rating scale",
+     "value": "0.81 vs 0.78",
+     "context": "Ilgen et al., 2015 (45 studies)"
+    },
+    {
+     "metric": "Inter-station reliability, global rating scale vs checklist",
+     "value": "0.80 vs 0.69",
+     "context": "Ilgen et al., 2015"
+    },
+    {
+     "metric": "ICC interpretation",
+     "value": "<0.50 poor; 0.50-0.75 moderate; 0.75-0.90 good; >0.90 excellent",
+     "context": "Koo & Li, 2016"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "A systematic review of validity evidence for checklists versus global rating scales in simulation-based assessment (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1111/medu.12621?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Medical Education via OpenAlex",
+     "date": "2015"
+    },
+    {
+     "title": "A Guideline of Selecting and Reporting Intraclass Correlation Coefficients for Reliability Research (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1016/j.jcm.2016.02.012?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Journal of Chiropractic Medicine via OpenAlex",
+     "date": "2016-06"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ai-scoring-calibration",
+   "title": "Check AI call scoring against human raters before using it for certification",
+   "category": "assessment-certification",
+   "guidance": "Strong LLM judges agreed with human preferences more than 80% of the time, about the same rate as two humans agree with each other. The same research documented biases toward the first-listed answer, toward longer answers, and toward the model's own outputs. An AI scorer can therefore do most of the scoring, but only once it has been checked against human-scored examples and is audited on an ongoing basis. In a 2024 trial of AI-simulated patient conversations, two human raters reached an ICC of 0.924 using a structured inventory. That shows the level of rubric clarity worth aiming for. Have the AI quote evidence for each scored behaviour (a transcript quote with a timestamp), so a person can check every judgment.",
+   "steps": [
+    "Build a gold set of 50-100 role-play and real calls, each scored independently by two experienced coaches (a starting-point design choice, not a published standard).",
+    "Run the AI scorer on the gold set. Compute the ICC for totals and per-item agreement for checklist items.",
+    "Use AI scores for certification decisions only when agreement with humans is at least in the 'good' band (ICC 0.75 or higher). Below that, use AI scores for practice feedback only.",
+    "Require a transcript quote and timestamp for each item marked as hit or missed.",
+    "Each month, have a human re-score a random 5-10% of AI-scored calls and recalibrate when agreement drifts.",
+    "Test for length bias by checking whether longer calls or answers score higher with no change in behaviour."
+   ],
+   "do": [
+    "Require evidence-linked scoring",
+    "Re-audit after any change to the prompt, model or scorecard"
+   ],
+   "dont": [
+    "Let an unvalidated AI score decide pass or fail or pay",
+    "Assume AI agreement holds steady across model versions"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Agreement between a strong LLM judge and human preferences",
+     "value": "More than 80%, comparable to agreement between humans",
+     "context": "Zheng et al., NeurIPS 2023 Datasets & Benchmarks"
+    },
+    {
+     "metric": "Human inter-rater ICC on a structured conversation inventory",
+     "value": "0.924",
+     "context": "BMC Medical Education RCT, 2024"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+     "url": "https://arxiv.org/abs/2306.05685",
+     "publisher": "arXiv / NeurIPS 2023",
+     "date": "2023-06-09 (v1); 2023-12-24 (v4)"
+    },
+    {
+     "title": "Large language models improve clinical decision making of medical students through patient simulation and structured feedback: a randomized controlled trial (OpenAlex record)",
+     "url": "https://api.openalex.org/works?filter=title.search:large%20language%20models%20improve%20clinical%20decision%20making%20of%20medical%20students%20through%20patient%20simulation&select=title,publication_date,doi,abstract_inverted_index&per-page=2",
+     "publisher": "BMC Medical Education via OpenAlex",
+     "date": "2024-11-28"
+    },
+    {
+     "title": "A Guideline of Selecting and Reporting Intraclass Correlation Coefficients (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1016/j.jcm.2016.02.012?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Journal of Chiropractic Medicine via OpenAlex",
+     "date": "2016-06"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ai-roleplay-platform-capabilities",
+   "title": "What AI role-play platforms offer in 2026, and what a competitive build needs",
+   "category": "ai-roleplay",
+   "guidance": "Gartner published a Market Overview for B2B sales AI role-play applications on 7 August 2026, treating them as a separate category. The full report is for subscribers only, and here it is seen only through a vendor's summary. Leading vendors share a common feature set. It includes AI buyers built from the customer's ideal-customer profiles and real calls, custom scorecards tied to the team's sales method, and real-call scoring on the same scorecards. It also includes certification programmes, manager analytics, in-call coaching panels, 25-30+ languages, and links to LMSs (SCORM/LTI), CRMs and meeting tools. Setup is quick for a first scenario (one vendor says a first bot and scorecard takes under 10 minutes) but takes about 2 weeks for full personas, modules and real-call scoring. Vendor outcome figures are self-reported and not audited. One vendor page gives both 34% and 21% for the same customer's sales lift, so treat all such numbers as marketing.",
+   "steps": [
+    "Must-have features: buyer personas built from the operator's niche and real call transcripts; voice role-play; custom scorecards; real-call scoring on the same scorecard; certification tracks; manager and coach dashboards.",
+    "Differentiators: automatically assigning practice from gaps seen on real calls; an in-call panel giving talking points, not word-for-word scripts; replay of every scored moment with its timestamp.",
+    "Integrations: CRM, calendar, dialer and meeting platforms, LMS (SCORM/LTI), and chat channels for micro-drills.",
+    "Run a 30-day pilot with a comparison group before claiming any ramp or win-rate result."
+   ],
+   "do": [
+    "Use the same scorecard for simulated and real calls",
+    "Show users where each in-call card's content came from"
+   ],
+   "dont": [
+    "Repeat vendor ramp or win-rate claims as evidence",
+    "Ship role-play without scoring and feedback"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Hyperbound self-reported time to build a first bot and scorecard",
+     "value": "Under 10 minutes; about 2 weeks average for full personas, modules and real-call scoring",
+     "context": "Vendor homepage, 2026"
+    },
+    {
+     "metric": "Second Nature self-reported ramp-time reduction",
+     "value": "34% average (vendor claim, no methodology)",
+     "context": "Vendor homepage, 2026"
+    },
+    {
+     "metric": "Mindtickle self-reported onboarding improvement",
+     "value": "50% faster onboarding (vendor claim, undated)",
+     "context": "Vendor homepage, 2026"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Hyperbound homepage and pricing (product features)",
+     "url": "https://www.hyperbound.ai/pricing",
+     "publisher": "Hyperbound",
+     "date": "2026 (copyright)"
+    },
+    {
+     "title": "AI Sales Role-Play Is Becoming a Distinct Market (summary of the Gartner Market Overview)",
+     "url": "https://hyperbound.ai/blog/ai-sales-role-play-is-becoming-a-distinct-market-heres-what-we-think-comes-next",
+     "publisher": "Hyperbound blog",
+     "date": "2026-09-14"
+    },
+    {
+     "title": "Second Nature AI role-play",
+     "url": "https://www.secondnature.ai/ai-role-play/",
+     "publisher": "Second Nature",
+     "date": "Undated (accessed 2026-10)"
+    },
+    {
+     "title": "Mindtickle homepage",
+     "url": "https://www.mindtickle.com/",
+     "publisher": "Mindtickle",
+     "date": "2026 (copyright)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ai-roleplay-needs-structured-feedback",
+   "title": "AI role-play works when it gives structured feedback; simulation alone is weak",
+   "category": "ai-roleplay",
+   "guidance": "Controlled evidence from fields close to sales suggests the feedback layer, not the simulated conversation, is what produces the gain. In a 2024 double-blind RCT, medical students all practised history-taking with LLM-simulated patients. Only those who also received structured AI feedback improved their clinical decision-making (3.60 vs 3.02 on the inventory after four sessions). In a 2024 study of 40 people practising conflict, those trained with an LLM simulator that coached them on a named conflict framework later used 67% fewer escalating tactics and twice as many cooperative ones, compared with a lecture-only group. Both studies are small, so treat the size of the effect as uncertain. The direction is consistent, though: every AI role-play in Operator AI should end with scored, behaviour-specific feedback and an immediate retry.",
+   "steps": [
+    "End every simulated call with a score on the scorecard, 1-3 specific missed behaviours with transcript quotes, and a model line for each.",
+    "Offer an immediate retry of the same moment (the objection or transition), not just the whole call.",
+    "Ground the feedback in a named framework the operator has already learned (for example a 4-step objection loop), so feedback reinforces the rule.",
+    "Log before and after scores on the specific item to measure within-session improvement."
+   ],
+   "do": [
+    "Pair every simulation with structured, framework-based feedback",
+    "Offer a targeted retry of the moment that went wrong"
+   ],
+   "dont": [
+    "Ship 'chat with a fake prospect' without scoring",
+    "Overstate effects from small pilot studies"
+   ],
+   "benchmarks": [
+    {
+     "metric": "LLM-simulated patients plus structured AI feedback vs simulation only",
+     "value": "3.60 vs 3.02 on the inventory after 4 sessions; p = .049, partial eta-squared 0.198",
+     "context": "n = 21, BMC Medical Education RCT, 2024"
+    },
+    {
+     "metric": "Simulated conflict practice vs lecture",
+     "value": "-67% escalating strategies; about 2x cooperative strategies",
+     "context": "n = 40, CHI 2024"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Large language models improve clinical decision making of medical students through patient simulation and structured feedback: an RCT (OpenAlex record)",
+     "url": "https://api.openalex.org/works?filter=title.search:large%20language%20models%20improve%20clinical%20decision%20making%20of%20medical%20students%20through%20patient%20simulation&select=title,publication_date,doi,abstract_inverted_index&per-page=2",
+     "publisher": "BMC Medical Education via OpenAlex",
+     "date": "2024-11-28"
+    },
+    {
+     "title": "Rehearsal: Simulating Conflict to Teach Conflict Resolution",
+     "url": "https://arxiv.org/abs/2309.12309",
+     "publisher": "arXiv / CHI 2024",
+     "date": "2023-09-21 (v1); 2024-02-29 (v2)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ai-coaching-dosage-by-skill-level",
+   "title": "Adjust the amount of AI coaching to the operator's level, and keep a human coach in the loop",
+   "category": "coaching",
+   "guidance": "Field experiments show that AI coaching helps most when it suits the learner's level. In a sales field experiment, mid-ranked agents gained the most from an AI coach. Bottom-ranked agents were overwhelmed by the volume of feedback, and top-ranked agents resisted it. Limiting how much feedback the AI gave improved results, and AI plus a human coach beat either one alone. In customer support, an AI assistant raised productivity by about 14% on average and about 34% for novices, with little effect for experienced agents. In live tutoring, AI guidance raised student mastery by 4 percentage points overall and by 9 points for lower-rated tutors. The design rule: give new operators a small number of high-priority prompts, give experienced operators optional advanced analysis, and have a human coach review AI insights every week.",
+   "steps": [
+    "Tier operators by recent scorecard and outcome data: new or struggling, mid, advanced.",
+    "New or struggling operators get at most 1-2 feedback points per call, each with a model line and a retry.",
+    "Mid-tier operators get the full scorecard breakdown plus one focus behaviour per week.",
+    "Advanced operators can opt in to deep analysis (talk patterns, deal strategy) and peer-coaching roles.",
+    "A human coach reviews the AI's top flagged patterns weekly and picks or changes each operator's focus behaviour."
+   ],
+   "do": [
+    "Limit how much feedback the AI gives low performers",
+    "Combine AI feedback with human coaching"
+   ],
+   "dont": [
+    "Send every operator a 20-point critique after each call",
+    "Force AI coaching on top performers without letting them choose"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Productivity effect of an AI assistant (resolutions per hour)",
+     "value": "+14% average; +34% for novice or low-skill agents; minimal for experienced agents",
+     "context": "5,179 support agents (Brynjolfsson, Li & Raymond; QJE 2025)"
+    },
+    {
+     "metric": "Student mastery with AI-assisted tutors",
+     "value": "+4 percentage points overall; +9 percentage points for lower-rated tutors; about $20 per tutor per year",
+     "context": "900 tutors, 1,800 students, preregistered RCT"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Artificial Intelligence Coaches for Sales Agents: Caveats and Solutions (Semantic Scholar record)",
+     "url": "https://api.semanticscholar.org/graph/v1/paper/DOI:10.1177/0022242920956676?fields=title,abstract,year,venue,authors,publicationDate",
+     "publisher": "Journal of Marketing via Semantic Scholar",
+     "date": "2020-09 (online); 2021 (print)"
+    },
+    {
+     "title": "Generative AI at Work (NBER Working Paper 31161)",
+     "url": "https://www.nber.org/papers/w31161",
+     "publisher": "NBER / Quarterly Journal of Economics",
+     "date": "2023-04 (WP); QJE 2025"
+    },
+    {
+     "title": "Tutor CoPilot: A Human-AI Approach for Scaling Real-Time Expertise",
+     "url": "https://arxiv.org/abs/2410.03017",
+     "publisher": "arXiv",
+     "date": "2024-10-03 (v1); 2026-10-10 (v3)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "feedback-content-rules",
+   "title": "Make feedback about the task and specific, never about the person",
+   "category": "coaching",
+   "guidance": "Feedback improves performance on average, but it is far from always helpful. A meta-analysis of 607 effect sizes found an average gain of d = 0.41, yet more than a third of feedback interventions made performance worse. Feedback lost effectiveness as it moved attention away from the task and toward the self. A later meta-analysis of 435 studies found an average effect of d = 0.48 with wide variation, and how much useful information the feedback carried was a major moderator. Effects were larger for cognitive and motor skills than for motivational or behavioural outcomes. For operators, this rules out generic praise, ranking-based shaming, and personality comments. Feedback should name the behaviour, show where it happened, and give the next action.",
+   "steps": [
+    "Format: what happened (quote and timestamp), why it matters (the effect on the buyer), what to do instead (a model line), and one rep to practise now.",
+    "Limit each review to 1-3 points, ranked by their effect on the outcome.",
+    "Never frame feedback about the person ('you're not a closer'). Frame it about the behaviour ('the close came before the prospect's goal was restated').",
+    "Keep public leaderboards about effort and improvement. Deliver criticism privately."
+   ],
+   "do": [
+    "Give specific feedback rich in useful information",
+    "Tie each feedback point to a practice rep"
+   ],
+   "dont": [
+    "Give feedback that rates the operator's character or ability as a person",
+    "Pile on unranked feedback"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average effect of feedback interventions",
+     "value": "d = 0.41; more than a third of interventions reduced performance",
+     "context": "607 effect sizes, 23,663 observations (Kluger & DeNisi, 1996)"
+    },
+    {
+     "metric": "Average effect of feedback on learning",
+     "value": "d = 0.48, highly variable",
+     "context": "435 studies, N > 61,000 (Wisniewski, Zierer & Hattie, 2020)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "The effects of feedback interventions on performance: a historical review, a meta-analysis, and a preliminary feedback intervention theory (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1037/0033-2909.119.2.254?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Psychological Bulletin via OpenAlex",
+     "date": "1996-03"
+    },
+    {
+     "title": "The Power of Feedback Revisited: A Meta-Analysis of Educational Feedback Research (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.3389/fpsyg.2019.03087?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Frontiers in Psychology via OpenAlex",
+     "date": "2020-01"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "coaching-cadence-and-span",
+   "title": "Coaching cadence: a daily drill, a weekly call review, and manageable coach-to-operator ratios",
+   "category": "coaching",
+   "guidance": "Evidence on workplace coaching supports regular, structured coaching but does not set a magic number of sessions. A meta-analysis of 17 studies found an overall effect of δ = 0.36 (0.28 on skill outcomes). Internal coaches outperformed external ones, and neither the number of sessions nor the format (face-to-face, blended or online) made a significant difference. Consistency and closeness to real work therefore matter more than volume. B2B sales benchmarks show first-line leaders now average 6.4 SDRs each, down from 8 in 2021-2023, which suggests how many people one coach can review in depth. Vendor and practitioner guidance often says to focus coaching time on mid-performers. The cadence below is a practitioner recommendation, not a tested optimum.",
+   "steps": [
+    "Daily (10-15 min, group or AI): one focused drill on the team's weakest scorecard item that week.",
+    "Weekly (30-45 min, one-to-one): review 1-2 recorded calls against the scorecard, agree one focus behaviour, and assign targeted AI role-plays.",
+    "Every two weeks: coaches score the same call independently and compare, to keep scoring consistent.",
+    "Monthly: re-run certification scenarios and compare item-level scores with the previous month.",
+    "Keep about 6-8 operators per human coach for in-depth review, and let AI pre-screen calls so coaches spend their time on the flagged moments."
+   ],
+   "do": [
+    "Use coaches who know the offer and the method (internal coaches)",
+    "Coach from recorded evidence"
+   ],
+   "dont": [
+    "Rely on ad-hoc coaching only when someone asks",
+    "Assume more sessions means better results"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Effect of workplace coaching",
+     "value": "δ = 0.36 overall; 0.28 on skill outcomes; 0.51 affective; internal coaches stronger",
+     "context": "17 studies (Jones, Woods & Guillaume, 2016)"
+    },
+    {
+     "metric": "SDRs per first-line leader",
+     "value": "6.4 (3.6 at sub-$5M revenue; 8.1 at $500M+)",
+     "context": "Bridge Group 2025, 351 B2B companies"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "The effectiveness of workplace coaching: a meta-analysis of learning and performance outcomes (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1111/joop.12119?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Journal of Occupational and Organizational Psychology via OpenAlex",
+     "date": "2016"
+    },
+    {
+     "title": "SDR Models, Motions & Metrics: 2025 Research Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "The Ultimate Guide to Sales Coaching",
+     "url": "https://www.gong.io/blog/sales-coaching/",
+     "publisher": "Gong (vendor blog)",
+     "date": "2019-04-09; last modified 2026-03-04"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ramp-benchmarks-2025",
+   "title": "Reference ramp and activity benchmarks for setter-type roles (B2B SDR data)",
+   "category": "ramp-metrics",
+   "guidance": "The most recent large benchmark for outbound setter roles is a 2025 survey of 351 mainly North American B2B SaaS companies. The average SDR ramp was 3.0 months, the shortest since 2010, and average tenure was 1.9 years. Median annual attrition was 40%, and only 60% of reps hit quota, the lowest in the study's history. The median monthly quota was 10 meetings held, and reps averaged 4.1 quality conversations and 112 total activities a day. Coaching-programme setters (DM and phone setting for high-ticket offers) work in a different motion. Use these numbers as outside reference points and build programme-specific baselines from the platform's own data. Report time-to-first-booked-call and time-to-certification, not just months.",
+   "steps": [
+    "Define ramp stages: certified on fundamentals, first booked call, first shown call, first client or deal, and consistent target output for 4 straight weeks.",
+    "Track days to each stage for every cohort, and report median and spread, not just the average.",
+    "Compare cohorts before and after any training change, keeping offer and lead source the same where possible.",
+    "Track attrition by reason (involuntary, voluntary, promotion) as the benchmark does."
+   ],
+   "do": [
+    "Report medians and percentile ranges",
+    "Build your own baseline before claiming improvement"
+   ],
+   "dont": [
+    "Assume B2B SaaS SDR benchmarks apply directly to high-ticket coaching setters",
+    "Use 'reps at quota' without saying how quotas are set"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average SDR ramp time",
+     "value": "3.0 months (peak 3.8 in 2014)",
+     "context": "Bridge Group 2025, 351 B2B companies"
+    },
+    {
+     "metric": "Average SDR tenure",
+     "value": "1.9 years",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "Median annual SDR attrition",
+     "value": "40% (25th-75th percentile 21%-57%)",
+     "context": "Bridge Group 2025 (2024 data)"
+    },
+    {
+     "metric": "Reps at quota",
+     "value": "60%",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "Median monthly quota, meetings held",
+     "value": "10",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "Quality conversations per day / total daily activities",
+     "value": "4.1 / 112",
+     "context": "Bridge Group 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "SDR Models, Motions & Metrics: 2025 Research Report (10th ed.)",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "AE Models, Motions & Metrics: 2026 Research Report (landing page)",
+     "url": "https://blog.bridgegroupinc.com/saas-inside-sales-metrics",
+     "publisher": "The Bridge Group",
+     "date": "2026"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "certification-mastery-gates",
+   "title": "Certify by demonstrated mastery across several scenarios and real calls, then recertify",
+   "category": "assessment-certification",
+   "guidance": "Mastery-style simulation training, where learners practise until they meet a set standard, beats traditional on-the-job learning for specific skills (effect size 0.71). Reliability research shows one scenario is a weak basis for a judgment, because performance varies from scenario to scenario. Skills also decay without use, so a certification should expire. Leading AI role-play platforms already offer certification tracks, but they publish little detail on how pass standards are set. Operator AI should make its standards explicit and auditable. The thresholds below are suggested starting points to tune against outcome data, not published standards.",
+   "steps": [
+    "Level 1, Knowledge: 90% or better on spaced free-recall checks of the offer, qualification criteria, compliance wording and objection steps.",
+    "Level 2, Simulation: pass at least 3 different AI scenarios (for example a cold inbound DM lead, a sceptical warm lead, and a price objection on the call) at 80% or more of checklist items and 4/5 or more on overall ratings, across at least 2 separate days.",
+    "Level 3, Live: 3 real calls or conversations scored at threshold by the AI and confirmed by a human coach.",
+    "Unlock the next activity (live leads, a higher-value offer, or doing outreach for clients) only after the level is passed.",
+    "Recertify every 90 days, or automatically when real-call item scores fall below threshold for 2 weeks."
+   ],
+   "do": [
+    "Write down the pass standard and the evidence behind each pass",
+    "Use multiple scenarios and two raters for high-stakes gates"
+   ],
+   "dont": [
+    "Award certificates for course completion alone",
+    "Make certification permanent"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Simulation with deliberate practice (mastery-oriented) vs traditional education",
+     "value": "Effect size 0.71",
+     "context": "McGaghie et al., 2011 (14 studies)"
+    },
+    {
+     "metric": "Inter-station reliability, checklist vs global rating",
+     "value": "0.69 vs 0.80",
+     "context": "Ilgen et al., 2015; supports multi-scenario certification"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Does simulation-based medical education with deliberate practice yield better results than traditional clinical education? (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1097/ACM.0b013e318217e119?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Academic Medicine via OpenAlex",
+     "date": "2011"
+    },
+    {
+     "title": "Validity evidence for checklists vs global rating scales (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1111/medu.12621?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Medical Education via OpenAlex",
+     "date": "2015"
+    },
+    {
+     "title": "Hyperbound homepage (Onboarding & Certifications use case)",
+     "url": "https://www.hyperbound.ai/",
+     "publisher": "Hyperbound",
+     "date": "2026 (copyright)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "skill-decay-and-booster-quizzes",
+   "title": "Plan for skill decay with adaptive spaced 'booster' questions",
+   "category": "learning-science",
+   "guidance": "Trained skills decay during periods of non-use. A meta-analysis of 189 data points found almost no loss right after training (d = -0.01) but a large loss after more than a year without use (d = -1.4). Cognitive, accuracy-based skills decayed faster than physical ones. Randomised trials of spaced education, short question sets emailed or sent to phones over weeks, show this format can last and change behaviour. In one trial, an adaptive version needed significantly fewer questions for similar end-of-course scores. In another, clinicians' inappropriate test ordering stayed about 40% lower for 72 weeks after the programme ended. Game-style versions reached 76-87% engagement or completion. For operators, short adaptive boosters keep scripts and judgment sharp between coaching sessions.",
+   "steps": [
+    "Send 2-5 scenario questions 2-3 times a week, for example 'Prospect says: I need to ask my partner. What do you say next?' Have the operator answer by voice or text.",
+    "Use adaptive repetition: a missed item comes back within days, and a correct item comes back after a longer gap. Retire it after repeated correct answers.",
+    "Raise boosters automatically for any scorecard item whose real-call score falls.",
+    "Track booster completion and accuracy as early warning signs."
+   ],
+   "do": [
+    "Keep boosters short and in the flow of work",
+    "Adapt repetition to each operator's errors"
+   ],
+   "dont": [
+    "Assume certification lasts indefinitely",
+    "Send long weekly quizzes that people skip"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Skill loss after more than 365 days of non-use",
+     "value": "d = -1.4 (vs -0.01 right after training)",
+     "context": "Arthur et al., 1998 (53 articles, 189 data points)"
+    },
+    {
+     "metric": "Inappropriate PSA testing, spaced education vs control",
+     "value": "7.8% vs 13.1% over the 72 weeks after the intervention (about 40% relative reduction)",
+     "context": "RCT, 95 clinicians (Kerfoot et al., 2010)"
+    },
+    {
+     "metric": "Engagement with spaced-education games",
+     "value": "87% game completion; 76% opted into future games",
+     "context": "Kerfoot RCTs, 2012-2014"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Factors that influence skill decay and retention: a quantitative review and analysis (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1207/s15327043hup1101_3?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Human Performance via OpenAlex",
+     "date": "1998"
+    },
+    {
+     "title": "Spaced education trials by Kerfoot and colleagues - Europe PMC records",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22spaced%20education%22%20AND%20AUTH:%22Kerfoot%22&resultType=core&format=json&pageSize=8",
+     "publisher": "Various journals via Europe PMC",
+     "date": "2010-2014"
+    },
+    {
+     "title": "Replication and Analysis of Ebbinghaus' Forgetting Curve - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:25150680%20OR%20EXT_ID:31556629%20OR%20EXT_ID:26173288%20OR%20EXT_ID:26148023%20OR%20EXT_ID:26173279&resultType=core&format=json",
+     "publisher": "PLoS ONE via Europe PMC",
+     "date": "2015-07-06"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "four-level-evaluation-with-leading-indicators",
+   "title": "Measure skill gains at four levels, and observe real calls rather than relying on self-reports",
+   "category": "measurement",
+   "guidance": "A widely used four-level training-evaluation model measures reaction, learning, on-the-job behaviour, and results. Its 2026 guidance says relevance is the strongest predictor of whether learners apply training, and confidence and commitment are early signs of behaviour change. It also warns against waiting 90 days before measuring behaviour. A meta-analysis of organisational training found similar average effects at every level (d of about 0.60-0.63). A transfer meta-analysis found that relationships look inflated when the predictor and the outcome come from the same source. Self-reported improvement is therefore weak evidence. Operator AI should measure behaviour from scored real calls and results from CRM outcomes.",
+   "steps": [
+    "Level 1 (reaction): a one-question relevance pulse after each module ('Will you use this on your next call?').",
+    "Level 2 (learning): recall accuracy plus simulation scorecard results, tracked by item.",
+    "Level 3 (behaviour): AI-scored real calls or DMs on the same scorecard, starting in week 1, not at 90 days.",
+    "Level 4 (results): leading indicators (reply rate, booked rate, show rate) and lagging ones (close rate, cash collected, client retention).",
+    "Compare against a baseline or a comparison cohort, and use outcome sources other than the operator's own report."
+   ],
+   "do": [
+    "Measure behaviour from the start",
+    "Keep the same scorecard across practice and live work"
+   ],
+   "dont": [
+    "Rely on satisfaction surveys or self-reported confidence as proof",
+    "Wait for quarter-end revenue to judge training"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Training effectiveness by evaluation level",
+     "value": "Reaction d = 0.60; learning 0.63; behaviour 0.62; results 0.62",
+     "context": "Arthur et al., 2003"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "The Kirkpatrick Model (four levels, 2026 guidance)",
+     "url": "https://www.kirkpatrickpartners.com/the-kirkpatrick-model/",
+     "publisher": "Kirkpatrick Partners",
+     "date": "2026 content (footer shows 2024)"
+    },
+    {
+     "title": "Effectiveness of training in organizations: a meta-analysis of design and evaluation features - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22effectiveness%20of%20training%20in%20organizations%22%20AND%20AUTH:%22Arthur%22&resultType=core&format=json",
+     "publisher": "Journal of Applied Psychology via Europe PMC",
+     "date": "2003-04"
+    },
+    {
+     "title": "Transfer of training: a meta-analytic review (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1177/0149206309352880?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Journal of Management via OpenAlex",
+     "date": "2010"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "transfer-environment-manager-support",
+   "title": "Design the environment so training carries over to real calls",
+   "category": "coaching",
+   "guidance": "Whether training shows up on the job depends a lot on the learner's motivation and work environment. These predictors matter more for open skills, where there is no single right answer, such as leadership or sales conversations, than for closed procedural skills. Behaviour-modelling research found that transfer improved when supervisors were trained in the same skills and the workplace rewarded using them. In LinkedIn's 2025 Workplace Learning Report, half of respondents named lack of manager support as a top barrier to career development. Only 15% said a manager had helped them build a career plan in the past six months. In a coaching programme, the coach or community leader acts as the manager, so they must know the scorecard and reinforce it.",
+   "steps": [
+    "Within 48 hours of each module, assign a live application task, for example 'use the new opener on your next 10 DMs'.",
+    "Give coaches the same scorecard and focus behaviour the operator is working on.",
+    "Recognise application publicly (a call clip of the week), with the operator's consent.",
+    "Check that the offer, lead flow and scripts support the trained behaviour. Remove blockers before blaming the operator."
+   ],
+   "do": [
+    "Treat sales conversation skills as open skills that need coaching support",
+    "Close the loop from module to live use within days"
+   ],
+   "dont": [
+    "Train operators while coaches use a different standard",
+    "Assume a course alone changes behaviour"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Respondents naming lack of manager support as a top career-development barrier",
+     "value": "About 50%",
+     "context": "LinkedIn Workplace Learning Report 2025"
+    },
+    {
+     "metric": "Employees whose manager helped build a career plan in the past 6 months",
+     "value": "15% (down 5 points from 2024)",
+     "context": "LinkedIn Workplace Learning Report 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Transfer of training: a meta-analytic review (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1177/0149206309352880?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Journal of Management via OpenAlex",
+     "date": "2010"
+    },
+    {
+     "title": "A meta-analytic review of behavior modeling training - Europe PMC record",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:%22behavior%20modeling%20training%22%20AND%20AUTH:%22Taylor%22&resultType=core&format=json",
+     "publisher": "Journal of Applied Psychology via Europe PMC",
+     "date": "2005-07"
+    },
+    {
+     "title": "Workplace Learning Report 2025",
+     "url": "https://business.linkedin.com/learn/resources/workplace-learning-report",
+     "publisher": "LinkedIn Learning",
+     "date": "2025"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cohort-completion-first-two-weeks",
+   "title": "Self-paced courses complete poorly: the first two weeks and the course structure decide completion",
+   "category": "community-cohort",
+   "guidance": "Across 221 open online courses, completion ranged from 0.7% to 52.1%, with a median of 12.6%. Longer courses completed less often, and the first two weeks were critical: after that, the share of active learners levelled off. A 2.5-year study of about 250,000 learners in 247 courses tested light-touch prompts such as plan-making and social-accountability planning. These raised activity in the first week or two, but the gains faded and did not raise completion. One intervention helped by about 2.7 points, and only in specific contexts. Completion among learners who intended to finish was only about 20%. Sign-up prompts and reminders are not enough. Use real structure: cohorts, deadlines, live touchpoints, short modules, and human follow-up in weeks 1-2.",
+   "steps": [
+    "Run onboarding as a dated cohort with a fixed start, weekly deadlines and a live kickoff.",
+    "Keep the core path short (for example 4-6 weeks to Level 2 certification) and move extra material to optional tracks.",
+    "Days 1-14: daily small wins, plus a human or AI check-in for anyone with no activity for 48 hours.",
+    "Treat 'no practice activity in week 1' as the main at-risk signal and alert a coach.",
+    "Don't rely on goal-setting forms or reminder emails alone to drive completion."
+   ],
+   "do": [
+    "Put most support effort into the first 14 days",
+    "Use deadlines and live sessions"
+   ],
+   "dont": [
+    "Launch a long self-paced library and expect completion",
+    "Assume a commitment form or accountability prompt will lift completion"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Open online course completion rate",
+     "value": "Median 12.6% (range 0.7%-52.1%)",
+     "context": "221 courses (Jordan, 2015)"
+    },
+    {
+     "metric": "Completion among intending completers",
+     "value": "About 20%",
+     "context": "Harvard/MIT/Stanford courses (Kizilcec et al., PNAS 2020)"
+    },
+    {
+     "metric": "Effect of light-touch plan-making on completion",
+     "value": "About 0 points (not significant); early engagement gains faded within 1-2 weeks",
+     "context": "About 250k learners, 247 courses"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Massive open online course completion rates revisited (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.19173/irrodl.v16i3.2112?select=title,publication_date,abstract_inverted_index",
+     "publisher": "IRRODL via OpenAlex",
+     "date": "2015"
+    },
+    {
+     "title": "Scaling up behavioral science interventions in online education (full text)",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7334459/fullTextXML",
+     "publisher": "PNAS via Europe PMC",
+     "date": "2020-06-15"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "community-pods-peer-review-team-competition",
+   "title": "Community mechanics: small pods, peer call review and team-based competition",
+   "category": "community-cohort",
+   "guidance": "Peer assessment improves performance by a small-to-moderate amount (g = 0.31 vs no assessment, 54 studies). It was as good as or better than teacher assessment, but not clearly better than self-assessment. That makes structured peer call reviews a cheap way to add review capacity, provided they use the same scorecard. Gamification has small positive effects on learning (g = 0.49 cognitive, 0.36 motivational, 0.25 behavioural). Behavioural gains were strongest when competition was combined with collaboration and when social interaction and a narrative were included. Only the cognitive effect held up in the most rigorous studies. Pure individual leaderboards are the weakest version. Team challenges, with pods competing on practice volume and scorecard improvement, are a better use of the evidence.",
+   "steps": [
+    "Group operators into pods of 4-6 at similar stages, with a rotating pod lead.",
+    "Each week, each operator submits one call or role-play, and two pod-mates score it on the official scorecard. The AI shows where peer and AI scores differ.",
+    "Run team challenges, such as pod-level improvement on one scorecard item, alongside personal-best tracking.",
+    "Rank improvement and practice reps, not raw revenue, so new operators aren't discouraged.",
+    "Rotate peer-review pairings every 2-4 weeks."
+   ],
+   "do": [
+    "Combine competition with collaboration",
+    "Use the official scorecard for peer review"
+   ],
+   "dont": [
+    "Rank only by revenue",
+    "Use badges and points as a substitute for real feedback"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Peer assessment vs no assessment",
+     "value": "g = 0.31 (vs teacher assessment g = 0.28; vs self-assessment g = 0.23, not significant)",
+     "context": "54 studies, k = 141 (Double et al., 2020)"
+    },
+    {
+     "metric": "Gamification effects",
+     "value": "g = 0.49 cognitive, 0.36 motivational, 0.25 behavioural",
+     "context": "Sailer & Homner, 2020"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "The Impact of Peer Assessment on Academic Performance: A Meta-analysis (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1007/s10648-019-09510-3?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Educational Psychology Review via OpenAlex",
+     "date": "2020"
+    },
+    {
+     "title": "The Gamification of Learning: a Meta-analysis (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1007/s10648-019-09498-w?select=title,publication_date,abstract_inverted_index",
+     "publisher": "Educational Psychology Review via OpenAlex",
+     "date": "2020 (online 2019)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "daily-practice-habit-design",
+   "title": "Build a daily practice habit tied to a fixed cue, and expect it to take months",
+   "category": "community-cohort",
+   "guidance": "In a 12-week study of real-world habit formation, the time for a daily behaviour to become close to automatic ranged from 18 to 254 days. Doing it consistently in the same context helped, and missing a single day did not meaningfully set people back. A large online-learning study found that engagement boosts from motivational prompts faded within one to two weeks. Short daily practice therefore needs a fixed cue and context, not willpower or reminder campaigns. Streak features should tolerate an occasional miss, because one lapse is not a failure, and harsh streak resets risk people dropping out.",
+   "steps": [
+    "Anchor one 10-15 minute practice block to a fixed daily cue, for example right before the first outreach block.",
+    "Make the first rep take one tap: open the app straight into today's AI role-play.",
+    "Use streaks that count weekly consistency (for example 5 of 7 days) instead of resetting to zero after one miss.",
+    "Plan for 2-8 months of support before the habit is self-sustaining, and don't promise '21 days'."
+   ],
+   "do": [
+    "Tie practice to an existing routine",
+    "Forgive single missed days"
+   ],
+   "dont": [
+    "Rely on motivational messages alone",
+    "Penalise a single lapse"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Days to reach 95% of automaticity for a daily behaviour",
+     "value": "18-254 days (wide individual variation)",
+     "context": "96 volunteers, 82 analysed (Lally et al., 2010)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "How are habits formed: Modelling habit formation in the real world (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1002/ejsp.674?select=title,publication_date,abstract_inverted_index",
+     "publisher": "European Journal of Social Psychology via OpenAlex",
+     "date": "2010-10"
+    },
+    {
+     "title": "Scaling up behavioral science interventions in online education (full text)",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7334459/fullTextXML",
+     "publisher": "PNAS via Europe PMC",
+     "date": "2020-06-15"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "closed-loop-real-call-to-practice",
+   "title": "Close the loop: real calls reveal gaps, the system assigns targeted practice, then re-measures",
+   "category": "ai-roleplay",
+   "guidance": "The direction the AI role-play market is moving, as described in a vendor summary of Gartner's August 2026 market overview, is from standalone practice to a loop. The system finds gaps in real conversations, chooses an intervention (a targeted role-play, coaching, content or a next step), delivers it, and checks whether behaviour changed on later calls. Gartner figures cited in that summary show AI saves sellers about 4.8 hours a week, but 72% of sales organisations report reinvesting little of that time in high-value activity. Saved time therefore has to be steered into practice. In-call coaching tools now give points to make rather than exact words to say, and cite the approved source behind each card. That keeps reps listening to the buyer instead of reading a script.",
+   "steps": [
+    "Score every real call or DM thread on the certification scorecard.",
+    "Find each operator's lowest item averaged over their last 5-10 conversations.",
+    "Automatically assign a 10-minute targeted role-play on that item, built from the objections and wording in the operator's own calls.",
+    "Re-measure that item on the next 5 real conversations, and escalate to a human coach if it has not improved after two cycles.",
+    "In-call support shows short talking points with their source, not full scripts."
+   ],
+   "do": [
+    "Turn time saved by AI into scheduled practice",
+    "Measure behaviour change on real calls after each intervention"
+   ],
+   "dont": [
+    "Leave practice disconnected from real-call data",
+    "Push word-for-word scripts in live calls"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Seller time saved by AI",
+     "value": "About 4.8 hours a week; 72% of organisations report low reinvestment",
+     "context": "Gartner (May 2026), as cited by a vendor blog"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "AI Sales Role-Play Is Becoming a Distinct Market. Here's What We Think Comes Next.",
+     "url": "https://hyperbound.ai/blog/ai-sales-role-play-is-becoming-a-distinct-market-heres-what-we-think-comes-next",
+     "publisher": "Hyperbound blog (vendor summary of Gartner Market Overview, 2026-08-07)",
+     "date": "2026-09-14"
+    },
+    {
+     "title": "Live Call Coaching: Coach the Call You're On",
+     "url": "https://hyperbound.ai/blog/live-call-coaching-coach-the-call-youre-on",
+     "publisher": "Hyperbound blog",
+     "date": "2026-08-13"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "vendor-claim-hygiene",
+   "title": "Treat vendor ramp and win-rate claims as hypotheses and prove them with your own cohort data",
+   "category": "measurement",
+   "guidance": "Vendor pages in this category make large outcome claims with no published method. Examples include a 34% average ramp reduction, 46% more deals closed, 50% faster onboarding and a 31% larger deal size. One vendor page shows two different figures for the same customer's sales lift (34% in the headline, 21% in the case summary). Independent evidence points the same way as the vendors (simulation plus feedback helps), but the controlled effects are smaller and shrink as you move toward business results. Because Operator AI must not make income promises, it should report only what it can measure: certification pass rates, scorecard deltas, and time-to-stage medians against a baseline cohort.",
+   "steps": [
+    "Before rollout, record a baseline cohort's time to each stage and their scorecard averages.",
+    "Roll out to new cohorts, or use a staggered start if randomising isn't feasible, and compare medians.",
+    "Publish internal results with sample sizes and date ranges, and avoid percentage claims from fewer than about 30 operators.",
+    "Keep marketing copy free of income or earnings guarantees, and describe training outcomes instead."
+   ],
+   "do": [
+    "Report sample size and comparison group with every result",
+    "Separate measures of training outcomes from revenue"
+   ],
+   "dont": [
+    "Repeat vendor statistics as facts",
+    "Turn skill gains into income projections"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Second Nature self-reported win-rate effect",
+     "value": "46% more deals closed (vendor claim, no methodology)",
+     "context": "Vendor homepage, 2026"
+    },
+    {
+     "metric": "Inconsistent figures on one vendor page",
+     "value": "34% vs 21% sales increase for the same customer",
+     "context": "Second Nature AI role-play page"
+    },
+    {
+     "metric": "Mindtickle self-reported Cisco case",
+     "value": "31% increase in deal size (undated)",
+     "context": "Vendor homepage"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Second Nature homepage",
+     "url": "https://www.secondnature.ai/",
+     "publisher": "Second Nature",
+     "date": "2026 (copyright)"
+    },
+    {
+     "title": "Second Nature AI role-play page",
+     "url": "https://www.secondnature.ai/ai-role-play/",
+     "publisher": "Second Nature",
+     "date": "Undated (accessed 2026-10)"
+    },
+    {
+     "title": "Mindtickle homepage",
+     "url": "https://www.mindtickle.com/",
+     "publisher": "Mindtickle",
+     "date": "2026 (copyright)"
+    },
+    {
+     "title": "Technology-enhanced simulation meta-analysis, showing effects shrinking toward real-world outcomes (OpenAlex record)",
+     "url": "https://api.openalex.org/works/doi:10.1001/jama.2011.1234?select=title,publication_date,abstract_inverted_index",
+     "publisher": "JAMA via OpenAlex",
+     "date": "2011-09"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "Research limitation: the shared web-search budget for this run was already used up when this task started, so no WebSearch queries succeeded. All sources were reached by fetching known URLs directly or through bibliographic APIs (Europe PMC, OpenAlex, Semantic Scholar). AI role-play and sales-enablement studies from 2025-2026 may be under-covered; a follow-up run with search access should look for newer RCTs.",
+  "Adesope et al. (2017) practice-testing meta-analysis: the abstract confirms practice tests beat restudy, but the overall effect size (often quoted as about g = 0.5-0.6) and moderator values were not verified.",
+  "Implementation-intentions meta-analysis (Gollwitzer & Sheeran, 2006): the commonly quoted d of about 0.65 could not be verified because the abstract was unavailable.",
+  "Habit formation (Lally et al., 2010): the widely quoted 66-day median is not in the abstract; only the 18-254 day range was verified.",
+  "No primary or peer-reviewed data was found supporting the common claim that cohort-based courses reach 80-90%+ completion. Maven's and the altMBA's pages showed no completion figures. The 'MOOC pivot' paper's completion numbers could not be retrieved because of rate limiting.",
+  "The accountability-partner statistics often quoted (for example a 65%/95% claim attributed to ASTD, or the Dominican University goals study) could not be verified. The Dominican item is a news release with no visible data or peer review.",
+  "Sales Executive Council / CEB coaching findings (which performers benefit most, how much coaching per month): the HBR page fetched did not show the figures.",
+  "No independent RCT of AI role-play on real sales outcomes (booked calls, show rates, close rates) was found. Efficacy evidence comes from nearby fields (medical history-taking, conflict resolution, customer support, tutoring) and from vendor claims.",
+  "No primary benchmarks were found for high-ticket coaching-programme setters or closers (DM-to-booked rate, show rate, close rate, ramp). The Bridge Group data covers B2B SaaS SDRs only.",
+  "The full Gartner 'Market Overview for B2B Sales AI Role-Play Applications' (Aug 2026) is for subscribers only and was seen only through a vendor's blog summary. Vendor and market-direction interpretations may not match Gartner's own wording.",
+  "No validated standard exists for AI-versus-human agreement thresholds before AI scores can be used for certification in sales role-play. The ICC bands used here come from clinical reliability guidance, and the 50-100-call gold set size is a design recommendation.",
+  "Spacing and retrieval evidence comes mainly from verbal and factual learning. Direct experimental evidence on the best spacing for complex conversational skills (live objection handling) is limited.",
+  "Specific cadence numbers (daily 10-15 minute drills, weekly 30-45 minute one-to-ones, 6-8 operators per coach, 90-day recertification, pod size of 4-6) are practitioner recommendations that fit the evidence, not tested optimums."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

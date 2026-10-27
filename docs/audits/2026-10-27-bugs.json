@@ -1,0 +1,197 @@
+{
+ "findings": [
+  {
+   "area": "Tenancy / KB admin (index.py, routes/owner.py, routes/core.py)",
+   "severity": "critical",
+   "problem": "KB exclusions live in one global file (data_dir/kb_exclusions.json) that is applied to the course index of every tenant. POST /kb/exclusions only checks for the owner role of any tenant, and that includes the public demo, where anyone can one-click sign in as owner. An anonymous visitor can exclude every line of every course file, and the real owner workspace's coach then answers 'not covered' to every question. GET /kb also returns this global list to every tenant.",
+   "evidence": "operator_ai/index.py:128-145 (global exclusions_path); operator_ai/routes/owner.py:45-53; operator_ai/routes/core.py:48 (demo-login needs no credentials). Repro /private/tmp/claude-501/-Users-junior-mbang-ai/3d8b1594-b4be-490b-9273-5283329d55fc/scratchpad/t2.py: owner before = 'partly' with 2 citations; demo owner posts 12 exclusions (200); owner after = \"no The course material doesn't cover this.\"; owner /kb shows 12 exclusions it never made.",
+   "recommendation": "Store exclusions per tenant (tenant.dir/kb_exclusions.json or a kb_exclusions table) and include them in the per-tenant index cache key. Only an owner of kind=='owner' may edit the course KB. Refuse all KB-admin writes in the demo tenant. Check that the file is actually indexed before saving.",
+   "effort": "M"
+  },
+  {
+   "area": "Demo workspace (demo.py, tenancy.py, routes/core.py)",
+   "severity": "critical",
+   "problem": "The public demo inherits the server-wide OPERATOR_AI_TOKEN_BUDGET (only client tenants are pinned to 0). Anyone can demo-login as owner and call /demo/reset. Reset deletes every setting except brand/is_demo/live_meta/meta_allowlist/live_calendar, so ai_token_used goes back to 0 and the budget refills each time: unlimited anonymous spend on the server's model key. Every reset also writes a full DB backup to data/backups with no cap (disk exhaustion). The demo has kb_scope='course', so once inputs/ holds the real course, any anonymous demo user (even the student role) can download the full text of every transcript and SOP through /api/search plus /api/source.",
+   "evidence": "operator_ai/tenancy.py:157 (only kind=='client' gets budget 0); operator_ai/demo.py:272-288 (reset keep-list); operator_ai/routes/core.py:48-62, 97-105. Repro t13.py: demo budget 50000; after spending, 'AI budget used up'; anonymous reset 200; used 0, reason None; 1 new backup per reset. Repro t17.py: demo-student read all 12 corpus files (238 lines) via /source.",
+   "recommendation": "Set the demo's ai_token_budget to 0, or give it its own small budget that survives reset (keep *_used keys). Rate-limit demo-login and reset per IP. Rotate or cap demo backups. Always serve the demo from the fixture or a redacted corpus, never effective_corpus_dir=inputs/.",
+   "effort": "S"
+  },
+  {
+   "area": "Approval queue concurrency (queue.py)",
+   "severity": "high",
+   "problem": "approve() reads the status, then calls deliver(): the live send can take up to 20 s plus retries. Only after that does it write status='approved'; nothing claims the item atomically first. Double-clicks, two operators or client retries each pass the OPEN check and each send the message. The same race runs on_approve hooks several times (ad_change/crm_move executed N times, duplicate PAUSED test builds, duplicate calendar events).",
+   "evidence": "operator_ai/queue.py:194-215. Repro t4.py with a fake live sender (0.3 s): 3 threads -> ['approved','approved','approved'], messages sent: 3; 3 concurrent HTTP POST /queue/{id}/approve -> [200, 200, 200], messages sent: 3.",
+   "recommendation": "Claim first: UPDATE queue SET status='sending' WHERE id=? AND status IN ('pending','held','needs_human'), and continue only if rowcount==1. On failure, restore the previous status. Pass an idempotency key (the queue id) to providers. Disable the button client-side while a request is in flight.",
+   "effort": "S"
+  },
+  {
+   "area": "Guardrails: outreach money rule and normalisation (guardrails.py)",
+   "severity": "high",
+   "problem": "_MONEY only matches '$' followed by at most one space, the suffixes k/grand/dollars/usd/bucks, and a few spelled-out numbers. _norm runs NFKC, but that neither strips zero-width characters nor folds homoglyphs. Prices and income claims pass in prospect outreach.",
+   "evidence": "operator_ai/guardrails.py:30-33, 116-120. Repro g1.py (outreach, warm). Each of these got 'pass' with no flags: '$  3000', 'Our rate is 3000/month', \"It's 3,000 a month\", 'It is USD 3000', '\u20ac3000 or \u00a32500', '\u20b950000', 'seven thousand dollars', 'eight grand', 'a million dollars', 'Our students make 10 thousand a month', 'Most of our clients hit six figures', '$\u200b3000', 'guaran\u200btee', 'gu\u0430rantee' (Cyrillic \u0430), \"full refund if it doesn't work\", 'pay 2500'.",
+   "recommendation": "Normalise first: strip Unicode Cf (zero-width) characters, map confusables to ASCII, and collapse digit runs split by spaces or separators. Block any currency symbol (\\p{Sc}) or ISO code (USD|EUR|GBP|AUD|CAD|INR) next to a number with any spacing. Block numbers >=100 with /mo, /month, a month, per month or per year. Block spelled numbers (one to ninety, hundred, thousand, million, grand, figures). Add 'refund' to the guarantee rule. Put every string above into tests/test_guardrails.py as must-block.",
+   "effort": "M"
+  },
+  {
+   "area": "Guardrails: negation window and allowed-range bypass (guardrails.py)",
+   "severity": "high",
+   "problem": "negated() counts a match as negated if any negator appears up to 40 chars earlier in the same sentence, so contrastive phrasing slips through. In outreach mode the allowed $50k-$100k range is replaced with 'the agreed range' before the income-claim rule runs, and the money rule only asks for a hedge word. Client income claims that use the range therefore pass the stricter prospect-facing mode, while the same text is blocked in plain mode.",
+   "evidence": "operator_ai/guardrails.py:23-44 (_NEG ...{0,40}$), 173 (range substituted before DECEPTION_RULES), 216-227 (hedge check). Repro g1.py/g2.py. These pass: \"No pressure, but this offer won't last\", \"Don't miss out, we guarantee 3x ROI\", 'Not only do we guarantee results', \"I don't want to guarantee anything but we guarantee results.\", \"Not saying it's easy, but our clients make $20k a month\" (plain). In outreach, 'Clients we help make $50k-$100k a month through our system.' and 'Our students can earn $50k-$100k a month with this.' pass, while plain mode blocks them as income_claim.",
+   "recommendation": "Count a negator only when it directly governs the matched verb (within about 3 tokens) and stop the window at a contrast word (but, however, yet) or a comma. Allow the range only in the guardrails.range_line shape ('Let me (help )?make {brand} $50k-$100k ...'). Run income_claim on the unsubstituted text in every mode.",
+   "effort": "M"
+  },
+  {
+   "area": "Diagnostic maths (diagnostic.py, agents/router.py)",
+   "severity": "high",
+   "problem": "(a) A stage's money impact is multiplied by the actual downstream rates, so any downstream stage at 0 (for example 0 closes) zeroes every upstream stage. (b) A stage below 20% of its benchmark is marked not 'realistic' and dropped, so the worst-broken stage is ignored. With no candidate left, the reply says 'Every stage with enough data is at or above the SOP benchmark' even when stages are below it. (c) The CPL impact pushes extra leads through the whole DM chain (reply \u2192 conversation \u2192 link \u2192 booked, using benchmarks where data is missing) instead of lead \u2192 close, so the cost is understated by about 50x. (d) NaN or Infinity metrics (valid in Python's JSON parser, accepted by pydantic float) cause a 500.",
+   "evidence": "operator_ai/diagnostic.py:76, 88-96, 137; operator_ai/agents/router.py:114. Repro t3.py: 1000 DMs / 30 replies / ... / 0 closed -> bottleneck None, reply 3% (below=True) with cost 0. Chat '800 DMs, 40 replies, 6 booked, 2 showed, 0 closed, price $3k' -> 'Every stage with enough data is at or above the SOP benchmark.' 2000 DMs / 10 replies (0.5%) -> bottleneck None. $3000 spend / 100 leads / 5 closed -> CPL cost 300 (about 15,000 at the actual 5% lead-to-close). POST /diagnose {\"dms_sent\": NaN} -> 500; Infinity -> 500.",
+   "recommendation": "Use max(actual, benchmark) for downstream rates when sizing upside. Rank 'dead' stages first as critical instead of excluding them. Say 'all at benchmark' only when no stage is below. Size CPL impact on leads \u2192 booked \u2192 showed \u2192 closed. Validate metrics as finite and >=0 (Field(ge=0, allow_inf_nan=False)).",
+   "effort": "M"
+  },
+  {
+   "area": "Banned-name scrub and settings validation (app.py, guardrails.py, console.py, settings.py)",
+   "severity": "high",
+   "problem": "The response-scrub middleware rewrites the raw JSON text of every tenant response except /api/settings. (a) /api/personality returns the persona banned_words as '[name removed]', and the Owner Console sends that list back on save, silently wiping the owner's banned words. (b) A banned name or word that equals a JSON key or literal (false, true, null, status, id, items) corrupts every API response, so the app stops working. (c) The settings API accepts any JSON type: banned_names [123] makes the middleware raise AttributeError, and every API except /settings returns 500.",
+   "evidence": "operator_ai/app.py:65-79; operator_ai/guardrails.py:283; operator_ai/console.py:71-95; web/src/pages/OwnerConsole.tsx:15,19; operator_ai/settings.py:21-31. Repro t1.py: GET /personality -> ['[name removed]', '[name removed]']; banned words ['status', 'false'] -> /me contains \"is_demo\":[name removed] and fails JSON parsing. Repro t7.py: banned_names [123] -> /me 500, /queue 500, /settings 200.",
+   "recommendation": "Scrub string values while walking the decoded JSON, never the raw text. Exempt /api/personality. Give each API_EDITABLE key a pydantic schema (for example banned_names: list[str] with min_length 2). Keep persona style words out of the response scrub.",
+   "effort": "M"
+  },
+  {
+   "area": "Live email delivery (channels.py, queue.py)",
+   "severity": "high",
+   "problem": "Inbound email stores recipient_ref as the full From header ('Jane Doe <jane@example.com>'), and deliver() sends to recipient_ref.split(' ')[0]. Every live reply to a sender with a display name goes to the bare word 'Jane', so the SMTP server rejects it or it lands in a local mailbox.",
+   "evidence": "operator_ai/channels.py:203; operator_ai/queue.py:253. Repro t12.py: approve -> delivered 'live:email:id1', and the sender was called with ('email', 'Jane', 'Re: What show rate should I aim for?').",
+   "recommendation": "Store the parsed address (email.utils.parseaddr) at intake. In deliver(), take the first _EMAIL match for the email channel and normalise SMS numbers to E.164.",
+   "effort": "S"
+  },
+  {
+   "area": "Action gate partial failure (queue.py, actions.py)",
+   "severity": "high",
+   "problem": "approve() marks the item 'approved' before running the on_approve hook. actions.execute applies ops one at a time and only writes status and prior_state after all of them succeed. If the adapter raises mid-way (Graph timeout or rate limit), earlier ops stay applied, the action stays 'proposed' with prior_state NULL, rollback is refused, and re-approval is refused because the item is already approved.",
+   "evidence": "operator_ai/queue.py:210-215; operator_ai/actions.py:56-122. Repro t14.py (2nd update raises): approve 500; queue status 'approved'; action {'status': 'proposed', 'prior_state': None}; A1 PAUSED, A2 ACTIVE; rollback 409 'Only executed actions can be rolled back'; re-approve 409 'Item is already approved'.",
+   "recommendation": "Persist each prior snapshot before its write and catch errors per op. Mark the action 'failed' with the partial prior_state so rollback works. Run hooks inside the claimed 'sending' state and surface a retryable failure.",
+   "effort": "M"
+  },
+  {
+   "area": "Coach grounding (agents/coach.py)",
+   "severity": "high",
+   "problem": "In live AI mode, an answer with zero valid citations is still served as covered 'yes': the forced-citation fallback is skipped when mode=='live'. Coach answers are never run through guardrails.check either; only banned names are scrubbed. An invented, uncited answer containing prices and income claims reaches students as course-grounded.",
+   "evidence": "operator_ai/agents/coach.py:256-266. Repro t16.py with a mock model returning no citations: covered 'yes', mode 'live', answer 'Aim for a 90% show rate and charge $5,000; our students make $40k a month.', citations [].",
+   "recommendation": "In live mode with no kept citations, downgrade to covered 'no' or fall back to the extractive answer. Require at least one valid [S#] per claim sentence. Run guardrails.check(mode='plain') and drop blocked sentences before returning.",
+   "effort": "S"
+  },
+  {
+   "area": "Show-up reminder ladder (live/chain.py, agents/sales.py)",
+   "severity": "high",
+   "problem": "Reminders carry meta.send_at, but no code reads it, so approving a '24h' reminder sends it immediately ('Looking forward to tomorrow' days early). In the live Meta chain, all three reminders are also addressed to the placeholder 'lead-{id}' instead of the lead's Instagram or email handle that the other DMs use.",
+   "evidence": "grep send_at: set only at operator_ai/agents/sales.py:165 and operator_ai/live/chain.py:186, never read. operator_ai/live/chain.py:184 recipient_ref=f\"lead-{lead_id}\". Repro t10.py: ladder recipients ['lead-1', 'lead-1', 'lead-1'] vs follow-ups ['@patlee', '@patlee', '@patlee'].",
+   "recommendation": "Add a 'scheduled' state: approved items whose send_at is in the future are delivered by a job at send_at. Pass the real handle into _ladder.",
+   "effort": "M"
+  },
+  {
+   "area": "SMS opt-out compliance (channels.py)",
+   "severity": "high",
+   "problem": "Opt-out only triggers when the whole upper-cased message is exactly STOP, UNSUBSCRIBE or CANCEL. 'Stop.', 'stop please', 'END', 'QUIT', 'STOPALL' and 'Unsubscribe me' leave the number opted in, and a coach reply to it is drafted.",
+   "evidence": "operator_ai/channels.py:153-171. Repro t15.py: each of those messages -> queued reply, opted_in still True.",
+   "recommendation": "Strip punctuation and whitespace and match the standard keyword set (STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT, OPTOUT, REVOKE), also on the first token. Never auto-draft a reply to an opt-out-like message.",
+   "effort": "S"
+  },
+  {
+   "area": "Never-invite list (queue.py)",
+   "severity": "medium",
+   "problem": "blocked_recipients adds the raw string as a candidate only when it contains no '@', so Instagram handles such as '@maya_demo' (the main outreach channel) never match the blocked list. DMs to blocked handles are queued as 'pending' and can be delivered.",
+   "evidence": "operator_ai/queue.py:50-60. Repro t7.py with blocked_attendees ['@maya_demo', '+15550123', 'bob@example.com']: '@maya_demo' -> pending [], 'maya_demo' -> pending []; the phone number and email are correctly held.",
+   "recommendation": "Normalise handles separately (lowercase, strip the leading '@') and compare them against the blocked handles alongside the canonical emails. Add tests.",
+   "effort": "S"
+  },
+  {
+   "area": "Payment webhook account control (console.py)",
+   "severity": "medium",
+   "problem": "A payment event flips users.active for any user whose username equals data.email, whatever their role, and the email is not validated. A renewal re-activates a coach the owner deactivated. payment.failed or a refund deactivates staff, and email 'owner' deactivates the owner and deletes their sessions.",
+   "evidence": "operator_ai/console.py:107-145. Repro t19.py: deactivated coach -> payment.succeeded -> {'role': 'coach', 'active': 1}; payment.failed with email 'owner' -> owner active 0; owner session -> 401.",
+   "recommendation": "Only change users with role 'student' who are linked to that member record. Validate the email format. Never deactivate the owner from a webhook.",
+   "effort": "S"
+  },
+  {
+   "area": "Public mini (lead magnet) scope (console.py)",
+   "severity": "medium",
+   "problem": "mini_ask filters only the citations by scope; the answer text is still built from all retrieved course passages. A public, embeddable mini scoped to one SOP returns content from other files with dangling [S#] markers. Sessions are free to create (any email), so question_limit is per throwaway token, with no IP limit.",
+   "evidence": "operator_ai/console.py:181-218. Repro t11.py: mini scoped to ['sops/thunderdome.txt'] answers '...Registration show rate, aim for at least thirty-five percent of registrants on the live. [S7]' (from course/transcripts/vid_m4n5o6.txt), while its citations list only thunderdome.txt.",
+   "recommendation": "Filter retrieval hits by scope before answering (pass the allowed files into coach.answer). Rate-limit /m/{tid}/{slug}/start and /ask per IP and per email.",
+   "effort": "S"
+  },
+  {
+   "area": "Chat router intent (agents/router.py, ads_import.py)",
+   "severity": "medium",
+   "problem": "looks_like_ads_export checks only the first line for a comma plus 'impression' plus 'spend/spent/cost', so ordinary questions go to the CSV auditor and get a parse error back. Any message with two numbers becomes a diagnostic, which often replies 'Every stage ... at or above the SOP benchmark' instead of answering the question.",
+   "evidence": "operator_ai/ads_import.py:52-54; operator_ai/agents/router.py:67-79. Repro t9.py: 'Quick one, my impressions are up but cost per lead is rising, what should I change?' -> ads_csv; 'Hey, impressions dropped and spend went up, is it creative fatigue?' -> ads_csv; 'I booked 3 calls and 2 showed, how do I improve my close rate?' -> metrics.",
+   "recommendation": "Treat text as ads_csv only with at least 2 lines and at least 3 delimited header cells. Treat a message as metrics only with at least 3 metrics and no question form; otherwise answer the question and offer the diagnostic.",
+   "effort": "S"
+  },
+  {
+   "area": "Ads CSV import (ads_import.py)",
+   "severity": "medium",
+   "problem": "_num misreads European number formats ('1.234,56' becomes 1.23456, '1.234' becomes 1.234, '\u20ac 2.345,00' becomes 2.345), so spend and impressions shrink 1000x and ads show as 'too early'. Any ad whose name starts with 'Total' is silently dropped as if it were the totals row. Semicolon-delimited exports (the Excel default in many EU locales) are rejected.",
+   "evidence": "operator_ai/ads_import.py:29-43, 72, 52-55. Repro t8.py: _num outputs as above; ad 'Total Transformation Hook' ($45, 0 leads, 2,400 impressions) is missing and the summary says '0 ad(s) hit the kill rule'; the semicolon CSV fails with \"Couldn't find the spend and impressions columns\".",
+   "recommendation": "Detect the decimal separator per value or column (a '.' followed by ',' and two digits means EU format). Sniff the delimiter, including ';'. Skip a totals row only when the name is empty or exactly 'Total' / 'Results from N ads'.",
+   "effort": "S"
+  },
+  {
+   "area": "Unhandled 500s from user and webhook input (onboarding.py, accountability.py, channels.py)",
+   "severity": "medium",
+   "problem": "(a) Onboarding a student whose name is whitespace passes min_length=1, inserts the student and 6 tasks, then crashes on name.split()[0]. Once that student is at risk, every accountability sweep returns 500 and nobody is nudged. (b) Telegram '/checkin 99999999999999999999999' raises OverflowError on the SQLite write, and Telegram keeps retrying the update. (c) An inbound email whose body is non-text (image/png) passes bytes to strip_quotes, which raises TypeError.",
+   "evidence": "operator_ai/agents/onboarding.py:111; operator_ai/agents/accountability.py:160; operator_ai/channels.py:81, 185-190. Repro t5.py/t6.py: onboard ' ' -> 500 IndexError, with the student row stored; /students/interventions -> 500 IndexError; checkin overflow -> 500 OverflowError; image email -> 500 TypeError.",
+   "recommendation": "Validate names with pattern \\S and strip them, and use (name.split() or ['there'])[0]. Clamp check-in numbers (outreach 0-100000, mood 1-5). In parse_email accept only str content and use '' otherwise.",
+   "effort": "S"
+  },
+  {
+   "area": "Nudge addressing and duplicate calendar events (accountability.py, sales.py, live/chain.py)",
+   "severity": "medium",
+   "problem": "Accountability nudges are queued on the 'telegram' channel with recipient_ref set to the student's display name. With live channels on, deliver() passes 'Zara' as the Telegram chat_id, so every approved nudge fails with 502. Separately, when a live calendar invite is approved, both deliver_calendar_invite and the sales on_approve hook insert a calendar_events row. The hook checks the stale, pre-approval item's 'delivered' field, which is always None.",
+   "evidence": "operator_ai/agents/accountability.py:161 with operator_ai/queue.py:253; operator_ai/agents/sales.py:255-260 with operator_ai/live/chain.py:197-198. Repro t10.py: calendar_events contains two 'Invite: Pat Lee' rows (the Google id and 'local-q4').",
+   "recommendation": "Look up the student's linked Telegram chat in channel_links, or queue the nudge as 'manual' when none exists. In the hook, re-read the item or skip when delivered starts with 'live:'.",
+   "effort": "S"
+  },
+  {
+   "area": "Secret storage in backups (vault.py, scripts/backup.py)",
+   "severity": "medium",
+   "problem": "Each tenant's AES key (vault.key) sits next to vault.bin. scripts/backup.py packs both into the same unencrypted tgz, which offsite_backup.sh then copies via rclone or rsync. Anyone holding an offsite archive can decrypt every tenant's Meta tokens, SMTP passwords and Google refresh tokens.",
+   "evidence": "operator_ai/vault.py:21-40; scripts/backup.py:50 (rglob('vault.*')); deploy/offsite_backup.sh:5-12.",
+   "recommendation": "Wrap tenant keys with a master key held in the environment or a KMS rather than on the data disk. Exclude vault.key from archives, or encrypt archives (age/gpg) before the offsite copy.",
+   "effort": "M"
+  },
+  {
+   "area": "Webhook idempotency (channels.py)",
+   "severity": "low",
+   "problem": "The Slack and Telegram handlers do not deduplicate by event_id or update_id. Slack retries any webhook not acknowledged within 3 s, and coach.answer with AI often takes longer, so the same message produces 2-4 queued replies. SMS and email signatures cover only the body, with no timestamp, so a captured request can be replayed.",
+   "evidence": "operator_ai/channels.py:59-96 (no update_id check), 109-127 (no event_id or X-Slack-Retry-Num handling), 131-133 (body-only HMAC). Plausible from the code; not exercised against real Slack.",
+   "recommendation": "Record provider event ids under a UNIQUE constraint and return 200 on repeats. Acknowledge immediately and draft the reply in a job. Add a timestamp to the signed SMS and email payloads.",
+   "effort": "S"
+  },
+  {
+   "area": "Booking with no free slots (live/chain.py, agents/sales.py)",
+   "severity": "low",
+   "problem": "record_reply and process_lead use slots[0] without checking for an empty list. calendar.free_slots returns [] when the next 14 weekdays are fully busy (for example a two-week out-of-office block in Google), which gives a 500 after the booking DM has already been queued.",
+   "evidence": "operator_ai/live/chain.py:141-147; operator_ai/agents/sales.py:150-156; operator_ai/calendar.py:19-46 (can return []).",
+   "recommendation": "If there are no slots, queue a 'manual booking needed' task and skip the invite and the ladder.",
+   "effort": "S"
+  },
+  {
+   "area": "Follow-up context in coach (agents/coach.py)",
+   "severity": "low",
+   "problem": "resolve_followup treats any question of 9 words or fewer containing it/this/there/that as a follow-up and prefixes the previous question. Unrelated new questions pull in off-topic passages.",
+   "evidence": "operator_ai/agents/coach.py:118-131. Repro t18.py: 'Is there a kill rule for ads?' after 'What's the USP formula?' adds 'Everything we build later sits on top of the offer...' to the answer.",
+   "recommendation": "Use the previous question only when the new question has no content terms of its own (after stopwords) or the retrieval overlap with the previous answer is high.",
+   "effort": "S"
+  }
+ ],
+ "top_priorities": [
+  "Lock down the public demo: give it its own AI budget that reset does not refill, keep the real inputs/ course out of it, rate-limit demo-login and reset, and refuse KB-admin writes there.",
+  "Make KB exclusions per-tenant. Right now any tenant owner, including anonymous demo users, can blank the real owner's course knowledge base.",
+  "Make approval atomic (claim the item with UPDATE ... WHERE status IN open, then send). Today concurrent approvals send the same DM, email or ad change several times.",
+  "Harden the guardrails against bypasses: zero-width and homoglyph normalisation, all currency symbols and ISO codes, spelled-out and 'per month' amounts, a contrast-aware negation window, and no income-claim exemption for the $50k-$100k range in outreach.",
+  "Fix the diagnostic maths so a zero or very weak stage is reported as the bottleneck instead of 'everything is at benchmark', size CPL impact on lead-to-close, and reject NaN or Infinity.",
+  "Fix the live send paths: parse email addresses (replies currently go to 'Jane'), honour send_at for reminders, use real handles in the chain ladder, link nudges to Telegram chat ids, and handle the full set of SMS opt-out keywords.",
+  "Make the action gate and the coach fail safe: keep prior state per op so a partial ad change can be rolled back, and never serve a live AI answer with no citations or one that fails the guardrails."
+ ]
+}
