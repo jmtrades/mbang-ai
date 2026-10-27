@@ -192,6 +192,30 @@ CREATE TABLE IF NOT EXISTS app_events (
   id INTEGER PRIMARY KEY, name TEXT, payload TEXT, created REAL);
 CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [academy] tables
+CREATE TABLE IF NOT EXISTS academy_paths (
+  key TEXT PRIMARY KEY, role TEXT, title TEXT, skill_order TEXT, levels TEXT, required TEXT, updated REAL);
+CREATE TABLE IF NOT EXISTS academy_mastery (
+  id INTEGER PRIMARY KEY, user_id INTEGER, skill TEXT, theta REAL DEFAULT 0, n INTEGER DEFAULT 0, history TEXT,
+  updated REAL, UNIQUE(user_id, skill));
+CREATE TABLE IF NOT EXISTS academy_enrolments (
+  id INTEGER PRIMARY KEY, user_id INTEGER, path_key TEXT, assigned_by INTEGER, due REAL, status TEXT, created REAL,
+  UNIQUE(user_id, path_key));
+CREATE TABLE IF NOT EXISTS team_assignments (
+  id INTEGER PRIMARY KEY, manager_id INTEGER, member_id INTEGER, created REAL, UNIQUE(manager_id, member_id));
+CREATE TABLE IF NOT EXISTS academy_exams (
+  id INTEGER PRIMARY KEY, user_id INTEGER, path_key TEXT, level TEXT, item_ids TEXT, seed INTEGER, started REAL,
+  deadline REAL, submitted REAL, score REAL, status TEXT, answers TEXT);
+CREATE INDEX IF NOT EXISTS academy_exams_user ON academy_exams(user_id, path_key, level);
+CREATE TABLE IF NOT EXISTS academy_builds (
+  id INTEGER PRIMARY KEY, run_id INTEGER, status TEXT, corpus TEXT, stats TEXT, skipped TEXT, actor TEXT, created REAL,
+  finished REAL);
+CREATE TABLE IF NOT EXISTS academy_assignments (
+  id INTEGER PRIMARY KEY, user_id INTEGER, kind TEXT, ref TEXT, note TEXT, due REAL, assigned_by INTEGER, status TEXT,
+  queue_id INTEGER, created REAL);
+CREATE TABLE IF NOT EXISTS academy_reports (
+  id INTEGER PRIMARY KEY, item_id INTEGER, user_id INTEGER, reason TEXT, created REAL, UNIQUE(item_id, user_id));
+CREATE INDEX IF NOT EXISTS academy_attempts_item ON academy_attempts(quiz_item_id);
+CREATE INDEX IF NOT EXISTS academy_attempts_user ON academy_attempts(user_id, created);
 -- [roleplay] tables
 -- [missions] tables
 CREATE TABLE IF NOT EXISTS mission_metrics (
@@ -282,6 +306,32 @@ CREATE INDEX IF NOT EXISTS claims_substantiation_key ON claims_substantiation(cl
 # already exists, so each new column is listed here and added on open when missing: (table, column, declaration).
 COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [academy]
+    ("academy_lessons", "status", "TEXT DEFAULT 'draft'"), ("academy_lessons", "gen_mode", "TEXT"),
+    ("academy_lessons", "gen_version", "INTEGER DEFAULT 1"), ("academy_lessons", "source_sha", "TEXT"),
+    ("academy_lessons", "source_lines", "TEXT"), ("academy_lessons", "skills", "TEXT"),
+    ("academy_lessons", "prereqs", "TEXT"), ("academy_lessons", "est_minutes", "INTEGER"),
+    ("academy_lessons", "reviewed_by", "TEXT"), ("academy_lessons", "reviewed_at", "REAL"),
+    ("academy_lessons", "skill", "TEXT"), ("academy_lessons", "lesson_key", "TEXT"),
+    ("academy_lessons", "example", "TEXT"), ("academy_lessons", "mistakes", "TEXT"),
+    ("academy_lessons", "checks", "TEXT"), ("academy_lessons", "build_id", "INTEGER"),
+    ("academy_lessons", "demo", "INTEGER DEFAULT 0"),
+    ("academy_quiz_items", "status", "TEXT DEFAULT 'draft'"), ("academy_quiz_items", "pool", "TEXT DEFAULT 'practice'"),
+    ("academy_quiz_items", "generator", "TEXT"), ("academy_quiz_items", "difficulty_b", "REAL DEFAULT 0"),
+    ("academy_quiz_items", "checks", "TEXT"), ("academy_quiz_items", "exposures", "INTEGER DEFAULT 0"),
+    ("academy_quiz_items", "p_value", "REAL"), ("academy_quiz_items", "discrimination", "REAL"),
+    ("academy_quiz_items", "reported", "INTEGER DEFAULT 0"), ("academy_quiz_items", "skill", "TEXT"),
+    ("academy_quiz_items", "norm_key", "TEXT"), ("academy_quiz_items", "accept", "TEXT"),
+    ("academy_quiz_items", "quotable", "INTEGER DEFAULT 1"), ("academy_quiz_items", "demo", "INTEGER DEFAULT 0"),
+    ("academy_attempts", "ms", "INTEGER"), ("academy_attempts", "context", "TEXT"),
+    ("academy_attempts", "session_id", "TEXT"), ("academy_attempts", "chosen_option", "TEXT"),
+    ("academy_attempts", "score", "REAL"),
+    ("academy_review", "item_kind", "TEXT DEFAULT 'quiz'"), ("academy_review", "item_id", "INTEGER"),
+    ("academy_review", "lapses", "INTEGER DEFAULT 0"), ("academy_review", "last_grade", "INTEGER"),
+    ("academy_review", "last_reviewed", "REAL"),
+    ("certifications", "status", "TEXT DEFAULT 'active'"), ("certifications", "expires", "REAL"),
+    ("certifications", "signed_off_by", "TEXT"), ("certifications", "revoked_reason", "TEXT"),
+    ("certifications", "criteria_snapshot", "TEXT"),
+    ("drills", "skill", "TEXT"), ("drills", "lines", "TEXT"),
     # [roleplay]
     # [missions]
     ("missions", "parent_id", "INTEGER"),

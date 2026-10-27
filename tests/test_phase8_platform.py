@@ -190,6 +190,9 @@ def test_call_review_requires_every_party_consent(tenant):
 
 
 def test_drills_spaced_repetition(tenant):
+    # the drill bank is seeded at Academy build time or by a call review, never on read (audit A15)
+    assert call_review.due_cards(tenant, 1) == []
+    call_review.seed_drills(tenant)
     cards = call_review.due_cards(tenant, 1)
     assert len(cards) >= 3 and all(c["is_due"] for c in cards)
     g = call_review.grade(tenant, 1, cards[0]["card_id"], 5)

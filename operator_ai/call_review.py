@@ -135,13 +135,52 @@ def make_drill(tenant, objection: str, query: str, source: str) -> dict:
         r = c.execute("SELECT id FROM drills WHERE objection=?", (objection,)).fetchone()
         if r:
             return {"id": r["id"], "objection": objection, "existing": True}
-    hits = retrieval.search(tenant, query, k=1)
-    answer = hits[0]["snippet"] if hits else "Not covered by the course material."
-    cite = retrieval.cite({**hits[0], "id": "S1"}) if hits else None
+    found = _academy_answer(tenant, objection, query)
+    if found is not None:
+        answer, cite = found["answer"], found["citation"]
+    else:
+        hits = retrieval.search(tenant, query, k=3)
+        answer, cite = _extractive_answer(tenant, objection, hits)
     with tenant.db() as c:
         did = c.execute("INSERT INTO drills(objection,answer,citation,source,created) VALUES(?,?,?,?,?)",
                         (objection, answer, db.jdump(cite), source, db.now())).lastrowid
     return {"id": did, "objection": objection, "answer": answer, "citation": cite}
+
+
+def _academy_answer(tenant, objection: str, query: str) -> dict | None:
+    """The course's own 'When someone says X, Y' answer with its exact line (Academy extraction)."""
+    try:
+        from .academy import build as academy_build
+    except ImportError:
+        return None
+    try:
+        return academy_build.objection_answer(tenant, objection, query)
+    except Exception:  # noqa: BLE001 - fall back to retrieval
+        return None
+
+
+def _extractive_answer(tenant, objection: str, hits: list[dict]) -> tuple[str, dict | None]:
+    """Fallback: the best two sentences from the top passages, cited to the exact line the first one is on."""
+    if not hits:
+        return "Not covered by the course material.", None
+    from . import index
+    from .agents import coach
+
+    text = coach.extractive(objection, [{**h, "id": f"S{i + 1}"} for i, h in enumerate(hits)], max_sentences=2)
+    first_id = re.search(r"\[S(\d+)\]", text)
+    h = hits[int(first_id.group(1)) - 1] if first_id else hits[0]
+    sentences = [re.sub(r"\s*\[S\d+\]\s*$", "", s.lstrip("• ").strip()) for s in text.split("\n") if s.strip()]
+    answer = " ".join(sentences) or h["snippet"]
+    cite = retrieval.cite({**h, "id": "S1"})
+    if sentences:
+        doc = index.for_tenant(tenant).docs.get(h["file"])
+        a, _, b = h["lines"].partition("-")
+        for n in range(int(a), int(b or a) + 1):
+            if doc is not None and n <= len(doc.lines) and sentences[0][:60] in doc.lines[n - 1]:
+                cite["lines"] = f"{n}-{n}"
+                cite["snippet"] = sentences[0][:300]
+                break
+    return answer, cite
 
 
 def seed_drills(tenant) -> int:
@@ -153,6 +192,14 @@ def seed_drills(tenant) -> int:
 
 
 def due_cards(tenant, user_id: int) -> list[dict]:
+    """Objection drill cards. With the Academy installed they live in its one spaced-repetition store and the
+    bank is seeded at Academy build time (or by a call review), never on read."""
+    try:
+        from .academy import srs as academy_srs
+    except ImportError:
+        academy_srs = None
+    if academy_srs is not None:
+        return academy_srs.drill_cards(tenant, user_id)
     seed_drills(tenant)
     now = time.time()
     with tenant.db() as c:
@@ -183,6 +230,12 @@ def sm2(ease: float, interval: float, reps: int, grade: int) -> tuple[float, flo
 
 
 def grade(tenant, user_id: int, card_id: int, g: int) -> dict:
+    try:
+        from .academy import srs as academy_srs
+    except ImportError:
+        academy_srs = None
+    if academy_srs is not None:
+        return academy_srs.grade_drill(tenant, user_id, card_id, g)
     with tenant.db() as c:
         card = c.execute("SELECT * FROM drill_cards WHERE id=? AND user_id=?", (card_id, user_id)).fetchone()
         if card is None:

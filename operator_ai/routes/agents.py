@@ -30,11 +30,23 @@ def _check_limit(ctx: Ctx) -> None:
             raise HTTPException(429, f"Daily question limit of {limit} reached. It resets in 24 hours.")
 
 
+def _academy_exam_pause(ctx: Ctx) -> None:
+    """[academy] The coach (every way in: ask, chat, chat upload) pauses while this person has a certification
+    exam open."""
+    try:
+        from ..academy import exam_open
+    except ImportError:
+        return
+    if exam_open(ctx.tenant, ctx.user["id"]):
+        raise HTTPException(423, "The coach is paused while your certification exam is open. Submit the exam first.")
+
+
 @router.post("/coach/ask")
 def ask(b: AskBody, ctx: Ctx = Depends(require("coach"))):
     if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
         raise HTTPException(404, "Thread not found")
     _check_limit(ctx)
+    _academy_exam_pause(ctx)
     return coach.answer(ctx.tenant, b.question, user=ctx.user, record=True, thread=True, thread_id=b.thread_id)
 
 
@@ -128,6 +140,7 @@ def chat(b: ChatBody, ctx: Ctx = Depends(require("coach"))):
     if b.thread_id and threads.get(ctx.tenant, b.thread_id, ctx.user["id"]) is None:
         raise HTTPException(404, "Thread not found")
     _check_limit(ctx)
+    _academy_exam_pause(ctx)
     return chat_router.handle(ctx.tenant, b.text, ctx.user, b.thread_id)
 
 
@@ -144,6 +157,7 @@ async def chat_upload(file: UploadFile = File(...), text: str = Form(""), thread
     if thread_id and threads.get(ctx.tenant, thread_id, ctx.user["id"]) is None:
         raise HTTPException(404, "Thread not found")
     _check_limit(ctx)
+    _academy_exam_pause(ctx)
     data = await file.read(uploads.MAX_BYTES + 1)
     name = file.filename or "upload"
     try:

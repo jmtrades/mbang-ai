@@ -53,10 +53,22 @@ def edit_item(qid: QueueId, b: EditBody, ctx: Ctx = Depends(require("queue"))):
 
 @router.post("/queue/{qid}/approve")
 def approve(qid: QueueId, ctx: Ctx = Depends(require("queue"))):
+    _academy_gate(ctx, qid)
     try:
         return queue.approve(ctx.tenant, qid, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
         _qerr(e)
+
+
+def _academy_gate(ctx: Ctx, qid: int) -> None:
+    """[academy] When the owner requires it, approving your own prospect outreach needs the Compliance core certificate."""
+    try:
+        from ..academy import approval_gate_for_item
+    except ImportError:
+        return
+    why = approval_gate_for_item(ctx.tenant, ctx.user["id"], qid, ctx.role)
+    if why:
+        raise HTTPException(403, why)
 
 
 class RejectBody(BaseModel):

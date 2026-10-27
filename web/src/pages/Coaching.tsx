@@ -16,8 +16,10 @@ const KINDS = [
   { value: "email", label: "My funnel email (client asset)" },
 ];
 
-export default function Coaching() {
-  const [kind, setKind] = useState("dm");
+export default function Coaching({ query }: { query?: URLSearchParams }) {
+  // the Academy's "Practise it" link opens Coaching mode with the matching kind (?kind=dm)
+  const asked = query?.get("kind");
+  const [kind, setKind] = useState(asked && KINDS.some((k) => k.value === asked) ? asked : "dm");
   const [tier, setTier] = useState("cold");
   const [text, setText] = useState("");
   const [res, setRes] = useState<any>(null);

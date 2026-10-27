@@ -23,7 +23,9 @@ export default function Drills() {
       <PageHeader title="Objection drills" subtitle="Spaced repetition (SM-2) on the objections that come up on real calls, answered from the course." />
       <ErrorBox error={err || error} retry={reload} />
       {loading && <Loading />}
-      {data && !card && <Empty icon={<CalendarCheck />} title="You are all caught up" hint={`${data.cards.length} cards in your bank. The next one shows up here when it is due; spacing is what makes it stick.`} action={<Button size="sm" onClick={() => { location.hash = "#/coach"; }}>Ask the coach about an objection</Button>} />}
+      {data && !card && (data.cards.length
+        ? <Empty icon={<CalendarCheck />} title="You are all caught up" hint={`${data.cards.length} cards in your bank. The next one shows up here when it is due; spacing is what makes it stick.`} action={<Button size="sm" onClick={() => { location.hash = "#/coach"; }}>Ask the coach about an objection</Button>} />
+        : <Empty icon={<CalendarCheck />} title="No drills yet" hint="Drills are built from the course material when the owner builds the Academy, and from reviewed calls." />)}
       {card && (
         <Card title={<span>Objection: “{card.objection}” <Badge>{due.length} due</Badge></span>}>
           {!show ? <Button tone="primary" onClick={() => setShow(true)}>Show the course answer</Button> : (
