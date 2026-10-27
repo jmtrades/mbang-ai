@@ -68,6 +68,10 @@ def provenance_panel(tenant) -> dict:
 
 
 # --------------------------------------------------------------------------- personality
+LEGACY_CONSENT_BANNER = ("An older free-text persona consent typed in this console is on file. It is not valid: a "
+                         "persona now needs consent signed by the person themselves (Owner console, Persona).")
+
+
 def _persona(tenant) -> dict:
     """The stored persona, whatever was stored before settings were validated (a non-object reads as empty)."""
     p = tenant.get("persona", {})
@@ -80,21 +84,24 @@ def personality(tenant) -> dict:
     if isinstance(limit, bool) or not isinstance(limit, (int, float)) or not 1 <= limit <= 1000:
         limit = 50
     style = p.get("style", "")
+    legacy = p.get("persona_consent")
     return {"display_name": p.get("display_name") if isinstance(p.get("display_name"), str) and p.get("display_name")
             else "Coach", "daily_question_limit": int(limit),
             "banned_words": [w for w in p.get("banned_words", []) if isinstance(w, str)]
             if isinstance(p.get("banned_words"), list) else [],
             "style": style if isinstance(style, str) else "",
             "style_note": "Style rewriting needs AI (NEEDS_AI_BUDGET); banned words are always enforced.",
-            "persona_consent": p.get("persona_consent") if isinstance(p.get("persona_consent"), dict) else None}
+            # the old owner-typed consent is shown only so it can be flagged; it never enables anything
+            "persona_consent": legacy if legacy else None, "persona_consent_valid": False,
+            "legacy_banner": LEGACY_CONSENT_BANNER if legacy else None}
 
 
 def set_personality(tenant, data: dict, actor: str) -> dict:
     cur = personality(tenant)
     name = (data.get("display_name") or cur.get("display_name") or "Coach").strip()[:60]
-    consent = cur.get("persona_consent")
     if data.get("persona_consent_text"):
-        consent = {"text": str(data["persona_consent_text"])[:500], "at": time.time(), "by": actor}
+        raise ValueError("Persona consent is no longer typed here: the person signs it themselves (Owner console, Persona).")
+    consent = cur.get("persona_consent")  # legacy record kept for the banner; never valid
     new = {"display_name": name, "daily_question_limit": int(data.get("daily_question_limit") or cur.get("daily_question_limit", 50)),
            "banned_words": [w.strip() for w in (data.get("banned_words") or cur.get("banned_words", [])) if str(w).strip()][:100],
            "style": str(data.get("style", cur.get("style", "")))[:500], "persona_consent": consent}
@@ -297,21 +304,27 @@ def mini_ask(tenant, slug: str, token: str, question: str, ip: str | None = None
         ratelimit.hit("mini-ask", ip or "?", ratelimit.limit("mini_ask", MINI_ASKS_PER_IP_HOUR), 3600)
     except ratelimit.Limited:
         raise WebhookError(429, "Too many questions from this network. Try again later.")
-    from . import retrieval
+    from . import persona, retrieval
     from .agents import coach
 
     question = question[:1000]
     allowed = {f for f in m["scope"] if isinstance(f, str)}
-    if allowed:
-        res = _scoped_answer(tenant, question, allowed)
-        retrieval.record_query(tenant, None, question, res["covered"], "en", None)
-    else:
-        # an unscoped mini answers from the whole course; a public mini never adds the external 2026 Playbooks
-        res = coach.answer(tenant, question, record=True, external=False)
+    with persona.surface("public_minis"):  # styled only if the subject consented to public minis
+        if allowed:
+            res = _scoped_answer(tenant, question, allowed)
+            retrieval.record_query(tenant, None, question, res["covered"], "en", None)
+        else:
+            # an unscoped mini answers from the whole course; a public mini never adds the external 2026 Playbooks
+            res = coach.answer(tenant, question, record=True, external=False)
     with tenant.db() as c:
         c.execute("UPDATE mini_sessions SET questions=questions+1 WHERE id=?", (s["id"],))
-    return {"covered": res["covered"], "answer": res["answer"], "citations": res["citations"] if res["covered"] != "no" else [],
-            "remaining": m["question_limit"] - s["questions"] - 1}
+    out = {"covered": res["covered"], "answer": res["answer"], "citations": res["citations"] if res["covered"] != "no" else [],
+           "remaining": m["question_limit"] - s["questions"] - 1}
+    styled = res.get("persona") or {}
+    if styled.get("styled"):  # [persona] a styled public answer always carries its disclosure, in the text itself too
+        out["persona"] = {"badge": styled["badge"], "disclosure": styled["disclosure"]}
+        out["answer"] = f"{res['answer']}\n\n({styled['badge']}. About this: {styled['disclosure']})"
+    return out
 
 
 def embed_snippet(tid: str, slug: str) -> str:

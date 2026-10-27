@@ -35,6 +35,12 @@ class Doc:
     provenance: str = "source_unconfirmed"
     corpus_id: str = "course"
     product: str = ""
+    # who says each line (None = unattributed), parallel to `lines`; parsed from speaker labels at ingest
+    speakers: list[str | None] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not self.speakers and self.lines:
+            self.speakers = parse_speakers(self.lines, self.kind)
 
     @property
     def weight(self) -> float:
@@ -57,6 +63,7 @@ class Chunk:
     licence_status: str
     provenance: str
     corpus_id: str
+    speaker_words: dict = field(default_factory=dict)  # speaker -> words in this chunk (attributed lines only)
 
     @property
     def lines_label(self) -> str:
@@ -109,6 +116,92 @@ def heuristic_quality(lines: list[str]) -> str:
     if ratio > 0.12:
         return "garbled"
     return "ok"
+
+
+# --------------------------------------------------------------------------- speaker attribution
+# Speaker labels are kept at ingest so nothing is ever guessed later: WebVTT <v Name> tags, "Name:" prefixes
+# (SRT/plain transcripts, ">> NAME:" and "- Name:" caption styles), "[Name] text", Zoom "[Name] 00:01:02" header
+# lines (the speaker holds until the next header) and Zoom "00:01:02 Name: text" lines. The line text itself is
+# never changed, so citations and line ranges stay exact.
+_NAME = r"[A-Z][A-Za-z'.\-]*(?:\s+[A-Z][A-Za-z'.\-]*){0,3}(?:\s+\([A-Z]{2,8}\))?"
+VTT_VOICE = re.compile(r"^\s*<v(?:\.[\w.\-]+)?\s+(?P<name>[^>]{1,60})>(?P<text>.*?)(?:</v>)?\s*$")
+ZOOM_HEADER = re.compile(r"^\s*\[(?P<name>[A-Za-z][A-Za-z'.\-() ]{0,60}?)\]\s+\d{1,2}:\d{2}(?::\d{2})?\s*$")
+ZOOM_INLINE = re.compile(r"^\s*\d{1,2}:\d{2}(?::\d{2})?\s+(?P<name>" + _NAME + r")\s*:\s+(?P<text>\S.*)$")
+LABEL_COLON = re.compile(r"^\s*(?:>>\s*|-\s*)?(?P<name>" + _NAME + r")\s*:\s+(?P<text>\S.*)$")
+LABEL_BRACKET = re.compile(r"^\s*\[(?P<name>[A-Za-z][A-Za-z'.\-() ]{0,60}?)\]\s*(?P<text>[^\d\s\[].*)$")
+# headings that look like "Name:" labels in written material
+NOT_SPEAKERS = {
+    "note", "notes", "step", "goal", "goals", "subject", "tip", "tips", "example", "examples", "homework", "rule", "rules",
+    "q", "a", "question", "answer", "summary", "title", "module", "lesson", "part", "day", "week", "action", "warning",
+    "important", "source", "date", "time", "re", "fwd", "fw", "hook", "cta", "outcome", "offer", "gap", "discovery",
+    "rapport", "objection", "objections", "result", "results", "why", "how", "what", "when", "who", "where", "mechanism",
+    "pain", "proof", "promise", "price", "timeframe", "close", "next", "agenda", "intro", "outro", "recap", "context",
+    "problem", "solution", "update", "status", "owner", "target", "metric", "metrics", "benchmark", "definition",
+    "key", "takeaway", "takeaways", "script", "opener", "follow", "reminder", "ps", "p.s", "bonus", "faq", "overview",
+}
+SPEAKER_KINDS = {"transcript", "upload", "note"}
+
+
+def speaker_key(name: str) -> str:
+    """Normalised speaker label for matching ("Host Name (DEMO):" -> "host name")."""
+    return " ".join((name or "").replace("(DEMO)", "").split()).strip(" .:-").lower()
+
+
+def parse_speakers(lines: list[str], kind: str = "transcript") -> list[str | None]:
+    """Who says each line (None = unattributed). Written material (SOPs, PDFs, summaries) never gets speakers.
+    "Name:" / "[Name]" labels count only when the document is clearly a labelled transcript: at least three labelled
+    lines, at least a fifth of the non-empty lines, and one label used more than once. Headings such as "Goal:" are
+    never speakers."""
+    out: list[str | None] = [None] * len(lines)
+    if kind not in SPEAKER_KINDS:
+        return out
+    current = None
+    strong = False  # VTT voices and Zoom headers are explicit; label prefixes need document-level evidence
+    weak: list[tuple[int, str]] = []
+    for i, ln in enumerate(lines):
+        m = VTT_VOICE.match(ln)
+        if m:
+            out[i] = m.group("name").strip()
+            strong = True
+            continue
+        m = ZOOM_HEADER.match(ln)
+        if m:
+            current = m.group("name").strip()
+            out[i] = current
+            strong = True
+            continue
+        m = ZOOM_INLINE.match(ln) or LABEL_COLON.match(ln) or LABEL_BRACKET.match(ln)
+        if m and speaker_key(m.group("name")) not in NOT_SPEAKERS:
+            weak.append((i, m.group("name").strip()))
+            continue
+        if current and ln.strip():
+            out[i] = current
+    if weak:
+        nonempty = sum(1 for ln in lines if ln.strip()) or 1
+        counts: dict[str, int] = {}
+        for _, n in weak:
+            counts[speaker_key(n)] = counts.get(speaker_key(n), 0) + 1
+        if strong or (len(weak) >= max(3, 0.2 * nonempty) and max(counts.values()) >= 2):
+            labelled = {i for i, _ in weak}
+            for i, n in weak:
+                out[i] = n
+                # a labelled turn continues on the following unlabelled lines until the next label or a blank line
+                j = i + 1
+                while j < len(lines) and j not in labelled and lines[j].strip() and not ZOOM_HEADER.match(lines[j]):
+                    out[j] = n
+                    j += 1
+    return out
+
+
+def speaker_text(line: str) -> str:
+    """The spoken words of a line without its speaker label (for style analysis only; citations keep the line)."""
+    if ZOOM_HEADER.match(line):
+        return ""
+    for pat in (VTT_VOICE, ZOOM_INLINE, LABEL_COLON, LABEL_BRACKET):
+        m = pat.match(line)
+        if m and (pat is VTT_VOICE or speaker_key(m.group("name")) not in NOT_SPEAKERS):
+            return re.sub(r"<[^>]+>", "", m.group("text")).strip()
+    return re.sub(r"<[^>]+>", "", line).strip()
 
 
 # --------------------------------------------------------------------------- loading
@@ -241,6 +334,8 @@ def chunk_docs(docs: list[Doc], exclusions: list[dict] | None = None) -> tuple[l
                     prev.text += "\n" + "\n".join(t for _, t in buf if t.strip())
                     prev.end = buf[-1][0]
                     prev.ts_end = doc.ts[prev.end - 1] if doc.ts else None
+                    for k, v in _speaker_words(doc, buf).items():
+                        prev.speaker_words[k] = prev.speaker_words.get(k, 0) + v
                     buf, words = [], 0
                     return
                 s, e = buf[0][0], buf[-1][0]
@@ -249,7 +344,7 @@ def chunk_docs(docs: list[Doc], exclusions: list[dict] | None = None) -> tuple[l
                     id=len(chunks), file=doc.file, title=doc.title, kind=doc.kind, start=s, end=e, text=text,
                     ts_start=doc.ts[s - 1] if doc.ts else None, ts_end=doc.ts[e - 1] if doc.ts else None,
                     quality=doc.quality, weight=doc.weight, licence_status=doc.licence_status,
-                    provenance=doc.provenance, corpus_id=doc.corpus_id))
+                    provenance=doc.provenance, corpus_id=doc.corpus_id, speaker_words=_speaker_words(doc, buf)))
             buf, words = [], 0
 
         for i, line in enumerate(doc.lines, start=1):
@@ -270,6 +365,17 @@ def chunk_docs(docs: list[Doc], exclusions: list[dict] | None = None) -> tuple[l
                 flush()
         flush(final=True)
     return chunks, excluded
+
+
+def _speaker_words(doc: Doc, buf: list[tuple[int, str]]) -> dict:
+    if not doc.speakers or not any(doc.speakers):
+        return {}
+    out: dict[str, int] = {}
+    for n, t in buf:
+        sp = doc.speakers[n - 1] if n - 1 < len(doc.speakers) else None
+        if sp:
+            out[sp] = out.get(sp, 0) + len(speaker_text(t).split())
+    return out
 
 
 def fingerprint(root: Path, extra: str = "") -> str:

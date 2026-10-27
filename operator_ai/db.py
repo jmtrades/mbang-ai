@@ -326,6 +326,32 @@ CREATE TABLE IF NOT EXISTS webinar_sends (
   due_at REAL, UNIQUE(webinar_id, registrant_id, template_key));
 CREATE INDEX IF NOT EXISTS webinar_sends_q ON webinar_sends(queue_id);
 -- [persona] tables
+CREATE TABLE IF NOT EXISTS persona_consents (
+  id INTEGER PRIMARY KEY, subject_user_id INTEGER NOT NULL, profile_id INTEGER, profile_version INTEGER,
+  profile_hash TEXT NOT NULL, statement TEXT NOT NULL, statement_sha TEXT NOT NULL, scopes TEXT NOT NULL,
+  method TEXT NOT NULL, at REAL NOT NULL, expires REAL NOT NULL, withdrawn_at REAL, withdrawn_by TEXT,
+  witnessed_by TEXT, demo INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS persona_consents_subject ON persona_consents(subject_user_id, id);
+CREATE TRIGGER IF NOT EXISTS persona_consents_no_delete BEFORE DELETE ON persona_consents
+  WHEN COALESCE((SELECT value FROM settings WHERE key='is_demo'), 'false') <> 'true'
+  BEGIN SELECT RAISE(ABORT, 'persona_consents is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS persona_consents_append_only BEFORE UPDATE ON persona_consents
+  WHEN OLD.withdrawn_at IS NOT NULL OR NEW.id IS NOT OLD.id OR NEW.demo IS NOT OLD.demo
+    OR NEW.subject_user_id IS NOT OLD.subject_user_id
+    OR NEW.profile_id IS NOT OLD.profile_id OR NEW.profile_version IS NOT OLD.profile_version
+    OR NEW.profile_hash IS NOT OLD.profile_hash OR NEW.statement IS NOT OLD.statement
+    OR NEW.statement_sha IS NOT OLD.statement_sha OR NEW.scopes IS NOT OLD.scopes OR NEW.method IS NOT OLD.method
+    OR NEW.at IS NOT OLD.at OR NEW.expires IS NOT OLD.expires OR NEW.witnessed_by IS NOT OLD.witnessed_by
+  BEGIN SELECT RAISE(ABORT, 'persona_consents is append-only: only a withdrawal may be recorded'); END;
+CREATE TABLE IF NOT EXISTS persona_phrases (
+  id INTEGER PRIMARY KEY, profile_id INTEGER, version INTEGER, phrase TEXT, display TEXT, cls TEXT, n INTEGER, z REAL,
+  count INTEGER, docs INTEGER, stability REAL, positions TEXT, evidence TEXT, decision TEXT DEFAULT 'pending',
+  decided_by TEXT, decided_at REAL, demo INTEGER DEFAULT 0, created REAL);
+CREATE INDEX IF NOT EXISTS persona_phrases_profile ON persona_phrases(profile_id, decision);
+CREATE TABLE IF NOT EXISTS persona_prefs (user_id INTEGER PRIMARY KEY, neutral_voice INTEGER DEFAULT 0, updated REAL);
+CREATE TABLE IF NOT EXISTS persona_uses (
+  id INTEGER PRIMARY KEY, user_id INTEGER, version INTEGER, phrase TEXT, created REAL);
+CREATE INDEX IF NOT EXISTS persona_uses_user ON persona_uses(user_id, id);
 -- [team] tables
 -- [playbooks] tables
 -- [claims] tables
@@ -433,6 +459,12 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [webinars]
     ("webinar_sends", "due_at", "REAL"),
     # [persona]
+    ("persona_profiles", "version", "INTEGER"),
+    ("persona_profiles", "profile_hash", "TEXT"),
+    ("persona_profiles", "subject_user_id", "INTEGER"),
+    ("persona_profiles", "words", "INTEGER DEFAULT 0"),
+    ("persona_profiles", "demo", "INTEGER DEFAULT 0"),
+    ("kb_notes", "speaker", "TEXT"),
     # [team]
     # [playbooks]
     # [claims]

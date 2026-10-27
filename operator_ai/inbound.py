@@ -1011,11 +1011,14 @@ def _holding_draft(tenant, party: dict, inbound: dict, run: runtime.Run | None, 
 
 
 def _coach_reply(tenant, party: dict, inbound: dict, meta: dict, run: runtime.Run) -> dict:
-    """Students, members and the team: the cited Coach answer, drafted for approval (or spoken on the voice line)."""
+    """Students, members and the team: the cited Coach answer, drafted for approval (or spoken on the voice line).
+    Channel replies and the phone line are outbound messages, so they are never persona-styled (persona.neutral)."""
+    from . import persona
     from .agents import coach
 
     user = party.get("user")
-    res = coach.answer(tenant, inbound["body"][:1000], user=user, record=True, run=run)
+    with persona.neutral():
+        res = coach.answer(tenant, inbound["body"][:1000], user=user, record=True, run=run)
     if meta.get("voice"):
         return {"answer": res["answer"], "covered": res["covered"], "spoken": True}
     cites = "; ".join(f"[{c['id']}] {c['title']}" for c in res["citations"][:3])

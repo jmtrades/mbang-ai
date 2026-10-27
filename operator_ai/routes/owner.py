@@ -92,7 +92,10 @@ class PersonalityBody(BaseModel):
 
 @router.put("/personality")
 def put_personality(b: PersonalityBody, ctx: Ctx = Depends(require_owner)):
-    return console.set_personality(ctx.tenant, b.model_dump(exclude_none=True), ctx.actor)
+    try:
+        return console.set_personality(ctx.tenant, b.model_dump(exclude_none=True), ctx.actor)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
 
 
 @router.get("/members")

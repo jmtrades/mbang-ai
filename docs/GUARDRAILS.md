@@ -132,13 +132,14 @@ address per day (canonical form, so `a+1@…` is the same address), 3 sessions p
   `awaiting_manual_send` (Instagram/LinkedIn DMs and phone always; any channel without a live sender in a real
   workspace) until they confirm "I sent it"; or sends it through a live sender behind the server-only switch
   (`sent` / `send_failed`). Mock transports run only in the demo workspace. The scheduled dispatcher re-runs the
-  guardrails and the never-invite check and evaluates `meta.cancel_if` before anything goes. Stage moves, caps and
-  stats count `sent`, never `approved`. Prospect email carries a postal-address footer, an unsubscribe link and
-  List-Unsubscribe headers; `/u/{token}` (guessing is throttled, a real link always works, applied once) sets
-  do-not-contact and suppresses the address.
+  guardrails and the never-invite check and evaluates `meta.cancel_if` (and the hard deadline `meta.send_before`)
+  before anything goes. Stage moves, caps and stats count `sent`, never `approved`. Prospect email carries a footer
+  naming the real sender (a student's own outreach: their business and postal address from Sender details), an
+  unsubscribe link and List-Unsubscribe headers; `/u/{token}` (guessing is throttled, a real link always works,
+  applied once) sets do-not-contact and suppresses the address.
   In a real workspace a prospect email cannot be approved (live or copy-and-send) until `OPERATOR_PUBLIC_URL` is set,
-  so the link never points at localhost. A send interrupted mid-way becomes `send_failed` after 15 minutes and is
-  never retried by itself.
+  so the link never points at localhost. A send interrupted mid-way becomes `needs_attention` after 15 minutes: a
+  person checks whether it went out and confirms it or sends it again; it is never retried by itself.
 - **Your drafts stay yours.** A queue item carrying `meta.owner_user_id` (outreach a person drafted for their own
   prospects/clients) is visible to and decided by that person and the owner only, never by other staff through
   their role; queue counts cover only what the viewer may see. Only the owner can record SMS/phone opt-in collected
@@ -147,7 +148,14 @@ address per day (canonical form, so `a+1@…` is the same address), 3 sessions p
   via a middleware) and block any queue item. The response scrub walks the decoded JSON and rewrites string values
   only, so a banned word equal to a key or literal (`status`, `false`, `id`) can't corrupt a response; it skips the
   settings and personality endpoints so the lists round-trip unchanged; persona style words are enforced on
-  generated text but not scrubbed from responses. A named persona needs recorded consent (Owner console → Personality).
+  generated text but not scrubbed from responses. Framing answers in a real person's teaching phrasing needs that
+  person's own consent, signed on their own login with their password, scoped, expiring and withdrawable (Owner
+  console → Persona; the person signs from Business profile). Whenever a persona name is configured,
+  `operator_ai/persona/guards.py` blocks `impersonation` ("I'm X", "X here", "As X, I…", sign-offs),
+  `persona_in_outreach` (the name or an approved phrase of 3+ words in outreach, client assets or own-prospect items),
+  `persona_autobio` (first-person stories in styled output) and `speculative_attribution` ("X would say…", "according
+  to X…" without an [S#]). "Are you X?" and questions about "your clients" get "I'm an AI assistant trained on X's
+  material, not X." The old owner-typed consent is shown as invalid.
 - **Settings have shapes.** Every API-editable setting is validated (`settings.validate`): banned names are a list of
   2-80 character strings, colours are `#rrggbb`, switches are true/false, numbers are finite and in range, anything
   else is plain JSON under 20 KB. A wrong shape is a 422, never stored.

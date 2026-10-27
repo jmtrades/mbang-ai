@@ -836,6 +836,8 @@ NO_SESSION_OK = {
     "/t/{tid}/p/{token}", "/t/{tid}/p/{token}/accept",
     # client ops: the client intake form, and the webinar registration page, sign-up and unsubscribe
     "/c/{tid}/{token}", "/w/{tid}/{slug}", "/w/{tid}/{slug}/register", "/w/{tid}/{slug}/unsubscribe",
+    # persona: the public disclosure page (who the assistant is, and that it is not the person)
+    "/t/{tid}/persona", "/t/{tid}/api/public/persona",
 }
 
 

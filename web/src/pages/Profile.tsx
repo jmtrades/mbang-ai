@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, put } from "../api";
 import { Button, Card, ErrorBox, Field, Input, Loading, PageHeader, useApi, useApp } from "../components/ui";
+import { PersonaSubject } from "./persona/PersonaSubject";
 
 export default function Profile() {
   const { toast } = useApp();
@@ -24,6 +25,7 @@ export default function Profile() {
   return (
     <div>
       <PageHeader title="Business profile" subtitle="Eight sections every skill, worker, Studio line and the webinar chain read before drafting." right={<Button tone="primary" onClick={save} loading={busy}>Save profile</Button>} />
+      <PersonaSubject />
       <ErrorBox error={err || error} retry={reload} />
       {loading && <Loading rows={8} />}
       {p && data && (

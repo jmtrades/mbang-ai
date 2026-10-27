@@ -15,8 +15,10 @@ from . import audit
 from .config import BOX_ONLY
 from .errors import InputError
 
+# "persona" is not here: display name, banned words and limits change through /personality, and the persona itself
+# (subject, consent, phrases) only through /persona, where the subject signs for themselves.
 API_EDITABLE = {
-    "brand", "persona", "banned_names", "blocked_attendees", "lead_weights", "lead_routes", "show_ladder",
+    "brand", "banned_names", "blocked_attendees", "lead_weights", "lead_routes", "show_ladder",
     "outreach_daily_cap", "revenue_goal", "third_party_kb", "coach_assign", "retention_weights", "builder_note",
 }
 MAX_JSON = 20_000  # bytes of JSON for any one setting

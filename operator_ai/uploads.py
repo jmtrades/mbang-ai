@@ -26,10 +26,20 @@ class UploadError(Exception):
     pass
 
 
+_VTT_VOICE = re.compile(r"^\s*<v(?:\.[\w.\-]+)?\s+([^>]{1,60})>(.*)$")
+
+
 def _subtitles(raw: str) -> str:
+    """Caption text without cue numbers or timings. A WebVTT voice tag (<v Name>) is kept as a "Name: " prefix so
+    the speaker survives into the knowledge base; SRT speaker prefixes ("NAME:", "- Name:") are already text."""
     out = []
     for line in raw.splitlines():
         if not line.strip() or _TS.match(line):
+            continue
+        m = _VTT_VOICE.match(line)
+        if m:
+            text = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+            out.append(f"{m.group(1).strip()}: {text}" if text else "")
             continue
         out.append(re.sub(r"<[^>]+>", "", line).strip())
     # collapse consecutive duplicates (common in auto captions)

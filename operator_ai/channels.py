@@ -486,9 +486,19 @@ def _twiml(*parts: str) -> str:
     return '<?xml version="1.0" encoding="UTF-8"?><Response>' + "".join(parts) + "</Response>"
 
 
+# The phone line speaks in one fixed neutral system voice from a constant allowlist. No setting, persona field or
+# request value can choose it: a cloned or person-like voice is never used.
+NEUTRAL_TTS_VOICES = ("Polly.Joanna", "Polly.Matthew", "alice")
+TTS_VOICE = NEUTRAL_TTS_VOICES[0]
+
+
+def _say(text: str) -> str:
+    return f'<Say voice="{TTS_VOICE}">{_xml(text)}</Say>'
+
+
 def _gather(action: str, prompt: str) -> str:
     return (f'<Gather input="speech" action="{_xml(action)}" method="POST" speechTimeout="auto" language="en-US">'
-            f'<Say voice="Polly.Joanna">{_xml(prompt)}</Say></Gather>')
+            f'{_say(prompt)}</Gather>')
 
 
 VOICE_HOLDING = "Thanks for calling. I've passed your message to the team, and a person will get back to you."
@@ -513,7 +523,7 @@ def voice_call(tenant, url: str, signature: str | None, params: dict) -> str:
     log_id = _log(tenant, "phone", "in", caller, speech)
     res = inbound.route(tenant, "phone", caller, speech[:500], {"voice": True, "log_id": log_id})
     if not res.get("spoken"):
-        return _twiml(f'<Say voice="Polly.Joanna">{_xml(VOICE_HOLDING)}</Say><Hangup/>')
+        return _twiml(_say(VOICE_HOLDING) + "<Hangup/>")
     spoken = re.sub(r"\s*\[[SX]\d+\]", "", res["answer"])[:900]  # neither course [S#] nor playbook [X#] markers are read aloud
     _log(tenant, "phone", "out", caller, spoken, {"covered": res["covered"], "run_id": res["run_id"]})
-    return _twiml(f'<Say voice="Polly.Joanna">{_xml(spoken)}</Say>', _gather(url, "Anything else?"))
+    return _twiml(_say(spoken), _gather(url, "Anything else?"))
