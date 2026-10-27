@@ -26,7 +26,10 @@ def update_from_api(tenant, key: str, value, actor: str) -> None:
         from . import guardrails
 
         guardrails.banned_cache_clear(tenant.id)
-    audit.log(tenant, actor, "settings", {"key": key})
+    detail = {"key": key}
+    if isinstance(value, bool):
+        detail["to"] = value  # on/off switches (third_party_kb) record which way they were turned
+    audit.log(tenant, actor, "settings", detail)
 
 
 def set_box(tenant, key: str, value, reason: str, actor: str = "server-cli") -> None:

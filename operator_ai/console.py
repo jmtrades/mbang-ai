@@ -207,7 +207,8 @@ def mini_ask(tenant, slug: str, token: str, question: str) -> dict:
     from . import retrieval
     from .agents import coach
 
-    res = coach.answer(tenant, question[:1000], record=True)
+    # a lead-magnet mini is public and scoped to chosen course files: never the external 2026 Playbooks
+    res = coach.answer(tenant, question[:1000], record=True, external=False)
     allowed = set(m["scope"])
     cites = [c for c in res["citations"] if not allowed or c["file"] in allowed]
     if res["covered"] != "no" and allowed and not cites:

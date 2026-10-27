@@ -107,7 +107,9 @@ def _call(tenant, name: str, args: dict):
 
         q = str(args["question"])[:2000]
         r = coach.answer(tenant, q, record=False)
-        return {"covered": r["covered"], "answer": r["answer"], "citations": r["citations"]}
+        # external 2026 Playbooks entries [X#] stay a separate list (never course citations)
+        return {"covered": r["covered"], "answer": r["answer"], "citations": r["citations"],
+                "external": r.get("external", [])}
     if name == "search_library":
         hits = retrieval.search(tenant, str(args["query"])[:500], k=max(1, min(20, int(args.get("k", 5)))))
         return [{k: h[k] for k in ("id", "file", "lines", "title", "snippet")} for h in hits]

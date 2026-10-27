@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Mic, MicOff, MessageCircle, Paperclip, Plus, Send, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Mic, MicOff, MessageCircle, Paperclip, Plus, Send, Volume2, VolumeX } from "lucide-react";
 import { ApiError, api, get, post } from "../api";
 import { AiModeBadge, Badge, Button, Card, Citations, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, TraceLink, cx, useApi, useApp } from "../components/ui";
 
@@ -36,9 +36,34 @@ function useVoice(onText: (t: string) => void) {
 function speak(text: string) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/\[S\d+\]/g, ""));
+  const u = new SpeechSynthesisUtterance(text.replace(/\[[SX]\d+\]/g, ""));
   u.rate = 1.05;
   window.speechSynthesis.speak(u);
+}
+
+// External 2026 Playbooks entries [X#]: researched public best practice, shown apart from the course [S#] chips.
+function ExternalChips({ items }: { items?: any[] }) {
+  const { go } = useApp();
+  if (!items || !items.length) return null;
+  return (
+    <div className="mt-2 rounded-lg border border-dashed border-sky-300 bg-white/60 p-2" data-testid="external-chips">
+      <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+        <Badge tone="info">External · 2026</Badge>
+        <span>Researched public best practice, dated. Not the course material.</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((x: any) => (
+          <button key={x.id + (x.entry_id || "")} onClick={() => go(`/playbooks?entry=${encodeURIComponent(x.entry_id)}`)} title={x.snippet}
+            className="focus-ring inline-flex max-w-full items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] text-ink hover:border-brand" data-testid="external-chip">
+            <BookOpenCheck className="size-3 shrink-0 text-sky-700" />
+            <span className="font-semibold">[{x.id}]</span>
+            <span className="truncate">{x.title}</span>
+            {x.as_of && <span className="shrink-0 text-muted">{x.as_of}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function Extra({ meta }: { meta: any }) {
@@ -191,6 +216,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
                       {m.meta.note && <p className="text-[11px] italic text-muted">{m.meta.note}</p>}
                       <Extra meta={m.meta} />
                       <Citations items={m.meta.citations} />
+                      <ExternalChips items={m.meta.external} />
                       {m.meta.not_used?.length > 0 && (
                         <details className="text-[11px] text-muted"><summary>{m.meta.not_used.length} passage(s) not used</summary>
                           {m.meta.not_used.map((n: any, j: number) => <div key={j}>{n.label} ({n.file} L{n.lines})</div>)}

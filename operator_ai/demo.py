@@ -43,6 +43,8 @@ def ensure_seeded(tenant) -> None:
         return
     with _lock:
         if tenant.get("seeded_at"):
+            if tenant.get("third_party_kb") is None and tenancy.is_demo_db(tenant):
+                tenant.set("third_party_kb", True)  # demo seeded before the playbooks existed
             return
         seed(tenant)
 
@@ -168,6 +170,8 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
 
     tenant.set("seeded_at", now)
     tenant.set("brand", {**(tenant.get("brand", {}) or {}), "name": tenant.get("brand", {}).get("name") or config.get().brand})
+    # the demo shows the 2026 Playbooks (external, researched best practice); real workspaces start with it off
+    tenant.set("third_party_kb", True)
     _seed_queue(tenant, rng)
     _seed_questions(tenant)
     _seed_features(tenant)

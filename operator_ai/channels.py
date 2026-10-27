@@ -36,6 +36,8 @@ def _answer_draft(tenant, channel: str, ext_id: str, question: str, user: dict |
     res = coach.answer(tenant, question, user=user, record=True)
     cites = "; ".join(f"[{c['id']}] {c['title']}" for c in res["citations"][:3])
     body = res["answer"] + (f"\nSources: {cites}" if cites else "")
+    refs = coach.external_refs(res["answer"], res.get("external", []), tenant)
+    body += f"\n\n{refs}" if refs else ""
     item = queue.add(tenant, "channel_reply", body, channel=channel, recipient_ref=ext_id,
                      title=f"{channel.title()} reply to {ext_id}", meta={"question": question[:300], "covered": res["covered"],
                                                                         "run_id": res["run_id"]},
@@ -200,7 +202,8 @@ def inbound_email(tenant, sig: str | None, raw: bytes) -> dict:
 
     res = coach.answer(tenant, p["body"][:1000] or p["subject"], record=True)
     subj = p["subject"] if p["subject"].lower().startswith("re:") else f"Re: {p['subject']}"
-    item = queue.add(tenant, "email_reply", res["answer"], channel="email", recipient_ref=p["from"],
+    refs = coach.external_refs(res["answer"], res.get("external", []), tenant)
+    item = queue.add(tenant, "email_reply", res["answer"] + (f"\n\n{refs}" if refs else ""), channel="email", recipient_ref=p["from"],
                      title=f"Email reply to {p['from']}", meta={"subject": subj, "prior_contact": True, "covered": res["covered"]},
                      run_id=res["run_id"], actor="email-inbound", demo=tenant.is_demo)
     return {"ok": True, "parsed": p, "queued": item["id"], "status": item["status"]}
@@ -317,6 +320,6 @@ def voice_call(tenant, url: str, signature: str | None, params: dict) -> str:
     from .agents import coach
 
     res = coach.answer(tenant, speech[:500], record=True)
-    spoken = re.sub(r"\s*\[S\d+\]", "", res["answer"])[:900]
+    spoken = re.sub(r"\s*\[[SX]\d+\]", "", res["answer"])[:900]
     _log(tenant, "phone", "out", caller, spoken, {"covered": res["covered"], "run_id": res["run_id"]})
     return _twiml(f'<Say voice="Polly.Joanna">{_xml(spoken)}</Say>', _gather(url, "Anything else?"))

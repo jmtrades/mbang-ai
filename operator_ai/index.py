@@ -239,6 +239,12 @@ def warm_async() -> None:
             pass
         finally:
             _warming.clear()
+        try:
+            from . import playbooks  # the separate 2026 Playbooks index (its vectors are cached on disk too)
+
+            playbooks.load().index
+        except Exception:  # noqa: BLE001
+            pass
 
     threading.Thread(target=_go, name="index-warm", daemon=True).start()
 

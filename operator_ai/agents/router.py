@@ -102,7 +102,9 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
     shown = text if not filename else (f"[{filename}] " + (text[:200] + ("…" if len(text) > 200 else "")))
     if intent == "question":
         res = coach.answer(tenant, text, user=user, record=True, thread=False, context=previous)
-        reply, meta = res["answer"], {"citations": res["citations"], "covered": res["covered"], "run_id": res["run_id"],
+        # course citations [S#] and external 2026 Playbooks entries [X#] stay in separate lists
+        reply, meta = res["answer"], {"citations": res["citations"], "external": res.get("external", []),
+                                      "covered": res["covered"], "run_id": res["run_id"],
                                       "label": res.get("label"), "mode": res.get("mode"), "note": res.get("note"),
                                       "not_used": res.get("not_used", []), "followup": bool(res["parts"] and previous
                                                                                             and res["parts"][0]["part"].startswith(previous.rstrip("?. ")))}
