@@ -31,9 +31,11 @@ def _log(tenant, channel: str, direction: str, ext_id: str, body: str, meta: dic
 
 
 def _answer_draft(tenant, channel: str, ext_id: str, question: str, user: dict | None = None) -> dict:
+    from . import persona
     from .agents import coach
 
-    res = coach.answer(tenant, question, user=user, record=True)
+    with persona.neutral():  # channel replies are outbound messages: never styled
+        res = coach.answer(tenant, question, user=user, record=True)
     cites = "; ".join(f"[{c['id']}] {c['title']}" for c in res["citations"][:3])
     body = res["answer"] + (f"\nSources: {cites}" if cites else "")
     item = queue.add(tenant, "channel_reply", body, channel=channel, recipient_ref=ext_id,
@@ -293,9 +295,19 @@ def _twiml(*parts: str) -> str:
     return '<?xml version="1.0" encoding="UTF-8"?><Response>' + "".join(parts) + "</Response>"
 
 
+# The phone line speaks in one fixed neutral system voice from a constant allowlist. No setting, persona field or
+# request value can choose it: a cloned or person-like voice is never used.
+NEUTRAL_TTS_VOICES = ("Polly.Joanna", "Polly.Matthew", "alice")
+TTS_VOICE = NEUTRAL_TTS_VOICES[0]
+
+
+def _say(text: str) -> str:
+    return f'<Say voice="{TTS_VOICE}">{_xml(text)}</Say>'
+
+
 def _gather(action: str, prompt: str) -> str:
     return (f'<Gather input="speech" action="{_xml(action)}" method="POST" speechTimeout="auto" language="en-US">'
-            f'<Say voice="Polly.Joanna">{_xml(prompt)}</Say></Gather>')
+            f'{_say(prompt)}</Gather>')
 
 
 def voice_call(tenant, url: str, signature: str | None, params: dict) -> str:
@@ -314,9 +326,11 @@ def voice_call(tenant, url: str, signature: str | None, params: dict) -> str:
     if not speech:
         return _twiml(_gather(url, "Hi, ask me anything about the programme."))
     _log(tenant, "phone", "in", caller, speech)
+    from . import persona
     from .agents import coach
 
-    res = coach.answer(tenant, speech[:500], record=True)
+    with persona.neutral():  # the phone line is never styled
+        res = coach.answer(tenant, speech[:500], record=True)
     spoken = re.sub(r"\s*\[S\d+\]", "", res["answer"])[:900]
     _log(tenant, "phone", "out", caller, spoken, {"covered": res["covered"], "run_id": res["run_id"]})
-    return _twiml(f'<Say voice="Polly.Joanna">{_xml(spoken)}</Say>', _gather(url, "Anything else?"))
+    return _twiml(_say(spoken), _gather(url, "Anything else?"))

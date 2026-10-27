@@ -68,20 +68,27 @@ def provenance_panel(tenant) -> dict:
 
 
 # --------------------------------------------------------------------------- personality
+LEGACY_CONSENT_BANNER = ("An older free-text persona consent typed in this console is on file. It is not valid: a "
+                         "persona now needs consent signed by the person themselves (Owner console, Persona).")
+
+
 def personality(tenant) -> dict:
     p = tenant.get("persona", {}) or {}
+    legacy = p.get("persona_consent")
     return {"display_name": p.get("display_name") or "Coach", "daily_question_limit": p.get("daily_question_limit", 50),
             "banned_words": p.get("banned_words", []), "style": p.get("style", ""),
             "style_note": "Style rewriting needs AI (NEEDS_AI_BUDGET); banned words are always enforced.",
-            "persona_consent": p.get("persona_consent")}
+            # the old owner-typed consent is shown only so it can be flagged; it never enables anything
+            "persona_consent": legacy, "persona_consent_valid": False,
+            "legacy_banner": LEGACY_CONSENT_BANNER if legacy else None}
 
 
 def set_personality(tenant, data: dict, actor: str) -> dict:
     cur = tenant.get("persona", {}) or {}
     name = (data.get("display_name") or cur.get("display_name") or "Coach").strip()[:60]
-    consent = cur.get("persona_consent")
     if data.get("persona_consent_text"):
-        consent = {"text": str(data["persona_consent_text"])[:500], "at": time.time(), "by": actor}
+        raise ValueError("Persona consent is no longer typed here: the person signs it themselves (Owner console, Persona).")
+    consent = cur.get("persona_consent")  # legacy record kept for the banner; never valid
     new = {"display_name": name, "daily_question_limit": int(data.get("daily_question_limit") or cur.get("daily_question_limit", 50)),
            "banned_words": [w.strip() for w in (data.get("banned_words") or cur.get("banned_words", [])) if str(w).strip()][:100],
            "style": str(data.get("style", cur.get("style", "")))[:500], "persona_consent": consent}
@@ -204,10 +211,11 @@ def mini_ask(tenant, slug: str, token: str, question: str) -> dict:
         raise WebhookError(401, "Start a session first")
     if s["questions"] >= m["question_limit"]:
         raise WebhookError(429, f"Question limit of {m['question_limit']} reached")
-    from . import retrieval
+    from . import persona, retrieval
     from .agents import coach
 
-    res = coach.answer(tenant, question[:1000], record=True)
+    with persona.surface("public_minis"):  # styled only if the subject consented to public minis
+        res = coach.answer(tenant, question[:1000], record=True)
     allowed = set(m["scope"])
     cites = [c for c in res["citations"] if not allowed or c["file"] in allowed]
     if res["covered"] != "no" and allowed and not cites:

@@ -130,6 +130,10 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
         raise
     res["run_id"] = run.id
     res["ai_mode"] = run.ai_mode
+    # [persona] consent-gated framing: returns res unchanged unless a valid, subject-signed persona consent covers this
+    # user and surface (operator_ai/persona/apply.py). Also answers "are you <name>?" honestly. Never raises.
+    from ..persona import apply as persona_apply
+    res = persona_apply.frame(tenant, question, res, user=user, run=run)
     if own_run:
         run.finish(res)
     if record:

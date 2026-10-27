@@ -17,9 +17,18 @@ def provenance_overrides(tenant) -> dict[str, dict]:
         return {r["file"]: dict(r) for r in c.execute("SELECT * FROM kb_notes")}
 
 
+def _persona_boost(tenant, idx) -> dict[int, float] | None:
+    """+10% for passages mostly said by the persona subject, only while a valid persona consent is active."""
+    try:
+        from .persona import apply as persona_apply
+    except ImportError:
+        return None
+    return persona_apply.retrieval_boost(tenant, idx)
+
+
 def search(tenant, query: str, k: int = 10, prefix: str = "S") -> list[dict]:
     idx = index.for_tenant(tenant)
-    hits = idx.search(query, k=k, priority=priorities(tenant))
+    hits = idx.search(query, k=k, priority=priorities(tenant), chunk_boost=_persona_boost(tenant, idx))
     names = guardrails.tenant_banned_names(tenant)
     notes = provenance_overrides(tenant)
     out = []

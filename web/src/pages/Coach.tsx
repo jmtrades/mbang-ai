@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Mic, MicOff, MessageCircle, Paperclip, Plus, Send, Volume2, VolumeX } from "lucide-react";
 import { ApiError, api, get, post } from "../api";
 import { AiModeBadge, Badge, Button, Card, Citations, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, TraceLink, cx, useApi, useApp } from "../components/ui";
+import { NeutralVoiceNote, StyledBadge, isStyledLabel } from "./persona/StyledBadge";
 
 type Msg = { role: string; content: string; meta?: any };
 
@@ -86,6 +87,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
   const [err, setErr] = useState<ApiError | null>(null);
   const [voiceOut, setVoiceOut] = useState(false);
   const list = useApi<any>("/threads");
+  const personaMe = useApi<any>("/persona/me");
   const end = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const voice = useVoice((t) => setQ((cur) => (cur ? cur + " " : "") + t));
@@ -154,7 +156,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
   ];
   return (
     <div>
-      <PageHeader title="Student Coach" subtitle="One chat that does the work: ask a question, paste your numbers, a script, an ad or a DM, or drop a screenshot or an Ads Manager export. Answers come only from the programme's material, with citations." />
+      <PageHeader title="Student Coach" subtitle={<>One chat that does the work: ask a question, paste your numbers, a script, an ad or a DM, or drop a screenshot or an Ads Manager export. Answers come only from the programme's material, with citations.<NeutralVoiceNote me={personaMe.data} onChange={personaMe.reload} /></>} />
       <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
         <Card title="Threads" actions={<Button size="sm" onClick={() => setThreadId(null)}><Plus className="size-3.5" /> New</Button>} pad={false} className="hidden lg:block">
           <div className="max-h-[60vh] overflow-auto p-2">
@@ -183,7 +185,9 @@ export default function Coach({ query }: { query: URLSearchParams }) {
                         {m.meta.covered && <Badge tone={m.meta.covered === "yes" ? "good" : m.meta.covered === "partly" ? "warn" : "neutral"}>covered: {m.meta.covered}</Badge>}
                         {m.meta.followup && <Badge tone="info">follow-up, read in context</Badge>}
                         {(m.meta.mode || m.meta.covered) && <AiModeBadge mode={m.meta.mode === "live" ? "live" : m.meta.mode === "replay" ? "replay" : "rules"} />}
-                        {m.meta.label && <span className="text-[11px] text-muted">{m.meta.label}</span>}
+                        {m.meta.label && (isStyledLabel(m.meta.label)
+                          ? <StyledBadge label={m.meta.label} me={personaMe.data} onChange={personaMe.reload} />
+                          : <span className="text-[11px] text-muted">{m.meta.label}</span>)}
                         <TraceLink runId={m.meta.run_id} />
                         <button className="focus-ring rounded p-0.5 text-muted hover:text-ink" onClick={() => speak(m.content)} aria-label="Read aloud"><Volume2 className="size-3.5" /></button>
                       </div>

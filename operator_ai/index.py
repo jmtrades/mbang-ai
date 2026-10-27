@@ -67,7 +67,8 @@ class Index:
         qv = embeddings.get().embed([query])[0]
         return self.vectors @ qv
 
-    def search(self, query: str, k: int = 10, priority: dict[str, float] | None = None) -> list[dict]:
+    def search(self, query: str, k: int = 10, priority: dict[str, float] | None = None,
+               chunk_boost: dict[int, float] | None = None) -> list[dict]:
         if not self.N:
             return []
         q = textnorm.expand(textnorm.tokens(query))
@@ -78,6 +79,8 @@ class Index:
         weights = np.array([c.weight for c in self.chunks])
         if priority:
             weights = weights * np.array([priority.get(c.file, 1.0) for c in self.chunks])
+        if chunk_boost:  # per-chunk weights (an active persona's attributed passages); None changes nothing
+            weights = weights * np.array([chunk_boost.get(c.id, 1.0) for c in self.chunks])
         bmw = bm * weights
         dew = (de + 1.0) * weights  # cosine in [-1, 1] -> positive before weighting
         fused = np.zeros(self.N, dtype=np.float64)

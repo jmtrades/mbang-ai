@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, put } from "../api";
 import { Badge, Button, Card, DemoBadge, ErrorBox, Field, Input, Loading, PageHeader, Table, Tabs, isDemo, useApi, useApp } from "../components/ui";
+import { PersonaAdmin } from "./persona/PersonaAdmin";
 
 export default function OwnerConsole({ query }: { query: URLSearchParams }) {
   const { toast } = useApp();
@@ -16,7 +17,7 @@ export default function OwnerConsole({ query }: { query: URLSearchParams }) {
   const save = async () => {
     setErr(null);
     try {
-      await put("/personality", { display_name: p.display_name, daily_question_limit: Number(p.daily_question_limit), banned_words: p.banned_words.split(",").map((s: string) => s.trim()).filter(Boolean), style: p.style, persona_consent_text: p.persona_consent_text || undefined });
+      await put("/personality", { display_name: p.display_name, daily_question_limit: Number(p.daily_question_limit), banned_words: p.banned_words.split(",").map((s: string) => s.trim()).filter(Boolean), style: p.style });
       toast("Saved", "good");
       pers.reload();
     } catch (e) {
@@ -25,12 +26,13 @@ export default function OwnerConsole({ query }: { query: URLSearchParams }) {
   };
   return (
     <div>
-      <PageHeader title="Owner console" subtitle="Personality, members and payments, recent and unanswered questions, engagement alerts." />
+      <PageHeader title="Owner console" subtitle="Personality and persona, members and payments, recent and unanswered questions, engagement alerts." />
       {alerts.data?.items?.length > 0 && (
         <div className="mb-4 space-y-2" data-testid="alerts">{alerts.data.items.map((a: any) => <a key={a.text} href={a.href} className={`block rounded-lg border px-3 py-2 text-sm ${a.level === "warn" ? "border-amber-200 bg-amber-50" : "border-sky-200 bg-sky-50"}`}>{a.text}</a>)}</div>
       )}
       <ErrorBox error={err} />
-      <Tabs value={tab} onChange={setTab} tabs={[{ key: "personality", label: "Personality" }, { key: "members", label: "Members & payments" }, { key: "queries", label: "Questions" }]} />
+      <Tabs value={tab} onChange={setTab} tabs={[{ key: "personality", label: "Personality" }, { key: "persona", label: "Persona" }, { key: "members", label: "Members & payments" }, { key: "queries", label: "Questions" }]} />
+      {tab === "persona" && <PersonaAdmin />}
       {tab === "personality" && (pers.loading || !p ? <Loading /> : (
         <Card title="Personality">
           <div className="grid gap-3 md:grid-cols-2">
@@ -38,9 +40,9 @@ export default function OwnerConsole({ query }: { query: URLSearchParams }) {
             <Field label="Daily question limit per student"><Input value={p.daily_question_limit} onChange={(e) => setP({ ...p, daily_question_limit: e.target.value })} /></Field>
             <Field label="Banned words (always enforced)"><Input value={p.banned_words} onChange={(e) => setP({ ...p, banned_words: e.target.value })} placeholder="hustle, crush it" /></Field>
             <Field label="Style" hint={p.style_note}><Input value={p.style} onChange={(e) => setP({ ...p, style: e.target.value })} /></Field>
-            <Field label="Persona consent (only if the assistant may speak as a named person)" hint="Recorded with your name and the time. Without it, nothing is ever written as a real person."><Input value={p.persona_consent_text || ""} onChange={(e) => setP({ ...p, persona_consent_text: e.target.value })} /></Field>
           </div>
-          {p.persona_consent && <p className="mt-2 text-xs text-muted">Consent recorded {new Date(p.persona_consent.at * 1000).toLocaleString()} by {p.persona_consent.by}</p>}
+          {p.legacy_banner && <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900" data-testid="legacy-banner">{p.legacy_banner}</p>}
+          <p className="mt-3 text-xs text-muted">Answering in a real person's teaching phrasing needs that person's own signed consent. Set it up in the <button className="text-brand underline-offset-2 hover:underline" onClick={() => setTab("persona")}>Persona</button> tab.</p>
           <Button className="mt-3" tone="primary" onClick={save}>Save</Button>
         </Card>
       ))}
