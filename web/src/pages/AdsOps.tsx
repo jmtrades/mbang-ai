@@ -39,7 +39,7 @@ export default function AdsOps() {
   };
   return (
     <div>
-      <PageHeader title="Ads Ops" subtitle="Diagnose (read-only), propose changes (approvals only), build new tests (PAUSED, zero budget). Mock adapter by default; the real Meta client is coded and switched off."
+      <PageHeader title="Ads ops" subtitle="Diagnose (read-only), propose changes (approvals only), build new tests (PAUSED, zero budget). Mock adapter by default; the real Meta client is coded and switched off."
         right={<Badge tone={acct.data?.adapter === "mock" ? "info" : "warn"}>adapter: {acct.data?.adapter || "…"}</Badge>} />
       <ErrorBox error={err || acct.error} retry={acct.reload} />
       <Tabs value={tab} onChange={setTab} tabs={[{ key: "account", label: "Practice account" }, { key: "golive", label: "Practice go-live" }, { key: "actions", label: "Actions & rollback" }]} />
@@ -78,7 +78,7 @@ export default function AdsOps() {
         <Card title="Practice go-live (4 steps)" subtitle="Everything runs on the practice (mock) account. Activation and budget need an owner approval.">
           <ol className="mb-4 grid gap-2 md:grid-cols-4">
             {STEPS.map((s, i) => (
-              <li key={s} className={cx("rounded-lg border p-3 text-sm", flow.step > i ? "border-green-300 bg-green-50" : flow.step === i ? "border-brand" : "border-line")}>
+              <li key={s} className={cx("rounded-lg border p-3 text-sm", flow.step > i ? "border-good-line bg-good-soft" : flow.step === i ? "border-brand" : "border-line")}>
                 <div className="text-xs text-muted">Step {i + 1}</div><div className="font-medium">{s}</div>
               </li>
             ))}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiError, post, put } from "../api";
-import { Badge, Button, Card, ErrorBox, Field, Input, Loading, PageHeader, Select, Stat, Table, Tabs, useApi, useApp } from "../components/ui";
+import { FileText } from "lucide-react";
+import { Badge, Button, Card, Empty, ErrorBox, Field, Input, Loading, PageHeader, Select, Stat, Table, Tabs, useApi, useApp } from "../components/ui";
 
 export default function KbAdmin() {
   const { openSource } = useApp();
@@ -35,7 +36,8 @@ export default function KbAdmin() {
             { key: "provenance", label: "Provenance", render: (f) => <Badge tone={f.provenance === "owner_confirmed" ? "good" : "neutral"}>{f.provenance}</Badge> },
             { key: "priority", label: "Priority" },
           ]} /></div></Card>
-          <Card title={sel ? sel.title : "Select a file"}>
+          <Card title={sel ? sel.title : "File details"} className="self-start">
+            {!sel && <Empty icon={<FileText />} title="Pick a file" hint="Choose a file on the left to open its source, set its licence and provenance, and change how much the coach relies on it." />}
             {sel && (
               <div className="space-y-2">
                 <Button size="sm" onClick={() => openSource({ id: "S", file: sel.file, lines: "1-1", title: sel.title })}>Open source</Button>

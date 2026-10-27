@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { Activity, ArrowRight } from "lucide-react";
 import { ApiError, post } from "../api";
-import { AiModeBadge, Badge, Button, Card, Citations, ErrorBox, Field, Input, PageHeader, Select, Table, TraceLink, cx, useApi, useApp, DemoBadge } from "../components/ui";
+import { AiModeBadge, Badge, Button, Card, Citations, DemoBadge, Empty, ErrorBox, Field, Input, PageHeader, Select, Table, TraceLink, cx, useApi, useApp } from "../components/ui";
 
 const FIELDS = [
   ["dms_sent", "DMs sent"], ["replies", "Replies"], ["conversations", "Quality conversations"], ["links_sent", "Links sent"],
@@ -55,7 +55,7 @@ export default function Diagnostic() {
           </div>
         </Card>
         <div className="space-y-4">
-          {!res && <Card><p className="text-sm text-muted">Enter your pipeline numbers (or load the sample) and run the diagnosis.</p></Card>}
+          {!res && <Empty icon={<Activity />} title="No diagnosis yet" hint="Enter your pipeline numbers, or load the sample, and run the diagnosis. You get the bottleneck, what it costs a month and the next best action." />}
           {res && (
             <>
               <Card title={res.bottleneck ? `Bottleneck: ${res.bottleneck.label}` : "No bottleneck"} actions={<><AiModeBadge mode={res.mode} /><TraceLink runId={res.run_id} /></>}>

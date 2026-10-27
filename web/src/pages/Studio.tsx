@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { PenLine, Rocket } from "lucide-react";
 import { ApiError, post } from "../api";
-import { Badge, Button, Card, Citations, ErrorBox, PageHeader, TraceLink, cx, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, Empty, ErrorBox, PageHeader, TraceLink, cx, useApp } from "../components/ui";
 import { BriefForm } from "../components/BriefForm";
 
 const LINES: [string, string, string][] = [
@@ -60,7 +60,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
       {fromNba && <div className="mb-4 rounded-lg border border-brand/30 bg-[color-mix(in_oklab,var(--brand)_8%,white)] px-3 py-2 text-sm">Next best action: <b>{fromNba}</b></div>}
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
         {LINES.map(([k, label, hint]) => (
-          <button key={k} onClick={() => setLine(k)} data-line={k} className={cx("focus-ring card p-3 text-left transition", line === k ? "border-brand ring-2 ring-brand/20" : "hover:border-black/20")}>
+          <button key={k} onClick={() => setLine(k)} data-line={k} className={cx("focus-ring card p-3 text-left transition", line === k ? "border-brand ring-2 ring-brand/20" : "hover:border-line-strong")}>
             <div className="text-sm font-semibold">{label}</div>
             <div className="text-[11px] text-muted">{hint}</div>
           </button>
@@ -69,7 +69,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
       <div className="grid gap-4 xl:grid-cols-2">
         <Card title="Brief" subtitle="Blank fields use your business profile, then sensible defaults.">
           <BriefForm value={b} onChange={setB} />
-          <Button tone="primary" className="mt-3" onClick={() => run("line")} loading={busy === "line"}>Draft {LINES.find((l) => l[0] === line)?.[1]}</Button>
+          <Button tone="primary" className="mt-3" onClick={() => run("line")} loading={busy === "line"}>Draft {(LINES.find((l) => l[0] === line)?.[1] || "").toLowerCase()}</Button>
           <ErrorBox error={err} />
         </Card>
         <div className="space-y-4">
@@ -87,7 +87,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
               <Button size="sm" className="mt-3" onClick={() => go(`/queue?ids=${kit.queue_ids.join(",")}`)}>Review {kit.queue_ids.length} drafts</Button>
             </Card>
           )}
-          {!res && !kit && <Card><p className="text-sm text-muted">Pick a line and draft it, or run the Launch kit to queue every line from one brief.</p></Card>}
+          {!res && !kit && <Empty icon={<PenLine />} title="Nothing drafted yet" hint="Pick a line above and draft it, or run the launch kit to queue every line from one brief. Every draft is scored and screened before it reaches the queue." />}
         </div>
       </div>
     </div>

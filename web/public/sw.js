@@ -1,5 +1,5 @@
 // Offline shell: cache the app shell, never cache API responses.
-const CACHE = "operator-shell-v1";
+const CACHE = "operator-shell-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg", "/offline.html"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL).catch(() => null)));

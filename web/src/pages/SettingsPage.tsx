@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { ApiError, post, put } from "../api";
-import { Badge, Button, Card, ErrorBox, Field, Input, Loading, PageHeader, useApi, useApp } from "../components/ui";
+import { Monitor, Moon, Sun } from "lucide-react";
+import { Badge, Button, Card, ErrorBox, Field, Input, Loading, PageHeader, Segmented, useApi, useApp } from "../components/ui";
+import { type ThemePref, useTheme } from "../theme";
 
 export default function SettingsPage() {
   const { me, toast, reloadMe } = useApp();
+  const theme = useTheme();
   const { data, error, loading, reload } = useApi<any>("/settings");
   const [brand, setBrand] = useState<any>(null);
   const [banned, setBanned] = useState("");
@@ -32,6 +35,13 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" subtitle={owner ? "Branding, banned names and the never-invite list. Live switches and AI budgets are server-only." : "Your workspace."} />
       <ErrorBox error={err || error} retry={reload} />
+      <Card title="Appearance" subtitle="Saved on this device. System follows your operating system's light or dark setting." className="mb-4">
+        <Segmented<ThemePref> label="Theme" value={theme.pref} onChange={theme.setPref} options={[
+          { value: "system", label: "System", icon: <Monitor /> },
+          { value: "light", label: "Light", icon: <Sun /> },
+          { value: "dark", label: "Dark", icon: <Moon /> },
+        ]} />
+      </Card>
       {loading && <Loading />}
       {owner && brand && (
         <div className="grid gap-4 xl:grid-cols-2">

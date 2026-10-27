@@ -9,7 +9,7 @@ export default function CommandCentre() {
   const q = data?.kpis.queue || {};
   return (
     <div>
-      <PageHeader title="Command Centre" subtitle="Everything at a glance: KPIs, risk, leads, agent activity, recent runs with traces, quality and the queue." badge={me.is_demo ? <DemoBadge /> : null} />
+      <PageHeader title="Command centre" subtitle="Everything at a glance: KPIs, risk, leads, agent activity, recent runs with traces, quality and the queue." badge={me.is_demo ? <DemoBadge /> : null} />
       <ErrorBox error={error} retry={reload} />
       {loading && <Loading rows={6} />}
       {data && (
@@ -26,7 +26,7 @@ export default function CommandCentre() {
             <Card title="Agent activity (7 days)">
               {Object.keys(data.agents_7d).length === 0 ? <p className="text-sm text-muted">No runs yet.</p> : (
                 <div className="h-56"><ResponsiveContainer><BarChart data={Object.entries(data.agents_7d).map(([k, v]) => ({ agent: k, runs: v }))} layout="vertical" margin={{ left: 30 }}>
-                  <XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="agent" width={90} tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="runs" fill="var(--brand)" radius={4} />
+                  <XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="agent" width={90} tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="runs" fill="var(--viz-1)" radius={4} maxBarSize={22} />
                 </BarChart></ResponsiveContainer></div>
               )}
             </Card>

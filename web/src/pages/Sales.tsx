@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { MousePointerClick, Zap } from "lucide-react";
 import { ApiError, get, post } from "../api";
-import { Badge, Button, Card, Citations, DemoBadge, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, DemoBadge, Empty, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
 
 const TIER_TONE: Record<string, any> = { hot: "bad", warm: "warn", cold: "info" };
 
@@ -46,7 +46,7 @@ export function BurstPanel() {
       {!batch && <p className="text-sm text-muted">Creates 500 fictional leads (DEMO), scores and routes each one, and queues a reply draft per lead. Nothing sends.</p>}
       {st && (
         <div className="space-y-2" data-testid="burst">
-          <div className="h-2 overflow-hidden rounded-full bg-black/5"><div className="h-full bg-brand transition-all" style={{ width: `${pct}%` }} /></div>
+          <div className="h-2 overflow-hidden rounded-full bg-[var(--neutral-soft)]"><div className="h-full bg-brand transition-all" style={{ width: `${pct}%` }} /></div>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge>{st.done + st.failed}/{st.total}</Badge>
             <Badge tone={st.failed ? "bad" : "good"}>{st.failed} failures</Badge>
@@ -167,7 +167,7 @@ export default function Sales() {
                 ]} />}
               </div>
             </Card>
-            <div>{sel ? <LeadDetail key={sel.id} lead={sel} onDone={reload} /> : <Card><p className="text-sm text-muted">Pick a lead to qualify it and draft the setter reply, follow-ups, booking and reminders.</p></Card>}</div>
+            <div>{sel ? <LeadDetail key={sel.id} lead={sel} onDone={reload} /> : <Empty icon={<MousePointerClick />} title="Pick a lead" hint="Select a lead on the left to qualify it and draft the setter reply, follow-ups, booking and reminders." />}</div>
           </div>
         </>
       )}

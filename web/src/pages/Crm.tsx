@@ -22,7 +22,7 @@ export default function Crm() {
   };
   return (
     <div>
-      <PageHeader title="CRM (mock)" subtitle="A GoHighLevel-style pipeline. Ordinary moves apply directly; closed-won and closed-lost need the owner's approval and can be rolled back." />
+      <PageHeader title="CRM" badge={<Badge tone="neutral">Mock</Badge>} subtitle="A GoHighLevel-style pipeline. Ordinary moves apply directly; closed-won and closed-lost need the owner's approval and can be rolled back." />
       <ErrorBox error={err || error} retry={reload} />
       <div className="mb-3 flex gap-2"><Input className="max-w-xs" placeholder="New contact name" value={name} onChange={(e) => setName(e.target.value)} />
         <Button onClick={async () => { await post("/crm/contacts", { name }); setName(""); reload(); }} disabled={!name}>Add contact</Button></div>

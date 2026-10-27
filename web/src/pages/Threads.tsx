@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Archive, Link2, Pencil } from "lucide-react";
+import { Archive, Link2, MessagesSquare, Pencil } from "lucide-react";
 import { ApiError, api, post } from "../api";
 import { Badge, Button, Card, Citations, CopyButton, Empty, ErrorBox, Input, Loading, PageHeader, cx, useApi, useApp } from "../components/ui";
 
@@ -35,7 +35,7 @@ export default function Threads({ rest }: { rest: string[] }) {
           <div className="max-h-[60vh] overflow-auto px-2 pb-2">
             {list.loading && <Loading />}
             <ErrorBox error={list.error} retry={list.reload} />
-            {list.data?.items.length === 0 && <Empty title="No threads" hint="Ask the coach something to start one." />}
+            {list.data?.items.length === 0 && <Empty icon={<MessagesSquare />} title="No threads yet" hint="Every conversation with the coach is saved here." action={<Button size="sm" tone="primary" onClick={() => { location.hash = "#/coach"; }}>Ask the coach</Button>} />}
             {list.data?.items.map((t: any) => (
               <button key={t.id} onClick={() => { setSel(t.id); setTitle(t.title); setLink(null); }} className={cx("focus-ring block w-full truncate rounded-md px-2 py-1.5 text-left text-sm hover:bg-panel-2", sel === t.id && "bg-panel-2 font-medium")}>{t.title}</button>
             ))}

@@ -29,7 +29,7 @@ export default function Clients() {
           { key: "name", label: "Client", render: (c) => <span className="flex items-center gap-1.5">{c.name.replace(" (DEMO)", "")} {isDemo(c.name) && <DemoBadge />}</span> },
           { key: "niche", label: "Niche" },
           { key: "price", label: "Offer price", render: (c) => Number(c.price).toLocaleString() },
-          { key: "go", label: "", render: (c) => <Button size="sm" tone="primary" loading={busy === c.id} onClick={() => fulfil(c.id)}>Run fulfilment</Button> },
+          { key: "go", label: "", className: "text-right", render: (c) => <Button size="sm" loading={busy === c.id} onClick={() => fulfil(c.id)}>Run fulfilment</Button> },
         ]} />}
       </div></Card>
       {res && (

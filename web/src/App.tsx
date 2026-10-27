@@ -1,8 +1,14 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { LogOut, Menu, WifiOff, X, Bot, Sparkles } from "lucide-react";
+import React, { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, m } from "motion/react";
+import {
+  ArrowRight, BadgeCheck, Bot, CircleCheck, ChevronDown, ChevronRight, Crown, GraduationCap, Info, LayoutGrid, LogOut, Menu,
+  MessageCircle, Monitor, Moon, PhoneCall, Plus, Rocket, Search, Send, ShieldCheck, Sun, TriangleAlert, WifiOff, X, Inbox,
+} from "lucide-react";
 import { ApiError, TID, get, onConnection, post } from "./api";
-import { AppCtx, Badge, Button, Citation, ErrorBox, Input, Loading, Me, Pill, SourceModal, TraceDrawer, cx } from "./components/ui";
-import { GROUPS, PAGES } from "./pages/registry";
+import { AppCtx, Avatar, Badge, Button, Citation, ErrorBox, IconButton, Input, Kbd, Loading, Me, Pill, SourceModal, TraceDrawer, cx, modKey } from "./components/ui";
+import { CommandPalette, type Command } from "./components/CommandPalette";
+import { PAGES, PAGE_BY_KEY, groupOf, navFor, tabbarFor } from "./pages/registry";
+import { setThemePref, toggleTheme, useTheme } from "./theme";
 
 class PageBoundary extends React.Component<{ children: React.ReactNode; page: string }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -16,6 +22,7 @@ class PageBoundary extends React.Component<{ children: React.ReactNode; page: st
     if (this.state.error) {
       return (
         <div className="card p-6">
+          <h1 className="t-h2 mb-3">Something went wrong on this screen</h1>
           <ErrorBox error="This screen hit an unexpected error. Your data is safe." retry={() => this.setState({ error: null })} />
         </div>
       );
@@ -36,23 +43,77 @@ function useHash() {
   return { page: parts[0] || "home", rest: parts.slice(1), query: new URLSearchParams(qs || "") };
 }
 
+// ---------------------------------------------------------------- brand
+function luminance(hex: string): number | null {
+  const m6 = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m6) return null;
+  const n = parseInt(m6[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+
 function applyBrand(brand: Me["brand"] | undefined) {
   const r = document.documentElement.style;
-  if (brand?.primary) r.setProperty("--brand", brand.primary);
+  if (brand?.primary) {
+    r.setProperty("--brand", brand.primary);
+    // light brand colours get dark text on buttons; everything else gets white
+    const l = luminance(brand.primary);
+    r.setProperty("--brand-ink", l !== null && l > 0.42 ? "#0b0b0d" : "#ffffff");
+  }
   if (brand?.accent) r.setProperty("--brand-2", brand.accent);
   document.title = brand?.name || "Operator AI";
 }
 
+const initial = (s: string) => (s.trim()[0] || "O").toUpperCase();
+
+function BrandMark({ name, className }: { name: string; className?: string }) {
+  return <span aria-hidden className={cx("brand-mark grid size-8 shrink-0 place-items-center rounded-[9px] text-[14px] font-semibold", className)}>{initial(name)}</span>;
+}
+
+// ---------------------------------------------------------------- small stores
+function readJSON<T>(key: string, fallback: T): T {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeJSON(key: string, v: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(v));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+// ---------------------------------------------------------------- connection
 function ReconnectBar() {
   const [offline, setOffline] = useState(false);
   useEffect(() => onConnection((on) => setOffline(!on)), []);
-  if (!offline) return null;
   return (
-    <div role="status" className="fixed inset-x-0 top-0 z-[60] flex items-center justify-center gap-2 bg-amber-500 px-3 py-1.5 text-sm font-medium text-white">
-      <WifiOff className="size-4" /> Reconnecting to the server…
-    </div>
+    <AnimatePresence>
+      {offline && (
+        <m.div role="status" initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -40, opacity: 0 }}
+          className="fixed inset-x-0 top-2 z-[90] mx-auto flex w-fit items-center gap-2 rounded-full border border-warn-line bg-warn-soft px-3.5 py-1.5 text-[13px] font-medium text-warn-ink shadow-lg backdrop-blur">
+          <WifiOff className="size-4" /> Reconnecting to the server…
+        </m.div>
+      )}
+    </AnimatePresence>
   );
 }
+
+// ---------------------------------------------------------------- sign in
+const DEMO_ROLES: { role: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
+  { role: "owner", icon: Crown, desc: "Sees everything, approves every send" },
+  { role: "coach", icon: GraduationCap, desc: "Accountability, reviews and check-ins" },
+  { role: "setter", icon: Send, desc: "Prospects, openers and outreach" },
+  { role: "closer", icon: PhoneCall, desc: "Booked calls and follow-ups" },
+  { role: "student", icon: Rocket, desc: "Missions, practice and a first client" },
+];
 
 function SignIn({ onDone }: { onDone: () => void }) {
   const [pub, setPub] = useState<any>(null);
@@ -92,140 +153,411 @@ function SignIn({ onDone }: { onDone: () => void }) {
       setBusy(null);
     }
   };
+  const promises = [
+    { icon: BadgeCheck, t: "Grounded in your material", d: "Every answer cites the lesson it came from, or says the material doesn't cover it." },
+    { icon: ShieldCheck, t: "Agentic, but gated", d: "Agents plan, draft and review. You approve every message before it goes out." },
+    { icon: Bot, t: "Keeps working without AI", d: "Rules, templates, retrieval and labelled replays keep every screen useful." },
+  ];
   return (
-    <div className="flex min-h-full items-center justify-center p-4">
-      <div className="grid w-full max-w-4xl gap-4 md:grid-cols-2">
-        <div className="card p-6">
-          <div className="mb-6 flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-xl bg-side text-[#8b96ff]"><Bot className="size-5" /></div>
-            <div>
-              <div className="text-lg font-semibold">{brand}</div>
-              <div className="text-xs text-muted">{isDemo ? "Pitch demo workspace (fictional data)" : "Your programme's AI. Nothing goes out without your approval."}</div>
-            </div>
+    <main className="grid min-h-dvh bg-bg lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <section className="hero-surface hidden flex-col justify-between overflow-hidden border-r border-line p-10 lg:flex xl:p-14" aria-label={`About ${brand}`}>
+        <div className="flex items-center gap-2.5">
+          <BrandMark name={brand} />
+          <span className="text-[15px] font-semibold">{brand}</span>
+        </div>
+        <div className="max-w-lg">
+          <p className="t-display text-ink">Your programme's AI operator.</p>
+          <p className="t-lead mt-4">Trained on your material, speaking in your brand, doing the work for you and your students.</p>
+          <ul className="mt-10 space-y-5">
+            {promises.map(({ icon: I, t, d }) => (
+              <li key={t} className="flex gap-3.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-[10px] border border-line bg-panel text-brand shadow-xs"><I className="size-[18px]" /></span>
+                <span><span className="block font-semibold text-ink">{t}</span><span className="block text-[13.5px] text-muted">{d}</span></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-[12px] text-muted">White-label workspace · {isDemo ? "pitch demo with fictional data" : "private to your programme"}</p>
+      </section>
+      <section className="flex items-center justify-center px-4 py-10 sm:px-8">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+            <BrandMark name={brand} />
+            <span className="text-[15px] font-semibold">{brand}</span>
           </div>
-          <form onSubmit={submit} className="space-y-3" aria-label="Sign in">
+          <h1 className="t-h1">Sign in to {brand}</h1>
+          <p className="mt-1.5 text-[14px] text-muted">{isDemo ? "This is the pitch demo workspace. Every person and number in it is fictional." : "Your programme's AI. Nothing goes out without your approval."}</p>
+          <form onSubmit={submit} className="mt-6 space-y-3" aria-label="Sign in">
             <Input placeholder="Username" value={u} onChange={(e) => setU(e.target.value)} autoComplete="username" aria-label="Username" />
             <Input placeholder="Password" type="password" value={p} onChange={(e) => setP(e.target.value)} autoComplete="current-password" aria-label="Password" />
             {err && <ErrorBox error={err} />}
-            <Button tone="primary" className="w-full" loading={busy === "login"} type="submit">Sign in</Button>
+            <Button tone="primary" className="w-full" size="lg" loading={busy === "login"} type="submit">Sign in</Button>
           </form>
-          <p className="mt-4 text-xs text-muted">Owner password is written to a mode-600 file on the server when the workspace is created. It is never shown here.</p>
-        </div>
-        <div className="card p-6">
-          <div className="mb-1 flex items-center gap-2 text-lg font-semibold"><Sparkles className="size-5 text-demo" /> Pitch demo</div>
-          <p className="mb-4 text-sm text-muted">Opens the separate demo database: a believable, fictional cohort. Every person, business and number there is labelled <Badge tone="demo">DEMO</Badge>.</p>
-          <div className="grid grid-cols-2 gap-2" data-testid="pitch-demo">
-            {["owner", "coach", "setter", "closer", "student"].map((r) => (
-              <Button key={r} onClick={() => demo(r)} loading={busy === r} className="capitalize">{r}</Button>
+          <p className="mt-3 text-[12px] leading-relaxed text-muted">The owner password is written to a private file on the server when the workspace is created. It is never shown here.</p>
+
+          <div className="my-7 flex items-center gap-3 text-[12px] font-medium text-muted">
+            <span className="h-px flex-1 bg-line" /> or open the pitch demo <span className="h-px flex-1 bg-line" />
+          </div>
+          <div className="space-y-2" data-testid="pitch-demo">
+            {DEMO_ROLES.map(({ role, icon: I, desc }) => (
+              <button key={role} type="button" onClick={() => demo(role)} disabled={!!busy} aria-label={`Open the demo as ${role}`}
+                className="focus-ring group flex w-full items-center gap-3 rounded-[12px] border border-line bg-panel px-3 py-2.5 text-left shadow-xs transition-[border-color,box-shadow,background-color] hover:border-brand-line hover:shadow-md disabled:opacity-60">
+                <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-brand-soft text-brand ring-1 ring-brand-line"><I className="size-[18px]" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold capitalize text-ink">{role}</span>
+                  <span className="block truncate text-[12.5px] text-muted">{desc}</span>
+                </span>
+                {busy === role ? <span className="size-4 animate-spin rounded-full border-2 border-brand border-t-transparent" /> : <ArrowRight className="size-4 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />}
+              </button>
             ))}
           </div>
+          <p className="mt-3 flex items-center gap-1.5 text-[12px] text-muted"><Badge tone="demo">DEMO</Badge> marks every fictional person, business and number.</p>
         </div>
+      </section>
+    </main>
+  );
+}
+
+// ---------------------------------------------------------------- theme toggle
+function ThemeToggle({ className, small }: { className?: string; small?: boolean }) {
+  const { theme, toggle } = useTheme();
+  const dark = theme === "dark";
+  return (
+    <IconButton label={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={toggle} className={className} size={small ? "icon-sm" : "icon"}>
+      <AnimatePresence mode="wait" initial={false}>
+        <m.span key={theme} initial={{ rotate: -60, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 60, opacity: 0 }} transition={{ duration: 0.18 }} className="grid place-items-center">
+          {dark ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+        </m.span>
+      </AnimatePresence>
+    </IconButton>
+  );
+}
+
+// ---------------------------------------------------------------- sidebar
+function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; open: boolean; onClose: () => void; onLogout: () => void }) {
+  const sections = useMemo(() => navFor(me.user.role, me.tabs), [me.user.role, me.tabs]);
+  const [collapsed, setCollapsed] = useState<string[]>(() => readJSON<string[]>("op.nav.collapsed", []));
+  const baseId = useId();
+  const toggle = (g: string) => {
+    const next = collapsed.includes(g) ? collapsed.filter((x) => x !== g) : [...collapsed, g];
+    setCollapsed(next);
+    writeJSON("op.nav.collapsed", next);
+  };
+  const roleLabel = `${me.user.role[0].toUpperCase()}${me.user.role.slice(1)}${me.is_demo ? " (DEMO)" : ""}`;
+  const brand = me.brand?.name || "Operator AI";
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (open) setTimeout(() => navRef.current?.querySelector<HTMLElement>("[aria-current=page], a")?.focus({ preventScroll: true }), 50);
+  }, [open]);
+  useEffect(() => {
+    // keep the active link visible in a long sidebar
+    navRef.current?.querySelector("[aria-current=page]")?.scrollIntoView({ block: "center" });
+  }, [page]);
+  return (
+    <aside
+      className={cx(
+        "fixed inset-y-0 left-0 z-50 w-[288px] max-w-[86vw] border-r border-line bg-side shadow-xl transition-[transform,visibility] duration-300 ease-[cubic-bezier(.2,.8,.2,1)]",
+        "md:relative md:inset-auto md:z-auto md:h-full md:w-[260px] md:max-w-none md:translate-x-0 md:border-0 md:bg-transparent md:shadow-none md:visible",
+        open ? "translate-x-0" : "-translate-x-full max-md:invisible",
+      )}
+    >
+      <nav ref={navRef} className="flex h-full flex-col" aria-label="Main">
+        <div className="flex items-center gap-2.5 px-4 pb-3 pt-4 md:pt-3">
+          <BrandMark name={brand} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[14px] font-semibold leading-tight text-ink">{brand}</div>
+            <div className="truncate text-[12px] leading-tight text-muted">{me.tenant.name}</div>
+          </div>
+          <ThemeToggle small className="md:hidden" />
+          <IconButton label="Close menu" size="icon-sm" className="md:hidden" onClick={onClose}><X className="size-4" /></IconButton>
+        </div>
+        <div className="scroll-thin flex-1 overflow-y-auto px-2.5 pb-4 pt-1">
+          {sections.map((s) => {
+            const hasActive = s.items.some((i) => i.key === page);
+            const isOpen = !collapsed.includes(s.group) || hasActive;
+            const listId = `${baseId}-${s.group.replace(/\W+/g, "")}`;
+            return (
+              <div key={s.group} className="mb-3 last:mb-0">
+                <button type="button" onClick={() => toggle(s.group)} aria-expanded={isOpen} aria-controls={listId}
+                  className="focus-ring group/g flex h-7 w-full items-center gap-1 rounded-md px-2 text-[12px] font-medium text-muted transition-colors hover:text-ink">
+                  <span className="flex-1 text-left">{s.group}</span>
+                  <ChevronDown className={cx("size-3.5 opacity-0 transition-[transform,opacity] group-hover/g:opacity-100 group-focus-visible/g:opacity-100", !isOpen && "-rotate-90 opacity-100")} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <m.ul id={listId} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }} className="space-y-px overflow-hidden">
+                      {s.items.map((p) => {
+                        const active = page === p.key;
+                        return (
+                          <li key={p.key}>
+                            <a href={`#/${p.key}`} data-nav={p.key} aria-current={active ? "page" : undefined}
+                              className={cx(
+                                "focus-ring group/nav relative flex h-8 items-center gap-2.5 rounded-[8px] px-2 text-[13.5px] font-medium transition-colors",
+                                active ? "bg-side-active text-ink" : "text-side-ink hover:bg-hover hover:text-ink",
+                              )}>
+                              <p.icon className={cx("size-4 shrink-0", active ? "text-brand" : "text-muted group-hover/nav:text-ink-2")} strokeWidth={1.9} />
+                              <span className="truncate">{p.label}</span>
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </m.ul>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+        <div className="border-t border-line p-2.5">
+          <div className="flex items-center gap-2 rounded-[10px] px-1 py-1">
+            <Avatar name={me.user.display || me.user.role} small />
+            <div className="min-w-0 flex-1 leading-tight" title={`${me.user.display} · ${roleLabel}`}>
+              <div className="truncate text-[13px] font-medium text-ink">{(me.user.display || roleLabel).replace(/\s*\(DEMO\)\s*/g, "")}</div>
+              <div className="mt-0.5 text-[11px] leading-snug tracking-[-0.003em] text-muted" data-testid="whoami">{roleLabel}{me.is_demo ? " · PITCH DEMO" : ""}</div>
+            </div>
+            <IconButton label="Sign out" size="icon-sm" onClick={onLogout}><LogOut className="size-4" /></IconButton>
+          </div>
+        </div>
+      </nav>
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------- header
+function Header({ me, page, onMenu, onSearch }: { me: Me; page: string; onMenu: () => void; onSearch: () => void }) {
+  const current = PAGE_BY_KEY[page];
+  const brand = me.brand?.name || "Operator AI";
+  return (
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-[color-mix(in_oklab,var(--bg)_82%,transparent)] px-3 backdrop-blur-xl backdrop-saturate-150 md:px-5">
+      <IconButton label="Open menu" className="-ml-1 md:hidden" onClick={onMenu}><Menu className="size-5" /></IconButton>
+      <a href="#/" className="focus-ring flex items-center rounded-[9px] md:hidden" aria-label={`${brand} home`}><BrandMark name={brand} className="size-7 text-[13px]" /></a>
+      <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 md:block">
+        <ol className="flex min-w-0 items-center gap-1.5 text-[13px]">
+          <li className="shrink-0 max-xl:hidden"><a href="#/" className="focus-ring rounded text-muted transition-colors hover:text-ink">{me.tenant.name}</a></li>
+          {current && (
+            <>
+              <li aria-hidden className="text-faint max-xl:hidden"><ChevronRight className="size-3.5" /></li>
+              <li className="shrink-0 text-muted">{groupOf(current, me.user.role)}</li>
+              <li aria-hidden className="text-faint"><ChevronRight className="size-3.5" /></li>
+              <li aria-current="page" className="truncate font-medium text-ink">{current.label}</li>
+            </>
+          )}
+        </ol>
+      </nav>
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 md:gap-2">
+        <button type="button" onClick={onSearch} aria-keyshortcuts="Meta+K Control+K"
+          className="focus-ring hidden h-8 w-56 items-center gap-2 rounded-[9px] border border-line bg-panel px-2.5 text-[13px] text-muted shadow-xs transition-colors hover:border-line-strong hover:text-ink lg:flex">
+          <Search className="size-3.5" />
+          <span className="flex-1 text-left">Search or jump to…</span>
+          <Kbd>{modKey === "⌘" ? "⌘K" : "Ctrl K"}</Kbd>
+        </button>
+        {me.is_demo && <Badge tone="demo" className="font-semibold tracking-[0.04em]"><span className="max-sm:hidden">PITCH </span>DEMO</Badge>}
+        <Pill tone={me.ai.enabled ? "good" : "muted"} className="max-w-[46vw]">
+          <span className={cx("size-1.5 shrink-0 rounded-full", me.ai.enabled ? "pulse-dot bg-good" : "bg-faint")} />
+          <span data-testid="ai-pill" title={me.ai.label} className="truncate">
+            {me.ai.enabled ? "AI connected" : <>AI offline<span className="max-xl:hidden">: saved AI runs replay (labelled)</span></>}
+          </span>
+        </Pill>
+        <IconButton label="Search pages and actions" className="lg:hidden" onClick={onSearch}><Search className="size-[18px]" /></IconButton>
+        <ThemeToggle className="max-md:hidden" />
       </div>
+    </header>
+  );
+}
+
+// ---------------------------------------------------------------- phone tab bar
+function TabBar({ me, page, onMore }: { me: Me; page: string; onMore: () => void }) {
+  const tabs = tabbarFor(me.user.role, me.tabs);
+  const inTabs = tabs.some((t) => t.key === page);
+  return (
+    <nav aria-label="Shortcuts" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-[color-mix(in_oklab,var(--panel)_86%,transparent)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 md:hidden">
+      <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}>
+        {tabs.map((p) => {
+          const active = page === p.key;
+          return (
+            <li key={p.key}>
+              <a href={`#/${p.key}`} aria-current={active ? "page" : undefined}
+                className={cx("focus-ring relative flex h-[58px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-brand" : "text-muted")}>
+                {active && <span aria-hidden className="absolute inset-x-5 top-0 h-[2px] rounded-full bg-brand" />}
+                <p.icon className="size-[21px]" strokeWidth={active ? 2.1 : 1.8} />
+                <span className="max-w-full truncate px-1">{p.short || p.label}</span>
+              </a>
+            </li>
+          );
+        })}
+        <li>
+          <button type="button" onClick={onMore} aria-label="More pages"
+            className={cx("focus-ring flex h-[58px] w-full flex-col items-center justify-center gap-1 text-[11px] font-medium", !inTabs ? "text-brand" : "text-muted")}>
+            <LayoutGrid className="size-[21px]" strokeWidth={1.8} />
+            <span>More</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
+// ---------------------------------------------------------------- toasts
+type Toast = { id: number; msg: string; tone: "good" | "bad" | "info" };
+function Toaster({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) => void }) {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[70] flex flex-col items-center gap-2 px-3 md:inset-x-auto md:bottom-5 md:right-5 md:items-end">
+      <AnimatePresence initial={false}>
+        {toasts.map((t) => {
+          const Icon = t.tone === "good" ? CircleCheck : t.tone === "bad" ? TriangleAlert : Info;
+          return (
+            <m.div key={t.id} initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }} transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+              role="status"
+              className="pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-[12px] border border-line bg-panel py-2.5 pl-3 pr-2 text-[13.5px] text-ink shadow-lg">
+              <Icon className={cx("mt-0.5 size-4 shrink-0", t.tone === "good" ? "text-good" : t.tone === "bad" ? "text-bad" : "text-brand")} />
+              <span className="min-w-0 flex-1 leading-snug">{t.msg}</span>
+              <button type="button" className="focus-ring -my-0.5 rounded-md p-1 text-muted hover:bg-hover hover:text-ink" onClick={() => dismiss(t.id)} aria-label="Dismiss"><X className="size-3.5" /></button>
+            </m.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }
 
+// ---------------------------------------------------------------- shell
 function Shell({ me, reloadMe }: { me: Me; reloadMe: () => void }) {
   const { page, rest, query } = useHash();
   const [navOpen, setNavOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [cite, setCite] = useState<Citation | null>(null);
   const [trace, setTrace] = useState<number | null>(null);
-  const [toastMsg, setToast] = useState<{ msg: string; tone: string } | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const scroller = useRef<HTMLDivElement>(null);
+  const toastSeq = useRef(0);
+  const { theme } = useTheme();
   const allowed = useMemo(() => PAGES.filter((p) => me.tabs.includes(p.key)), [me.tabs]);
   const current = allowed.find((p) => p.key === page);
+
+  const dismiss = useCallback((id: number) => setToasts((ts) => ts.filter((t) => t.id !== id)), []);
   const ctx = useMemo(
     () => ({
       me,
       reloadMe,
       openSource: setCite,
       openTrace: setTrace,
+      openPalette: () => setPaletteOpen(true),
       go: (path: string) => { location.hash = path.startsWith("#") ? path : `#${path}`; },
       toast: (msg: string, tone: "good" | "bad" | "info" = "info") => {
-        setToast({ msg, tone });
-        setTimeout(() => setToast(null), 3500);
+        const id = ++toastSeq.current;
+        setToasts((ts) => [...ts.slice(-2), { id, msg, tone }]);
+        setTimeout(() => setToasts((ts) => ts.filter((t) => t.id !== id)), tone === "bad" ? 6000 : 3500);
       },
     }),
     [me, reloadMe],
   );
+
   useEffect(() => {
     setNavOpen(false);
-  }, [page]);
-  const logout = async () => {
+    scroller.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
+    const brand = me.brand?.name || "Operator AI";
+    document.title = current ? `${current.label} · ${brand}` : brand;
+    if (current) {
+      const recent = readJSON<string[]>("op.recent", []).filter((k) => k !== page);
+      writeJSON("op.recent", [page, ...recent].slice(0, 6));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, me.brand?.name]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      } else if (e.key === "Escape" && navOpen) {
+        setNavOpen(false);
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [navOpen]);
+
+  const logout = useCallback(async () => {
     await post("/auth/logout").catch(() => null);
     location.reload();
-  };
-  const roleLabel = `${me.user.role[0].toUpperCase()}${me.user.role.slice(1)}${me.is_demo ? " (DEMO)" : ""}`;
-  const nav = (
-    <nav className="scroll-thin flex h-full flex-col overflow-y-auto bg-side text-side-ink" aria-label="Main">
-      <div className="flex items-center gap-2 px-4 py-4">
-        <div className="grid size-8 place-items-center rounded-lg bg-white/10 text-[#8b96ff]"><Bot className="size-4" /></div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-white">{me.brand?.name || "Operator AI"}</div>
-          <div className="truncate text-[11px]">{me.tenant.name}</div>
-        </div>
-      </div>
-      <div className="flex-1 space-y-4 px-2 pb-4">
-        {GROUPS.map((g) => {
-          const items = allowed.filter((p) => p.group === g);
-          if (!items.length) return null;
-          return (
-            <div key={g}>
-              <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">{g}</div>
-              {items.map((p) => (
-                <a key={p.key} href={`#/${p.key}`} data-nav={p.key}
-                  className={cx("focus-ring flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] hover:bg-white/5 hover:text-white", page === p.key && "bg-side-active text-white")}>
-                  <p.icon className="size-4 shrink-0 opacity-80" /> {p.label}
-                </a>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-      <div className="border-t border-white/10 px-3 py-3 text-xs">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-white" data-testid="whoami">{roleLabel}{me.is_demo ? " · PITCH DEMO" : ""}</span>
-          <button onClick={logout} className="focus-ring rounded p-1 hover:bg-white/10" aria-label="Sign out"><LogOut className="size-4" /></button>
-        </div>
-        <div className="truncate text-white/40">{me.user.display}</div>
-      </div>
-    </nav>
-  );
+  }, []);
+
+  const commands = useMemo<Command[]>(() => {
+    const go = (k: string) => () => { location.hash = `#/${k}`; };
+    const has = (k: string) => me.tabs.includes(k);
+    const role = me.user.role;
+    const out: Command[] = [];
+    const recent = readJSON<string[]>("op.recent", []).filter((k) => k !== page && has(k) && PAGE_BY_KEY[k]).slice(0, 4);
+    for (const k of recent) {
+      const pg = PAGE_BY_KEY[k];
+      out.push({ id: k, label: pg.label, section: "Recent", icon: pg.icon, hint: groupOf(pg, role), run: go(k) });
+    }
+    if (has("coach")) out.push({ id: "act-coach", label: "Ask the coach", section: "Actions", icon: MessageCircle, hint: "Coach", keywords: ["question", "chat", "help"], run: go("coach") });
+    if (has("missions")) out.push({ id: "act-mission", label: "New mission", section: "Actions", icon: Plus, hint: "Missions", keywords: ["start", "task", "create"], run: () => { location.hash = "#/missions?new=1"; } });
+    if (has("queue")) out.push({ id: "act-queue", label: "Open approval queue", section: "Actions", icon: Inbox, hint: "Approvals", keywords: ["approve", "drafts", "review"], run: go("queue") });
+    out.push({ id: "act-theme", label: "Toggle dark mode", section: "Actions", icon: theme === "dark" ? Sun : Moon, hint: theme === "dark" ? "Dark is on" : "Light is on", keywords: ["theme", "light", "appearance", "night"], run: toggleTheme });
+    out.push({ id: "act-system", label: "Use system theme", section: "Actions", icon: Monitor, hint: "Appearance", keywords: ["theme", "auto"], run: () => setThemePref("system") });
+    out.push({ id: "act-signout", label: "Sign out", section: "Actions", icon: LogOut, keywords: ["log out", "logout", "exit"], run: logout });
+    for (const s of navFor(role, me.tabs)) {
+      for (const pg of s.items) out.push({ id: pg.key, label: pg.label, section: "Pages", icon: pg.icon, hint: s.group, keywords: pg.keywords, run: go(pg.key) });
+    }
+    return out;
+    // recompute when the palette opens so "Recent" is fresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me.tabs, me.user.role, theme, page, paletteOpen, logout]);
+
   return (
     <AppCtx.Provider value={ctx}>
-      <div className="flex h-full">
-        <aside className="hidden w-60 shrink-0 md:block">{nav}</aside>
-        {navOpen && (
-          <div className="fixed inset-0 z-40 flex md:hidden" onClick={() => setNavOpen(false)}>
-            <div className="w-64" onClick={(e) => e.stopPropagation()}>{nav}</div>
-            <div className="flex-1 bg-black/40" />
+      <a href="#/" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-[9px] focus:border focus:border-line focus:bg-panel focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:shadow-lg">
+        Skip to content
+      </a>
+      <div className="min-h-dvh md:flex md:h-dvh md:p-2 md:pl-0">
+        <AnimatePresence>
+          {navOpen && <m.div className="fixed inset-0 z-40 bg-[var(--overlay)] md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNavOpen(false)} />}
+        </AnimatePresence>
+        <Sidebar me={me} page={page} open={navOpen} onClose={() => setNavOpen(false)} onLogout={logout} />
+        <div className="flex min-w-0 flex-1 flex-col md:overflow-hidden md:rounded-[14px] md:border md:border-line md:bg-bg md:shadow-sm">
+          <div ref={scroller} className="flex min-h-dvh flex-1 flex-col bg-bg md:min-h-0 md:overflow-y-auto">
+            <Header me={me} page={page} onMenu={() => setNavOpen(true)} onSearch={() => setPaletteOpen(true)} />
+            <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1320px] flex-1 px-4 pb-28 pt-6 outline-none sm:px-6 md:px-8 md:pb-12 md:pt-8">
+              <Suspense fallback={<Loading rows={6} />}>
+                {current ? (
+                  <PageBoundary page={page}>
+                    <m.div key={page} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}>
+                      <current.C rest={rest} query={query} />
+                    </m.div>
+                  </PageBoundary>
+                ) : (
+                  <div className="card mx-auto max-w-lg p-8 text-center">
+                    <h1 className="t-h2">That page isn't available for your role</h1>
+                    <p className="mt-2 text-[14px] text-muted">Ask the workspace owner if you need access.</p>
+                    <Button tone="primary" className="mt-5" onClick={() => { location.hash = "#/"; }}>Back to Day One</Button>
+                  </div>
+                )}
+              </Suspense>
+            </main>
           </div>
-        )}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-bg/90 px-3 py-2 backdrop-blur md:px-6">
-            <button className="focus-ring rounded p-1.5 md:hidden" onClick={() => setNavOpen(true)} aria-label="Open menu"><Menu className="size-5" /></button>
-            <div className="min-w-0 flex-1 truncate text-sm text-muted">{current?.group} {current && "·"} <span className="text-ink">{current?.label}</span></div>
-            {me.is_demo && <Badge tone="demo">PITCH DEMO</Badge>}
-            <Pill tone={me.ai.enabled ? "good" : "muted"}>
-              <span className={cx("size-2 rounded-full", me.ai.enabled ? "bg-good" : "bg-gray-400")} />
-              <span data-testid="ai-pill" title={me.ai.label}>{me.ai.enabled ? "AI connected" : "AI offline: saved AI runs replay (labelled)"}</span>
-            </Pill>
-          </header>
-          <main className="min-w-0 flex-1 px-3 py-5 md:px-8 md:py-7">
-            <Suspense fallback={<Loading rows={6} />}>
-              {current ? <PageBoundary page={page}><current.C rest={rest} query={query} /></PageBoundary> : <div className="card p-6"><p className="font-medium">That page isn't available for your role.</p><a className="text-brand" href="#/">Back to Day One</a></div>}
-            </Suspense>
-          </main>
         </div>
       </div>
+      <TabBar me={me} page={page} onMore={() => setNavOpen(true)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
       <SourceModal cite={cite} onClose={() => setCite(null)} />
       <TraceDrawer runId={trace} onClose={() => setTrace(null)} />
-      {toastMsg && (
-        <div role="status" className={cx("fixed bottom-4 right-4 z-[70] max-w-sm rounded-lg px-4 py-2 text-sm text-white shadow-lg", toastMsg.tone === "bad" ? "bg-bad" : toastMsg.tone === "good" ? "bg-good" : "bg-side")}>
-          {toastMsg.msg}
-          <button className="ml-3 opacity-70" onClick={() => setToast(null)} aria-label="Dismiss"><X className="inline size-3.5" /></button>
-        </div>
-      )}
+      <Toaster toasts={toasts} dismiss={dismiss} />
     </AppCtx.Provider>
+  );
+}
+
+function Boot() {
+  return (
+    <div className="grid min-h-dvh place-items-center bg-bg p-8">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-center gap-2.5"><span className="skeleton size-8 rounded-[9px]" /><span className="skeleton h-4 w-32" /></div>
+        <Loading rows={4} />
+      </div>
+    </div>
   );
 }
 
@@ -259,12 +591,14 @@ export default function App() {
     return () => window.removeEventListener("op:signed-out", h);
   }, [load]);
   return (
-    <>
-      <ReconnectBar />
-      {state === "loading" && <div className="p-8"><Loading rows={4} /></div>}
-      {state === "error" && <div className="p-8"><ErrorBox error={err} retry={load} /></div>}
-      {state === "signin" && <SignIn onDone={load} />}
-      {state === "ready" && me && <Shell me={me} reloadMe={load} />}
-    </>
+    <MotionConfig reducedMotion="user">
+      <LazyMotion features={domAnimation}>
+        <ReconnectBar />
+        {state === "loading" && <Boot />}
+        {state === "error" && <div className="mx-auto max-w-xl p-8"><ErrorBox error={err} retry={load} /></div>}
+        {state === "signin" && <SignIn onDone={load} />}
+        {state === "ready" && me && <Shell me={me} reloadMe={load} />}
+      </LazyMotion>
+    </MotionConfig>
   );
 }

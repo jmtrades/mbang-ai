@@ -120,13 +120,13 @@ export default function Builder({ rest, query }: { rest: string[]; query: URLSea
         {presets.loading && <Loading rows={3} />}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" data-testid="business-picker">
           {presets.data?.presets.map((p: any) => (
-            <button key={p.key} data-preset={p.key} onClick={() => setPicked(p.key)} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left transition", picked === p.key ? "border-brand ring-2 ring-brand/20" : "hover:border-black/20")}>
+            <button key={p.key} data-preset={p.key} onClick={() => setPicked(p.key)} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left transition", picked === p.key ? "border-brand ring-2 ring-brand/20" : "hover:border-line-strong")}>
               <div className="flex w-full items-center justify-between"><Building2 className="size-5 text-brand" /><DemoBadge /></div>
               <div className="font-semibold">{p.name.replace(" (DEMO)", "")}</div>
               <div className="text-xs text-muted">{p.niche} · {p.offer.replace(" (DEMO)", "")}</div>
             </button>
           ))}
-          <button data-preset="own" onClick={() => setPicked("own")} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left", picked === "own" ? "border-brand ring-2 ring-brand/20" : "hover:border-black/20")}>
+          <button data-preset="own" onClick={() => setPicked("own")} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left", picked === "own" ? "border-brand ring-2 ring-brand/20" : "hover:border-line-strong")}>
             <Sparkles className="size-5 text-brand" />
             <div className="font-semibold">Your own business</div>
             <div className="text-xs text-muted">Fill in a short profile</div>

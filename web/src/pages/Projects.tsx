@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Upload } from "lucide-react";
+import { FolderOpen, Trash2, Upload } from "lucide-react";
 import { ApiError, api, del, post } from "../api";
 import { Badge, Button, Card, Empty, ErrorBox, Field, Input, Loading, PageHeader, Select, Table, TextArea, useApi, useApp } from "../components/ui";
 
@@ -66,13 +66,13 @@ export default function Projects() {
           </label>}>
           {me.user.role === "owner" && <label className="mb-2 flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={toKb} onChange={(e) => setToKb(e.target.checked)} /> Add to my knowledge base</label>}
           {receipt && (
-            <div className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm" data-testid="receipt">
+            <div className="mb-3 rounded-[10px] border border-good-line bg-good-soft p-3 text-sm text-good-ink" data-testid="receipt">
               <b>What I read:</b> {receipt.summary}
               {receipt.warnings?.map((w: string) => <div key={w} className="text-xs text-warn">{w}</div>)}
               <pre className="prose-pre mt-1 max-h-24 overflow-auto text-xs text-muted">{receipt.preview}</pre>
             </div>
           )}
-          {ups.data?.items.length === 0 ? <Empty title="No uploads yet" /> : (
+          {ups.data?.items.length === 0 ? <Empty icon={<FolderOpen />} title="No uploads yet" hint="Add a transcript, a PDF, a doc or a screenshot above. You get a receipt of what was read before anything uses it." /> : (
             <Table rows={ups.data?.items || []} cols={[{ key: "filename", label: "File" }, { key: "kind", label: "Kind", render: (u) => <Badge>{u.kind}</Badge> }, { key: "words", label: "Words", render: (u) => u.receipt.words }]} />
           )}
         </Card>
