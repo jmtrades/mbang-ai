@@ -15,6 +15,15 @@ from playwright.sync_api import expect, sync_playwright
 TIMEOUT = 15_000
 
 
+def _settles(locator, n: int) -> bool:
+    """The picker fills in after its data loads and its entrance animation runs; wait for the count."""
+    try:
+        expect(locator).to_have_count(n, timeout=TIMEOUT)
+        return True
+    except AssertionError:
+        return False
+
+
 def click_through(page, base: str, bonus: bool = True) -> list[str]:
     """Run the §11 script once. Returns a list of problems (empty = CLEAN)."""
     problems: list[str] = []
@@ -37,8 +46,8 @@ def click_through(page, base: str, bonus: bool = True) -> list[str]:
     page.locator("[data-nav=builder]").first.click()
     expect(page.get_by_role("heading", name="Build a business's AI team")).to_be_visible(timeout=TIMEOUT)
     picker = page.get_by_test_id("business-picker")
-    check(picker.locator("[data-preset]").count() == 4, "3 presets + own business")
-    check(picker.get_by_text("DEMO", exact=True).count() == 3, "3 businesses marked DEMO")
+    check(_settles(picker.locator("[data-preset]"), 4), "3 presets + own business")
+    check(_settles(picker.get_by_text("DEMO", exact=True), 3), "3 businesses marked DEMO")
     check(picker.get_by_text("Your own business").count() == 1, "'Your own business' card")
 
     # 3. Physio preset -> Generate departments (< 1 s, rules)
