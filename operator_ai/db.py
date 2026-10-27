@@ -195,6 +195,25 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [roleplay] tables
 -- [missions] tables
 -- [prospects] tables
+CREATE TABLE IF NOT EXISTS prospect_icps (
+  id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, data TEXT, updated REAL);
+CREATE TABLE IF NOT EXISTS prospect_claims (
+  key TEXT PRIMARY KEY, prospect_id INTEGER, owner_user_id INTEGER, created REAL);
+CREATE INDEX IF NOT EXISTS prospect_claims_pid ON prospect_claims(prospect_id);
+CREATE TABLE IF NOT EXISTS prospect_suppression (
+  key TEXT PRIMARY KEY, prospect_id INTEGER, reason TEXT, created REAL);
+CREATE TABLE IF NOT EXISTS prospect_imports (
+  id INTEGER PRIMARY KEY, owner_user_id INTEGER, filename TEXT, list_name TEXT, lawful_basis TEXT, lawful_note TEXT,
+  summary TEXT, run_id INTEGER, demo INTEGER DEFAULT 0, created REAL);
+CREATE TABLE IF NOT EXISTS prospect_events (
+  id INTEGER PRIMARY KEY, prospect_id INTEGER, kind TEXT, detail TEXT, actor TEXT, created REAL);
+CREATE INDEX IF NOT EXISTS prospect_events_pid ON prospect_events(prospect_id, created);
+CREATE TABLE IF NOT EXISTS prospect_touches (
+  id INTEGER PRIMARY KEY, prospect_id INTEGER, owner_user_id INTEGER, queue_id INTEGER UNIQUE, touch TEXT, move TEXT,
+  step INTEGER, channel TEXT, family TEXT, sent_at REAL, replied_at REAL, booked_at REAL, demo INTEGER DEFAULT 0,
+  created REAL);
+CREATE INDEX IF NOT EXISTS prospect_touches_owner ON prospect_touches(owner_user_id, family, sent_at);
+CREATE INDEX IF NOT EXISTS prospect_touches_pid ON prospect_touches(prospect_id);
 -- [delivery] tables
 -- [inbound] tables
 -- [client_ops] tables
@@ -213,6 +232,17 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [roleplay]
     # [missions]
     # [prospects]
+    ("prospects", "business", "TEXT"),
+    ("prospects", "canon_email", "TEXT"), ("prospects", "canon_handle", "TEXT"), ("prospects", "canon_domain", "TEXT"),
+    ("prospects", "ad_activity", "TEXT"), ("prospects", "fit_breakdown", "TEXT"), ("prospects", "import_id", "INTEGER"),
+    ("prospects", "lawful_note", "TEXT"), ("prospects", "claim_released", "INTEGER DEFAULT 0"),
+    ("prospects", "client_id", "INTEGER"), ("prospects", "lost_reason", "TEXT"), ("prospects", "stage_changed", "REAL"),
+    ("proposals", "token", "TEXT"), ("proposals", "sections", "TEXT"), ("proposals", "flags", "TEXT"),
+    ("proposals", "call_notes", "TEXT"), ("proposals", "views", "INTEGER DEFAULT 0"), ("proposals", "first_viewed", "REAL"),
+    ("proposals", "last_viewed", "REAL"), ("proposals", "accepted_at", "REAL"), ("proposals", "accepted_name", "TEXT"),
+    ("proposals", "accepted_ip_hash", "TEXT"), ("proposals", "accepted_option", "TEXT"), ("proposals", "sent_at", "REAL"),
+    ("proposals", "mode", "TEXT"), ("proposals", "run_id", "INTEGER"), ("proposals", "demo", "INTEGER DEFAULT 0"),
+    ("proposals", "updated", "REAL"),
     # [delivery]
     # [inbound]
     # [client_ops]
