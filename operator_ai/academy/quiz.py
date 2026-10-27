@@ -16,6 +16,7 @@ at least 8 words; nothing from excluded or garbled lines; dedupe by normalised p
 """
 from __future__ import annotations
 
+import functools
 import math
 import random
 import re
@@ -38,7 +39,7 @@ MIN_SOURCE_WORDS = 8
 # Injected violations for "spot the rule break". Each must be blocked by guardrails (checked at build time).
 VIOLATIONS = [
     ("guarantee", r"guarantee", "We guarantee you will double your bookings in thirty days.", "plain"),
-    ("planted_question", r"plant|question", "Plant a few questions in the chat from a second account.", "plain"),
+    ("planted_question", r"plant", "Plant a few questions in the chat from a second account.", "plain"),
     ("deceptive_subject", r"subject|following up|re:", "Subject: Re: our chat", "plain"),
     ("outreach_price", r"price|discount|fee", "Our programme price is a small monthly fee, so just reply yes.", "outreach"),
     ("fake_scarcity", r"deadline|scarcity|closing|last chance", "Doors are closing tonight, so this is your last chance.", "plain"),
@@ -53,7 +54,8 @@ WRITE_TASKS = {
     "dms": [("dm", "Write a first-touch DM to a business owner in your niche you have never spoken to. "
                    "One question, no price.", {"lead_tier": "cold"})],
     "offer": [("usp", "Write your USP using the course formula.", {})],
-    "show_rate": [("reminder", "Write the reminder you send two hours before a booked call.", {})],
+    # generic on purpose: the timings belong to the owner's own reminder ladder, which the lesson teaches
+    "show_rate": [("reminder", "Write a reminder you'd send before a booked call, following the course's reminder rules.", {})],
     "ads": [("ad", "Write one short ad hook to test against your current best ad.", {})],
     "client_reporting": [("email", "Write the subject line and opening lines of a weekly client report email.",
                           {"client_asset": True})],
@@ -187,7 +189,9 @@ def _cloze_number(L, kp, cite, pools, heading_low) -> list[dict]:
     x = q["value"]
     if q["unit"] in CONTINUOUS_UNITS:
         pads = [T.nice(x * 0.5), T.nice(x * 2), T.nice(x + max(1.0, T.nice(x * 0.25)))]
-    else:  # counts: whole numbers only
+    elif x >= 10:  # larger counts: "under 39 words" vs "under 40 words" would test nothing the lesson taught
+        pads = [T.nice(x * 0.5), T.nice(x * 2), T.nice(x * 1.5), T.nice(x * 3)]
+    else:  # small counts: whole numbers only
         pads = [x + 1, x * 2 if x >= 2 else x + 2, x - 1 if x > 1 else x + 3, x + 2]
     for v in pads:
         if len(distract) >= 3:
@@ -389,7 +393,8 @@ def _scenarios(L, objections: list[dict]) -> list[dict]:
             continue
         cite = {"id": "S1", "file": o["file"], "lines": f"{o['line']}-{o['line']}", "title": o["title"],
                 "snippet": o["source"][:300], "kind": o["kind"]}
-        items.append(_item("scenario", f"A prospect says: “{o['objection']}”. What does the course tell you to do?",
+        said = f"“{o['objection']}”" + ("" if o["objection"].endswith("?") else ".")
+        items.append(_item("scenario", f"A prospect says: {said} What does the course tell you to do?",
                            o["first"], L=L, cite=cite, options=_shuffle(opts, o["objection"]),
                            explanation=f"The course says: “{o['source']}”",
                            checks={"answer_in_source": True, "options_unique": True,
@@ -403,13 +408,17 @@ def _spot(L, pools) -> list[dict]:
     if len(clean) < 3:
         return []
     text_low = " ".join(k["text"] for k in L["key_points"] + L["mistakes"]).lower()
-    order = sorted(VIOLATIONS, key=lambda v: (0 if re.search(v[1], text_low) else 1, VIOLATIONS.index(v)))
+    rules = {code: next((c for t, c in pools.never_lines if re.search(kw, t, re.I)), None) for code, kw, _, _ in VIOLATIONS}
+    # a violation of a rule the course itself states comes first, so the explanation can cite that rule; one the
+    # course never states is cited to nothing rather than to an unrelated lesson line
+    order = sorted(VIOLATIONS, key=lambda v: (0 if rules[v[0]] else 1, 0 if re.search(v[1], text_low) else 1,
+                                              VIOLATIONS.index(v)))
     for code, kw, line, mode in order:
         flags = guardrails.check(line, mode, {"lead_tier": "warm"} if mode == "outreach" else {})
         if not guardrails.blocked(flags):
             continue
         msg = next(f["message"] for f in flags if f["severity"] == "block")
-        rule = next((c for t, c in pools.never_lines if re.search(kw, t, re.I)), None)
+        rule = rules[code]
         opts = [k["text"] for k in clean] + [line]
         if not _unique_options(opts):
             continue
@@ -417,7 +426,7 @@ def _spot(L, pools) -> list[dict]:
         if rule:
             expl += f" The course: “{rule['snippet']}”"
         return [_item("spot", "Three of these lines follow the course. Which one breaks the rules?", line, L=L,
-                      cite=rule or _cite(L, clean[0]["cite"]), options=_shuffle(opts, L["key"] + "spot"),
+                      cite=rule, options=_shuffle(opts, L["key"] + "spot"),
                       explanation=expl, skill="compliance",
                       checks={"violation_blocked_by_guardrails": True, "others_clean": True, "options_unique": True})]
     return []
@@ -565,15 +574,128 @@ def write_threshold(tenant) -> float:
     return float(common.DEFAULT_THRESHOLDS["L2"]["write_score"])
 
 
+# --------------------------------------------------------------------------- write-it: a real attempt first
+# The rubric scores the craft of a draft (one question, short, gives value, plain words, guardrails). On its own it
+# gives "zzz qqq www" 100 as a DM: three nonsense words break none of those rules. A write-it answer is mastery and
+# L2 certificate evidence, so the rubric only counts once the draft is a real attempt at the task: the length of the
+# thing asked for (not a wall of text), written as a message rather than a keyword list or one word repeated, not the
+# task, the feedback or a course line pasted back, and carrying the parts the task asks for.
+WRITE_SHAPE: dict[str, dict] = {
+    "dm": {"label": "DM", "min_words": 8, "max_words": 80, "min_questions": 1},
+    "followup": {"label": "follow-up", "min_words": 8, "max_words": 80},
+    "reminder": {"label": "reminder", "min_words": 8, "max_words": 80, "names_the_call": True},
+    "usp": {"label": "USP", "min_words": 10, "max_words": 60, "usp": True},
+    "ad": {"label": "ad hook", "min_words": 4, "max_words": 40},
+    "email": {"label": "email", "min_words": 12, "max_words": 250, "subject": True},
+}
+GENERIC_SHAPE = {"label": "draft", "min_words": 5, "max_words": 300}
+NOT_AN_ATTEMPT_CAP = 30.0
+PASTE_SHARE = 0.7          # this share of the draft's words comes from one task, feedback or course line
+PASTE_SHARE_ALL = 0.9      # ... or from all of them together
+_WORD = re.compile(r"[A-Za-z0-9$£€][\w'’$%-]*")
+_FUNCTION = {"i'm", "it's", "you're", "we're", "what's", "that's", "here's", "there's", "hi", "hey", "am", "i've",
+             "i'd", "i'll", "you'll", "can't", "don't", "won't", "isn't", "let's",
+             # learners also write in French, Spanish and Portuguese: their function words count too
+             "de", "la", "le", "les", "el", "los", "las", "un", "una", "une", "des", "du", "que", "qui", "y", "et", "e",
+             "en", "es", "est", "para", "por", "pour", "con", "com", "avec", "o", "os", "um", "uma", "je", "tu", "vous",
+             "yo", "mi", "su", "se", "não", "no", "você", "nous", "ce", "como", "comment"}
+_USP_SHAPE = re.compile(r"\bi help\s+(.+?)\s+(?:get|achieve|reach|hit|land|book|fill)\s+(.+?)\s+(?:in|within)\s+(.+?)\s+"
+                        r"(?:through|with|using|by)\s+(.+?)\s+without\s+(\S.*)", re.I | re.S)
+_CALL_WORDS = re.compile(r"\b(call|meeting|session|chat|appointment|consult\w*|zoom)\b", re.I)
+_SUBJECT = re.compile(r"^\s*subject\s*:\s*\S", re.I | re.M)
+# drafts that make the rubric print its fixes, so a fix pasted back as an answer is recognised
+_FIX_PROBES = ("", "Hi? How are you? What now?", "word " * 130, "Subject: Re: following up\nJust checking in.",
+               "Hey, I'm going to show you how businesses grow. Click here, book a call, reply today.",
+               "In today's fast-paced world, let's delve into the synergy of seamless growth.")
+
+
+@functools.lru_cache(maxsize=64)
+def _feedback_texts(asset: str) -> tuple[str, ...]:
+    """Every label and fix the rubric for this asset can show a learner."""
+    out: list[str] = []
+    for rule in rubrics.get(asset):
+        out.append(rule.label)
+        for probe in _FIX_PROBES:
+            try:
+                fix = rule.check(probe, {"mode": "plain", "meta": {}, "banned": []})[2]
+            except Exception:  # noqa: BLE001 - a probe that a rule can't read just adds nothing
+                continue
+            if fix:
+                out.append(fix)
+    return tuple(dict.fromkeys(out))
+
+
+def _lesson_lines(tenant, item: dict) -> list[str]:
+    if tenant is None or not item.get("lesson_id"):
+        return []
+    with tenant.db() as c:
+        r = c.execute("SELECT key_points, mistakes, example FROM academy_lessons WHERE id=?", (item["lesson_id"],)).fetchone()
+    if r is None:
+        return []
+    return [k.get("text", "") for col in ("key_points", "mistakes", "example") for k in (db.jload(r[col], []) or [])
+            if isinstance(k, dict)]
+
+
+def attempt_problems(tenant, item: dict, text: str) -> list[str]:
+    """Why this draft isn't a real attempt at the write-it task yet ([] when it is)."""
+    asset = (item.get("answer") or {}).get("asset", "generic")
+    shape = WRITE_SHAPE.get(asset, GENERIC_SHAPE)
+    label = shape["label"]
+    words = [w.lower().strip("'’-.") for w in _WORD.findall(text or "")]
+    words = [w for w in words if w]
+    n = len(words)
+    probs: list[str] = []
+    if n < shape["min_words"]:
+        probs.append(f"Too short to be a real {label}: write at least {shape['min_words']} words, the way you'd send it.")
+    elif n > shape["max_words"]:
+        probs.append(f"Far too long for a {label} ({n} words): keep it under {shape['max_words']} words.")
+    if n >= 4:
+        function_words = sum(1 for w in words if w in textnorm.STOP or w in _FUNCTION)
+        if function_words == 0 or (n >= 8 and function_words / n < 0.15):
+            probs.append("This reads like a list of keywords, not a message. Write it the way you'd send it.")
+        elif n >= 6 and len(set(words)) / n < 0.5:
+            probs.append("The same few words over and over: write a real message.")
+    mine = set(textnorm.tokens(text or ""))
+    if len(mine) >= 3:
+        sources = [item.get("prompt") or "", (item.get("citation") or {}).get("snippet") or ""]
+        sources += list(_feedback_texts(asset)) + _lesson_lines(tenant, item)
+        toks = [set(textnorm.tokens(s)) for s in sources if s]
+        every = set().union(*toks) if toks else set()
+        if any(len(mine & st) / len(mine) >= PASTE_SHARE for st in toks if st) or \
+                len(mine & every) / len(mine) >= PASTE_SHARE_ALL:
+            probs.append("This repeats the task, the feedback or a line from the lesson instead of answering it. "
+                         "Write your own message.")
+    if text.count("?") < shape.get("min_questions", 0):
+        probs.append(f"A {label} asks one question to start the conversation; this one asks none.")
+    if shape.get("names_the_call") and not _CALL_WORDS.search(text):
+        probs.append("Say which call the reminder is for.")
+    if shape.get("usp"):
+        m = _USP_SHAPE.search(text)
+        if not m or not all(any(t not in textnorm.STOP for t in re.findall(r"[a-z0-9]+", g.lower())) for g in m.groups()):
+            probs.append("Fill in every part of the formula: I help [who] get [outcome] in [timeframe] through [mechanism] "
+                         "without [pain].")
+    if shape.get("subject"):
+        body = " ".join(ln for ln in (text or "").splitlines() if not re.match(r"^\s*subject\s*:", ln, re.I))
+        if not _SUBJECT.search(text or "") or len(body.split()) < 6:
+            probs.append("Write a subject line (Subject: ...) and the opening lines under it.")
+    return probs
+
+
+def _attempt_criterion(problems: list[str]) -> dict:
+    return {"label": "A real attempt at the task", "score": 0, "fix": " ".join(problems), "quote": "", "citations": []}
+
+
 def _grade_write(tenant, item: dict, text: str) -> dict:
     from .. import critique
 
     spec = item["answer"] or {}
     asset = spec.get("asset", "generic")
     meta = dict(spec.get("meta") or {})
+    problems = attempt_problems(tenant, item, text)
     if len(text.split()) < 3:
         return {"correct": False, "score": 0.0, "chosen_option": text[:300],
-                "feedback": {"criteria": [], "flags": [], "citations": [], "note": "Write at least a full sentence."}}
+                "feedback": {"criteria": [_attempt_criterion(problems)], "flags": [], "citations": [], "attempt": problems,
+                             "note": "Write at least a full sentence."}}
     res = rubrics.score(text, asset, meta, guardrails.tenant_banned_names(tenant), tenant=tenant)
     flags = res["flags"]
     cites, by_key = critique.evidence(tenant, res["criteria"])
@@ -582,9 +704,12 @@ def _grade_write(tenant, item: dict, text: str) -> dict:
     score = float(res["score"])
     if guardrails.blocked(flags):
         score = min(score, 40.0)
-    ok = score >= write_threshold(tenant) and not guardrails.blocked(flags)
+    if problems:
+        score = min(score, NOT_AN_ATTEMPT_CAP)
+        crit.insert(0, _attempt_criterion(problems))
+    ok = score >= write_threshold(tenant) and not guardrails.blocked(flags) and not problems
     return {"correct": ok, "score": score, "chosen_option": None,
-            "feedback": {"criteria": crit, "flags": flags, "citations": cites, "mode": "rules"}}
+            "feedback": {"criteria": crit, "flags": flags, "citations": cites, "attempt": problems, "mode": "rules"}}
 
 
 # --------------------------------------------------------------------------- item analytics

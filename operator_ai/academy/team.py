@@ -35,13 +35,24 @@ def _last_active(tenant, uid: int) -> float | None:
 
 
 def _failed_roleplays(tenant, uid: int, days: int = 14) -> int:
+    """Finished role-plays in the last two weeks that didn't pass (the pass mark and the scenario's outcome) or had a
+    compliance flag: the same pass rule the scorecard and the certificate use."""
     since = time.time() - days * common.DAY
     n = 0
     for r in certify._roleplays(tenant, uid, since):
         sc = r["score"]
-        if float(sc.get("total") or 0) < 75 or int(sc.get("compliance_flags") or 0) > 0:
+        if sc.get("passed") is not True or int(sc.get("compliance_flags") or 0) > 0:
             n += 1
     return n
+
+
+def _path_mastery(tenant, u: dict) -> float | None:
+    """The mastery the learner sees on their own path and the L1 certificate checks: across the path's skills, with
+    a skill never practised counting as 0.5. None before the first answer."""
+    if not srs.mastery(tenant, u["id"]):
+        return None
+    path = common.path_def(tenant, common.ROLE_PATH.get(u["role"], "compliance_core"))
+    return srs.path_mastery(tenant, u["id"], path["skills"])["overall"]
 
 
 def _leeches(tenant, uid: int) -> int:
@@ -83,10 +94,10 @@ def cohort(tenant, viewer: dict) -> dict:
             risk.append(f"{failed} role-plays below the bar")
         if leech:
             risk.append(f"{leech} question{'s' if leech != 1 else ''} keep slipping")
-        overall = [v["chance"] for v in m.values()]
         people.append({"id": u["id"], "name": u["display"] or u["username"], "role": u["role"],
                        "level": _level(tenant, u["id"]), "last_active": last,
-                       "mastery": round(sum(overall) / len(overall), 3) if overall else None,
+                       "mastery": _path_mastery(tenant, u),
+                       "mastery_path": common.ROLE_PATH.get(u["role"], "compliance_core"),
                        "spark": _overall_spark(m), "skills": {k: v["chance"] for k, v in m.items()},
                        "at_risk": risk, "demo": "(DEMO)" in (u["display"] or "")})
     skills = [s for s in common.SKILLS if s in skills_seen]
@@ -286,10 +297,9 @@ def impact(tenant, viewer: dict) -> dict:
     rows = []
     sent, replies = _outreach_counts(tenant)
     for u in _learners(tenant, viewer):
-        m = srs.mastery(tenant, u["id"])
-        if not m:
+        mast = _path_mastery(tenant, u)
+        if mast is None:
             continue
-        mast = sum(v["chance"] for v in m.values()) / len(m)
         out = {"id": u["id"], "mastery": mast}
         if sent.get(u["id"], 0) >= MIN_SENT_FOR_RATE:
             out["reply_rate"] = min(1.0, replies.get(u["id"], 0) / sent[u["id"]])

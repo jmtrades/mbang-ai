@@ -37,6 +37,7 @@ EVENT_HELP = {
     "gap_agree": "agree that their summary is right", "gap_thin": "say their summary is only partly right",
     "gap_unsupported": "say you never said that", "offer_early": "push back: they pitched too early",
     "next_step_accept": "agree to the next step", "neutral": "acknowledge briefly",
+    "unclear": "say politely that you didn't follow what they said",
 }
 
 

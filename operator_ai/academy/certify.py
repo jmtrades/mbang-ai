@@ -3,12 +3,15 @@ the optional approval gate for a person's own outreach.
 
 L1 Foundations  every published lesson in the path done; mastery >= 0.8 overall and >= 0.7 per skill;
                 Compliance core passed (for every other path).
-L2 Practitioner 3 role-plays on distinct scenarios scoring 75+ with zero compliance flags; 5 write-it answers 80+.
+L2 Practitioner 3 role-plays on distinct scenarios passed in exam mode (the scorer's pass, outcome included),
+                scoring 75+ with zero compliance flags; 5 different write-it answers 80+ that are real attempts
+                (quiz.attempt_problems).
 L3 Certified    a timed 30-question exam from the approved exam pool at 85%+ (answers never sent to the browser,
-                24h retake cooldown, the coach pauses while it is open); one role-play signed off by a coach or
-                the owner; real work read from the system, never self-reported: setter 50+ approved own DMs with
-                at most 5% guardrail holds; closer 10+ consented, reviewed calls averaging 70+; growth operator a
-                first client signed; coach 10 graded learner role-plays within +-10 of the rules score.
+                24h retake cooldown, the coach pauses while it is open); one role-play a coach or the owner signed
+                off at a passing grade; real work read from the system, never self-reported: setter 50+ approved own
+                DMs with at most 5% guardrail holds; closer 10+ consented, reviewed calls averaging 70+; growth
+                operator a first client signed on someone else's evidence (an accepted proposal, a win the owner or a
+                coach recorded); coach 10 graded learner role-plays within +-10 of the rules score.
 L4 Lead         calibration: 20+ graded role-plays with 80%+ agreement (within +-10).
 
 Certificates expire after 180 days. 3+ guardrail blocks on a person's own items within 30 days expire their
@@ -162,7 +165,7 @@ def done_keys(tenant, user_id: int) -> set[str]:
 def _roleplays(tenant, user_id: int, since: float = 0.0) -> list[dict]:
     try:
         with tenant.db() as c:
-            rows = db.rows(c.execute("SELECT id, scenario_key, score, status, updated, created FROM roleplays "
+            rows = db.rows(c.execute("SELECT id, scenario_key, score, status, updated, created, exam, hints FROM roleplays "
                                      "WHERE user_id=? AND status='complete'", (user_id,)))
     except Exception:  # noqa: BLE001
         return []
@@ -173,6 +176,32 @@ def _roleplays(tenant, user_id: int, since: float = 0.0) -> list[dict]:
         r["score"] = db.jload(r["score"], {}) or {}
         out.append(r)
     return out
+
+
+def unaided_pass(r: dict, min_score: float) -> bool:
+    """A role-play that is L2 evidence: the scorer passed it (its pass mark AND the scenario's own outcome, so quitting
+    before the next step never counts), it scored at least `min_score` with no compliance flags, and nothing told the
+    learner what to do next. That is an exam-mode session: no live hints, a seed the server picks, three attempts a
+    day, and a run trace without live scoring (a practice session's trace shows each turn's acts and the persona's
+    events as they happen, even with the hint line switched off)."""
+    sc = r.get("score") or {}
+    return (sc.get("passed") is True and float(sc.get("total") or 0) >= min_score
+            and int(sc.get("compliance_flags") or 0) == 0 and bool(r.get("exam")))
+
+
+def signed_off(r: dict) -> bool:
+    """A coach or the owner signed this role-play off: a grade under the role-play pass mark is a review, not a sign-off,
+    and a session with a compliance flag is never signed off."""
+    from ..roleplay.score import PASS_SCORE
+
+    sc = r.get("score") or {}
+    so = sc.get("signoff")
+    if not isinstance(so, dict) or not so.get("by") or int(sc.get("compliance_flags") or 0) > 0:
+        return False
+    try:
+        return so.get("score") is None or float(so["score"]) >= PASS_SCORE
+    except (TypeError, ValueError):
+        return False
 
 
 def _graded_by(tenant, grader: dict) -> list[dict]:
@@ -262,11 +291,12 @@ def criteria(tenant, user: dict, path_key: str, level: str) -> list[dict]:
                               ",".join("?" * len(path["skills"])), (uid, since, *path["skills"])).fetchone()[0]
             out.append(_crit("fresh_answers", "10 right answers since your last certificate ended", n >= 10, n, 10, "", "practice"))
     elif level == "L2":
-        rps = [r for r in _roleplays(tenant, uid, since)
-               if float(r["score"].get("total") or 0) >= th["roleplay_score"] and int(r["score"].get("compliance_flags") or 0) == 0]
+        rps = [r for r in _roleplays(tenant, uid, since) if unaided_pass(r, th["roleplay_score"])]
         distinct = len({r["scenario_key"] for r in rps})
-        out.append(_crit("roleplays", f"{th['roleplays']} role-plays on different scenarios scoring {th['roleplay_score']}+ "
-                                      "with no compliance flags", distinct >= th["roleplays"], distinct, th["roleplays"], "", "roleplay"))
+        out.append(_crit("roleplays", f"{th['roleplays']} role-plays on different scenarios passed in exam mode, "
+                                      f"scoring {th['roleplay_score']}+ with no compliance flags", distinct >= th["roleplays"],
+                         distinct, th["roleplays"], "Practice with hints doesn't count, and a session that ends before its "
+                                                    "outcome doesn't pass.", "roleplay"))
         with tenant.db() as c:
             rows = c.execute("SELECT a.answer FROM academy_attempts a JOIN academy_quiz_items i ON i.id=a.quiz_item_id "
                              "WHERE a.user_id=? AND i.kind='write' AND a.score>=? AND a.created>?",
@@ -281,9 +311,9 @@ def criteria(tenant, user: dict, path_key: str, level: str) -> list[dict]:
         out.append(_crit("exam", f"Timed exam of {th['exam_items']} questions at {int(th['exam_pass'] * 100)}%+",
                          ex is not None and ex >= th["exam_pass"], None if ex is None else f"{round(ex * 100)}%",
                          f"{int(th['exam_pass'] * 100)}%", "", "exam"))
-        signed = [r for r in _roleplays(tenant, uid, since) if isinstance(r["score"].get("signoff"), dict)
-                  and r["score"]["signoff"].get("by")]
-        out.append(_crit("signoff", "One role-play signed off by a coach or the owner", bool(signed), len(signed), 1, "", "roleplay"))
+        signed = [r for r in _roleplays(tenant, uid, since) if signed_off(r)]
+        out.append(_crit("signoff", "One role-play a coach or the owner signed off at a passing grade", bool(signed), len(signed),
+                         1, "", "roleplay"))
         out.append(_real_work(tenant, user, path_key, th, since))
     elif level == "L4":
         graded = _graded_by(tenant, user)
@@ -356,18 +386,31 @@ def _real_work(tenant, user: dict, path_key: str, th: dict, since: float) -> dic
 
 
 def _clients_won(tenant, user: dict, since: float) -> int:
-    n = 0
+    """Clients this person signed, on someone else's evidence: a proposal the client accepted on its page, a win the
+    owner or a coach recorded, or a client the programme put on file for them. A prospect the learner moved to "won"
+    themselves is self-reported and never counts. Each client counts once (a won prospect and the client record it
+    created are one client)."""
+    me = f"{user['username']}("
+    self_won: set = set()
+    won: set = set()
     with tenant.db() as c:
+        for p in c.execute("SELECT id, client_id FROM prospects WHERE owner_user_id=? AND stage='won' AND "
+                           "COALESCE(updated,created,0)>?", (user["id"], since)).fetchall():
+            ev = c.execute("SELECT actor FROM prospect_events WHERE prospect_id=? AND kind='won' ORDER BY id DESC LIMIT 1",
+                           (p["id"],)).fetchone()
+            key = ("client", p["client_id"]) if p["client_id"] else ("prospect", p["id"])
+            actor = (ev["actor"] if ev else "") or ""
+            (self_won if not actor or actor.startswith(me) else won).add(key)
         if user.get("student_id"):
-            n += c.execute("SELECT COUNT(*) FROM clients WHERE student_id=? AND COALESCE(created,0)>?",
-                           (user["student_id"], since)).fetchone()[0]
-        n += c.execute("SELECT COUNT(*) FROM prospects WHERE owner_user_id=? AND stage='won' AND COALESCE(updated,created,0)>?",
-                       (user["id"], since)).fetchone()[0]
-        for r in c.execute("SELECT payload FROM app_events WHERE name='client_won' AND created>?", (since,)):
+            for r in c.execute("SELECT id FROM clients WHERE student_id=? AND COALESCE(created,0)>?",
+                               (user["student_id"], since)):
+                if ("client", r["id"]) not in self_won:
+                    won.add(("client", r["id"]))
+        for r in c.execute("SELECT id, payload FROM app_events WHERE name='client_won' AND created>?", (since,)):
             p = db.jload(r["payload"], {}) or {}
             if p.get("owner_user_id") == user["id"] and not p.get("prospect_id"):
-                n += 1
-    return n
+                won.add(("client", p["client_id"]) if p.get("client_id") else ("event", r["id"]))
+    return len(won)
 
 
 # --------------------------------------------------------------------------- ladder, awarding

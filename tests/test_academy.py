@@ -451,8 +451,12 @@ def test_real_work_evidence_is_read_from_the_system(demo_tenant):
     assert certify._real_work(t, student, "growth_operator", th, 0)["met"]  # the demo student has a client on file
     assert not certify._real_work(t, closer, "growth_operator", th, 0)["met"]
     with t.db() as c:
-        c.execute("INSERT INTO prospects(owner_user_id,name,stage,demo,created,updated) VALUES(?,?,?,?,?,?)",
-                  (closer["id"], "Harbour Physio (DEMO)", "won", 1, db.now(), db.now()))
+        pid = c.execute("INSERT INTO prospects(owner_user_id,name,stage,demo,created,updated) VALUES(?,?,?,?,?,?)",
+                        (closer["id"], "Harbour Physio (DEMO)", "won", 1, db.now(), db.now())).lastrowid
+    assert not certify._real_work(t, closer, "growth_operator", th, 0)["met"]  # nobody recorded who won it
+    with t.db() as c:  # the client accepted the proposal on its page
+        c.execute("INSERT INTO prospect_events(prospect_id,kind,detail,actor,created) VALUES(?,?,?,?,?)",
+                  (pid, "won", "{}", "prospect", db.now()))
     assert certify._real_work(t, closer, "growth_operator", th, 0)["met"]
 
 
