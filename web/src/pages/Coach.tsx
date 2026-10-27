@@ -5,7 +5,38 @@ import { AiModeBadge, Badge, Button, Card, Citations, Empty, ErrorBox, FlagList,
 
 type Msg = { role: string; content: string; meta?: any };
 
-const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit" };
+const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission" };
+
+function StartMission({ draft }: { draft: any }) {
+  const { go, toast } = useApp();
+  const [busy, setBusy] = useState(false);
+  const [startedId, setStartedId] = useState<number | null>(null);
+  const [err, setErr] = useState<ApiError | null>(null);
+  const start = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await post("/missions", { goal: draft.goal, template: draft.template, answers: draft.answers || {} });
+      setStartedId(r.id);
+      toast("Mission started", "good");
+      go(`/missions?id=${r.id}`);
+    } catch (e) {
+      setErr(e as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-2 space-y-1">
+      {startedId ? (
+        <Button size="sm" onClick={() => go(`/missions?id=${startedId}`)}>Open the mission <ArrowRight className="size-3.5" /></Button>
+      ) : (
+        <Button size="sm" tone="primary" loading={busy} onClick={start}>Start this mission <ArrowRight className="size-3.5" /></Button>
+      )}
+      <ErrorBox error={err} />
+    </div>
+  );
+}
 
 // Browser speech: recognition may use the browser's online speech service; read-aloud is local.
 const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -68,6 +99,7 @@ function ExternalChips({ items }: { items?: any[] }) {
 
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
+  if (meta.intent === "goal" && meta.mission_draft) return <StartMission draft={meta.mission_draft} />;
   if (meta.intent === "metrics" && meta.bottleneck) {
     const b = meta.bottleneck;
     return (
