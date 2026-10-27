@@ -570,8 +570,32 @@ def _research_fit(sc: StepCtx) -> StepResult:
             ok += 1
         except Exception:  # noqa: BLE001 - one prospect failing must not stop the others
             errors += 1
-    msg = f"Researched {ok} prospect(s)" + (f"; {errors} couldn't be researched" if errors else "") + "."
-    return StepResult("done", msg, output={"researched": ok, "errors": errors})
+    # an import already stores each prospect's own fields as facts, so "researched 0" would hide what matters: how many
+    # of the best-fit prospects have one specific, verifiable detail an opener can use (the playbook's personalisation)
+    best = prospects(sc.tenant, sc.uid, "AND COALESCE(do_not_contact,0)=0", limit=top)
+    personal = sum(1 for p in best if has_specific(p))
+    msg = (f"{personal} of {len(best)} best-fit prospects have a specific detail an opener can use (a line from their "
+           "bio, their ads or a connection in common)")
+    msg += "." if personal >= len(best) else (". Add one fact to the others on the Prospects page (a launch, an ad, a "
+                                               "line from their page) so their openers can be personal too.")
+    if ok:
+        msg += f" Researched {ok} that had no facts yet."
+    if errors:
+        msg += f" {errors} couldn't be researched."
+    return StepResult("done", msg, output={"researched": ok, "errors": errors, "personal": personal, "total": len(best),
+                                           "href": "#/prospects"})
+
+
+def has_specific(p: dict) -> bool:
+    """The prospect carries a real, verifiable detail (a bio line, ads running, a mutual connection) that the prospects
+    feature can turn into a personal opener."""
+    mod = feature("prospects")
+    if mod is None:
+        return False
+    try:
+        return bool(mod._quote_candidates(p) or mod._ads_fact(p) or mod._mutual_fact(p))
+    except Exception:  # noqa: BLE001 - a different prospects module: no claim either way
+        return False
 
 
 # --------------------------------------------------------------------------- outreach
@@ -616,10 +640,20 @@ def _drafted_today(sc: StepCtx) -> int:
 
 
 def _contacted_ids(sc: StepCtx) -> set[int]:
+    """Prospects that already have a first message (this mission's, or one the person wrote on the Prospects page)."""
     with sc.tenant.db() as c:
         return {r[0] for r in c.execute(
             "SELECT DISTINCT json_extract(meta,'$.prospect_id') FROM queue WHERE json_extract(meta,'$.owner_user_id')=? "
-            "AND json_extract(meta,'$.first_touch')=1 AND status NOT IN ('rejected','cancelled')", (sc.uid,)) if r[0]}
+            "AND (json_extract(meta,'$.first_touch')=1 OR json_extract(meta,'$.touch')='opener') "
+            "AND status NOT IN ('rejected','cancelled')", (sc.uid,)) if r[0]}
+
+
+def opener_moves() -> list[str]:
+    """The opener styles a plan change may switch to: the prospects feature's own styles when it drafts the openers
+    (a mutual-connection opener needs a recorded connection, so it isn't a style to switch a whole block to)."""
+    mod = feature("prospects")
+    moves = [m for m in getattr(mod, "MOVES", []) if m != "mutual"] if mod is not None else []
+    return moves or list(MOVE_ORDER)
 
 
 def _opener_candidates(sc: StepCtx, n: int) -> list[dict]:
@@ -685,6 +719,10 @@ def _daily_openers(sc: StepCtx) -> StepResult:
     fn = feature_fn("prospects", "draft_openers_bulk")
     qids: list[int] = []
     source = "rules"
+    feature_ran = False
+    skipped: list[str] = []
+    # a confirmed plan change picks the opener style; until then the prospects feature's own chooser does
+    pref = sc.ctx.get("opener_move") if sc.ctx.get("moves_tried") else None
     if fn is not None:
         try:
             # the prospects feature drafts research-checked openers (its own caps, claims and never-invite checks);
@@ -694,11 +732,23 @@ def _daily_openers(sc: StepCtx) -> StepResult:
                           "email": [p["id"] for p in picks if not p.get("handle") and p.get("email")]}
             for ch, ids in by_channel.items():
                 if ids:
-                    qids += qids_from(sc.tenant, fn(sc.tenant, sc.user, ch, ids=ids, limit=len(ids)), mark)
+                    kw = {"ids": ids, "limit": len(ids), **({"move": pref} if pref else {})}
+                    res = fn(sc.tenant, sc.user, ch, **kw)
+                    qids += qids_from(sc.tenant, res, mark)
+                    skipped += [s.get("reason") for s in ((res.get("skipped") if isinstance(res, dict) else None) or [])
+                                if isinstance(s, dict)]
             source = "prospects"
+            feature_ran = True
         except Exception:  # noqa: BLE001 - fall back to the generic rules openers
             log.warning("prospects.draft_openers_bulk failed; using rules openers")
             qids = []
+    if not qids and feature_ran:
+        # the feature looked at these prospects and drafted none (its own daily cap, a first message already waiting):
+        # generic openers beside it would message the same people twice or go round its cap
+        nxt = next_morning(sc.now)
+        why = "; ".join(sorted({r for r in skipped if r})) or "nothing to draft"
+        return StepResult("waiting_time", f"No openers drafted today ({why}). Next block {when(nxt)}.",
+                          output={"next_block_at": nxt, "skipped": skipped[:20]}, due=nxt)
     if not qids:
         qids = _fallback_openers(sc, picks)
         source = "rules"
@@ -778,17 +828,19 @@ def _reply_watch(sc: StepCtx) -> StepResult:
     if sc.ctx.get("won"):
         return StepResult("done", "Goal won.")
     reps = events_of(sc.tenant, sc.mid, "reply")
-    pos = [e for e in reps if e["detail"].get("positive")]
-    return StepResult("waiting_event", f"{len(reps)} repl{'y' if len(reps) == 1 else 'ies'} so far, {len(pos)} positive. "
-                      "Waiting for the next one.", output={"replies": len(reps), "positive": len(pos)},
+    # one reply can arrive twice (the inbound message and the prospect's stage move): count people, not events
+    people = {(e["detail"].get("party_type"), e["detail"].get("party_id")) for e in reps}
+    pos = {(e["detail"].get("party_type"), e["detail"].get("party_id")) for e in reps if e["detail"].get("positive")}
+    return StepResult("waiting_event", f"{len(people)} repl{'y' if len(people) == 1 else 'ies'} so far, {len(pos)} "
+                      "positive. Waiting for the next one.", output={"replies": len(people), "positive": len(pos)},
                       wait={"events": ["reply_received", "prospect_stage", "client_won"]},
                       cycle=len(pos) > (sc.step.get("cycles") or 0))
 
 
-def _slots(tenant, n: int = 2) -> list[dict]:
+def _slots(tenant, n: int = 2, after: float | None = None) -> list[dict]:
     from .. import calendar
 
-    return calendar.free_slots(tenant, n)
+    return calendar.free_slots(tenant, n, after=after)
 
 
 @step_type("booking", "Booking", "For each positive reply, draft a booking message with two fresh times. Waits for the "
@@ -804,16 +856,21 @@ def _booking(sc: StepCtx) -> StepResult:
     if target and booked >= int(target):
         return StepResult("done", f"{booked} call(s) booked: target of {target} reached.")
     with sc.tenant.db() as c:
-        have = {r[0] for r in c.execute("SELECT json_extract(meta,'$.prospect_id') FROM queue WHERE kind='booking_dm' "
-                                        "AND json_extract(meta,'$.mission_id')=?", (sc.mid,))}
-        stale = db.rows(c.execute("SELECT id, meta FROM queue WHERE kind='booking_dm' AND json_extract(meta,'$.mission_id')=? "
+        # this mission's booking messages: its own drafts, and inbound reply drafts it put the times into
+        have = {r[0] for r in c.execute("SELECT json_extract(meta,'$.prospect_id') FROM queue WHERE json_extract(meta,"
+                                        "'$.mission_id')=? AND (kind='booking_dm' OR json_extract(meta,'$.slots') IS NOT NULL)",
+                                        (sc.mid,))}
+        stale = db.rows(c.execute("SELECT id, meta, body FROM queue WHERE json_extract(meta,'$.mission_id')=? "
                                   "AND status IN ('pending','needs_human') AND json_extract(meta,'$.slots_valid_until')<?",
                                   (sc.mid, sc.now)))
-    for r in stale:  # proposed times went by while the draft waited: refresh them
-        slots = _slots(sc.tenant)
-        if len(slots) >= 2:
+    for r in stale:  # proposed times went by while the draft waited: refresh them, keeping the rest of the message
+        old = (db.jload(r["meta"], {}) or {}).get("slots") or []
+        slots = _slots(sc.tenant, after=sc.now)
+        if len(slots) >= 2 and len(old) >= 2:
+            body = r["body"].replace(old[0]["label"], "\x00slot0\x00").replace(old[1]["label"], "\x00slot1\x00")
+            body = body.replace("\x00slot0\x00", slots[0]["label"]).replace("\x00slot1\x00", slots[1]["label"])
             try:
-                queue.edit(sc.tenant, r["id"], _booking_text(slots), "system", "owner",
+                queue.edit(sc.tenant, r["id"], body, "system", "owner",
                            meta_patch={"slots": slots, "slots_valid_until": slots[0]["start"]})
             except queue.QueueError:
                 pass
@@ -827,30 +884,97 @@ def _booking(sc: StepCtx) -> StepResult:
         rcpt = (p or {}).get("handle") or (p or {}).get("email") or e["detail"].get("handle")
         if not rcpt or (p and p.get("do_not_contact")):
             continue
-        slots = _slots(sc.tenant)
+        slots = _slots(sc.tenant, after=sc.now)
         if len(slots) < 2:
             continue
-        item = draft(sc, "booking_dm", _booking_text(slots), channel="instagram_dm" if (p or {}).get("handle") else "email",
-                     recipient=rcpt, title=f"Booking times for {(p or {}).get('name') or 'prospect'}",
-                     meta={"prospect_facing": True, "lead_tier": "warm", "prior_contact": True, "prospect_id": pid,
-                           "slots": slots, "slots_valid_until": slots[0]["start"]})
+        handled, qid = _times_into_reply(sc, e["detail"].get("queue_id"), pid, slots)
+        if handled:
+            # the inbound reply already answers them: one message with the two times, never a second one beside it
+            have.add(pid)
+            if qid:
+                new_ids.append(qid)
+            continue
+        email = not (p or {}).get("handle")
+        text = _booking_text(slots, f"Hi {_first((p or {}).get('name'))},")
+        meta = {"prospect_facing": True, "lead_tier": "warm", "prior_contact": True, "prospect_id": pid,
+                "slots": slots, "slots_valid_until": slots[0]["start"]}
+        if email:
+            text += STOP_LINE
+            meta["subject"] = _thread_subject(sc, pid)
+        item = draft(sc, "booking_dm", text, channel="email" if email else "instagram_dm", recipient=rcpt,
+                     title=f"Booking times for {(p or {}).get('name') or 'prospect'}", meta=meta)
         new_ids.append(item["id"])
         have.add(pid)
-    open_ids = q_states(sc.tenant, sc.step.get("queue_ids") or [])["open"] + new_ids
+    open_ids = list(dict.fromkeys(q_states(sc.tenant, sc.step.get("queue_ids") or [])["open"] +
+                                  q_states(sc.tenant, new_ids)["open"]))
     msg = f"{booked} call(s) booked" + (f" of {target}" if target else "") + "."
     if new_ids:
-        msg += f" {len(new_ids)} booking message(s) drafted with two fresh times each."
+        msg += f" {len(new_ids)} booking message(s) with two fresh times each."
+    with sc.tenant.db() as c:  # wake when the first proposed time goes by, so a waiting draft never offers a past time
+        valid = c.execute("SELECT MIN(json_extract(meta,'$.slots_valid_until')) FROM queue WHERE json_extract(meta,"
+                          "'$.mission_id')=? AND status IN ('pending','needs_human','held') AND "
+                          "json_extract(meta,'$.slots_valid_until') IS NOT NULL", (sc.mid,)).fetchone()[0]
     res_kw = {"queue_ids": new_ids, "cycle": booked > (sc.step.get("cycles") or 0),
               "wait": {"events": ["reply_received", "booking_made", "prospect_stage", "client_won"]},
-              "output": {"booked": booked}}
+              "output": {"booked": booked},
+              # a time that couldn't be refreshed (a full calendar) is tried again in 15 minutes, not on every tick
+              "due": max(float(valid), sc.now + 15 * 60) if valid else None}
     if open_ids:
         return StepResult("waiting_approval", msg + f" {len(open_ids)} waiting for approval.", **res_kw)
     return StepResult("waiting_event", msg + " Waiting for the next booking.", **res_kw)
 
 
-def _booking_text(slots: list[dict]) -> str:
-    return (f"Great to hear. Would {slots[0]['label']} or {slots[1]['label']} work for a 20-minute call? "
+STOP_LINE = "\n\nIf you'd rather not hear from me again, just reply STOP."
+
+
+def _booking_text(slots: list[dict], greeting: str = "") -> str:
+    lead = f"{greeting} thanks for getting back to me." if greeting else "Great to hear."
+    return (f"{lead} Would {slots[0]['label']} or {slots[1]['label']} work for a 20-minute call? "
             "If neither suits, send me a time that does.")
+
+
+def _thread_subject(sc: StepCtx, pid) -> str:
+    """Reply in the thread the prospect answered: the subject of the last email we sent them."""
+    with sc.tenant.db() as c:
+        r = c.execute("SELECT json_extract(meta,'$.subject') FROM queue WHERE json_extract(meta,'$.prospect_id')=? AND "
+                      "channel='email' AND status='sent' AND json_extract(meta,'$.subject') IS NOT NULL ORDER BY id DESC "
+                      "LIMIT 1", (pid,)).fetchone()
+    subj = (r[0] if r else "") or ""
+    if not subj:
+        return "A time for a quick call"
+    return subj if subj.lower().startswith("re:") else f"Re: {subj}"[:150]
+
+
+def _times_into_reply(sc: StepCtx, qid, pid, slots: list[dict]) -> tuple[bool, int | None]:
+    """A positive reply that came in through the inbox already has a reply drafted for it. Put the two times into that
+    draft (same thread, same greeting) instead of drafting a second message. Returns (handled, queue id to track).
+    Edited by a person: kept as they wrote it. Already approved or sent: they were answered, nothing more is drafted."""
+    if isinstance(qid, bool) or not isinstance(qid, int):
+        return False, None
+    it = queue.get(sc.tenant, qid, scrub=False)
+    meta = (it or {}).get("meta") or {}
+    if it is None or meta.get("prospect_id") != pid or meta.get("owner_user_id") not in (None, sc.uid) \
+            or (meta.get("mission_id") and meta.get("mission_id") != sc.mid):
+        return False, None
+    if it["status"] in QUEUE_NOT_SENT:
+        return False, None  # they rejected the inbox's answer: draft the booking message instead
+    if it["status"] not in QUEUE_OPEN:
+        return True, None
+    if not it.get("original_body"):
+        m = re.match(r"\s*(Hi [^,\n]{1,40},)", it["body"] or "")
+        text = _booking_text(slots, m.group(1) if m else "Hi,")
+        if it["channel"] == "email":
+            text += STOP_LINE
+        try:
+            edited = queue.edit(sc.tenant, qid, text, "system", "owner",
+                                meta_patch={"slots": slots, "slots_valid_until": slots[0]["start"]})
+        except queue.QueueError:
+            return False, None
+        if it["status"] == "needs_human" and edited["status"] == "pending":
+            with sc.tenant.db() as c:  # an unclear reply still needs a person's eyes first
+                c.execute("UPDATE queue SET status='needs_human' WHERE id=? AND status='pending'", (qid,))
+    tag_queue(sc.tenant, [qid], sc.mid, sc.step["id"], sc.uid, own=True)
+    return True, qid
 
 
 @step_type("reminder_ladder", "Confirmations and reminders", "Confirm each booked call and draft 24-hour and 2-hour "
@@ -1007,14 +1131,17 @@ def _proposal(sc: StepCtx) -> StepResult:
         return StepResult("skipped", "Goal won before a proposal was needed.")
     d = _last_party(sc, "showed", "booked") or {}
     pid = d.get("party_id")
+    # what they said on this call (recorded when the call was marked as held): never another prospect's notes
+    same = sc.ctx.get("call_party") in (None, pid)
+    notes = (sc.ctx.get("call_notes") or "") if same else ""
+    nums = sc.ctx.get("numbers") if same and isinstance(sc.ctx.get("numbers"), dict) and sc.ctx.get("numbers") else None
     build, send = feature_fn("proposals", "build"), feature_fn("proposals", "send")
     if build is not None and pid:
         try:
             mark = queue_watermark(sc.tenant)
             price = sc.answers.get("price")
             pricing = {"retainer": price, "currency": sc.answers.get("currency") or "USD"} if price else None
-            prop = build(sc.tenant, sc.user, int(pid), call_notes=sc.ctx.get("call_notes") or "", pricing=pricing,
-                         numbers=sc.ctx.get("numbers") if isinstance(sc.ctx.get("numbers"), dict) else None)["proposal"]
+            prop = build(sc.tenant, sc.user, int(pid), call_notes=notes, pricing=pricing, numbers=nums)["proposal"]
             got: list[int] = []
             if send is not None and not prop.get("blocked"):
                 p = prospect(sc.tenant, pid, sc.uid) or {}
@@ -1037,7 +1164,7 @@ def _proposal(sc: StepCtx) -> StepResult:
                           "step, or Retry once another call has happened.", wait={"events": ["booking_made"]})
     a = sc.answers
     who = p.get("name") or "your business"
-    body = (f"Proposal for {who}\n\nWhere you are: {sc.ctx.get('call_notes') or 'what you told me on the call'}.\n"
+    body = (f"Proposal for {who}\n\nWhere you are: {notes or 'what you told me on the call'}.\n"
             f"What we'll do: {a.get('offer') or 'the programme we discussed'}.\n"
             "First 30 days: agree the numbers, fix the one biggest bottleneck, set up weekly reporting.\n"
             "Days 31-60: build on what worked; test one new thing at a time.\n"
@@ -1074,7 +1201,9 @@ def _client_onboarding_start(sc: StepCtx) -> StepResult:
     if fn is not None and cid:
         try:
             # idempotent: client ops already started it on client_won; this makes sure (and never drafts a second kickoff)
-            res = fn(sc.tenant, int(cid), owner_user_id=sc.uid, actor=sc.actor)
+            pid = sc.ctx.get("won_prospect_id")
+            res = fn(sc.tenant, int(cid), owner_user_id=sc.uid, actor=sc.actor,
+                     **({"prospect_id": pid} if isinstance(pid, int) else {}))
             return StepResult("done", "Client onboarding started.",
                               output={"client_id": cid, "source": "client_ops", "kickoff_queue_id": res.get("kickoff_queue_id")})
         except Exception:  # noqa: BLE001 - fall back to an onboarding mission
@@ -1144,21 +1273,146 @@ def _diagnose(sc: StepCtx) -> StepResult:
                                                  "next_best_action": res.get("next_best_action")}, context=patch)
 
 
+# Playbook fixes for the sales-chain stages a Studio line doesn't target (sales-setting-closing: booking window and
+# pre-call priming, reminder cadence and no-show recovery, qualification). Message templates the person adapts and
+# sends from their own account; each waits for approval like every other draft.
+FIX_KITS: dict[str, list[tuple[str, str]]] = {
+    "show": [
+        ("Show-up fix: booking confirmation (send within five minutes of booking)",
+         "You're booked in, thank you. On the call we'll go through what you want from the next 90 days, where things "
+         "are now, and whether working together makes sense, so you'll leave with a clear answer either way. Could you "
+         "reply \"confirmed\" so I know this reached you? If the time stops working, tell me and we'll move it."),
+        ("Show-up fix: reminder 24 hours before the call",
+         "Looking forward to our call tomorrow. To make the most of it, have last month's numbers to hand (enquiries, "
+         "calls booked, sales). If the time no longer works, reply and I'll send two new options."),
+        ("Show-up fix: reminder 2 hours before the call",
+         "See you in two hours. Reply 1 to confirm, or tell me if you need a different time and we'll move it."),
+        ("Show-up fix: no-show rebook (send within fifteen minutes)",
+         "Sorry we missed each other today, these things happen. Would tomorrow or later this week suit you better? "
+         "Send me a time that works and I'll book it in."),
+    ],
+    "booked": [
+        ("Booking fix: one qualifying question before the times",
+         "Before I suggest a time, a quick question so the call is worth your while: what's the one thing you'd most "
+         "want to change in the next 90 days?"),
+        ("Booking fix: offer two specific times instead of a link",
+         "Easiest is if I suggest a couple of times. Would tomorrow morning or Thursday afternoon work for a 20-minute "
+         "call? If neither suits, send me a time that does."),
+        ("Booking fix: a gentle nudge the next day when no time was picked",
+         "No rush at all. If it's easier, tell me which day suits and I'll find a time around it."),
+    ],
+    "conversation": [
+        ("Conversation fix: ask about their goal first",
+         "Thanks for getting back to me. Out of interest, what would you most like to change in the business over the "
+         "next few months?"),
+        ("Conversation fix: ask for their current numbers",
+         "Got it. Roughly how many new enquiries come in each month right now, and how many of them turn into calls?"),
+        ("Conversation fix: ask what they've tried",
+         "That makes sense. What have you tried so far to fix it, and what happened?"),
+    ],
+    "link": [
+        ("Call offer fix: offer the call once you know their goal",
+         "Thanks, that's really helpful. From what you've said, a short call is probably the quickest way to map out the "
+         "next step. Would that be useful, or would you rather keep chatting here for now?"),
+        ("Call offer fix: when they ask for details first",
+         "Happy to explain. It depends a little on where you are now, so rather than guess, could I ask two quick "
+         "questions here, or would a 20-minute call be easier?"),
+    ],
+}
+
+
+def answers_brief(sc: StepCtx) -> dict:
+    """The brief from the person's own answers, filled from what they already told the workspace (their prospect
+    profile's niche and offer), with the audience taken from the niche: their copy names who they serve, never a
+    generic "business owners" when the niche is known."""
+    a = sc.answers
+    b = {k: a.get(k) for k in ("niche", "offer", "price", "outcome", "audience") if a.get(k) not in (None, "")}
+    fn = feature_fn("prospects", "get_icp")
+    if fn is not None and not (b.get("niche") and b.get("offer")):
+        try:
+            icp = fn(sc.tenant, sc.uid) or {}
+            for k in ("niche", "offer"):
+                if not b.get(k) and str(icp.get(k) or "").strip():
+                    b[k] = str(icp[k]).strip()[:200]
+        except Exception:  # noqa: BLE001 - no profile yet: the answers alone
+            pass
+    if b.get("niche") and not b.get("audience"):
+        b["audience"] = b["niche"]
+    return b
+
+
+def _fix_kit(sc: StepCtx, stage: str) -> StepResult:
+    bn = (sc.ctx.get("diagnosis") or {}).get("bottleneck") or {}
+    ids = [draft(sc, "mission_draft", body, title=title,
+                 meta={"draft": "fix_kit", "stage": stage, "prospect_facing": True, "lead_tier": "warm",
+                       "prior_contact": True, "template": True})["id"] for title, body in FIX_KITS[stage]]
+    label = (bn.get("label") or stage).lower()
+    return StepResult("waiting_approval", f"{len(ids)} message templates to fix {label} (from the appointment-setting "
+                      "playbook) waiting for approval. Use them from your own account once approved.", queue_ids=ids,
+                      output={"qids": ids, "line": "playbook", "stage": stage})
+
+
+def _webinar_promo(sc: StepCtx) -> StepResult:
+    """Promotion ads for THIS webinar: its title, its date, the niche, and a free registration (never "book a call")."""
+    from .. import brief as brief_mod
+    from .. import critique
+
+    b = brief_mod.build(sc.tenant, answers_brief(sc))["brief"]
+    title = sc.answers.get("offer") or sc.mission.get("goal") or "the live training"
+    wid = sc.ctx.get("webinar_id")
+    get = feature_fn("webinars", "get")
+    if wid and get is not None:
+        try:
+            title = (get(sc.tenant, int(wid)) or {}).get("title") or title
+        except Exception:  # noqa: BLE001 - the answers' title is fine
+            pass
+    at = when(sc.answers.get("event_date")) or "soon"
+    n, o, pain = b["niche"], b["outcome"], b["pain"]
+    ads = [("Free live training", f"Free live training for {n}: {title}.\n{at}. We'll walk through how {n} get {o} "
+                                  f"without {pain}, step by step, with time for your questions.\nRegister free."),
+           ("The question", f"{n[:1].upper() + n[1:]}: how do you get {o} without {pain}?\nJoin the free live training "
+                            f"\"{title}\" on {at}.\nRegister free and bring your questions."),
+           ("The date", f"Live on {at}: {title}.\nA free training for {n} who want {o}.\nRegister free.")]
+    mark = queue_watermark(sc.tenant)
+    got = []
+    for name, body in ads:
+        meta = {"client_asset": True, "webinar_promo": True, "studio_line": "ads", "webinar_id": wid}
+        res = critique.loop(sc.tenant, body, "ad", meta, brief=str(b), run=sc.run)
+        item = queue.add(sc.tenant, "ad_copy", res["final"], channel="manual", title=f"[Webinar ad] {name}: {title}"[:200],
+                         meta={**meta, "score": res["score"], "needs_human": res["needs_human"]}, run_id=sc.run.id,
+                         actor=sc.actor, demo=sc.tenant.is_demo)
+        if res["needs_human"] and item["status"] == "pending":  # as the Studio does: the rubric wants a person's edit
+            with sc.tenant.db() as c:
+                c.execute("UPDATE queue SET status='needs_human' WHERE id=? AND status='pending'", (item["id"],))
+        got.append(item["id"])
+    got = qids_from(sc.tenant, got, mark)
+    tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid)  # ads keep the usual ad-copy approval rules
+    return StepResult("waiting_approval", f"{len(got)} promotion ads for the webinar on {at} waiting for approval.",
+                      queue_ids=got, output={"qids": got, "line": "ads", "purpose": "webinar"})
+
+
 @step_type("studio_line", "Draft the fix", "Run the Studio line for the fix (drafts reviewed against the rubric and the "
-           "guardrails), then approve them.", wait_for="approval", outbound=True, success="Drafts approved",
+           "guardrails), then approve them. A diagnosed sales-chain bottleneck gets the playbook's fix for that stage.",
+           wait_for="approval", outbound=True, success="Drafts approved",
            params={"line": Param("enum", None, choices=("outreach", "ads", "funnels", "creatives", "webinars", "training",
-                                                         "delivery"))})
+                                                         "delivery")),
+                   "purpose": Param("enum", None, choices=("webinar",), help="webinar: promote the mission's webinar")})
 def _studio_line(sc: StepCtx) -> StepResult:
     from .. import studio
 
     qids = sc.out.get("qids") or []
     if qids:
-        return _approval_result(sc, qids, "Studio drafts", "Studio drafts approved.")
+        return _approval_result(sc, qids, "Drafts", "Drafts approved.")
+    stage =((sc.ctx.get("diagnosis") or {}).get("bottleneck") or {}).get("key")
+    if not sc.params.get("line") and stage in FIX_KITS:
+        return _fix_kit(sc, stage)
+    if sc.params.get("purpose") == "webinar" or (sc.mission.get("template") == "launch_webinar"
+                                                 and sc.params.get("line") == "ads"):
+        return _webinar_promo(sc)
     line = sc.params.get("line") or ((sc.ctx.get("next_best_action") or {}).get("line")) or "outreach"
     if line not in studio.LINES:
         line = "outreach"
-    a = sc.answers
-    brief = {k: a.get(k) for k in ("niche", "offer", "price", "outcome", "audience") if a.get(k)}
+    brief = answers_brief(sc)
     mark = queue_watermark(sc.tenant)
     res = studio.run_line(sc.tenant, line, brief, sc.user)
     got = qids_from(sc.tenant, res.get("queue_ids"), mark)
@@ -1211,7 +1465,7 @@ def _webinar_chain(sc: StepCtx) -> StepResult:
     if qids:
         return _approval_result(sc, qids, "Webinar assets", "Webinar assets approved.")
     a = sc.answers
-    brief = {k: a.get(k) for k in ("niche", "offer", "price", "outcome", "audience") if a.get(k)}
+    brief = answers_brief(sc)
     if a.get("event_date"):
         brief["date"] = when(a["event_date"])
     mark = queue_watermark(sc.tenant)
@@ -1262,8 +1516,12 @@ def _wait_until(sc: StepCtx) -> StepResult:
            success="Marked done", human_action="Mark done", outcomes=("done",),
            params={"task": Param("str", "Do the task"), "href": Param("str", "")})
 def _human_task(sc: StepCtx) -> StepResult:
-    return StepResult("blocked_human", str(sc.params.get("task") or "Do the task, then mark it done."),
-                      output={"href": sc.params.get("href") or None}, wait={"events": []})
+    task = str(sc.params.get("task") or "Do the task, then mark it done.")
+    if "{" in task:  # a template's task can name the person's own niche and offer
+        a = {k: str(v) for k, v in answers_brief(sc).items() if isinstance(v, str) and v.strip()}
+        task = re.sub(r"\{(niche|offer)\}", lambda mm: a.get(mm.group(1)) or {"niche": "the people you serve",
+                                                                            "offer": "what you offer"}[mm.group(1)], task)
+    return StepResult("blocked_human", task, output={"href": sc.params.get("href") or None}, wait={"events": []})
 
 
 # --------------------------------------------------------------------------- ads
@@ -1440,13 +1698,26 @@ def _weekly_client_ops(sc: StepCtx) -> StepResult:
         return StepResult("blocked_human", "No clients yet: this runs once you have one.",
                           wait={"events": ["client_won", "context_updated"], "recheck": True})
     fn = feature_fn("client_ops", "weekly_ops")
+    this_week = feature_fn("client_ops", "week_report")
+    if cid and clients and sc.answers.get("weekday") and feature_fn("client_ops", "update") is not None:
+        try:  # one report day per client: client ops' own weekly loop runs on the day this mission chose
+            if int(clients[0].get("report_weekday") or 0) != wd:
+                feature_fn("client_ops", "update")(sc.tenant, int(clients[0]["id"]), {"report_weekday": wd}, sc.actor,
+                                                   (sc.user or {}).get("role") or "owner")
+        except Exception:  # noqa: BLE001 - the mission still runs on its own day
+            log.warning("could not align the client's report day")
     ids: list[int] = []
     for cl in clients:
         got: list[int] = []
+        had = this_week(sc.tenant, int(cl["id"]), sc.now) if this_week is not None else None
+        if had:  # client ops' weekly loop already drafted this week's report: that's the one, not a second
+            tag_queue(sc.tenant, [had], sc.mid, sc.step["id"], sc.uid, own=True)
+            ids.append(had)
+            continue
         if fn is not None:
             try:
                 mark = queue_watermark(sc.tenant)
-                res = fn(sc.tenant, int(cl["id"]), sc.user)
+                res = fn(sc.tenant, int(cl["id"]), sc.user, now=sc.now)
                 got = qids_from(sc.tenant, [res.get("report_queue_id"), res.get("monthly_queue_id")], mark)
                 tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
             except Exception:  # noqa: BLE001
@@ -1462,6 +1733,10 @@ def _weekly_client_ops(sc: StepCtx) -> StepResult:
             got = [draft(sc, "client_report", body, channel="email", title=f"Weekly report: {cl['name']}",
                          meta={"client_asset": True, "client_id": cl["id"], "subject": "Your weekly numbers"})["id"]]
         ids += got
+    if not q_states(sc.tenant, ids)["open"]:  # this week's reports were already decided
+        nxt = next_weekday(sc.now, wd)
+        return StepResult("waiting_time", f"This week's reports decided. Next run {when(nxt)}.", queue_ids=ids,
+                          output={"block_qids": [], "next_at": nxt}, due=nxt, cycle=True)
     return StepResult("waiting_approval", f"{len(ids)} weekly report(s) drafted for approval.", queue_ids=ids,
                       output={"block_qids": ids, "next_at": None})
 

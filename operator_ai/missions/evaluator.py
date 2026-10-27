@@ -21,6 +21,10 @@ from .registry import DAY, add_event, clock, events_of
 REPLY_FLOOR, REPLY_MIN_SENDS = 0.04, 80
 SHOW_FLOOR, SHOW_MIN_CALLS = 0.50, 4
 ZERO_CALLS_DAY = 14
+STALL_DAYS = 3  # a step waiting this long on its person (an answer, an approval, a certification) is escalated once
+# steps whose wait is not the person's to end: an optional review, a call booked for later, a prospect's reply or yes,
+# a date or a checkpoint
+NOT_STALLABLE = ("call_review", "take_call", "reply_watch", "await_win", "checkpoint", "wait_until")
 
 
 def _distinct(evs: list[dict], pred=lambda d: True) -> int:
@@ -105,13 +109,16 @@ def plan_vs_actual(m: dict, met: dict) -> list[dict]:
 
 # --------------------------------------------------------------------------- rules
 def _next_move(ctx: dict) -> str:
+    """The next opener style to try, in the vocabulary of whoever drafts the openers (the prospects feature's styles
+    when it is installed, so the change really reaches the next block)."""
+    order = registry.opener_moves()
     cur = ctx.get("opener_move") or "question"
     tried = list(ctx.get("moves_tried") or [cur])
-    for mv in registry.MOVE_ORDER:
+    for mv in order:
         if mv not in tried:
             return mv
-    i = registry.MOVE_ORDER.index(cur) if cur in registry.MOVE_ORDER else 0
-    return registry.MOVE_ORDER[(i + 1) % len(registry.MOVE_ORDER)]
+    i = order.index(cur) if cur in order else 0
+    return order[(i + 1) % len(order)]
 
 
 def rules(tenant, m: dict, met: dict, now: float) -> list[dict]:
@@ -141,6 +148,25 @@ def rules(tenant, m: dict, met: dict, now: float) -> list[dict]:
                     "diff": {"context": {}, "remove": [],
                              "add": [{"skey": "reminders", "type": "reminder_ladder", "title": "Confirmations and reminders",
                                       "params": {}, "depends": ["booking"] if "booking" in skeys else []}]}})
+    stuck = []
+    for s in steps:
+        st = s["status"]
+        if st in ("ready", "running"):  # a recheck about to run: judge the wait it is in
+            st = (s.get("output") or {}).get("_st") or st
+        waits_on_person = st in ("blocked_human", "waiting_approval") or (s["agent"] == "cert_gate" and st == "waiting_event")
+        if not waits_on_person or s["agent"] in NOT_STALLABLE or marks.get(f"stalled:{s['id']}"):
+            continue
+        since = (s.get("output") or {}).get("_since") or s.get("updated") or now
+        if now - since >= STALL_DAYS * DAY:
+            what = {"waiting_approval": "drafts waiting for approval",
+                    "blocked_human": "waiting for an answer or a task"}.get(st, "certification not done yet")
+            stuck.append((s, f"'{s['title']}' ({what}, {int((now - since) // DAY)} days)"))
+    if stuck:
+        why = "Stuck on its person for days: " + "; ".join(t for _, t in stuck) + "."
+        out.append({"rule": "stalled:" + ",".join(str(s["id"]) for s, _ in stuck), "kind": "mission_stalled", "mark": 1,
+                    "marks": {f"stalled:{s['id']}": 1 for s, _ in stuck}, "why": why,
+                    "escalate": (why + " Next: " + (stuck[0][0].get("message") or ""))[:600],
+                    "diff": {"context": {}, "remove": [], "add": []}})
     days = (now - (m.get("created") or now)) / DAY
     if m["template"] in templates.OUTREACH_TEMPLATES and days >= ZERO_CALLS_DAY and met["lagging"]["calls_booked"] == 0 \
             and not ctx.get("won") and not marks.get("zero_calls_day14"):
@@ -169,8 +195,9 @@ def evaluate(tenant, m: dict, now: float | None = None, actor: str = "system") -
     marks = dict((m.get("context") or {}).get("rule_marks") or {})
     for f in fs:
         if f.get("escalate"):
-            escalate(tenant, m, f["rule"], f["escalate"], key=f["rule"])
+            escalate(tenant, m, f.get("kind") or f["rule"], f["escalate"], key=f["rule"])
         marks[f["rule"]] = f["mark"]
+        marks.update(f.get("marks") or {})
         if f["diff"].get("add") or f["diff"].get("remove") or f["diff"].get("context"):
             rid = store_replan(tenant, m["id"], "rules", f["rule"], {**f["diff"], "why": f["why"]})
             if rid:
@@ -246,7 +273,8 @@ def apply_replan(tenant, mid: int, rid: int, actor: str, accept: bool = True) ->
     ctx = m["context"]
     patch: dict = {}
     for k, ch in (diff.get("context") or {}).items():
-        if k in ("opener_move",) and isinstance(ch, dict) and ch.get("to") in registry.OPENER_MOVES:
+        if k in ("opener_move",) and isinstance(ch, dict) and (ch.get("to") in registry.OPENER_MOVES
+                                                            or ch.get("to") in registry.opener_moves()):
             patch[k] = ch["to"]
             patch["moves_tried"] = list(dict.fromkeys(list(ctx.get("moves_tried") or [ch.get("from") or "question"]) + [ch["to"]]))
     patch["decisions"] = (list(ctx.get("decisions") or []) + [{"at": now, "rule": r["rule"], "source": r["source"],

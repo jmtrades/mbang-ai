@@ -40,6 +40,7 @@ KINDS = {
     "rubric_citation": "Role-play scoring rule needs checking",
     "mission_off_track": "Mission off track",
     "mission_step_failed": "Mission step keeps failing",
+    "mission_stalled": "Mission waiting on a person for days",
     "zero_calls_day14": "No calls booked by day 14",
     "other": "Needs a person",
 }
