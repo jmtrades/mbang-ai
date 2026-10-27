@@ -51,13 +51,15 @@ def command_centre(tenant) -> dict:
     }
 
 
-def morning_brief(tenant) -> dict:
-    """Today's few decisions, ranked by rules. Read-only: computing it changes nothing."""
+def morning_brief(tenant, user: dict | None = None) -> dict:
+    """Today's few decisions, ranked by rules. Read-only: computing it changes nothing. For a coach it covers only
+    what a coach may see: the queue items their role decides, their own students, and no clients or logins."""
     from . import console, diagnostic
     from .agents import accountability
 
+    coach = user["id"] if user and user.get("role") == "coach" else None
     items = []
-    qc = queue.counts(tenant)
+    qc = queue.counts(tenant, queue.decidable_kinds("coach"), coach) if coach else queue.counts(tenant)
     if qc.get("held"):
         items.append({"score": 100, "title": f"Fix {qc['held']} held draft(s)", "why": "Guardrails stopped them; they can't go out until edited.",
                       "href": "#/queue?status=held"})
@@ -67,13 +69,13 @@ def morning_brief(tenant) -> dict:
     if qc.get("pending"):
         items.append({"score": 60 + min(20, qc["pending"]), "title": f"Approve or reject {qc['pending']} pending draft(s)",
                       "why": "Nothing is sent until you decide.", "href": "#/queue?status=pending"})
-    b = accountability.board(tenant)
+    b = accountability.board(tenant, coach)
     high = [s for s in b["students"] if s["level"] == "high"]
     if high:
         items.append({"score": 70 + min(25, len(high)), "title": f"{len(high)} student(s) at high risk",
                       "why": "; ".join(f"{s['name']}: {s['signals'][0]['label']}" for s in high[:3]), "href": "#/students"})
     with tenant.db() as c:
-        rows = db.rows(c.execute("SELECT name, metrics, price FROM clients"))
+        rows = [] if coach else db.rows(c.execute("SELECT name, metrics, price FROM clients"))
     worst = None
     for r in rows:
         a = diagnostic.analyse({**db.jload(r["metrics"], {}), "offer_price": r["price"]})
@@ -82,7 +84,8 @@ def morning_brief(tenant) -> dict:
     if worst:
         items.append({"score": 65, "title": f"Funnel bottleneck: {worst[0]} — {worst[1]['label']}",
                       "why": f"≈ {worst[1]['monthly_cost']:,} a month at current numbers.", "href": "#/diagnostic"})
-    missing = [i for i in console.integrations(tenant) if i["status"] == "NEEDS_LOGIN" and i["key"] in ("meta", "google_calendar", "instagram")]
+    missing = [] if coach else [i for i in console.integrations(tenant)
+                                if i["status"] == "NEEDS_LOGIN" and i["key"] in ("meta", "google_calendar", "instagram")]
     if missing:
         items.append({"score": 30, "title": f"{len(missing)} login(s) missing for going live",
                       "why": ", ".join(i["name"] for i in missing), "href": "#/integrations"})

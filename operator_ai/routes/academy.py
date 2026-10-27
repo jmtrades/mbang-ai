@@ -305,6 +305,9 @@ def cert_revoke(cert_id: Id, b: RevokeBody, ctx: Ctx = Depends(TAB)):
 @router.post("/academy/build")
 def start_build(ctx: Ctx = Depends(TAB)):
     _owner(ctx)
+    from .. import ratelimit
+
+    ratelimit.demo_heavy(ctx.tenant, ctx.ip)
     # the demo material is tiny, so the demo builds in-line; real material builds in the background
     return _call(build.start, ctx.tenant, ctx.actor, sync=ctx.tenant.is_demo)
 

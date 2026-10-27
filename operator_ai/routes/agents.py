@@ -113,6 +113,9 @@ class EvalBody(BaseModel):
 
 @router.post("/evals/run")
 def eval_run(b: EvalBody, ctx: Ctx = Depends(require_owner)):
+    from .. import ratelimit
+
+    ratelimit.demo_heavy(ctx.tenant, ctx.ip)
     fn: Any = {"retrieval": evals.retrieval_eval, "honesty": evals.honesty_eval, "reviewer": evals.reviewer_eval}[b.kind]
     return fn(ctx.tenant)
 

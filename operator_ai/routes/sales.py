@@ -69,6 +69,11 @@ class BurstBody(BaseModel):
 
 @router.post("/burst")
 def burst(b: BurstBody, ctx: Ctx = Depends(require_owner)):
+    from .. import ratelimit
+
+    if ctx.tenant.is_demo and b.n > ratelimit.DEMO_BURST_MAX:
+        raise HTTPException(422, f"The pitch demo runs bursts of up to {ratelimit.DEMO_BURST_MAX} leads.")
+    ratelimit.demo_heavy(ctx.tenant, ctx.ip)
     return sales.start_burst(ctx.tenant, b.n)
 
 

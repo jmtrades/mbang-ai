@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from .. import auth, db, llm, queue, tenancy
+from .. import auth, db, llm, public_demo, queue, tenancy
 from .. import proposals as PR
 from .. import prospects as P
 from ..deps import COOKIE, Ctx, client_ip, require
@@ -448,7 +448,7 @@ def proposal_page(tid: str, token: str, request: Request):
         return HTMLResponse(PR.NOT_AVAILABLE, status_code=404, headers=_HDRS)
     team = auth.session_user(t, request.cookies.get(COOKIE)) is not None
     PR.record_view(t, r, count=not team, ip=ip)
-    return HTMLResponse(PR.render_html(t, r), headers=_HDRS)
+    return HTMLResponse(public_demo.label(t, PR.render_html(t, r)), headers=_HDRS)
 
 
 class AcceptBody(BaseModel):

@@ -19,19 +19,24 @@ def students(mine: bool = False, ctx: Ctx = Depends(require("students"))):
     return accountability.board(ctx.tenant, coach_id)
 
 
+def _coach_scope(ctx: Ctx) -> int | None:
+    """A coach works with their own students only (the same rule as the board and /students/{sid})."""
+    return ctx.user["id"] if ctx.role == "coach" else None
+
+
 @router.get("/students/star")
 def star(ctx: Ctx = Depends(require("students"))):
-    return accountability.retention_star(ctx.tenant)
+    return accountability.retention_star(ctx.tenant, _coach_scope(ctx))
 
 
 @router.get("/students/digest")
 def digest(ctx: Ctx = Depends(require("students"))):
-    return accountability.digest(ctx.tenant)
+    return accountability.digest(ctx.tenant, coach_id=_coach_scope(ctx))
 
 
 @router.post("/students/interventions")
 def interventions(ctx: Ctx = Depends(require("students"))):
-    return accountability.run_interventions(ctx.tenant, ctx.user)
+    return accountability.run_interventions(ctx.tenant, ctx.user, coach_id=_coach_scope(ctx))
 
 
 @router.get("/students/{sid}")
