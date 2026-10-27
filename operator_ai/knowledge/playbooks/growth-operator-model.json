@@ -1,0 +1,961 @@
+{
+ "domain": "growth-operator-model",
+ "title": "Growth-operator business model",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "growth-operator-scope-map",
+   "title": "Define the operator's scope as seven owned layers, each with one KPI",
+   "category": "business-model",
+   "guidance": "A 'growth operator' or 'growth partner' runs the money-making side of a creator's or expert's business in exchange for a share of revenue. The term has no legal or industry-standard definition. Third-party write-ups use it for anything from people who build funnels and automations to full-stack partners who run ads, sales teams and delivery. Write the scope down as seven layers: offer, demand generation (organic and paid), conversion asset (VSL, webinar or application funnel), sales (setting and closing), fulfilment, retention/ascension, and finance and compliance operations. For each layer, name the owner (operator, creator or shared), the one KPI it is judged on, and how often it is reported. Programmes that sell training on 'becoming an operator' are themselves money-making opportunities. Independent reviewers have criticised them for optimistic income framing, so do not copy their language.",
+   "steps": [
+    "Score each of the seven layers 0-3 for current maturity during the audit",
+    "Find the one or two weakest layers that limit revenue (the constraint), and scope phase 1 around those only",
+    "Write a RACI table for each layer and attach it to the contract as a schedule",
+    "Give each layer one KPI, for example: cost per qualified booked call, show rate, close rate, cash collected per call, refund/chargeback rate, client-result rate, renewal/ascension rate",
+    "Hold a weekly 30-minute KPI review and a monthly scope review; change the scope only by written amendment"
+   ],
+   "do": [
+    "Put in writing which layers the creator keeps (usually content, brand voice and delivery quality)",
+    "Measure each layer on cash and quality metrics, not vanity metrics"
+   ],
+   "dont": [
+    "Don't accept an open-ended 'grow my business' scope with no layer ownership",
+    "Don't reuse income-promise marketing from operator-training programmes"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Operator share described for one operator-training programme",
+     "value": "10-30% of profits",
+     "context": "Third-party review site (which sells a competing programme), updated 24 Oct 2026. Anecdotal, not a market standard"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Growth Operator Review 2026 (third-party review of an operator-training programme)",
+     "url": "https://ippei.com/growth-operator/",
+     "publisher": "Ippei.com",
+     "date": "2026-10-24"
+    },
+    {
+     "title": "Why most people will never scale creator businesses and how you can",
+     "url": "https://themob.beehiiv.com/p/why-most-people-will-never-scale-creator-businesses-and-how-you-can",
+     "publisher": "The MOB (beehiiv newsletter)",
+     "date": "2025-05-04"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "creator-partner-selection-gates",
+   "title": "Pick creator partners with pass/fail gates, not follower counts",
+   "category": "partner-selection",
+   "guidance": "Choose partners on evidence that buyers exist and that client results can be delivered. Apply hard gates first: an existing paid offer or clear unmet demand, client outcomes documented well enough to survive FTC-style substantiation, a steady publishing cadence, a creator who commits fixed weekly hours, and no history of income guarantees you would inherit. Rival IQ's 2025 benchmark showed engagement falling across platforms year on year, so judge audience quality against the creator's own trailing baseline and their niche peers rather than a fixed engagement cut-off. Screen for bought followers or views. The FTC's reviews and testimonials rule bars buying or using fake social-influence indicators for commercial purposes when you knew or should have known they were fake. Liability depends on red flags you ignored, so record your checks.",
+   "steps": [
+    "Map 30-50 candidates in one niche and score each 0-3 on: offer/demand evidence, documented client results, audience fit, content cadence, creator time commitment, compliance history",
+    "Drop anyone who fails a gate: no documented results, past income guarantees, or unexplained follower or view spikes",
+    "Get 90 days of native analytics (screenshots or read-only access) and compare recent engagement with the creator's own trailing average",
+    "Run a small paid validation test (lead magnet, waitlist or workshop) before signing a long revenue-share term",
+    "Save the vetting evidence in the partner file"
+   ],
+   "do": [
+    "Favour niches where buyers have money and an urgent, measurable problem",
+    "Check the creator's past ads and sales pages for claims you would be responsible for"
+   ],
+   "dont": [
+    "Don't sign with someone because of follower count alone",
+    "Don't run partnership or whitelisted ads from an account with signs of bot inflation"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Year-on-year change in engagement rate, all industries",
+     "value": "Facebook -36%, Instagram -16%, TikTok -34%, X -48%",
+     "context": "Rival IQ 2025 Social Media Industry Benchmark Report, published 25 Feb 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "2025 Social Media Industry Benchmark Report",
+     "url": "https://www.rivaliq.com/blog/social-media-industry-benchmark-report/",
+     "publisher": "Rival IQ",
+     "date": "2025-02-25"
+    },
+    {
+     "title": "The Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-11"
+    },
+    {
+     "title": "Why most people will never scale creator businesses and how you can",
+     "url": "https://themob.beehiiv.com/p/why-most-people-will-never-scale-creator-businesses-and-how-you-can",
+     "publisher": "The MOB (beehiiv newsletter)",
+     "date": "2025-05-04"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "deal-structure-selection",
+   "title": "Choose the deal model by who carries fixed cost and who controls the levers",
+   "category": "deal-structures",
+   "guidance": "Pure revenue share fits when the creator already has a proven offer and audience and the operator's cost is mostly time. Retainer plus revenue share fits when the operator carries payroll (setters, closers, editors, media buyer) or the offer is unproven. Equity only makes sense when the operator is building a transferable company asset and gets governance and information rights. Pay-per-result (per qualified call or per enrolment) suits narrow scopes such as appointment setting. Every model needs written terms on the revenue base, who funds ad spend and whether it comes off before the split, the minimum term, termination triggers, and a tail for revenue from customers won during the term. Published splits are anecdotal, so model your own break-even instead of copying a 'standard' percentage.",
+   "steps": [
+    "Build a 12-month model with downside, base and upside cases for cash collected, ad spend, commissions and delivery cost",
+    "Compute the operator's break-even share: operator fixed plus variable cost divided by projected net cash collected",
+    "If the offer is unproven, set a retainer that at least covers the operator's fixed delivery cost",
+    "Pre-agree step-ups or step-downs in the share at defined cash thresholds instead of renegotiating ad hoc",
+    "Define the tail, e.g. a fixed number of months of share on payment plans and renewals from customers acquired during the term"
+   ],
+   "do": [
+    "Write down who pays for ad spend and when it is reimbursed",
+    "Tie any equity to vesting and to delivered milestones"
+   ],
+   "dont": [
+    "Don't take a revenue share on a business whose cash, ad and CRM data you cannot see",
+    "Don't agree a split before modelling refunds, chargebacks and commissions"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Growth Operator Review 2026 (describes a back-end revenue-share model)",
+     "url": "https://ippei.com/growth-operator/",
+     "publisher": "Ippei.com",
+     "date": "2026-10-24"
+    },
+    {
+     "title": "Iowa Code 486A.202 - Formation of partnership (Uniform Partnership Act 1997)",
+     "url": "https://www.legis.iowa.gov/docs/code/2024/486A.202.pdf",
+     "publisher": "Iowa Legislature",
+     "date": "2024"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "revenue-base-and-clawbacks",
+   "title": "Define 'net cash collected', clawbacks and audit rights precisely",
+   "category": "contracts",
+   "guidance": "Revenue-share disputes usually start from an undefined word 'revenue'. Define the base as cash actually received, not contract value. Subtract refunds, chargebacks and dispute fees, payment-processing and financing-provider fees, and sales tax or VAT. Then say explicitly whether ad spend and sales commissions come off before the split. Pay the share only on instalments actually collected. Add a clawback window that matches your refund policy and the card-dispute window. On payment platforms, refunding a charge does not automatically recover money already passed to the other party, so the contract has to say how over-payments are netted against future payouts. Grant read-only access to the processor, CRM and ad accounts, and include an annual audit right with cost-shifting if underpayment exceeds a stated tolerance.",
+   "steps": [
+    "Write a definitions schedule: Gross Cash Collected, Excluded Amounts, Net Cash Collected, Ad Spend, Commissions",
+    "Set the payout cadence (e.g. monthly, within 10 business days of month end) with a line-item statement",
+    "Add a clawback: refunds and chargebacks on sales already shared are netted against the next payout",
+    "Optionally add a rolling reserve (a percentage held back for a set number of days) for new or high-refund offers",
+    "Add an audit right (once a year, 30 days' notice), with the payer covering audit cost if underpayment exceeds the agreed tolerance (e.g. 5%)",
+    "Add a dispute-resolution ladder: written notice, a 30-day cure period, then mediation or arbitration"
+   ],
+   "do": [
+    "Use the processor's exported data as the system of record",
+    "Treat payment-plan defaults as 'not collected'"
+   ],
+   "dont": [
+    "Don't calculate the share on booked or contracted revenue",
+    "Don't leave ad-spend treatment implicit"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Stripe UK dispute fee",
+     "value": "GBP 20 per dispute received, plus GBP 20 per dispute responded to manually (refunded if won)",
+     "context": "Stripe GB pricing page, accessed Oct 2026"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Create separate charges and transfers (refunds and transfer reversals)",
+     "url": "https://docs.stripe.com/connect/separate-charges-and-transfers",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Stripe pricing (GB)",
+     "url": "https://stripe.com/pricing",
+     "publisher": "Stripe",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "split-payments-at-the-rail",
+   "title": "Collect the operator's share automatically at the payment rail, not by invoice",
+   "category": "payments",
+   "guidance": "Chasing invoices for a revenue share causes friction and bad debt. A marketplace-style setup can split each payment when it is collected. With Stripe Connect 'separate charges and transfers', the platform takes the customer charge and then transfers set amounts to one or more connected accounts. All related objects are tagged with a shared transfer_group. If a transfer is tied to the charge with source_transaction, it is accepted immediately but the funds move only once the charge's money is available. For delayed-confirmation methods such as ACH or SEPA debit, wait for the charge.succeeded event before transferring. Stripe does not automatically reverse a transfer if the payment later fails, and a refund does not adjust transfers already made, so your code has to issue reversals. Cross-border transfers are supported between the US, Canada, the UK, the EEA and Switzerland. Elsewhere the platform and connected accounts generally must be in the same region.",
+   "steps": [
+    "Decide the settlement merchant. With on_behalf_of the creator's account settles and their statement descriptor appears, which customers recognise more easily",
+    "Create a transfer_group for each sale, and transfer each party's share with source_transaction set",
+    "Listen for refund and dispute webhooks and reverse transfers (fully or partly) in line with the contract",
+    "For ACH/SEPA, transfer only after charge.succeeded",
+    "Reconcile weekly: charges, refunds, disputes, transfers and reversals by transfer_group"
+   ],
+   "do": [
+    "Mirror the contract's revenue definition exactly in the transfer logic",
+    "Keep the platform's negative-balance exposure in mind, since Stripe recommends this charge type only when the platform is responsible for connected accounts' negative balances"
+   ],
+   "dont": [
+    "Don't transfer the share before the funds are available",
+    "Don't assume refunds will claw back transfers automatically"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Create separate charges and transfers",
+     "url": "https://docs.stripe.com/connect/separate-charges-and-transfers.md?platform=web&integration=checkout&ui=stripe-hosted",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Stripe pricing (Connect)",
+     "url": "https://stripe.com/pricing",
+     "publisher": "Stripe",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "avoid-accidental-partnership",
+   "title": "Paper revenue share as a contractor fee to avoid creating an accidental partnership",
+   "category": "contracts",
+   "guidance": "Under the Uniform Partnership Act (1997) as many US states have enacted it (Iowa Code 486A.202, for example), two or more people who run a business as co-owners for profit form a partnership whether or not they meant to. Anyone who receives a share of a business's profits is presumed to be a partner, with listed exceptions. One exception covers profits paid for services as an independent contractor. Sharing gross returns does not by itself create a partnership. An informal 'we split the profits 50/50 and run it together' arrangement can therefore leave each side exposed to the other's debts and regulatory liabilities. Unless both sides deliberately want a joint venture entity, use an independent-contractor services agreement whose fee is calculated on revenue, with an express no-partnership clause, no authority to bind the other party, and mutual indemnities. State law varies and UK law differs, so have counsel in the relevant jurisdiction review it.",
+   "steps": [
+    "Contract between separate legal entities (the operator's company and the creator's company)",
+    "Describe the payment as a services fee calculated on Net Cash Collected, not a profit distribution",
+    "Add clauses for no partnership, no agency, no authority to bind, and independent contractor status",
+    "Add mutual indemnities for each party's own claims, content and regulatory compliance, and require appropriate insurance (professional/E&O)",
+    "If you do want joint ownership, form a separate entity with an operating agreement"
+   ],
+   "dont": [
+    "Don't describe the relationship publicly as 'partners' or 'co-owners' if the contract says otherwise",
+    "Don't share profits under a handshake deal"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Iowa Code 486A.202 - Formation of partnership",
+     "url": "https://www.legis.iowa.gov/docs/code/2024/486A.202.pdf",
+     "publisher": "Iowa Legislature",
+     "date": "2024"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "equity-deal-terms",
+   "title": "Equity deals: vesting, a 30-day 83(b) decision and governance minimums",
+   "category": "deal-structures",
+   "guidance": "Only take equity in a creator's company when the operator is building a durable asset (team, systems, owned audience, recurring revenue) and receives real information and governance rights. Equity for services should vest on time or milestones so that an operator who leaves early does not keep a large stake. A US recipient of restricted (vesting) stock for services, whether employee or independent contractor, can make a section 83(b) election. It must be filed no later than 30 days after the property is transferred. The IRS now provides Form 15620 (Rev. 4-2025) for this, though a compliant written statement still works. Pair equity with an IP assignment of the systems built for the company, and with leaver, transfer and information clauses.",
+   "steps": [
+    "Agree vesting (time-based with a cliff, or milestone-based) and leaver terms before any shares are issued",
+    "Within 30 days of the grant, decide with a tax adviser whether to file an 83(b) (Form 15620 or a written statement)",
+    "Add monthly financial reporting, a board or observer seat, and consent rights over new debt and share issues",
+    "Add tag-along/drag-along and a buy-back mechanism for leavers",
+    "Assign IP in funnels, SOPs and data built for the company to the company, and license the operator's pre-existing tools"
+   ],
+   "dont": [
+    "Don't accept 'sweat equity' with no vesting, valuation or information rights",
+    "Don't miss the 30-day 83(b) window, because it cannot be extended"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Form 15620, Section 83(b) Election (Rev. 4-2025)",
+     "url": "https://www.irs.gov/pub/irs-pdf/f15620.pdf",
+     "publisher": "Internal Revenue Service",
+     "date": "2025-04"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "restrictive-covenants-and-ip",
+   "title": "Protect both sides with non-solicit, non-circumvention and IP schedules, not broad non-competes",
+   "category": "contracts",
+   "guidance": "The FTC's nationwide non-compete rule is not in effect. A federal court stopped enforcement on 20 August 2024, the FTC moved to dismiss its appeal on 5 September 2025, and a February 2026 Federal Register action removed the rule. Whether a non-compete is enforceable now depends on state law (or restraint-of-trade doctrine in the UK), and some states treat them very restrictively. Rely on narrower protections that courts enforce more readily: confidentiality, clear IP ownership, non-solicitation of each other's staff and customers for a fixed period, and non-circumvention for introduced vendors and partners. As a default allocation, the creator owns brand, audience, ad accounts, pixels and customer data. The operator owns its pre-existing templates, SOPs and software and licenses them to the creator during the term.",
+   "steps": [
+    "Attach an IP schedule listing pre-existing operator IP, creator IP, and work product created during the term",
+    "Have the creator own the ad accounts, domain, CRM and processor account, with the operator added as a partner or user",
+    "Add 12-month mutual non-solicitation of employees and contractors",
+    "Add a data-return and access-removal checklist that runs on termination",
+    "Check non-compete enforceability under the governing state's or country's law before including one"
+   ],
+   "dont": [
+    "Don't run a partner's ads from operator-owned ad accounts or pixels you would have to 'hand back' later",
+    "Don't rely on a broad non-compete as your main protection"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Noncompete Rule (status page)",
+     "url": "https://www.ftc.gov/legal-library/browse/rules/noncompete-rule",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2026-02"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "earnings-claims-substantiation",
+   "title": "Treat every income or results claim as needing a written substantiation file",
+   "category": "compliance",
+   "guidance": "In October 2021 the FTC sent a Notice of Penalty Offenses on money-making opportunities to more than 1,100 companies, explicitly including business-coaching providers. Knowing violations can draw civil penalties. The notice lists as unlawful: false or unsupported claims that participants will profit, claims that the results shown are typical, falsely saying no experience is needed, and false urgency to act now. On 13 January 2025 the FTC proposed extending the Business Opportunity Rule to 'money-making opportunities', expressly including training or mentoring programmes, with substantiation and recordkeeping duties. Whether that has been finalised is unconfirmed. Coaching offers that promise income, and creators selling business education, should lead with process and capability, and should show results only with cohort data.",
+   "steps": [
+    "Keep a claims register: exact claim text, where it is used, evidence, cohort size, date range, number and percentage of buyers who achieved it, typicality disclosure, approver",
+    "Prefer claims about what the programme includes and teaches over claims about what buyers will earn",
+    "If you show a result, also show what typical buyers achieved, with numbers",
+    "Review ads, VSL/webinar scripts, sales-call scripts and DM templates against the register before launch and every quarter",
+    "Train setters and closers that verbal earnings promises count as claims"
+   ],
+   "do": [
+    "Keep evidence (payment records, signed client statements) for every testimonial that mentions money"
+   ],
+   "dont": [
+    "Don't say 'anyone can', 'guaranteed', 'passive income' or 'impossible to fail'",
+    "Don't rely on a small-print disclaimer to fix a misleading overall impression"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Civil penalty for knowing violations named in the 2021 notice",
+     "value": "up to USD 43,792 per violation (2021 level; inflation-adjusted annually, and the FTC's CAN-SPAM guide now cites USD 53,088)",
+     "context": "FTC press release, 26 Oct 2021"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Puts Businesses on Notice that False Money-Making Claims Could Lead to Big Penalties",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "16 CFR 437; Business Opportunity Rule; Notice of Proposed Rulemaking",
+     "url": "https://www.ftc.gov/legal-library/browse/federal-register-notices/16-cfr-437-business-opportunity-rule-notice-proposed-rulemaking-0",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-01-13"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ftc-2025-case-red-flags",
+   "title": "Hard-block the patterns behind the FTC's 2024-2025 coaching and 'done-for-you' cases",
+   "category": "compliance",
+   "guidance": "The FTC's 2025 actions show which patterns regulators treat as deceptive in this space. Growth Cave (March 2025) allegedly sold a 'digital education program' build-out with claims of large passive income, used undisclosed employee testimonials, and steered prospects from YouTube ads into 'strategy calls'. Some buyers were allegedly signed up for business credit cards. The FTC put consumer losses at about USD 50 million. Click Profit (March 2025) allegedly charged management fees of at least USD 45,000 for done-for-you stores, claimed AI and brand partnerships it did not have, and used an unlawful non-disparagement clause. Air AI (August 2025) allegedly sold coaching with an AI product, claimed it could replace staff, made earnings claims, and promised refund guarantees it rarely honoured. The complaint cited the TSR and the Business Opportunity Rule. These are allegations, not findings, but the patterns are what a compliant operator system should refuse to produce.",
+   "steps": [
+    "Add these terms to a blocklist for ads, pages, scripts and DMs: 'passive income', 'guaranteed', 'impossible to fail', 'replace your staff', 'done-for-you income'",
+    "Require disclosure whenever staff, affiliates or partners appear in testimonials",
+    "Remove non-disparagement or 'no negative review' clauses from customer contracts",
+    "Do not arrange or encourage credit lines or credit cards to fund a purchase",
+    "Check every AI-capability claim against evidence before it is used"
+   ],
+   "dont": [
+    "Don't offer a profit or 'earn-back' guarantee you cannot fund and honour",
+    "Don't claim partnerships, endorsements or technology you do not have"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Alleged consumer losses",
+     "value": "Growth Cave about USD 50M; Click Profit at least USD 14M",
+     "context": "FTC press releases, 7 and 18 Mar 2025 (allegations)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Takes Action to Stop Sprawling 'Growth Cave' Business Opportunity and Credit Repair Scam",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-takes-action-stop-sprawling-growth-cave-business-opportunity-credit-repair-scam",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-03-07"
+    },
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity that Has Cost Consumers At Least $14 Million",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-03-18"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-08-25"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "testimonials-reviews-ai-content",
+   "title": "Testimonials and case studies: real, disclosed, typical, and never AI-fabricated",
+   "category": "compliance",
+   "guidance": "The FTC's Consumer Reviews and Testimonials Rule (16 CFR Part 465) took effect on 21 October 2024 and allows civil penalties for knowing violations. It bans reviews or testimonials from people who don't exist (which covers AI-generated fakes) or who had no real experience. It also bans incentives conditioned on positive sentiment, undisclosed insider testimonials, suppressing reviews through threats or false accusations, and buying fake followers or views. Testimonials from employees, agents or contractors (including setters, closers and the operator) need a clear, unavoidable disclosure, which a hyperlink generally does not provide. Under the 2023 Endorsement Guides, an endorser's exceptional result must be paired with the generally expected result unless you can substantiate that buyers typically get it. An AI avatar is not banned in itself, but using one to deliver a fake testimonial is.",
+   "steps": [
+    "Collect testimonials through a consent form that records identity, the result claimed, the evidence and any relationship to the business",
+    "Label insider and affiliate testimonials on the asset itself",
+    "Next to any standout result, state what typical clients achieved, with numbers",
+    "Offer review incentives only if they don't depend on sentiment, and invite all customers, not just happy ones",
+    "Never let the AI system draft testimonials, reviews or 'client stories' that are not tied to a verified real person"
+   ],
+   "dont": [
+    "Don't use employees' or closers' wins as if they were customer results without disclosure",
+    "Don't threaten customers over negative reviews"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Rule effective date",
+     "value": "21 Oct 2024",
+     "context": "FTC Q&A, updated Nov 2024"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-08-14"
+    },
+    {
+     "title": "The Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-11"
+    },
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2023"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ad-platform-income-claim-policies",
+   "title": "Write ads that pass Meta and Google economic-opportunity policies",
+   "category": "paid-acquisition",
+   "guidance": "Meta's ad policies prohibit promising or implying unrealistic outcomes for economic opportunity, and its community standards bar offers of unrealistic financial reward for vague or minimal effort. Google's 'Unreliable claims' policy prohibits unrealistic promises of large returns for little risk, effort or investment, including get-rich-quick schemes, guaranteed returns and 'risk-free' framing. Google says it issues a warning at least 7 days before suspending an account under that policy, but other misrepresentation categories can lead to suspension without warning. Google's unacceptable-business-practices policy also gives AI-generated videos that make it look as if well-known creators endorse a get-rich-quick scheme as an example of what is not allowed. Ads that sell the skill, method or transformation process, with realistic framing, are both safer for the account and easier to scale.",
+   "steps": [
+    "Lint every ad, landing page and VSL for income figures, guarantees, 'no experience needed' and time-to-money promises",
+    "Lead with the problem, the method and proof of competence, not earnings outcomes",
+    "Keep a policy-review log per ad and fix and resubmit disapprovals (Google re-reviews edits, typically within 24-48 hours)",
+    "Keep backup ad accounts and business assets legitimate. Never use rented or bought accounts to evade enforcement"
+   ],
+   "dont": [
+    "Don't use before/after income screenshots as the ad hook",
+    "Don't use AI likenesses of creators or celebrities without permission"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Resolve your ad rejection and get tips for successful campaigns",
+     "url": "https://www.facebook.com/business/m/small-business/ad-policy-guidance",
+     "publisher": "Meta",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Misrepresentation: Unreliable claims",
+     "url": "https://support.google.com/adspolicy/answer/15936857?hl=en",
+     "publisher": "Google Ads Policy Help",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "meta-learning-phase-budgeting",
+   "title": "Size Meta budgets and optimisation events around the ~50 events/week learning threshold",
+   "category": "paid-acquisition",
+   "guidance": "Meta marks an ad set 'Learning limited' when it is unlikely to get about 50 optimisation events in the week after its last significant edit. It becomes Active once it reaches 50 events. Significant edits include pausing, or changing the optimisation event, audience or creative. Large bid or budget changes can also restart learning. High-ticket funnels rarely generate 50 purchases per ad set per week, so optimise for a higher-volume event close to the ad (registration, application or booked call) and feed back downstream quality signals. Consolidate ad sets and batch edits rather than tweaking daily. A practical sizing rule derived from the threshold: weekly ad-set budget of at least 50 times the expected cost of the chosen optimisation event.",
+   "steps": [
+    "Pick the deepest event you can realistically get about 50 times a week per ad set",
+    "Set the budget to at least 50 times the expected cost per event per week, or consolidate ad sets until you reach it",
+    "Batch creative and audience changes into one weekly edit window",
+    "Send qualified-call and purchase events back server-side so you can judge lead quality",
+    "Judge winners on cost per qualified call and cash per call, not cost per lead alone"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Learning-phase exit threshold",
+     "value": "about 50 optimisation events in the week after the last significant edit",
+     "context": "Meta Business Help Centre, 'About learning limited'"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About learning limited",
+     "url": "https://en-gb.facebook.com/business/help/269269737396981",
+     "publisher": "Meta Business Help Centre",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Last Significant Edit",
+     "url": "https://www.facebook.com/business/help/942374239243867",
+     "publisher": "Meta Business Help Centre",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "sales-team-telemarketing-compliance",
+   "title": "Sales calls for money-making offers: assume the Telemarketing Sales Rule applies and keep 5-year records",
+   "category": "sales",
+   "guidance": "The TSR normally exempts inbound calls that consumers make in response to general media ads. That exemption does not cover calls about investment opportunities, or business opportunities other than those covered by the Franchise or Business Opportunity Rules, and it never covers upsells. A coaching offer marketed as a way to make money may therefore bring setter and closer calls under the TSR. The FTC's August 2025 Air AI complaint alleged TSR violations for misrepresenting services, refund policies and earnings potential. Since the 2024 amendments, sellers and telemarketers must keep for 5 years: call detail records, scripts and promotional materials, consent records, service-provider records and Do Not Call records. If no contract divides these duties, both seller and telemarketer must keep everything. Respond to inbound leads quickly; HBR's research found most firms reply too slowly to web leads.",
+   "steps": [
+    "Have counsel decide whether your offer and calls fall under the TSR",
+    "Version-control every setter and closer script and keep copies for 5 years",
+    "Log call detail records (caller ID, called number, date, time, duration, disposition) in the CRM",
+    "In the operator-creator contract, state which party keeps which TSR records",
+    "Ban verbal earnings promises and refund-policy embellishments in call QA, and score recorded calls weekly"
+   ],
+   "dont": [
+    "Don't record calls without the consent required by the strictest applicable state law",
+    "Don't let commission plans reward closing people who don't qualify"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "16 CFR 310.6 - Exemptions (Telemarketing Sales Rule)",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.6",
+     "publisher": "Cornell LII / eCFR",
+     "date": "2024-12-10"
+    },
+    {
+     "title": "Mark your calendars: October 15 is the Telemarketing Sales Rule's Record Store Day",
+     "url": "https://www.ftc.gov/business-guidance/blog/2024/10/mark-your-calendars-telemarketers-sellers-october-15-telemarketing-sales-rules-record-store-day",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-10"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "The Short Life of Online Sales Leads",
+     "url": "https://hbr.org/2011/03/the-short-life-of-online-sales-leads",
+     "publisher": "Harvard Business Review",
+     "date": "2011-03"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "cold-email-outreach-compliance",
+   "title": "Cold email for landing partners (or on a partner's behalf): CAN-SPAM plus Gmail sender rules",
+   "category": "outreach",
+   "guidance": "CAN-SPAM makes no exception for business-to-business email. Every commercial message needs accurate headers, a non-deceptive subject line, identification as an ad, a valid physical postal address, and a working opt-out honoured within 10 business days. The FTC cites penalties of up to USD 53,088 per violating email. Both the company being promoted and the company sending can be liable, which matters when an operator emails on a creator's behalf. Gmail requires SPF or DKIM, valid PTR records, TLS and a spam rate below 0.3% from all senders. Bulk senders (about 5,000 or more messages a day to Gmail) also need SPF and DKIM, DMARC (policy may be 'none'), alignment, and one-click unsubscribe headers. Google recommends keeping spam rates below 0.1%.",
+   "steps": [
+    "Send from a separate outreach domain with SPF, DKIM and DMARC configured, and keep the main brand domain clean",
+    "Keep volume low and personalised. Research each prospect and reference their specific offer or funnel gap",
+    "Include a postal address and a plain opt-out in every message, and sync opt-outs across all tools within 10 business days",
+    "Monitor Postmaster Tools. Pause sending if the spam rate approaches 0.1%",
+    "For outreach on a creator's behalf, get the creator's written approval of the copy and the list source"
+   ],
+   "dont": [
+    "Don't use bought lists without a lawful basis (stricter rules apply in the UK/EU)",
+    "Don't hide the sender identity or use deceptive subject lines"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Gmail spam-rate ceiling",
+     "value": "keep below 0.1%; never reach 0.3%",
+     "context": "Gmail Email sender guidelines; requirements since 1 Feb 2024"
+    },
+    {
+     "metric": "CAN-SPAM opt-out deadline",
+     "value": "10 business days",
+     "context": "FTC CAN-SPAM compliance guide"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2023-08 (edited for penalty amounts)"
+    },
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/mail/answer/81126?hl=en",
+     "publisher": "Google Gmail Help",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "social-dm-automation-limits",
+   "title": "Social DMs and LinkedIn: automated cold outreach breaks platform rules; design around them",
+   "category": "outreach",
+   "guidance": "LinkedIn's User Agreement prohibits bots and other unauthorised automation for adding contacts or sending messages. It does not allow third-party software or browser extensions that automate activity, and accounts that use them risk being restricted or shut down. On Meta's messaging APIs (which include Instagram messaging), businesses can reply only inside a standard window. That window is 24 hours after a user's message, or up to 7 days after a user messages from a click-to-message ad. A Human Agent tag allows manual replies for 7 days. Promotional messages outside the window are limited to Sponsored Messages, which are not available on Instagram. An agentic system therefore cannot legitimately cold-DM at scale. It should draft messages for a human to send, and use ads or content that prompt prospects to message first.",
+   "steps": [
+    "Use AI for research and drafting, and have a human review and send each cold DM or connection note",
+    "Use click-to-message ads or comment-keyword prompts so the prospect starts the conversation and opens the window",
+    "Automate replies only inside the allowed window, with a human handover for qualification",
+    "Cap the daily manual send volume per account and track the reply rate per template"
+   ],
+   "dont": [
+    "Don't install LinkedIn automation extensions on client or partner accounts",
+    "Don't misuse message tags to send promotions"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Meta standard messaging window",
+     "value": "24 hours (up to 7 days after a click-to-message ad); Human Agent tag 7 days",
+     "context": "Meta Messenger Platform policy overview, accessed Oct 2026"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Prohibited software and extensions",
+     "url": "https://www.linkedin.com/help/linkedin/answer/a1341387",
+     "publisher": "LinkedIn Help",
+     "date": "accessed 2026-10 (page shows last updated ~2 years ago)"
+    },
+    {
+     "title": "Messenger Platform policy overview",
+     "url": "https://developers.facebook.com/docs/messenger-platform/policy/policy-overview",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uk-consumer-cancellation-and-dmcc",
+   "title": "UK buyers: 14-day cancellation, express-request rules and DMCC unfair-practice enforcement",
+   "category": "compliance",
+   "guidance": "When a UK consumer buys a coaching or service programme at a distance (online or by phone), the Consumer Contracts Regulations 2013 give a 14-day cancellation period from the day the contract is made. The trader must not begin the service within that period unless the consumer expressly asks. If the consumer then cancels, they owe a proportionate amount for what was already supplied. If the required cancellation information was not given, or there was no valid request, the consumer owes nothing for services supplied in that period. Since April 2025 the CMA has enforced unfair commercial practices under the Digital Markets, Competition and Consumers Act 2024, with dedicated guidance on fake reviews (CMA208). Whether a buyer of a 'build a business' programme counts as a consumer depends on the facts, so take advice before treating them as a trader.",
+   "steps": [
+    "Show cancellation information before checkout and confirm it on a durable medium (email or PDF)",
+    "Add an unticked express-request checkbox for starting immediately, with an acknowledgement that the right to cancel is lost once the service is fully performed",
+    "Price modules so a proportionate refund can be calculated",
+    "Review testimonials and reviews against CMA208 as well as the FTC rules"
+   ],
+   "dont": [
+    "Don't start delivery during the cancellation period without a recorded express request",
+    "Don't apply a 'no refunds' policy to UK consumers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Cancellation period for distance service contracts",
+     "value": "14 days from contract date",
+     "context": "Consumer Contracts Regulations 2013, reg. 30"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013, reg. 36",
+     "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/36",
+     "publisher": "legislation.gov.uk",
+     "date": "2013 (current)"
+    },
+    {
+     "title": "Consumer Contracts Regulations 2013, reg. 30",
+     "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/30",
+     "publisher": "legislation.gov.uk",
+     "date": "2013 (current)"
+    },
+    {
+     "title": "Unfair commercial practices (CMA207)",
+     "url": "https://www.gov.uk/government/publications/unfair-commercial-practices-cma207",
+     "publisher": "Competition and Markets Authority",
+     "date": "2025-04-04 (updated 2025-11-18)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "chargeback-ratio-monitoring",
+   "title": "Keep disputes well under Visa's VAMP thresholds, because high-ticket refunds turn into chargebacks",
+   "category": "payments",
+   "guidance": "Visa's Acquirer Monitoring Program (VAMP) uses a count-based ratio: reported fraud (TC40) plus disputes (TC15), divided by settled card-not-present transactions (TC05). According to Visa's 2025 fact sheet, a merchant in the AP, Canada, EU and US regions is 'Excessive' at a ratio of at least 2.2% with at least 1,500 fraud plus disputes in the month. That merchant threshold dropped to 1.5% on 1 April 2026 (LAC was already at 1.5%). Visa's advisory period ended on 30 September 2025, and enforcement now applies at the excessive level. Acquirers act well before these levels, and a single high-ticket launch with weak delivery can freeze a processor account. Fast, honoured refunds, a recognisable statement descriptor and documented delivery are the main defences.",
+   "steps": [
+    "Track a weekly dispute ratio per offer and per processor, and alert at a fraction of the network threshold",
+    "Use the creator's brand name in the statement descriptor and send a receipt that names the programme",
+    "Keep delivery evidence (logins, call attendance, module completion) for dispute responses",
+    "Honour refund requests within policy quickly rather than letting them become disputes"
+   ],
+   "benchmarks": [
+    {
+     "metric": "VAMP merchant 'Excessive' threshold (AP, Canada, EU, US)",
+     "value": ">=2.2% and >=1,500 monthly fraud+disputes; reduced to >=1.5% from 1 Apr 2026",
+     "context": "Visa VAMP fact sheet 2025 (v2, May 2025); text decoded from the official PDF, so confirm with your acquirer"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Visa Acquirer Monitoring Program Fact Sheet (2025)",
+     "url": "https://corporate.visa.com/content/dam/VCOM/corporate/visa-perspectives/security-and-trust/documents/visa-acquirer-monitoring-program-fact-sheet-2025.pdf",
+     "publisher": "Visa",
+     "date": "2025-05-14"
+    },
+    {
+     "title": "Evolving the Visa Acquirer Monitoring Program",
+     "url": "https://corporate.visa.com/en/sites/visa-perspectives/security-trust/visa-vamp-program-update-fraud-disputes.html",
+     "publisher": "Visa",
+     "date": "2025-10-09"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "setter-closer-classification-and-1099",
+   "title": "Setters and closers: classify correctly and apply the 2026 $2,000 1099-NEC threshold",
+   "category": "team-and-tax",
+   "guidance": "Most operator agencies pay appointment setters and closers on commission as contractors. The IRS judges worker status with a common-law control test covering behavioural control, financial control and the type of relationship. No single factor decides it, so mandatory shifts, scripts enforced as rules, supplied tools and indefinite core work all push toward employee status. If unsure, Form SS-8 gets an IRS determination, though that can take six months or more. For payments made after 31 December 2025, the 1099-NEC and 1099-MISC reporting threshold rose from USD 600 to USD 2,000 (indexed for inflation after 2026). Form 1099-K is required only above USD 20,000 and 200 transactions. State tests (and IR35 in the UK) can be stricter than the federal test.",
+   "steps": [
+    "Collect a W-9 (US) before the first payment and store it with the contract",
+    "Write commission plans that pay on cash collected, net of refunds and chargebacks within a stated window",
+    "Document the independence factors: contractors set their own hours, use their own tools and can work for others",
+    "Issue 1099-NEC for 2026 payments of USD 2,000 or more",
+    "Review classification for each role when a contractor works full-time on one account"
+   ],
+   "benchmarks": [
+    {
+     "metric": "1099-NEC reporting threshold",
+     "value": "USD 2,000 for payments made in 2026 (USD 600 previously)",
+     "context": "IRS, Working Families Tax Cuts business provisions"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Independent contractor (self-employed) or employee?",
+     "url": "https://www.irs.gov/businesses/small-businesses-self-employed/independent-contractor-self-employed-or-employee",
+     "publisher": "Internal Revenue Service",
+     "date": "2026-05-19"
+    },
+    {
+     "title": "Understanding the Working Families Tax Cuts: Business Tax Provisions (video text script)",
+     "url": "https://www.irs.gov/newsroom/understanding-the-working-families-tax-cuts-business-tax-provisions-youtube-video-text-script",
+     "publisher": "Internal Revenue Service",
+     "date": "2026"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "guarantees-refunds-financing",
+   "title": "Guarantees, refunds and financing: only promise what operations will honour",
+   "category": "offer-design",
+   "guidance": "Guarantees are among the most-cited problems in recent FTC complaints. Air AI allegedly promised full refunds if buyers did not earn back a multiple of their payment but rarely paid them. Growth Cave allegedly offered a profit guarantee and signed buyers up for business credit cards. Click Profit allegedly used a non-disparagement clause and threatened complainers, which the FTC charged under the Consumer Review Fairness Act. A guarantee should be tied to things the business controls (delivery, support, access, implementation sessions), state its conditions clearly up front, and be funded and paid quickly. Do not tie refunds to the buyer's earnings, and do not push buyers to take on credit to buy a money-making programme.",
+   "steps": [
+    "Write the guarantee in plain language and repeat it on the order form and in the confirmation email",
+    "Base conditions on actions the buyer can verify, such as completing modules or attending calls, not income",
+    "Set a refund SLA (e.g. decision within 5 business days, payment within 10) and measure it",
+    "If you offer payment plans or third-party financing, show the total cost and avoid any pressure about credit",
+    "Keep customer contracts free of non-disparagement or review-gag clauses"
+   ],
+   "dont": [
+    "Don't offer an 'earn back your investment or your money back' guarantee",
+    "Don't use buy-back or 'protected investment' language"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "FTC Takes Action to Stop Sprawling 'Growth Cave' Business Opportunity and Credit Repair Scam",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-takes-action-stop-sprawling-growth-cave-business-opportunity-credit-repair-scam",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-03-07"
+    },
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-03-18"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "partner-unit-economics-model",
+   "title": "Per-partner unit economics: funnel identity, allowable cost per call and kill criteria",
+   "category": "unit-economics",
+   "guidance": "Model each partnership as a P&L before scaling spend. Enrolments = qualified leads x booked % x show % x close %. Net cash per enrolment = cash collected minus processing fees, refunds and dispute costs. Contribution per enrolment = net cash per enrolment minus acquisition cost (ads, setter and closer commission, tools) minus delivery cost. From that, the maximum cost per booked call = (net cash per enrolment − delivery − commissions − target margin) x show % x close %. Processing costs are not trivial: Stripe's UK pricing is 1.5% + 20p for standard UK cards, 3.15% + 20p for international cards, plus 2% for currency conversion. Set kill or iterate criteria in advance and judge them only after enough volume (for example, after the ad set exits Meta's learning phase).",
+   "steps": [
+    "Write the funnel identity per offer and fill it with the last 30 days of real data",
+    "Calculate the maximum allowable cost per booked qualified call and cost per lead",
+    "Set thresholds: pause or rework creative when cost per qualified call exceeds the maximum for 2 consecutive weeks",
+    "Track refund-adjusted cash at 30 and 60 days per cohort, not first-day cash",
+    "Recalculate the operator's effective hourly return per partner each month"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Stripe UK card processing",
+     "value": "1.5% + 20p (standard UK cards); 3.15% + 20p (international); +2% currency conversion",
+     "context": "Stripe GB pricing page, accessed Oct 2026"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Stripe pricing (GB)",
+     "url": "https://stripe.com/pricing",
+     "publisher": "Stripe",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "About learning limited",
+     "url": "https://en-gb.facebook.com/business/help/269269737396981",
+     "publisher": "Meta Business Help Centre",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "scaling-operator-agency",
+   "title": "Scaling an operator agency: limit concentration, standardise delivery, add partners one at a time",
+   "category": "scaling",
+   "guidance": "Revenue-share agencies often depend on a few partners, and a third-party review of an operator-training programme specifically flags the cash-flow risk when one partner leaves. Treat partner concentration as a primary risk metric and add partners only when the playbook for the current ones runs without the founder's daily involvement. Standardise the repeatable parts (audit template, funnel build checklist, ad testing cadence, sales QA rubric, KPI dashboard, offboarding checklist) and keep creative and offer strategy as the custom layer. Build the team around roles with clear compensation and classification. Assume each new partner needs full onboarding capacity for the first 60-90 days (a planning heuristic, not a sourced benchmark).",
+   "steps": [
+    "Track the share of agency gross profit from the largest partner, and set an internal ceiling before taking on more risk with that partner",
+    "Write SOPs for each of the seven layers before signing partner number two",
+    "Use a retainer floor for new partners until their offer is proven",
+    "Hire or contract by constraint: media buyer, setter or closer capacity, editor, then a dedicated partner manager",
+    "Run a quarterly partner review with each partner: keep, restructure or exit"
+   ],
+   "dont": [
+    "Don't sign several partners at once on unproven offers",
+    "Don't let one partner's ad account, processor or brand risk spill onto others' assets"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Growth Operator Review 2026",
+     "url": "https://ippei.com/growth-operator/",
+     "publisher": "Ippei.com",
+     "date": "2026-10-24"
+    },
+    {
+     "title": "Independent contractor (self-employed) or employee?",
+     "url": "https://www.irs.gov/businesses/small-businesses-self-employed/independent-contractor-self-employed-or-employee",
+     "publisher": "Internal Revenue Service",
+     "date": "2026-05-19"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "agentic-ai-guardrails",
+   "title": "Guardrails for an agentic 'operator AI' acting on a client's behalf",
+   "category": "ai-operations",
+   "guidance": "There is no AI exemption from consumer-protection law. The FTC's September 2024 'Operation AI Comply' sweep targeted overstated AI capabilities (a 'robot lawyer'), AI-powered storefront business opportunities, and an AI tool that generated likely-false reviews. The 2025 Air AI complaint targeted claims that an AI product could replace staff and produce earnings. An operator AI that writes ads, scripts and outreach takes on the same liability as a human team, so it needs hard guardrails. It must not fabricate testimonials or results. Every income or result claim must be checked against the substantiation register. A human must approve first-touch outbound messages and any public claim. It must stay inside platform rules on automation and messaging windows, and it must log what it produced and sent so you can meet TSR and Business Opportunity Rule-style recordkeeping. The product's own marketing must not claim the AI replaces a team or guarantees revenue unless that is substantiated.",
+   "steps": [
+    "Implement a claims linter: block guarantee, passive-income, typicality and capability phrases unless they are linked to a register entry",
+    "Put a human approval gate before sending first-touch outreach and before publishing ads or pages",
+    "Disable any feature that produces reviews or testimonials from scratch",
+    "Log every generated asset, version, approver and send event for at least 5 years",
+    "Red-team prompts each quarter for attempts to make deceptive claims"
+   ],
+   "dont": [
+    "Don't market the system as 'replacing' growth operators or guaranteeing results without evidence",
+    "Don't let the agent send LinkedIn or Instagram cold messages automatically"
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Announces Crackdown on Deceptive AI Claims and Schemes (Operation AI Comply)",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/09/ftc-announces-crackdown-deceptive-ai-claims-schemes",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-09-25"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2024-08-14"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "common-failure-modes",
+   "title": "Common failure modes of operator-creator partnerships and early-warning metrics",
+   "category": "risk",
+   "guidance": "The recurring failures fall into four groups. Commercial: undefined revenue base, no data access, one partner carrying the whole agency. Operational: the creator becomes the bottleneck for content or calls, delivery quality drops as sales scale, refunds rise. Platform: ad account restrictions from income claims, email domains burned past spam thresholds, and dependence on one marketplace. In the Click Profit case the FTC alleged about 95% of the Amazon stores were blocked, suspended or terminated. Regulatory: income claims drift in ads and on calls, undisclosed insider testimonials, unhonoured guarantees. Each group has a leading indicator you can watch weekly.",
+   "steps": [
+    "Watch weekly: refund and dispute ratio, show rate, close rate, client-result rate, creator content output versus plan",
+    "Watch weekly: ad rejections and account-quality warnings, Gmail spam rate, the share of agency profit from the top partner",
+    "Escalate when any metric breaches its threshold for 2 weeks running",
+    "Run a quarterly compliance audit of ads, scripts, testimonials and call recordings"
+   ],
+   "dont": [
+    "Don't scale ad spend while refunds or delivery complaints are rising",
+    "Don't depend on a single platform account with no compliant contingency"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Gmail spam-rate ceiling",
+     "value": "below 0.3% (target below 0.1%)",
+     "context": "Gmail Email sender guidelines"
+    },
+    {
+     "metric": "Alleged share of Amazon stores blocked, suspended or terminated in one done-for-you scheme",
+     "value": "about 95%",
+     "context": "FTC Click Profit press release, 18 Mar 2025 (allegation)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "U.S. Federal Trade Commission",
+     "date": "2025-03-18"
+    },
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/mail/answer/81126?hl=en",
+     "publisher": "Google Gmail Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Growth Operator Review 2026",
+     "url": "https://ippei.com/growth-operator/",
+     "publisher": "Ippei.com",
+     "date": "2026-10-24"
+    }
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "open_questions": [
+  "The shared web-search budget ran out partway through, so several topics are covered only by sources found before that point and the gaps below were not searched further.",
+  "Market-standard revenue-share percentages, retainer levels and tail lengths for operator-creator deals: only anecdotal or vendor-reported figures were found (10-30% of profits for one training programme). No independent survey was located.",
+  "Funnel benchmarks for high-ticket coaching (webinar registration-to-attendance, VSL opt-in, booked-call show rate, close rate, refund rate): no primary or independent sources could be opened (vendor pages returned 403/429).",
+  "HBR 'Short Life of Online Sales Leads' (2011): the specific response-time multipliers are paywalled and were not verified. Only the general finding that most firms respond too slowly is cited.",
+  "Whether the FTC's January 2025 proposal to extend the Business Opportunity Rule to coaching/'money-making opportunities' has been finalised, withdrawn or stalled as of Oct 2026.",
+  "FCC/TCPA status for SMS and AI-voice appointment setting (AI-voice ruling, consent-revocation rule timing, one-to-one consent vacatur): the FCC pages returned 403, so this is not verified and needs counsel review before any automated calling or texting.",
+  "US Department of Labor independent-contractor rule enforcement status in 2025-2026: the DOL page returned 404, so it is not verified.",
+  "Visa VAMP: merchant fees per dispute and the exact CEMEA thresholds were not verified. Thresholds were decoded from the official PDF and should be confirmed with the acquirer. Mastercard program thresholds were not researched.",
+  "Stripe US card pricing was not verified (only the GB page loaded).",
+  "UK DMCC Act maximum CMA fine level and Consumer Contracts Regulations reg. 31 extension length were not verified on the pages opened.",
+  "Creator-economy market sizing and creator income distribution (Goldman Sachs, Kit reports) could not be opened (403/429).",
+  "Whether buyers of 'build a business' coaching are 'consumers' under UK law, and whether a given coaching offer is a 'business opportunity' under the TSR, are fact-specific legal questions requiring counsel."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

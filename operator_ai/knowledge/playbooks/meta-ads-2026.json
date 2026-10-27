@@ -1,0 +1,1162 @@
+{
+ "domain": "meta-ads-2026",
+ "title": "Meta ads",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "andromeda-retrieval-creative-is-targeting",
+   "title": "Andromeda retrieval: treat creative as the main targeting input",
+   "category": "algorithm-and-delivery",
+   "guidance": "Andromeda is the first stage of Meta's ad delivery system. For each impression it cuts tens of millions of eligible ads down to a few thousand candidates, which the ranking models then score. Meta says it raised retrieval recall by 6% and ad quality by 8% on selected segments while growing model capacity about 10,000x, and that it was built to handle the volume of ads coming from Advantage+ automation and generative-AI tools. For a coaching advertiser, this means what the ad says and shows now does most of the audience-finding that interest stacks used to do. A distinct concept (a different person, setting, problem or promise) gets matched to a different group of people, while cosmetic variants of one concept compete for the same group. Meta's public guidance is outcome-based and does not explain how it represents individual creatives, so this concept-to-audience link is an informed inference, not a documented rule.",
+   "steps": [
+    "List 3-5 distinct buyer situations for the offer (e.g., employed professional wanting a side business, service provider stuck at a revenue plateau, career changer, existing coach with no lead flow).",
+    "For each situation write 2-3 angles: problem, mechanism/how it works, proof/case study (compliant), objection-handling, contrarian belief.",
+    "Produce each angle in at least two formats (talking-head video, static, carousel, screen-recorded walkthrough, webinar or call clip).",
+    "Make the first 3 seconds visually different across concepts (different speaker, setting or format), not just different captions.",
+    "Launch concepts in weekly batches into a broad, Advantage+-enabled ad set and let delivery allocate spend.",
+    "Retire or scale concepts on downstream metrics (cost per qualified lead or showed call), not CTR alone."
+   ],
+   "do": [
+    "Keep audience settings broad so retrieval can match each concept to its own audience",
+    "Maintain a rolling pool of genuinely different concepts",
+    "Tag every ad by concept, angle, persona and format so you can read results by concept"
+   ],
+   "dont": [
+    "Rely on interest stacks to define who sees the ad",
+    "Count ten hook or text swaps of one video as ten tests",
+    "Treat vendor 'similarity score' percentages as official Meta thresholds"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Retrieval recall improvement",
+     "value": "+6%",
+     "context": "Meta Engineering, Dec 2024 (company-reported)"
+    },
+    {
+     "metric": "Ads quality improvement",
+     "value": "+8% on selected segments",
+     "context": "Meta Engineering, Dec 2024 (company-reported)"
+    },
+    {
+     "metric": "Model capacity increase",
+     "value": "~10,000x",
+     "context": "Meta Engineering, Dec 2024"
+    },
+    {
+     "metric": "ROAS lift for Advantage+ AI targeting",
+     "value": "+22%",
+     "context": "Meta-reported, no methodology published"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Andromeda: Supercharging Advantage+ automation with the next-gen personalized ads retrieval engine",
+     "url": "https://engineering.fb.com/2024/12/02/production-engineering/meta-andromeda-advantage-automation-next-gen-personalized-ads-retrieval-engine/",
+     "publisher": "Engineering at Meta",
+     "date": "2024-12-02"
+    },
+    {
+     "title": "Meta tells advertisers near-identical creative counts as the same ad",
+     "url": "https://www.relevantaudience.com/meta/meta-ad-creative-diversification-same-hook-same-ad/",
+     "publisher": "Relevant Audience (reporting Marketing Brew)",
+     "date": "2026-09-29"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "gem-ranking-signal-quality",
+   "title": "GEM ranking model: feed it clean conversion signals and unfragmented delivery",
+   "category": "algorithm-and-delivery",
+   "guidance": "After retrieval, Meta's ranking models pick the winning ad. Since 2025 they have been trained with help from GEM, a large foundation model whose learnings are distilled into hundreds of smaller serving models. Meta reported that GEM raised ad conversions by about 5% on Instagram and 3% on Facebook Feed in Q2 2025. In October 2026 it said a unified cross-surface version produced 18.9% more conversions and 12% higher CTR, but it published no baselines or methodology, so treat these as directional company claims. GEM learns from advertiser goals, creative formats, measurement signals and user behaviour. The levers you control are therefore the optimization event you choose, the honesty of the conversion data you send back, and giving the model every placement to work with. A funnel that optimizes for a cheap, low-intent opt-in teaches the ranker to find more low-intent people; sending back qualified-lead or purchase stages changes what it learns.",
+   "steps": [
+    "Confirm every funnel event fires through both pixel and Conversions API with good match quality (see the CAPI entry).",
+    "Choose the optimization event with the signal-ladder method (deepest event that reaches about 50 per week).",
+    "Keep Advantage+ placements on unless a placement is clearly harmful to lead quality according to CRM data.",
+    "Send qualified/booked/showed/purchase stages back to Meta so ranking learns from revenue, not form fills."
+   ],
+   "do": [
+    "Use one consolidated conversion campaign per offer and optimization event",
+    "Send purchase value with purchase events"
+   ],
+   "dont": [
+    "Optimize a high-ticket funnel for link clicks or landing-page views",
+    "Restrict placements by habit without CRM evidence"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Conversion lift from GEM (Instagram)",
+     "value": "+5%",
+     "context": "Q2 2025, Meta-reported"
+    },
+    {
+     "metric": "Conversion lift from GEM (Facebook Feed)",
+     "value": "+3%",
+     "context": "Q2 2025, Meta-reported"
+    },
+    {
+     "metric": "Cross-surface conversion improvement",
+     "value": "+18.9%",
+     "context": "Oct 2026 GEM update; no baseline or method disclosed"
+    },
+    {
+     "metric": "Ad CTR improvement",
+     "value": "+12%",
+     "context": "Oct 2026 GEM update; unaudited"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta's Generative Ads Model (GEM): The central brain accelerating ads recommendation AI innovation",
+     "url": "https://engineering.fb.com/2025/11/10/ml-applications/metas-generative-ads-model-gem-the-central-brain-accelerating-ads-recommendation-ai-innovation/",
+     "publisher": "Engineering at Meta",
+     "date": "2025-11-10"
+    },
+    {
+     "title": "Generative Ads Model (GEM): scaling frontier ads AI",
+     "url": "https://engineering.fb.com/2026/10/13/ml-applications/generative-ads-model-gem-scaling-frontier-ads-ai/",
+     "publisher": "Engineering at Meta",
+     "date": "2026-10-13"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "creative-diversity-concepts-vs-variants",
+   "title": "What counts as a 'new' creative: concepts, not text swaps",
+   "category": "creative-strategy",
+   "guidance": "In late September 2026 a Meta spokesperson called creative diversification a long-standing best practice and said Meta's advice is deliberately outcome-based rather than tied to a particular model. Agency leaders interviewed for the same report said ads that share the same look or opening hook are ranked as essentially the same ad, and that two videos of the same person differing only in on-screen text count as one creative. Meta did not confirm either claim. Meta's fatigue guidance also says to replace a tired ad with a 'materially different' image or video. There is no official similarity threshold; the 60% and 70% figures in vendor blogs are unverified. A useful working rule is that a new concept changes at least two of four things: the person or visual world, the core angle, the format, and the buyer situation addressed. Headline and caption swaps are variants within a concept. They belong in the multiple-text fields, not in separate ads.",
+   "steps": [
+    "Adopt a naming convention: concept ID / angle / persona / format / hook type.",
+    "Gate: an ad counts as a new concept only if at least 2 of the 4 dimensions differ from existing ads.",
+    "Inside a concept, load up to 5 primary texts and 5 headlines instead of cloning the ad.",
+    "Each week, plan a format mix across talking-head, founder story, client case study (compliant), myth-buster, screen walkthrough, static statistic or quote, and carousel.",
+    "Report results at concept level and kill or scale whole concepts."
+   ],
+   "do": [
+    "Mix video and static assets and vary tone across hooks",
+    "Use different on-camera people, settings and production styles"
+   ],
+   "dont": [
+    "Ship many near-identical UGC clips and expect added reach",
+    "Treat headline A/B tests as creative strategy"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Official similarity threshold",
+     "value": "None published",
+     "context": "Meta says its guidance is outcome-based; vendor 60-70% figures are unverified"
+    },
+    {
+     "metric": "Creative insights metrics in Insights API",
+     "value": "Limited testing since June 2026",
+     "context": "Small number of agencies/resellers per Meta spokesperson; no general release date"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta tells advertisers near-identical creative counts as the same ad",
+     "url": "https://www.relevantaudience.com/meta/meta-ad-creative-diversification-same-hook-same-ad/",
+     "publisher": "Relevant Audience",
+     "date": "2026-09-29"
+    },
+    {
+     "title": "About creative fatigue (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/1346816142327858",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "advantage-plus-leads-setup",
+   "title": "Advantage+ leads campaigns: default setup and the controls that still matter",
+   "category": "campaign-structure",
+   "guidance": "Since February 2025, new Sales, App and Leads campaigns start with Advantage+ switched on for budget, audience and placements, replacing the old choice between manual and automated campaigns. In early tests Meta reported roughly 10% lower cost per qualified lead with Advantage+ on (a company figure). A campaign loses its Advantage+ status if you override the audience suggestions (age, gender, custom-audience inclusions) or override the budget or placement settings. The hard controls that remain are location, minimum age, custom-audience exclusions and language. Maximum age, gender, interests and custom audiences become suggestions that Meta may try first before widening. For high-ticket offers the main risk is that the system chases cheap volume. Counter it with a quality signal (qualified-lead or booked-call events) and firm exclusions rather than narrow targeting.",
+   "steps": [
+    "Create a Leads-objective campaign and leave Advantage+ on (campaign budget, Advantage+ audience, Advantage+ placements).",
+    "Set hard controls: countries you can actually serve, a minimum age suited to the offer, and languages.",
+    "Add custom-audience exclusions: current clients, past buyers, leads from the last 30-90 days, staff.",
+    "Upload past buyers or qualified applicants as audience suggestions, not hard inclusions.",
+    "Optimize for the deepest event that reaches about 50 per week (see the signal-ladder entry).",
+    "Review CRM cost per qualified lead weekly. If quality drops, add a quality signal (conversion leads, application or booked-call event) before you narrow targeting."
+   ],
+   "do": [
+    "Use exclusions for people you never want to pay for",
+    "Judge Advantage+ against a manual control on cost per qualified lead, not CPL"
+   ],
+   "dont": [
+    "Override age and gender suggestions out of habit, which removes Advantage+ status",
+    "Assume Meta's reported savings will transfer to a high-ticket funnel without CRM checks"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Cost per qualified lead with Advantage+ on",
+     "value": "~10% lower",
+     "context": "Meta early tests, Feb 2025; vendor-reported"
+    },
+    {
+     "metric": "Hard audience controls available",
+     "value": "Location, minimum age, custom-audience exclusions, language",
+     "context": "As documented in Mar 2025; UI may have shifted since"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Advantage+ ad updates (February 2025)",
+     "url": "https://www.socialmediatoday.com/news/meta-advantage-plus-ad-updates-february-2025/739472/",
+     "publisher": "Social Media Today",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "Advantage+ Sales, App, and Leads Campaigns",
+     "url": "https://www.jonloomer.com/advantage-plus-sales-app-leads-campaigns/",
+     "publisher": "jonloomer.com",
+     "date": "2025-02-10 (updated 2025-03-06)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "broad-targeting-controls-2026",
+   "title": "Broad targeting in 2026: what was removed and how to exclude safely",
+   "category": "targeting",
+   "guidance": "Meta removed detailed-targeting exclusions (excluding people by interest, behaviour or demographic) from new campaigns in mid-2024. It stopped delivering older campaigns that still used them from 31 January 2025, citing an internal test where median cost per conversion improved 22.6% after exclusions were removed. A further consolidation removed more detailed-targeting options, and ad sets still using the retired options stopped delivering on 15 January 2026. The steering tools left are location, minimum age, language, custom-audience exclusions and account-level audience controls. For coaching offers, quality control now has to come from three places: creative that speaks to the right buyer and repels the wrong one, exclusions of existing customers and leads, and qualification steps in the funnel.",
+   "steps": [
+    "Audit saved audiences and old ad sets for retired detailed-targeting options; ad sets that use them stop delivering.",
+    "Build exclusion custom audiences: customers, applicants, recent leads, team members.",
+    "Set account-level audience controls (minimum age, excluded locations) so every campaign inherits them.",
+    "Write self-selecting call-outs into creative, describing who the programme is for and who it is not for.",
+    "Add 1-2 qualifying questions in forms or applications."
+   ],
+   "do": [
+    "Start broad: country + minimum age + language",
+    "Keep custom-audience exclusions up to date through CRM syncs"
+   ],
+   "dont": [
+    "Rebuild narrow interest stacks to substitute for missing exclusions",
+    "Leave legacy ad sets running on retired targeting options"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Median cost per conversion after removing detailed-targeting exclusions",
+     "value": "22.6% improvement",
+     "context": "Meta internal test, 2024"
+    },
+    {
+     "metric": "Delivery stop for ad sets using retired detailed-targeting options",
+     "value": "15 Jan 2026",
+     "context": "Ads Manager notice reported Aug 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta removes detailed targeting exclusions from ad campaigns",
+     "url": "https://www.socialmediatoday.com/news/meta-removes-detailed-targeting-exclusions-from-ad-campaigns/723389/",
+     "publisher": "Social Media Today",
+     "date": "2024-08-05"
+    },
+    {
+     "title": "Meta removes more detailed ad targeting options",
+     "url": "https://www.socialmediatoday.com/news/meta-removes-more-detailed-ad-targeting-options-facebook-instagram/757856/",
+     "publisher": "Social Media Today",
+     "date": "2025-08-17"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "native-creative-testing-tool",
+   "title": "Meta's built-in Creative Testing tool: when and how to use it",
+   "category": "testing",
+   "guidance": "Ads Manager has a native Creative Testing option, introduced around autumn 2025. It duplicates the ad you start from into 2-5 test ads (some accounts see up to 10), splits a ring-fenced budget so each person sees only one variant, and reports results in the Experiments section. Meta recommends putting no more than 20% of the campaign or ad-set budget into the test. The default length appears to be 7 days and the maximum is 30. It requires the Highest Volume bid strategy, so cost-per-result goals, bid caps and ROAS goals are not supported. The ad you start from is not part of the test, existing ads cannot be tested directly, and once the test ends Meta stops forcing even spend. Use it for clean head-to-head reads of a few new concepts inside a live campaign, and size the budget so each variant can reach a meaningful number of results.",
+   "steps": [
+    "Open an ad in the target ad set, go to the Creative Testing section and choose 'Set up test'.",
+    "Create 2-5 variants that differ by concept, not just by caption.",
+    "Allocate at most 20% of the budget. Make sure the per-variant budget covers several times your target cost per result.",
+    "Pick the comparison metric: cost per result, or a specific custom conversion such as a qualified lead or booked call.",
+    "Run 7 days or longer if variants have too few results to call. Read the outcome in Experiments.",
+    "Move the winners into the main ad set in one batch and archive the losers."
+   ],
+   "do": [
+    "Test distinct concepts against each other",
+    "Account for staggered ad review start times when reading early spend"
+   ],
+   "dont": [
+    "Use it with cost cap, bid cap or ROAS goal campaigns",
+    "Assume the post-test winner will automatically get most of the budget"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Test ads per test",
+     "value": "2-5 (up to 10 in some accounts)",
+     "context": "Observed in Ads Manager 2025-2026"
+    },
+    {
+     "metric": "Recommended budget share",
+     "value": "<=20% of campaign/ad set budget",
+     "context": "Meta recommendation shown in setup"
+    },
+    {
+     "metric": "Duration",
+     "value": "Default ~7 days; max 30 days",
+     "context": "Ads Manager setup"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Creative Testing",
+     "url": "https://www.jonloomer.com/meta-creative-testing/",
+     "publisher": "jonloomer.com",
+     "date": "2025-10-13 (updated 2026-01-03)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lean-account-architecture",
+   "title": "Lean account structure for coaching lead generation",
+   "category": "campaign-structure",
+   "guidance": "Meta's learning-phase guidance favours fewer, consolidated ad sets with realistic budgets and few edits. That fits an Andromeda-era structure: one main conversion campaign with broad delivery and many diverse ads, plus a small, deliberate testing lane. An ad set can hold up to 50 ads, so the constraint is rarely slots. It is whether each ad gets enough delivery to be judged. Splitting one budget across several ad sets with overlapping broad audiences divides the roughly 50-results-per-week learning signal and keeps every ad set in learning longer. Create separate campaigns only when something real differs: the optimization event, the offer, the currency or geography, or a hard budget split.",
+   "steps": [
+    "Scale campaign: Advantage+ leads (or sales), 1-2 ad sets, broad delivery, 10-30 active concepts.",
+    "Testing lane: native Creative Testing at no more than 20% of budget, or a small separate test campaign for new concepts each week.",
+    "Once a week, promote winners into the scale campaign in a single batch, so it counts as one significant edit instead of many.",
+    "Pause losers in the same weekly batch.",
+    "Keep retargeting minimal or inside the broad campaign, since small audiences fatigue fastest."
+   ],
+   "do": [
+    "Combine similar ad sets",
+    "Schedule changes into one weekly edit window"
+   ],
+   "dont": [
+    "Run one ad set per interest or per creative",
+    "Edit live ad sets daily"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Maximum ads per ad set",
+     "value": "50",
+     "context": "Ads Manager limit as of 2025"
+    },
+    {
+     "metric": "Results needed to exit learning",
+     "value": "~50 in the week after the last significant edit",
+     "context": "Meta Business Help Center"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About the learning phase (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/112167992830700",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Creative Fatigue: What It Is and How to Prevent It",
+     "url": "https://www.jonloomer.com/creative-fatigue-meta-ads/",
+     "publisher": "jonloomer.com",
+     "date": "2025-09-15"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "learning-phase-budget-math",
+   "title": "Learning-phase math: size budgets to about 50 results per week",
+   "category": "budgets",
+   "guidance": "Meta says an ad set usually leaves the learning phase after about 50 results in the week after its last significant edit. Ad sets that cannot get there show 'Learning limited'. Edits to the ad, ad set or campaign, and frequent budget changes, can count as significant edits and restart learning. Meta advises waiting until learning ends before editing, combining similar ad sets, and setting budgets large enough to produce results. As a planning formula, minimum daily ad-set budget ≈ 50 × expected cost per optimization event ÷ 7. At the 2025 US education benchmark CPL of about $28 that is roughly $200 a day. Optimizing for a $150 booked call needs about $1,070 a day, and a $500 sale about $3,570 a day. That is why most smaller coaching accounts optimize for a lead or registration and send the deeper stages back as signals.",
+   "steps": [
+    "Estimate cost per optimization event from history or benchmarks.",
+    "Compute the minimum daily budget: 50 × cost per event ÷ 7.",
+    "If the budget cannot support the event, move one rung up the signal ladder (e.g., from booked call to application or lead).",
+    "Check the 'Last significant edit' column before making changes; batch edits.",
+    "Treat a persistent 'Learning limited' status as a sign to consolidate ad sets or choose a higher-volume event."
+   ],
+   "do": [
+    "Plan budgets per ad set, not per campaign",
+    "Leave new ad sets alone for about a week"
+   ],
+   "dont": [
+    "Optimize for a rare event on a budget that delivers 5-10 per week",
+    "Make many small budget tweaks during learning"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Learning-phase exit",
+     "value": "~50 results per ad set in the week after last significant edit",
+     "context": "Meta Business Help Center"
+    },
+    {
+     "metric": "Budget needed at $28 CPL",
+     "value": "~$200/day per ad set",
+     "context": "Derived: 50 × $28 ÷ 7"
+    },
+    {
+     "metric": "Budget needed at $150 per booked call",
+     "value": "~$1,070/day per ad set",
+     "context": "Derived, illustrative"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About the learning phase (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/112167992830700",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Facebook ad costs jump 21% as lead campaigns struggle while traffic ads thrive",
+     "url": "https://ppc.land/facebook-ad-costs-jump-21-as-lead-campaigns-struggle-while-traffic-ads-thrive/",
+     "publisher": "PPC Land (reporting WordStream/LocaliQ)",
+     "date": "2025-09-09"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "signal-ladder-optimization-event",
+   "title": "Pick the optimization event with a signal ladder",
+   "category": "measurement",
+   "guidance": "High-ticket coaching and webinar funnels run through a chain of events: opt-in or registration, attendance or application, booked call, showed call, sale. Each step is rarer and more predictive of revenue. Optimize for the deepest step that reliably reaches about 50 events per ad set per week at your budget. Still send every deeper step to Meta through the Conversions API, so the data is there when you are ready to move down the ladder. For Instant Form leads, Meta's conversion-leads integration works best when the stage you optimize for happens within 28 days of the lead, converts 1-40% of leads, and the account produces at least 200 leads a month. When a deeper event reaches enough volume, launch it in a new campaign or ad set alongside the old one instead of changing the optimization event in place, which restarts learning.",
+   "steps": [
+    "Map the funnel events: Lead, CompleteRegistration, SubmitApplication, Schedule, a custom 'CallShowed' event, and Purchase with value.",
+    "Fire each event via pixel plus CAPI with deduplication; send offline stages through CAPI or CAPI for CRM.",
+    "Calculate weekly volume per event at current spend.",
+    "Optimize for the deepest event with at least 50 per week per ad set.",
+    "Each month, check whether a deeper event now qualifies and test it in parallel."
+   ],
+   "do": [
+    "Send purchase value so value-based optimization becomes possible later",
+    "Keep event definitions stable over time"
+   ],
+   "dont": [
+    "Switch the optimization event on a live ad set",
+    "Fire 'Lead' on page views or button clicks, which inflates the signal"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Minimum lead volume for conversion-leads integration",
+     "value": ">=200 leads/month",
+     "context": "Meta developer docs"
+    },
+    {
+     "metric": "Target stage conversion rate",
+     "value": "1%-40% of leads within 28 days",
+     "context": "Meta developer docs"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About the learning phase (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/112167992830700",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Conversions API for CRM Integration",
+     "url": "https://developers.facebook.com/docs/marketing-api/conversions-api/conversion-leads-integration",
+     "publisher": "Meta for Developers",
+     "date": "undated; accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "kill-and-scale-rules",
+   "title": "Kill and scale rules (practitioner heuristics, not Meta policy)",
+   "category": "budgets",
+   "guidance": "Meta publishes no percentage threshold for a 'safe' budget increase and no rule for when to switch an ad off. Its documentation only warns that frequent budget changes and other significant edits can restart learning. The numbers below are common practitioner conventions; calibrate them per account. Judge ads by spend relative to your target cost per result, not by days elapsed, and move to downstream quality (cost per qualified lead or per showed call) once there is enough volume. Scale in steps several days apart, or add budget through a new ad set or campaign, and never scale an ad set that is still in learning.",
+   "steps": [
+    "Early kill: pause an ad that has spent about 2× the target CPL with no leads, or about 3× the target CPL with CPL still more than 50% above target.",
+    "In the first ~48 hours, don't act on a new ad's early volatility or a 'Creative limited' label.",
+    "Quality kill: after 20-30 leads, pause concepts whose qualified-lead or booking rate is under half the account average, even if CPL looks good.",
+    "Scale trigger: the ad set has exited learning and cost per qualified result has been at least 20% under target for 3 or more days.",
+    "Scale step: raise budget about 20-30%, then wait 48-72 hours before the next change. For larger jumps, duplicate into a new ad set or campaign.",
+    "If results collapse after an increase, revert once and hold. Don't keep adjusting."
+   ],
+   "do": [
+    "Write kill and scale rules down before launch so the AI agent or media buyer applies them consistently",
+    "Batch all edits into one daily or weekly window"
+   ],
+   "dont": [
+    "Kill on CTR alone for high-ticket offers",
+    "Double budgets on an ad set still in learning"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Budget step size",
+     "value": "~20-30% per change (heuristic)",
+     "context": "Not documented by Meta; contested among practitioners"
+    },
+    {
+     "metric": "Wait before judging a new ad",
+     "value": "~48 hours (vendor heuristic)",
+     "context": "Vendor guidance; unverified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About the learning phase (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/112167992830700",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Meta Creative Fatigue: How to Diagnose and Fix It Fast in 2026",
+     "url": "https://www.tryatria.com/blog/meta-creative-fatigue-diagnose-and-fix-2026",
+     "publisher": "Atria (vendor)",
+     "date": "2026-06-03"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "creative-fatigue-diagnosis",
+   "title": "Diagnose creative fatigue with Meta's delivery labels, then replace with new concepts",
+   "category": "creative-strategy",
+   "guidance": "Meta's Delivery column shows 'Creative limited' when cost per result is above your past ads but less than double, and 'Creative fatigue' when it is at least double. Meta counts all recent exposures of the same image or video, including exposures from other campaigns on your Page, and can warn before launch if it expects fatigue within 7 days. The labels only apply to ad sets with a single creative (not dynamic creative, catalog or Advantage+ app campaigns), so ad sets with many ads need your own monitoring. Meta's suggested fixes are to add an ad with a materially different image or video (leaving the original on can still help), widen the audience, or use Advantage+ creative variations, which are limited to traffic and sales campaigns with a website destination. The labels only appear after costs have already risen, so run a fixed refresh cadence rather than waiting for them.",
+   "steps": [
+    "Add the Delivery column and watch for Creative limited or Creative fatigue on single-creative ad sets.",
+    "For multi-ad ad sets, track each concept's 7-day cost per result against its own first-14-day baseline.",
+    "At 'Creative limited', brief a replacement concept. At 'Creative fatigue', launch it.",
+    "Remember that reusing the same video across campaigns adds to the same exposure count.",
+    "Keep a pipeline of new concepts so replacements are ready before fatigue shows."
+   ],
+   "do": [
+    "Replace fatigued ads with a different concept, not a re-cut",
+    "Watch frequency together with cost trends, not on its own"
+   ],
+   "dont": [
+    "Treat high frequency alone as proof of fatigue when results are holding",
+    "Run the same hero video across every campaign"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Creative limited",
+     "value": "Cost per result above past ads but <2×",
+     "context": "Meta Business Help Center"
+    },
+    {
+     "metric": "Creative fatigue",
+     "value": "Cost per result >=2× past ads",
+     "context": "Meta Business Help Center"
+    },
+    {
+     "metric": "Performance drop after repeated exposure",
+     "value": "~45% after 4 exposures (average)",
+     "context": "2022 Meta study as cited by third party; context-free average"
+    },
+    {
+     "metric": "Prospecting frequency warning zone",
+     "value": "~2.5-3.0",
+     "context": "Vendor heuristic, unverified"
+    },
+    {
+     "metric": "Direct-response refresh cadence",
+     "value": "Every 1-2 weeks",
+     "context": "Vendor heuristic, unverified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "About creative fatigue (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/1346816142327858",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Creative Fatigue: What It Is and How to Prevent It",
+     "url": "https://www.jonloomer.com/creative-fatigue-meta-ads/",
+     "publisher": "jonloomer.com",
+     "date": "2025-09-15"
+    },
+    {
+     "title": "Meta Creative Fatigue: How to Diagnose and Fix It Fast in 2026",
+     "url": "https://www.tryatria.com/blog/meta-creative-fatigue-diagnose-and-fix-2026",
+     "publisher": "Atria (vendor)",
+     "date": "2026-06-03"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "capi-web-implementation",
+   "title": "Conversions API for web funnels: redundant, deduplicated, high-match events",
+   "category": "tracking",
+   "guidance": "Run the Meta pixel and the Conversions API together for every web funnel event, so browser-side losses (ad blockers, cookie limits) are covered by server events. To deduplicate, both sends must use the identical event_name and the same event_id, or alternatively external_id plus fbp; Meta recommends sending all of them, and the deduplication window is 48 hours. Every website event needs action_source, event_source_url and client_user_agent. Match quality depends mostly on hashed email, phone, first and last name, client IP address, user agent, fbp and fbc. Only matched events are used for optimization and attribution. Event Match Quality is scored out of 10 per event in Events Manager. Send events in real time rather than in delayed batches.",
+   "steps": [
+    "Map every funnel event and give each one a single event_id, generated in the browser and passed to the server call.",
+    "Send the required fields: action_source='website', event_source_url, client_user_agent, event_time.",
+    "Add user data: SHA-256-hashed em, ph, fn, ln; plus client_ip_address, fbp, fbc (from the _fbp/_fbc cookies or the fbclid) and external_id (your CRM ID).",
+    "Send server events immediately, not hours later.",
+    "Validate in Test Events with your own details, then check the Deduplicated and Event Match Quality views in Events Manager.",
+    "Read fresh fbp and fbc values each time rather than caching stale ones."
+   ],
+   "do": [
+    "Use the same order or lead ID as event_id on both browser and server",
+    "Monitor EMQ and data-freshness weekly"
+   ],
+   "dont": [
+    "Generate separate random IDs in the browser and on the server",
+    "Send events containing only weak identifiers such as city+state+zip+user agent, which Meta rejects"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Deduplication window",
+     "value": "48 hours max",
+     "context": "Meta developer docs"
+    },
+    {
+     "metric": "Event Match Quality scale",
+     "value": "0/1-10 per event",
+     "context": "Meta; no official minimum target for web. Vendor claims that a score under 6 is a warning sign are unverified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Conversions API Best Practices",
+     "url": "https://developers.facebook.com/documentation/ads-commerce/conversions-api/best-practices",
+     "publisher": "Meta for Developers",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Omni Optimal Technical Setup Guide",
+     "url": "https://developers.facebook.com/docs/marketing-api/best-practices/omni-optimal-setup-guide",
+     "publisher": "Meta for Developers",
+     "date": "undated; accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "capi-crm-conversion-leads",
+   "title": "Conversion Leads with CRM feedback for Instant Form campaigns",
+   "category": "tracking",
+   "guidance": "Meta's Conversion Leads performance goal lets Instant Form campaigns optimize toward leads that reach a later CRM stage, such as qualified, booked or sold, instead of raw form fills. Meta's integration requirements are: send lead-stage updates at least daily; produce at least 200 leads a month; the target stage must happen within 28 days of the lead and convert 1-40% of leads; and store the 15-17 digit Meta lead ID in the CRM and send it with each stage event. Meta estimates about 3-4 weeks from setup to value, including 2-4 weeks of learning. An agency citing Meta's internal tests reported about 15% lower cost per quality lead with this setup. One secondary source says that from April 2026 new campaigns using the qualified-leads goal need a Conversions API integration, with existing campaigns affected from August 2026. Treat that timeline as unconfirmed.",
+   "steps": [
+    "Make sure Instant Form leads reach the CRM automatically (native integration, Zapier, LeadsBridge or webhooks) with the Meta lead_id stored.",
+    "In Events Manager, connect a data source, choose CRM and create a dedicated dataset.",
+    "Define clear stages (e.g., New, Qualified, Call Booked, Showed, Won) and send every stage change with lead_id at least daily.",
+    "Pick the optimization stage that hits 1-40% of leads within 28 days (often 'Qualified' or 'Call Booked').",
+    "After the model has learned (2-4 weeks), launch a campaign with the Conversion Leads goal next to the existing one and compare cost per qualified lead."
+   ],
+   "do": [
+    "Keep stage definitions consistent across sales reps",
+    "Upload negative outcomes (disqualified) as well as positive ones where supported"
+   ],
+   "dont": [
+    "Optimize for 'Won' if it converts under 1% of leads or takes longer than 28 days",
+    "Download leads manually via CSV; form lead data is only retained for 90 days"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Minimum monthly leads",
+     "value": "200",
+     "context": "Meta developer docs"
+    },
+    {
+     "metric": "Upload frequency",
+     "value": "At least daily",
+     "context": "Meta developer docs"
+    },
+    {
+     "metric": "Time to value",
+     "value": "~3-4 weeks",
+     "context": "Meta developer docs"
+    },
+    {
+     "metric": "Cost per quality lead",
+     "value": "~15% lower",
+     "context": "Meta internal testing relayed by an agency; not independently verified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Conversions API for CRM Integration",
+     "url": "https://developers.facebook.com/docs/marketing-api/conversions-api/conversion-leads-integration",
+     "publisher": "Meta for Developers",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Meta's Shift to Lead Optimization & What it Means For Your Business",
+     "url": "https://www.clickheredigital.com/insights/meta-shift-to-lead-optimization",
+     "publisher": "Click Here Digital",
+     "date": "2026-03-30"
+    },
+    {
+     "title": "Facebook Lead Ads: How Instant Forms Work and How to Use Them",
+     "url": "https://www.relevantaudience.com/facebook-ads/facebook-lead-ads-instant-forms-guide/",
+     "publisher": "Relevant Audience",
+     "date": "2026-10-14"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "instant-forms-vs-landing-pages",
+   "title": "Instant forms vs landing pages for high-ticket offers",
+   "category": "funnel",
+   "guidance": "Instant Forms open inside Facebook or Instagram with contact details prefilled. That lowers friction and cost per lead but invites low-effort submissions. A website funnel (landing page or video sales letter, then application, then calendar) costs more per lead, but lets a high-ticket buyer see the offer, proof and expectations before raising a hand, and keeps the data in your own systems from the first click. The 'Higher intent' form type adds a review-and-confirm screen and a note that the business may follow up. It only runs in mobile Facebook and Instagram feeds, and it suits funnels where every lead gets a sales call. Forms allow up to 15 questions with conditional logic, so 1-2 multiple-choice qualifiers with a different ending for poor fits can filter volume. Meta restricts questions on sensitive topics such as personal income or health. An agency citing Meta's tests says running Instant Form and website campaigns together cut cost per lead about 60% and raised volume 125% compared with website alone. The decision metric that matters is still cost per qualified lead or per showed call from your CRM, on the same offer and audience.",
+   "steps": [
+    "For offers sold on a call, run a website funnel optimized on a lead or application event via CAPI.",
+    "In parallel, run a Higher-intent Instant Form with 1-2 qualifiers (situation, timeline, programme fit) and a completion screen that links to the calendar.",
+    "Sync leads to the CRM in real time and contact them within minutes during business hours.",
+    "Send CRM outcomes back to Meta (see the Conversion Leads entry).",
+    "After equal spend, compare cost per booked call and per showed call, then reallocate."
+   ],
+   "do": [
+    "State clearly on the form that a call will follow",
+    "Use conditional endings to send poor fits to a free resource instead of the calendar"
+   ],
+   "dont": [
+    "Judge forms vs pages on CPL alone",
+    "Ask about personal income, debts or health in Instant Forms"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max questions per Instant Form",
+     "value": "15",
+     "context": "Meta product limit"
+    },
+    {
+     "metric": "Lead data retention for download",
+     "value": "90 days",
+     "context": "Meta product limit"
+    },
+    {
+     "metric": "Instant Form + website vs website alone",
+     "value": "~60% lower CPL, +125% lead volume",
+     "context": "Meta internal tests relayed by an agency; unverified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Facebook Lead Ads: How Instant Forms Work and How to Use Them",
+     "url": "https://www.relevantaudience.com/facebook-ads/facebook-lead-ads-instant-forms-guide/",
+     "publisher": "Relevant Audience",
+     "date": "2026-10-14"
+    },
+    {
+     "title": "Meta's Shift to Lead Optimization & What it Means For Your Business",
+     "url": "https://www.clickheredigital.com/insights/meta-shift-to-lead-optimization",
+     "publisher": "Click Here Digital",
+     "date": "2026-03-30"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "attribution-settings-2026",
+   "title": "2026 attribution settings and how to read lead results",
+   "category": "measurement",
+   "guidance": "Meta removed the 7-day and 28-day view-through attribution windows on 12 January 2026. In March 2026 it narrowed 'click-through' to conversions after a link click. Reactions, comments, shares, saves and engaged video views now sit in a separate 'engage-through' category with a 1-day window. The current defaults are 7-day click, 1-day engage-through and 1-day view. An 'incremental' attribution model, rolled out in 2025, optimizes toward conversions Meta's models judge were caused by the ad, but it locks the window settings. For lead generation, view-through and engage-through credit inflates easily, especially on remarketing audiences who would have converted anyway. Compare against click-only results and reconcile with your CRM's lead source. Reports built on the old view windows are no longer comparable, so re-baseline any targets set before 2026.",
+   "steps": [
+    "Add attribution comparison columns (click-only vs default) to the lead reporting view.",
+    "Consider removing 1-day view and engage-through for non-purchase events, especially in remarketing.",
+    "Tag all ads with UTMs and store the source on the CRM lead record.",
+    "Each week, reconcile Meta-reported leads with CRM leads by campaign and ad.",
+    "Re-baseline historical CPL and CAC targets that were set on 7- or 28-day view windows."
+   ],
+   "do": [
+    "Use CRM-sourced cost per qualified lead as the source of truth",
+    "Run periodic holdout or geo tests for incrementality on larger budgets"
+   ],
+   "dont": [
+    "Compare 2026 results to 2025 reports that used 28-day view",
+    "Credit remarketing for view-through leads without checking incrementality"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Default attribution setting",
+     "value": "7-day click, 1-day engage-through, 1-day view",
+     "context": "As of Mar 2026"
+    },
+    {
+     "metric": "View windows removed",
+     "value": "7-day and 28-day view, 12 Jan 2026",
+     "context": "Ads Insights API (Ads Manager impact reported as well)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "How Meta Ads Attribution Works in 2026",
+     "url": "https://www.jonloomer.com/meta-ads-attribution-2026/",
+     "publisher": "jonloomer.com",
+     "date": "2026-03-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cpl-benchmarks-and-unit-economics",
+   "title": "CPL benchmarks and deriving your own allowable cost per lead",
+   "category": "benchmarks",
+   "guidance": "The most recent large public dataset (WordStream/LocaliQ: US campaigns, April 2024 to June 2025, released September 2025) puts the average Facebook lead-campaign CPL at $27.66, up about 21% year on year. The same dataset shows a 7.72% conversion rate (down from 8.67%), 2.59% CTR and $1.92 CPC. By industry, Education & Instruction averaged $28.22 CPL, Personal Services $30.57, Health & Fitness $52.98 and Career & Employment $17.64. These figures mix local businesses and low-ticket offers. There is no credible public benchmark for high-ticket coaching metrics such as cost per booked or showed call, so use them only as a sanity check. Set targets from your own unit economics. Revenue per lead = price × lead-to-booking rate × show rate × close rate. Allowable CPL = revenue per lead × the share of revenue you will spend on acquisition. Track the whole chain weekly, because a cheap CPL with a collapsing booking rate loses money.",
+   "steps": [
+    "Pull the last 90 days of CRM data: leads, bookings, shows, closes and price collected.",
+    "Compute revenue per lead. Illustration only (assumed rates, not benchmarks): a $5,000 programme where 15% of leads book, 70% show and 25% of shows close gives about $131 per lead.",
+    "Set the allowable CPL. In the same illustration, a 30% acquisition share gives about $39.",
+    "Derive matching targets for cost per application, per booked call and per showed call.",
+    "Recalculate monthly. If the booking or show rate falls, lower the CPL target instead of raising spend."
+   ],
+   "do": [
+    "Report CPL, cost per booked call, cost per showed call and CAC together",
+    "Separate new-lead revenue from renewals or upsells when computing allowable CAC"
+   ],
+   "dont": [
+    "Set CPL targets from generic industry averages",
+    "Promise prospects or students specific ad results or income from these numbers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average Facebook lead-campaign CPL (all industries)",
+     "value": "$27.66 (+21% YoY)",
+     "context": "WordStream/LocaliQ, US, Apr 2024-Jun 2025, >1,000 campaigns"
+    },
+    {
+     "metric": "Lead-campaign conversion rate",
+     "value": "7.72% (from 8.67%)",
+     "context": "Same dataset"
+    },
+    {
+     "metric": "Education & Instruction CPL",
+     "value": "$28.22 (lead CPC $1.65)",
+     "context": "Same dataset"
+    },
+    {
+     "metric": "Personal Services CPL",
+     "value": "$30.57",
+     "context": "Same dataset"
+    },
+    {
+     "metric": "Health & Fitness CPL",
+     "value": "$52.98",
+     "context": "Same dataset"
+    },
+    {
+     "metric": "Lead-campaign CTR / CPC",
+     "value": "2.59% / $1.92",
+     "context": "Same dataset"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Facebook ad costs jump 21% as lead campaigns struggle while traffic ads thrive",
+     "url": "https://ppc.land/facebook-ad-costs-jump-21-as-lead-campaigns-struggle-while-traffic-ads-thrive/",
+     "publisher": "PPC Land (reporting WordStream/LocaliQ)",
+     "date": "2025-09-09"
+    },
+    {
+     "title": "Facebook Ads Cost benchmarks",
+     "url": "https://superscale.ai/learn/facebook-ads-cost/",
+     "publisher": "Superscale (compiling LocaliQ data)",
+     "date": "2026-07-23"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "special-ad-categories-coaching",
+   "title": "Special ad categories: when coaching-adjacent ads must declare one",
+   "category": "policy",
+   "guidance": "Meta requires a Special Ad Category for housing, employment, financial products and services, and social-issue, election or political ads. 'Financial products and services' replaced the old 'Credit' category on 14 January 2025 for US-based advertisers or ads reaching the US, and it also covers insurance, banking, investment and payment services. Declaring a category restricts targeting: age is fixed at 18-65+, gender can't be chosen, lookalikes and demographic or behaviour targeting and exclusions are unavailable, interests come from an approved list, and location targeting needs at least a 15-mile (25 km) radius in the US and Canada, with no ZIP-code targeting. Ordinary business-coaching ads usually need no category, but two coaching-adjacent cases do. Recruitment ads (for example, hiring appointment setters, closers or operator roles presented as jobs) fall under Employment. Ads promoting investment, trading, credit or insurance services fall under Financial products and services. Meta may reject ads that lack the right category, and since 6 October 2025 it no longer allows social-issue, electoral or political ads in the EU.",
+   "steps": [
+    "Classify each campaign before launch: is it selling a programme, recruiting for a role, or promoting a financial service?",
+    "Run recruiting and job-style ads in a separate campaign under the Employment category.",
+    "Run investment, trading, credit or insurance offers under Financial products and services, and expect broad-only targeting.",
+    "Keep job and recruitment messaging out of programme-sales ads so the two are never mixed."
+   ],
+   "do": [
+    "Plan for broad delivery and creative-led qualification in special-category campaigns",
+    "Check country-specific financial-services authorization requirements before advertising financial services outside the US"
+   ],
+   "dont": [
+    "Present a paid programme as a job opening",
+    "Try to recreate narrow targeting with ZIP codes or lookalikes in a special category"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Minimum location radius (US/Canada)",
+     "value": "15 miles / 25 km",
+     "context": "Special ad categories"
+    },
+    {
+     "metric": "Age targeting",
+     "value": "18-65+ fixed",
+     "context": "Special ad categories (EU credit exceptions)"
+    },
+    {
+     "metric": "Financial products and services category required",
+     "value": "From 14 Jan 2025 (US)",
+     "context": "Meta developer docs; an enforcement milestone also lists 21 Jan 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Special Ad Categories",
+     "url": "https://developers.facebook.com/docs/marketing-api/audiences/special-ad-category",
+     "publisher": "Meta for Developers",
+     "date": "undated (indexed as updated May 2026); accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "income-claims-meta-policy",
+   "title": "Income and opportunity claims under Meta's advertising standards",
+   "category": "policy",
+   "guidance": "Meta's advertising standards on unrealistic outcomes ban ads that say or imply someone can get rich quickly or make money with little or no work. Ads for income opportunities have to describe the actual product or business model instead of leading with earnings. Reviewers look at the ad copy, the imagery and the landing page together. Live ads can be re-reviewed after edits, and repeated violations can escalate from single-ad rejections to account restrictions; Meta also reserves the right to reject any ad. For coaching and operator-style offers, the safest approach is to sell the skill, the process and the support: what is taught, who it is for, the time commitment and what the work involves. Keep any results evidence on the landing page, with substantiation and a clear statement that outcomes vary. Practitioners most often report rejections for cash, cars or bank dashboards, payout screenshots, '$X per day' or 'passive income' framing, and testimonials that centre on money made.",
+   "steps": [
+    "Write each ad around the method, the work involved and who it suits, not around earnings.",
+    "Strip earnings figures, payout screenshots, lifestyle-wealth imagery and 'guaranteed' or 'fast' language from ads.",
+    "On the landing page, pair any results with substantiation and a clear typical-results or results-vary statement.",
+    "Prefer testimonials about skills gained, process and experience over money made.",
+    "Before launch, check the ad and the landing page as one package; re-check after any landing-page edit.",
+    "If an ad is rejected, fix the root cause across all ads and pages before appealing."
+   ],
+   "do": [
+    "Describe the business model and effort required plainly",
+    "Build to the strictest market (US, UK, EU) in global campaigns"
+   ],
+   "dont": [
+    "Use 'quit your job in 30 days', 'make $X per day' or 'no experience needed' hooks",
+    "Point a compliant ad at a landing page full of income screenshots"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Ads Income Claims Policy: How to Get Approved",
+     "url": "https://www.stackmatix.com/blog/meta-ads-income-claims-policy",
+     "publisher": "Stackmatix",
+     "date": "2026-09-02"
+    },
+    {
+     "title": "Meta Advertising Policies (tracked provisions)",
+     "url": "https://conductatlas.com/platform/meta-ads/meta-advertising-policies/",
+     "publisher": "ConductAtlas",
+     "date": "captured 2026-07-23; checked 2026-10"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ftc-earnings-claims-testimonials",
+   "title": "US legal guardrails: earnings claims, testimonials and reviews",
+   "category": "legal-compliance",
+   "guidance": "US regulators treat business-coaching and money-making-opportunity marketing as a priority. In October 2021 the FTC sent a Notice of Penalty Offenses to more than 1,100 such businesses, naming investment and business coaching among them. It warned that false or unsupported earnings claims, presenting results as typical, promising profits, falsely saying no experience is needed, fake urgency and misleading testimonials can bring civil penalties: up to $43,792 per violation at the time, adjusted for inflation each year since. In January 2025 the FTC proposed extending the Business Opportunity Rule to business coaching, requiring written substantiation for any earnings claim that consumers can request. The vote was 3-2 and the proposal's final status is unresolved. Under the 2023 Endorsement Guides, a testimonial showing exceptional results needs proof that such results are generally achieved or a clear disclosure of what people can generally expect, and paid or incentivised endorsers must be disclosed. The 2024 fake-reviews rule bans fabricated or AI-generated testimonials, reviews bought on condition of a positive opinion, undisclosed insider testimonials and purchased fake followers or views.",
+   "steps": [
+    "Keep a substantiation file for every earnings or results claim: data source, sample, period, and the typical result.",
+    "Next to any standout testimonial, disclose the generally expected result clearly.",
+    "Disclose material connections (affiliates, paid clients, free access, staff) next to the endorsement.",
+    "Use only real clients' testimonials, unedited in meaning. No AI-generated or composite testimonials.",
+    "Have counsel review funnel copy against the FTC Act, state laws and any final Business Opportunity Rule changes."
+   ],
+   "do": [
+    "Present results as ranges or typical outcomes with evidence",
+    "Make disclosures as prominent as the claim"
+   ],
+   "dont": [
+    "Use 'results not typical' fine print to excuse dramatic income claims",
+    "Buy followers or views, or seed reviews from staff without disclosure"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Businesses sent the 2021 money-making-opportunity notice",
+     "value": ">1,100",
+     "context": "FTC, 26 Oct 2021"
+    },
+    {
+     "metric": "Civil penalty per violation",
+     "value": "Up to $43,792 (2021 figure; inflation-adjusted annually)",
+     "context": "FTC, 2021"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Puts Businesses on Notice that False Money-Making Claims Could Lead to Big Penalties",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "US Federal Trade Commission",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "FTC Proposes Rule Changes and New Rule to Deter Deceptive Earnings Claims by Multilevel Marketers and Other Money-Making Opportunities",
+     "url": "https://ftc.gov/news-events/news/press-releases/2025/01/ftc-proposes-rule-changes-new-rule-deter-deceptive-earnings-claims-multilevel-marketers-money-making",
+     "publisher": "US Federal Trade Commission",
+     "date": "2025-01-13"
+    },
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "US Federal Trade Commission",
+     "date": "Guides revised 2023; page undated"
+    },
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "US Federal Trade Commission",
+     "date": "2024-08-14"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "personal-attributes-copy",
+   "title": "Personal-attribute rules: avoid implying the viewer's finances, health or status",
+   "category": "policy",
+   "guidance": "Meta doesn't allow ads to assert or imply that the viewer has a personal attribute, including age, a medical or mental-health condition, disability, criminal record, religion, sexual orientation or a vulnerable financial situation. In coaching copy this usually trips on money and mindset hooks. Lines like 'Tired of being broke?', 'Drowning in debt?' or 'Stuck in a dead-end job?' imply the viewer's financial situation. The word 'you' is fine when it doesn't tie the viewer to a sensitive attribute: 'Save your seat' and 'Want a repeatable way to win clients?' are fine. The fix is to describe who the programme helps in the third person, or to focus on what the method does. Instant Form questions on sensitive topics such as income or health are also restricted.",
+   "steps": [
+    "Screen every headline, primary text and on-screen caption for implied money, health, age or status.",
+    "Rewrite second-person 'struggle' questions as third-person or offer-focused statements.",
+    "Check hooks in auto-generated Advantage+ text variations as well.",
+    "Apply the same review to Instant Form questions and landing-page headlines."
+   ],
+   "do": [
+    "Use benefit-led copy about the method and who it suits",
+    "Keep a pre-approved bank of compliant hooks for the AI copywriter"
+   ],
+   "dont": [
+    "Ask the viewer about debt, income, weight, diagnoses or age",
+    "Use 'people like you' in a way that signals a sensitive trait"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Can We Use the Words 'You' and 'Your' in Facebook Ads Copy?",
+     "url": "https://www.jonloomer.com/can-we-use-the-words-you-and-your-in-facebook-ads-copy/",
+     "publisher": "jonloomer.com",
+     "date": "2023-03-13 (modified 2025-03-01)"
+    },
+    {
+     "title": "Meta Advertising Policies (tracked provisions)",
+     "url": "https://conductatlas.com/platform/meta-ads/meta-advertising-policies/",
+     "publisher": "ConductAtlas",
+     "date": "captured 2026-07-23"
+    },
+    {
+     "title": "Facebook Lead Ads: How Instant Forms Work and How to Use Them",
+     "url": "https://www.relevantaudience.com/facebook-ads/facebook-lead-ads-instant-forms-guide/",
+     "publisher": "Relevant Audience",
+     "date": "2026-10-14"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "opportunity-score-and-advantage-creative",
+   "title": "Opportunity score and Advantage+ creative recommendations: adopt selectively",
+   "category": "optimization",
+   "guidance": "Ads Manager's opportunity score rates campaign setup from 0 to 100 and comes with near-real-time recommendations, many of which switch on Advantage+ features, consolidate structure, add creative or address fatigue. Meta said advertisers who adopted the recommendations in early tests saw a 5% median drop in cost per result, and its help pages note that a high score does not guarantee performance. Advantage+ creative enhancements (text variations, background generation, aspect-ratio adaptation, AI-generated variants) give the system more distinct versions to deliver and can delay fatigue. For coaching offers, check each enhancement in preview before accepting it. Auto-generated text or imagery can introduce income-style claims, implied personal attributes or an off-brand voice. Adopt recommendations that add signal or creative diversity, and decline ones that trade lead quality for volume unless CRM data shows the cheaper leads still convert.",
+   "steps": [
+    "Review the opportunity score recommendations weekly in the same batch as other edits.",
+    "Accept structural ones (consolidation, Advantage+ placements, more creative) by default.",
+    "Preview every Advantage+ creative enhancement for policy and voice before enabling it.",
+    "Hold off on volume-oriented recommendations until CRM quality data supports them."
+   ],
+   "do": [
+    "Log which recommendations were applied and when, so you can read the impact",
+    "Supply up to 5 primary texts and 5 headlines per ad"
+   ],
+   "dont": [
+    "Chase a 100 score at the expense of lead quality",
+    "Auto-accept generated copy on a regulated or claims-sensitive offer"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Cost per result after adopting opportunity score recommendations",
+     "value": "5% median decrease",
+     "context": "Meta early tests, Feb 2025; company-reported"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Advantage+ ad updates (February 2025)",
+     "url": "https://www.socialmediatoday.com/news/meta-advantage-plus-ad-updates-february-2025/739472/",
+     "publisher": "Social Media Today",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "About creative fatigue (Meta Business Help Center)",
+     "url": "https://www.facebook.com/business/help/1346816142327858",
+     "publisher": "Meta",
+     "date": "undated; accessed 2026-10-27"
+    },
+    {
+     "title": "Creative Fatigue: What It Is and How to Prevent It",
+     "url": "https://www.jonloomer.com/creative-fatigue-meta-ads/",
+     "publisher": "jonloomer.com",
+     "date": "2025-09-15"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "health-wellness-data-restrictions",
+   "title": "Health and wellness coaches: check for event-sharing restrictions before building the funnel",
+   "category": "tracking",
+   "guidance": "From around January 2025, Meta began classifying some health and wellness advertisers and limiting the data they can use. Depending on the tier, custom parameters and URL details are removed, mid- and lower-funnel events can't be used for optimization, and in the strictest tier custom conversions are blocked, whether data arrives through the pixel or the Conversions API. Fitness, weight-loss, mental-health and wellness coaches may be caught by this, which can stop them optimizing for leads, bookings or purchases on their own site. Reporting at the time came from vendors and partly relied on pre-announcement information, so check your actual status in Events Manager before designing the funnel. If you are restricted, plan around on-platform lead capture, CRM-based quality measurement and holdout or geo tests, and appeal any misclassification.",
+   "steps": [
+    "In Events Manager, check the data-source category and any restriction notices for the dataset.",
+    "Test whether Lead, Schedule and Purchase events are available as optimization events.",
+    "If restricted, test Instant Form or messaging-based lead capture, which keeps conversions on Meta.",
+    "Measure downstream quality in the CRM and consider geo or holdout tests for incrementality.",
+    "Appeal classifications you believe are wrong."
+   ],
+   "do": [
+    "Keep health claims inside Meta's health and unrealistic-outcomes rules",
+    "Re-check status after any domain or offer change"
+   ],
+   "dont": [
+    "Rename or disguise events to get around a restriction",
+    "Assume a past setup still works without checking Events Manager"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Meta Shares New Conversion Restrictions for Health and Wellness Brands",
+     "url": "https://www.haus.io/blog/meta-announces-new-health-wellness-conversion-restrictions",
+     "publisher": "Haus (vendor)",
+     "date": "2024-11-25"
+    }
+   ],
+   "confidence": "low"
+  }
+ ],
+ "open_questions": [
+  "I could not open Meta's own Advertising Standards page on unrealistic outcomes and income claims (transparency.meta.com returned 404 or an error shell). The income-claims entry relies on indexed snippets and secondary summaries, and Meta may have reorganised these rules under a new 'Prohibited Commercial Practices' heading. The exact current wording needs checking.",
+  "I could not confirm the reported 2026 requirement that new campaigns using the qualified-leads goal need a Conversions API integration from April 2026, with existing campaigns from August 2026. It comes from one secondary source. The claim that Meta retired the Offline Conversions API in May 2025 also comes from a single source.",
+  "Meta has never published a similarity threshold or 'entity ID' rule for when two creatives count as the same ad. The 60% and 70% figures in vendor blogs are unverified, and Meta's creative-insights metrics in the Insights API have only been in limited testing since June 2026, with no general release date.",
+  "Meta publishes no budget-change percentage that restarts learning. The common '20% rule' and the kill/scale thresholds in this playbook are unverified practitioner conventions.",
+  "There is no credible public benchmark for high-ticket coaching metrics such as cost per application, per booked call or per showed call. WordStream's own report page returned 403, so the 2025 benchmark figures come via PPC Land and Superscale.",
+  "It is unclear whether courses or coaching that teach trading or investing (as opposed to selling a financial service) must use the 'Financial products and services' special ad category. Country-specific financial-services authorization rules (UK, Australia and others) were also not checked.",
+  "The final status in October 2026 of the FTC's January 2025 proposal to extend the Business Opportunity Rule to business coaching is unknown, as is the current inflation-adjusted civil penalty per violation.",
+  "I could not confirm how far Meta's health and wellness event restrictions reach in 2026; the available reporting is vendor-sourced and from late 2024.",
+  "Sources differ on whether the 7-day and 28-day view-window removal on 12 Jan 2026 applied to Ads Manager or only to the Insights API.",
+  "Not verified: reports of 14% lower CPL for Advantage+ leads after global rollout, Q2 2026 earnings figures (+8.3% ad clicks, an Advantage+ revenue run-rate above $75B), Meta's reported plan to fully automate ad creation by end of 2026, and how iOS 26 link-tracking protections affect fbclid/fbc match rates.",
+  "My web search budget ran out before I could check several items directly: Meta's official Advantage+ leads help article, Meta's lead-ads policy on which Instant Form questions are prohibited, and the official ad-review timing and account-quality pages."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

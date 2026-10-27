@@ -1,0 +1,1356 @@
+{
+ "domain": "first-client-outreach",
+ "title": "First client & outreach",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "icp-first-client-growth-operator",
+   "title": "Define a narrow ideal client profile before building any list",
+   "category": "targeting",
+   "guidance": "An ICP describes the kind of business that fits best. A buyer persona describes the person inside it who decides. Write both. A new operator with no clients yet should build the ICP around where they can most quickly deliver a result: experts, coaches or course creators who already sell an offer (proof of demand) but are missing one capability the operator can supply, such as paid acquisition, a webinar or VSL funnel, appointment setting or email follow-up. Qualify on signals you can see (an active offer page, testimonials, posting cadence, audience size, ad activity, price point, a reachable founder), not on guesses. Once three or more clients exist, rebuild the ICP from the clients who produced the best results, margin and fewest problems, and review it every quarter. Keep one ICP per campaign so the message can name one specific problem.",
+   "as_of": "2026-10",
+   "steps": [
+    "Pick one niche where the operator already has skill, proof or interest (e.g., business coaches, fitness coaches, B2B consultants).",
+    "Write the must-haves: already sells a paid offer, founder can be reached directly, can plausibly afford the fee, and has a gap you can fill. Write the disqualifiers too: no offer yet, legally sensitive claims niche, unreachable gatekeepers.",
+    "List the top 3 pains and buying triggers (e.g., new programme launch, ads running with no follow-up system, webinar with low show-up).",
+    "Write a one-paragraph persona: role, time pressure, preferred channel (often Instagram or email), what they fear from agencies.",
+    "Hand-check 20 sample prospects against the criteria, then tighten them before you scale the list.",
+    "After 3+ clients, re-derive the ICP from your best clients' shared traits and update it every quarter."
+   ],
+   "do": [
+    "Score prospects against written criteria so the AI and the operator qualify the same way",
+    "Keep separate ICPs (and separate campaigns) per niche or offer",
+    "Validate the ICP with real conversations and CRM data, not assumptions"
+   ],
+   "dont": [
+    "Target 'anyone with a business' or mix several niches in one sequence",
+    "Pitch businesses that have no proven offer yet as if they were scaling clients"
+   ],
+   "sources": [
+    {
+     "title": "Ideal Customer Profiles (ICPs): Benefits & How to Create",
+     "url": "https://www.salesforce.com/blog/ideal-customer-profile/",
+     "publisher": "Salesforce",
+     "date": "2026-05-14"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lead-sources-ad-transparency-libraries",
+   "title": "Find high-intent leads in public ad libraries, then tier them",
+   "category": "lead-lists",
+   "guidance": "A business already paying for ads has a budget and an offer that sells, which makes it a stronger prospect for growth-operator services than one with no paid activity. Meta's Ad Library can be searched by keyword or by advertiser and filtered by country, ad category, active or inactive status, platform, language and media type. Each ad shows its start date, the platforms it runs on and its grouped variants. It does not show spend, reach or performance for ordinary commercial ads. Use rough proxies instead: how long ads have run, how many variants and active ads there are, and whether they run on several platforms. Google's Ads Transparency Center shows verified advertisers' creatives and when and where they ran. Experts with an audience but no ads are a separate segment and need a different pitch, for example building a first paid funnel rather than optimising one.",
+   "as_of": "2026-10",
+   "steps": [
+    "Search niche keywords such as 'free training', 'webinar', 'coaching program' or 'book a call' with the target country set and only active ads shown.",
+    "For each advertiser, record the Page, website, earliest active ad start date, number of active ads and variants, and funnel type (webinar, VSL, application, low-ticket).",
+    "Click through to the landing page and note the visible gaps you will mention later (slow page, no reminder sequence, weak offer framing).",
+    "Tier the leads. Tier A: ads running 30+ days with several variants. Tier B: strong audience but no ads. Tier C: neither (usually skip).",
+    "Enrich Tier A and B with a verified contact route (business email, Instagram handle, LinkedIn) and the source URL."
+   ],
+   "do": [
+    "Treat run length and variant count as signals, not as proof of spend",
+    "Save the ad ID or URL as the evidence behind your personalised first line"
+   ],
+   "dont": [
+    "Claim to know a prospect's ad spend or ROAS from the library, because it isn't shown for commercial ads",
+    "Scrape platforms in ways their terms prohibit. Use the public search interfaces or official APIs"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Spend or impression data for ordinary commercial ads in Meta Ad Library",
+     "value": "Not shown",
+     "context": "Shown only as ranges for political/issue ads"
+    }
+   ],
+   "sources": [
+    {
+     "title": "How to use the Meta Ad Library",
+     "url": "https://www.superscale.ai/learn/how-to-use-the-meta-ad-library",
+     "publisher": "Superscale",
+     "date": "2026-05-27"
+    },
+    {
+     "title": "About verification (Google Ads / Ads Transparency Center)",
+     "url": "https://support.google.com/adspolicy/answer/9703665",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lead-data-hygiene-and-provenance",
+   "title": "Verify every address and record where each lead came from",
+   "category": "lead-lists",
+   "guidance": "Bounces damage a sending domain's reputation quickly. Verify addresses before they enter a sequence, and either drop catch-all or unknown results or send them on a separate low-volume track. Recent vendor data puts the typical bounce rate around 1.5% and treats 2% as the danger line, so pause any campaign that crosses 2%. Store provenance for every lead: source URL, capture date, role, and why the message is relevant to them. UK GDPR requires privacy information within one month when you collect someone's data indirectly. Canada's implied-consent route depends on documenting where a published address was found. Never buy lists: Gmail's sender guidelines explicitly say not to purchase addresses.",
+   "as_of": "2026-10",
+   "steps": [
+    "Run every new address through a verifier and keep only valid results. Quarantine catch-all and unknown results.",
+    "Store source URL, capture date, job role or business type, country, and the relevance reason with each lead.",
+    "Flag jurisdiction (US, UK, Canada, EU) and subscriber type (company vs sole trader) so compliance rules can be applied automatically.",
+    "Remove any lead that appears on a suppression or opt-out list across all channels.",
+    "Auto-pause the campaign if hard bounces exceed 2% of sends."
+   ],
+   "do": [
+    "Keep a single global suppression list that covers every mailbox and channel",
+    "Send UK and EU contacts a short privacy notice link or line within the required window"
+   ],
+   "dont": [
+    "Import purchased or scraped bulk lists without verification",
+    "Keep emailing an address after a hard (5xx) bounce"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Typical bounce rate",
+     "value": "1.54%",
+     "context": "Smartlead State of Cold Email 2026 (H1 2026, 850M+ emails)"
+    },
+    {
+     "metric": "Bounce danger line",
+     "value": "2%",
+     "context": "Smartlead and Instantly 2026 reports"
+    },
+    {
+     "metric": "Worst-quartile senders' bounce rate",
+     "value": ">=3.21%",
+     "context": "Smartlead H1 2026"
+    }
+   ],
+   "sources": [
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    },
+    {
+     "title": "Business-to-business marketing (PECR/UK GDPR)",
+     "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/business-to-business-marketing/",
+     "publisher": "UK Information Commissioner's Office",
+     "date": "undated; flagged as under review after the Data (Use and Access) Act (accessed 2026-10-27)"
+    },
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "CASL Compliance: The Comprehensive Guide",
+     "url": "https://substancelaw.ca/casl-compliance/",
+     "publisher": "Substance Law",
+     "date": "2026-09"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "research-based-personalisation",
+   "title": "Personalise with one verifiable business observation, not merge fields",
+   "category": "messaging",
+   "guidance": "Swapping in a first name and company reads as automation. What lifts replies is a specific, relevant observation tied to a problem the prospect actually has. Gong analysed 30,000+ prospecting emails. One-to-one personalisation roughly doubled replies from non-managerial buyers but lifted director-and-above replies by only about 50%. Referencing a company-specific initiative roughly tripled executive replies, and industry-relevant framing correlated with about 88% more replies. Gong also reports that 87% of buyers say sales emails don't address a relevant challenge. For a founder-led coaching business, the 'company initiative' is usually their latest launch, their ads, their funnel or their content. Time-box research per lead, and use segment-level personalisation for lower-tier leads.",
+   "as_of": "2026-10",
+   "steps": [
+    "Research checklist (3-5 minutes per Tier A lead): offer and price, latest launch or ad, funnel path (ad to page to booking or webinar), content cadence, one visible gap, one recent win.",
+    "Write the opener as: specific observation, then likely implication, then a soft question. Example structure: 'Saw your [webinar ad] has been live since [month]; most funnels like this lose people between registration and show-up. Is that something you're working on?'",
+    "Check that every factual claim in the opener is true and current before sending.",
+    "For Tier B/C, personalise by segment (niche plus funnel type) rather than by individual."
+   ],
+   "do": [
+    "Reference something the prospect can recognise as their own (an ad, a page, a launch)",
+    "Tie the observation to a business outcome they care about"
+   ],
+   "dont": [
+    "Open with empty compliments or 'I came across your profile'",
+    "Invent observations or statistics. Fabricated personalisation destroys trust and can be deceptive"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Reply lift from 1:1 personalisation, non-managers",
+     "value": "~2x",
+     "context": "Gong Labs, 30,000+ emails, vendor data"
+    },
+    {
+     "metric": "Reply lift from company-specific references, directors+",
+     "value": "~3x",
+     "context": "Gong Labs"
+    },
+    {
+     "metric": "Reply lift from industry-based personalisation",
+     "value": "+88%",
+     "context": "Gong Labs"
+    },
+    {
+     "metric": "Buyers saying sales emails miss their relevant challenge",
+     "value": "87%",
+     "context": "Gong buyer survey"
+    }
+   ],
+   "sources": [
+    {
+     "title": "4 data-backed ways to increase your email reply rate and book that meeting",
+     "url": "https://www.gong.io/resources/labs/4-data-backed-ways-to-increase-your-email-reply-rate-and-book-that-meeting/",
+     "publisher": "Gong Labs",
+     "date": "2023-07-07 (modified 2026-03-04)"
+    },
+    {
+     "title": "Cold Email Benchmarks 2026",
+     "url": "https://lemlist.com/blog/cold-email-benchmarks/",
+     "publisher": "lemlist",
+     "date": "2026-08-17 (updated 2026-09-28)"
+    },
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "cold-message-length-and-interest-cta",
+   "title": "Keep first touches under ~80 words and ask for interest, not a meeting",
+   "category": "messaging",
+   "guidance": "Instantly's 2026 report says top performers keep first-touch emails under 80 words with a single call to action. Smartlead's H1-2026 data shows first messages under 50 words replying at 1.47%, against a typical 0.74%. Gong studied 304,174 emails, counting a meeting booked within 10 days as success, and found that interest-style asks ('worth exploring?') performed best on cold emails. Asking for a specific day and time succeeded 15% of the time at the cold stage but 37% once a deal was active, so move to specific times only after the prospect engages. The conservative default is plain text, no images, one clear question, and few or no links in the first message.",
+   "as_of": "2026-10",
+   "steps": [
+    "Draft: one-line personalised observation, one line on the problem, one line on what you do about it, then an interest question.",
+    "Cut to under 80 words (aim for under 50 in step 1).",
+    "Use exactly one call to action phrased as a yes/no interest question.",
+    "After a positive reply, switch to a specific-time CTA or booking link."
+   ],
+   "do": [
+    "Write subject lines that look like a 1:1 note and match the content",
+    "A/B test one variable at a time on segments of at least a few hundred sends"
+   ],
+   "dont": [
+    "Put a calendar link and a meeting demand in the first cold message",
+    "Stack multiple asks or attachments in one message"
+   ],
+   "benchmarks": [
+    {
+     "metric": "First-email word count used by top performers",
+     "value": "<80 words",
+     "context": "Instantly 2026 (2025 data)"
+    },
+    {
+     "metric": "Reply rate, first emails under 50 words",
+     "value": "1.47% vs 0.74% typical",
+     "context": "Smartlead H1 2026"
+    },
+    {
+     "metric": "Specific-time CTA success",
+     "value": "15% cold stage vs 37% deal stage",
+     "context": "Gong, 304,174 emails, success = meeting within 10 days"
+    }
+   ],
+   "sources": [
+    {
+     "title": "This surprising cold email CTA will help you book a lot more meetings",
+     "url": "https://www.gong.io/blog/this-surprising-cold-email-cta-will-help-you-book-a-lot-more-meetings",
+     "publisher": "Gong",
+     "date": "2020-05-27 (modified 2026-03-06)"
+    },
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    },
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "gmail-yahoo-sender-requirements-2026",
+   "title": "Meet Gmail and Yahoo sender requirements, using the bulk-sender rules as the baseline",
+   "category": "email-deliverability",
+   "guidance": "Every sender to Gmail needs SPF or DKIM, valid forward and reverse DNS, TLS, RFC 5322-compliant formatting, and user-reported spam below 0.3%. Yahoo's rules are equivalent. Bulk senders send close to 5,000+ messages to personal Gmail accounts in 24 hours, counted across the primary domain including subdomains. They must also have SPF and DKIM, a DMARC record (p=none is acceptable) aligned with the From domain, and one-click unsubscribe on marketing or subscribed mail, with unsubscribes honoured within about two days. Bulk status never expires once reached, and Gmail began ramping enforcement in November 2025 with temporary and permanent rejections. Treat the bulk rules as your baseline even at low volume, because cold lists of solo coaches and creators often contain personal gmail.com addresses.",
+   "as_of": "2026-10",
+   "steps": [
+    "Authenticate every sending domain with SPF and DKIM, and publish DMARC with alignment to the From domain.",
+    "Confirm PTR/rDNS and TLS (automatic on Google Workspace and Microsoft 365 mailboxes).",
+    "Add RFC 8058 one-click unsubscribe headers when using any sequencing tool, and a visible opt-out line in the body.",
+    "Monitor spam rate in Postmaster Tools. Target under 0.1% and never reach 0.3%.",
+    "Keep From headers single-address, include a valid Message-ID, and never hide content with HTML/CSS."
+   ],
+   "do": [
+    "Use DKIM keys of 2048 bits where the provider supports it (1024 is the minimum)",
+    "Keep the same From address for the same type of message"
+   ],
+   "dont": [
+    "Spoof or use a gmail.com From address through a third-party sender",
+    "Mix promotional and transactional content in one message"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Bulk sender threshold",
+     "value": "~5,000 messages/24h to personal Gmail accounts",
+     "context": "Counted per primary domain including subdomains; status is permanent"
+    },
+    {
+     "metric": "Spam rate",
+     "value": "target <0.10%; never >=0.30%",
+     "context": "Above 0.3%, no mitigation until 7 consecutive days below 0.3%"
+    },
+    {
+     "metric": "Unsubscribe processing",
+     "value": "within 48 hours (Gmail) / 2 days (Yahoo)",
+     "context": "Bulk senders"
+    },
+    {
+     "metric": "Enforcement ramp",
+     "value": "November 2025",
+     "context": "Gmail temporary and permanent rejections for non-compliant mail"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "undated; requirements effective 2024-02-01 (accessed 2026-10-27)"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google",
+     "date": "undated; references Nov 2025 enforcement (accessed 2026-10-27)"
+    },
+    {
+     "title": "Sender Best Practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "undated; enforcement from Feb 2024 (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "microsoft-outlook-high-volume-rules",
+   "title": "Comply with Outlook.com high-volume sender rules (in force since 5 May 2025)",
+   "category": "email-deliverability",
+   "guidance": "Since 5 May 2025, domains sending more than 5,000 emails a day to Outlook.com consumer addresses (outlook.com, hotmail.com, live.com) must pass SPF and DKIM. They must also publish DMARC at p=none or stricter, aligned with SPF or DKIM (ideally both); Microsoft recommends p=reject. Microsoft's postmaster page says non-compliant mail goes to junk and may be rejected if problems persist. Its support article describes rejection with '550 5.7.515 ... does not meet the required authentication level'. Microsoft also asks every sender not to retry after a permanent 5xx error, to stop mailing addresses that keep failing, to keep valid reverse DNS, and to offer a clearly documented unsubscribe. A spike of 5.7.515 bounces means stop and fix DNS before sending more.",
+   "as_of": "2026-10",
+   "steps": [
+    "Check that each sending domain's DKIM signature and SPF return-path align with the visible From domain.",
+    "Publish DMARC (start p=none with reporting), then tighten after reports are clean.",
+    "Set the sequencer to suppress any address after a hard bounce.",
+    "Alert on any 550 5.7.515 bounce and pause the affected domain."
+   ],
+   "do": [
+    "Separate cold outreach domains from the brand's main transactional domain"
+   ],
+   "dont": [
+    "Retransmit to an address after a permanent 5xx failure"
+   ],
+   "benchmarks": [
+    {
+     "metric": "High-volume threshold",
+     "value": ">5,000 emails/day to Outlook.com consumer addresses",
+     "context": "Enforced from 2025-05-05"
+    },
+    {
+     "metric": "Rejection code",
+     "value": "550 5.7.515",
+     "context": "Authentication not met"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Policies, Practices, and Guidelines (Outlook.com Postmaster)",
+     "url": "https://substrate.office.com/ip-domain-management-snds/postmaster/Policies",
+     "publisher": "Microsoft",
+     "date": "undated; states enforcement 2025-05-05 (accessed 2026-10-27)"
+    },
+    {
+     "title": "Fix NDR error 550 5.7.515 in Outlook.com",
+     "url": "https://support.microsoft.com/en-us/outlook/fix-ndr-error-550-5-7-515-in-outlook-com",
+     "publisher": "Microsoft",
+     "date": "undated (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "email-authentication-setup-checklist",
+   "title": "SPF, DKIM and DMARC setup checklist for every outreach domain",
+   "category": "email-deliverability",
+   "guidance": "Each sending domain needs exactly one SPF record listing only the services that actually send for it, because two SPF records is a misconfiguration. It also needs DKIM signing with a 2048-bit key where supported and a DMARC record that starts at p=none with aggregate reports turned on. DMARC passes only when SPF or DKIM authenticates the same domain shown in the From header. If you use one-click unsubscribe, RFC 8058 requires the DKIM signature to cover both List-Unsubscribe headers. Tighten DMARC to quarantine or reject once a few weeks of reports show only legitimate sources.",
+   "as_of": "2026-10",
+   "steps": [
+    "Add MX records so replies arrive at the outreach mailboxes.",
+    "Publish one SPF TXT record, e.g. v=spf1 include:<provider> ~all, with only the providers you actually use.",
+    "Enable DKIM in the mailbox provider (2048-bit), publish the DNS record, and send a test to confirm dkim=pass.",
+    "Publish _dmarc TXT: v=DMARC1; p=none; rua=mailto:<reports address>.",
+    "Send test emails to Gmail, Yahoo and Outlook seed accounts and confirm SPF, DKIM and DMARC all pass and align.",
+    "If a sequencer adds List-Unsubscribe and List-Unsubscribe-Post headers, confirm they are inside the DKIM h= list.",
+    "After 2-4 weeks of clean DMARC reports, move to p=quarantine, then p=reject."
+   ],
+   "do": [
+    "Document the DNS config per domain in the operator's workspace so it can be audited"
+   ],
+   "dont": [
+    "Publish multiple SPF records or exceed SPF lookup limits by stacking unused includes",
+    "Jump straight to p=reject before confirming all legitimate senders pass"
+   ],
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "RFC 8058: Signaling One-Click Functionality for List Email Headers",
+     "url": "https://www.rfc-editor.org/rfc/rfc8058",
+     "publisher": "IETF",
+     "date": "2017-01"
+    },
+    {
+     "title": "Secondary Domains: The Essential Guide for Safe Scaling",
+     "url": "https://mailshake.com/blog/secondary-domains-the-essential-guide-for-safe-scaling/",
+     "publisher": "Mailshake",
+     "date": "2026-06-13"
+    },
+    {
+     "title": "Policies, Practices, and Guidelines (Outlook.com Postmaster)",
+     "url": "https://substrate.office.com/ip-domain-management-snds/postmaster/Policies",
+     "publisher": "Microsoft",
+     "date": "undated (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "spam-complaint-and-reputation-monitoring",
+   "title": "Monitor spam complaints and compliance, and auto-pause on thresholds",
+   "category": "email-deliverability",
+   "guidance": "Gmail calculates spam rate daily from user reports on mail that reached the inbox, and counts only DKIM-authenticated messages. Mail Gmail's own filters send to spam is not counted, so a low rate can hide a spam-folder problem. Postmaster Tools has eight dashboards: compliance status, spam rate, IP reputation, domain reputation, feedback loop, authentication, encryption and delivery errors. Data usually lags about 24 hours, and the compliance status uses a multi-day rolling average, so a fix can take up to 7 days to show. Yahoo also measures complaints only on inboxed mail, so its figures can differ from your own. Watch these alongside reply and bounce rates for each mailbox, and pause automatically before you reach the platforms' limits.",
+   "as_of": "2026-10",
+   "steps": [
+    "Verify each sending domain in Google Postmaster Tools and check Compliance status weekly.",
+    "Track per-mailbox daily sends, hard bounces, replies, negative replies and unsubscribes.",
+    "Auto-pause rules: spam rate over 0.1%, bounce over 2%, a sudden reply-rate collapse, or any 5.7.515 / 4.7.27 / 5.7.30 bounce codes.",
+    "Run seed inbox-placement tests on new copy and new domains before scaling.",
+    "After a pause, find the root cause (list source, copy, volume spike) before resuming at lower volume."
+   ],
+   "do": [
+    "Treat a negative reply ('stop', 'not interested') as an early complaint signal and suppress immediately"
+   ],
+   "dont": [
+    "Read a 0% Postmaster spam rate as proof of inboxing"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Gmail spam-rate target",
+     "value": "<0.1% (hard ceiling 0.3%)",
+     "context": "Gmail FAQ"
+    },
+    {
+     "metric": "Compliance-status update lag",
+     "value": "up to 7 days (rolling average)",
+     "context": "Postmaster Tools"
+    },
+    {
+     "metric": "Dashboard data freshness",
+     "value": "typically within 24h",
+     "context": "Postmaster Tools"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Postmaster Tools dashboards",
+     "url": "https://support.google.com/mail/answer/14668346?hl=en",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "Sender Best Practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "undated (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "unsubscribe-and-opt-out-handling",
+   "title": "Implement one-click unsubscribe and a cross-channel opt-out",
+   "category": "email-compliance",
+   "guidance": "Under RFC 8058, the List-Unsubscribe header carries an HTTPS URI and List-Unsubscribe-Post carries exactly 'List-Unsubscribe=One-Click'. DKIM must sign both headers, and the endpoint must accept a cookie-less POST without redirecting. Gmail says a mailto link alone does not meet its one-click requirement. Yahoo accepts mailto but recommends the POST method. Gmail recommends honouring unsubscribes within 48 hours and Yahoo within 2 days. CAN-SPAM's legal ceiling is 10 business days, and the opt-out must keep working for at least 30 days after sending. For one-to-one-style cold emails, also add a plain-language opt-out line, and treat any negative reply as an opt-out across every mailbox and channel.",
+   "as_of": "2026-10",
+   "steps": [
+    "Generate a unique, hard-to-guess token per recipient and campaign for the unsubscribe URL.",
+    "Add both RFC 8058 headers and make sure DKIM covers them.",
+    "Process the POST at once, write to the global suppression list, and return 200 without a redirect.",
+    "Add a body line such as 'If this isn't relevant, reply \"no\" and I won't contact you again.'",
+    "Sync the suppression list to email, DM and calling queues the same day."
+   ],
+   "do": [
+    "Keep opt-out endpoints live for at least 30 days after the last send (longer is safer)"
+   ],
+   "dont": [
+    "Ask for a login, fee or extra personal data to unsubscribe",
+    "Re-add opted-out contacts to a new campaign or a different mailbox"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Gmail recommended unsubscribe processing",
+     "value": "48 hours",
+     "context": "Gmail FAQ"
+    },
+    {
+     "metric": "CAN-SPAM legal maximum",
+     "value": "10 business days; mechanism live >=30 days",
+     "context": "FTC"
+    }
+   ],
+   "sources": [
+    {
+     "title": "RFC 8058: Signaling One-Click Functionality for List Email Headers",
+     "url": "https://www.rfc-editor.org/rfc/rfc8058",
+     "publisher": "IETF",
+     "date": "2017-01"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "Sender Best Practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "US FTC",
+     "date": "2023-08 (penalty figure edited 2024-01)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "sending-infrastructure-and-volume-caps",
+   "title": "Size outreach infrastructure: secondary domains, mailboxes and low per-mailbox volume",
+   "category": "email-deliverability",
+   "guidance": "Protect the operator's main domain by sending cold outreach from a few secondary domains that are close to the brand and clearly not lookalikes, each with 2-5 mailboxes in real people's names. Vendor data points to modest volume per mailbox. In Smartlead's H1-2026 data the typical mailbox sends about 14 cold emails a day and the heaviest decile 42. Vendors cite about 50 a day as the per-mailbox ceiling and about 500 a day per domain, and Mailshake suggests 40-60 per inbox at small scale, falling to 30-40 at 10k-30k emails a month. Google Workspace's hard limits are far higher (2,000 messages a day; trial accounts 500), but hitting them blocks sending for up to 24 hours and spamming can bring permanent restriction, so never treat them as targets. Gmail's own guidelines say to mail only opted-in recipients and never to buy lists. Unsolicited outreach therefore always carries platform risk, which is why volume should stay low and targeting tight.",
+   "as_of": "2026-10",
+   "steps": [
+    "Estimate monthly sends from the lead plan (e.g., 300 Tier A leads x 4 steps = 1,200 emails a month).",
+    "Choose domains and mailboxes: up to 3,000 a month, 1-2 domains x 2 mailboxes. 3,000-10,000 a month, 3-5 domains x 3 mailboxes.",
+    "Cap each mailbox at 30-50 cold sends a day once warmed, and spread sends through business hours.",
+    "Keep daily volume consistent. Add mailboxes rather than raising per-mailbox caps.",
+    "Rest or retire a domain whose bounce or complaint signals degrade."
+   ],
+   "do": [
+    "Use real sender names and working reply inboxes",
+    "Point secondary-domain links at the operator's real site or booking page"
+   ],
+   "dont": [
+    "Use typo-squats or domains that imitate another brand",
+    "Send cold outreach from the operator's primary transactional domain",
+    "Push mailboxes to Google Workspace's 2,000/day or 3,000 external-recipient limits"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Typical cold sends per mailbox/day",
+     "value": "~14 (heaviest 10%: 42)",
+     "context": "Smartlead H1 2026"
+    },
+    {
+     "metric": "Vendor-cited per-mailbox ceiling",
+     "value": "~50/day; ~500/day per domain",
+     "context": "Smartlead, Sep 2026"
+    },
+    {
+     "metric": "Google Workspace hard limits",
+     "value": "2,000 msgs/day; 3,000 external & unique recipients/day; trial 500/day",
+     "context": "Rolling 24h; limits can change without notice"
+    },
+    {
+     "metric": "Mailshake steady-state per inbox",
+     "value": "40-60 (<=3k/mo); 40-50 (3k-10k/mo); 30-40 (10k-30k/mo)",
+     "context": "Vendor guidance"
+    }
+   ],
+   "sources": [
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    },
+    {
+     "title": "How many cold emails per day",
+     "url": "https://www.smartlead.ai/blog/how-many-cold-emails-per-day",
+     "publisher": "Smartlead",
+     "date": "2026-09-25"
+    },
+    {
+     "title": "Secondary Domains: The Essential Guide for Safe Scaling",
+     "url": "https://mailshake.com/blog/secondary-domains-the-essential-guide-for-safe-scaling/",
+     "publisher": "Mailshake",
+     "date": "2026-06-13"
+    },
+    {
+     "title": "Gmail sending limits in Google Workspace",
+     "url": "https://knowledge.workspace.google.com/admin/gmail/gmail-sending-limits-in-google-workspace",
+     "publisher": "Google",
+     "date": "2026-10-22"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "new-domain-and-mailbox-warmup",
+   "title": "Warm up new domains and mailboxes gradually over 3-6 weeks",
+   "category": "email-deliverability",
+   "guidance": "Google tells senders to increase volume gradually at a consistent rate, starting with the most engaged recipients. On SMTP error 4.7.28, stop for at least 10 minutes and resume on a single connection. Vendor guidance converges on starting a new mailbox at roughly 5-15 emails a day and adding 5-10 every few days, reaching a steady state over about 3-6 weeks. One vendor warns that going from 0 to 50 a day in the first week can look like a compromised account. Smartlead's data shows senders now average only about 8 days between starting warm-up and launching a first campaign, which is faster than most guidance supports. Older mailboxes can be run below peak, around 70-80%, to keep a safety margin.",
+   "as_of": "2026-10",
+   "steps": [
+    "Day 0: register domains and set MX, SPF, DKIM and DMARC. Complete each mailbox profile (name, photo, signature).",
+    "Weeks 1-2: send a small number of genuine, link-free conversations to known contacts. Optionally run a warm-up tool in parallel.",
+    "Week 3: start cold sends at 5-15 a day per mailbox, Tier A leads only.",
+    "Every 3-4 days: add 5-10 a day if bounce stays under 2% and there are no complaints or negative-reply spikes.",
+    "Weeks 4-6: reach the steady-state cap (30-50 a day) and hold it level."
+   ],
+   "do": [
+    "Keep the same send window and volume every weekday",
+    "Start with your best-fit, most-likely-to-reply leads"
+   ],
+   "dont": [
+    "Launch a full campaign the week a domain is created",
+    "Resume at full volume after a pause or after deliverability errors"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Warm-up ramp start",
+     "value": "5-15 emails/day per mailbox",
+     "context": "Instantly 2026, Mailshake 2026 (vendor)"
+    },
+    {
+     "metric": "Time to steady state",
+     "value": "~4-6 weeks",
+     "context": "Instantly 2026 (vendor)"
+    },
+    {
+     "metric": "Observed warm-up-to-first-campaign",
+     "value": "~8 days average",
+     "context": "Smartlead H1 2026, which suggests many senders rush"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "undated (accessed 2026-10-27)"
+    },
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    },
+    {
+     "title": "Secondary Domains: The Essential Guide for Safe Scaling",
+     "url": "https://mailshake.com/blog/secondary-domains-the-essential-guide-for-safe-scaling/",
+     "publisher": "Mailshake",
+     "date": "2026-06-13"
+    },
+    {
+     "title": "How many cold emails per day",
+     "url": "https://www.smartlead.ai/blog/how-many-cold-emails-per-day",
+     "publisher": "Smartlead",
+     "date": "2026-09-25"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "us-can-spam-for-b2b-outreach",
+   "title": "US: CAN-SPAM applies to B2B cold email",
+   "category": "legal-compliance",
+   "guidance": "CAN-SPAM makes no exception for business-to-business email. Every commercial message needs accurate header and routing information that identifies the sender, a subject line that matches the content, a clear disclosure that it is an advertisement, a valid physical postal address, and a working opt-out. Opt-outs must be honoured within 10 business days, without a fee or extra personal data, and the mechanism must work for at least 30 days after sending. Both the business being promoted and whoever sends on its behalf can be liable. That matters when an operator, agency or AI system sends for someone else. The FTC lists penalties of up to $53,088 per violating email.",
+   "as_of": "2026-10",
+   "steps": [
+    "Use the operator's real name and real business in the From, and a monitored Reply-To.",
+    "Write subject lines that honestly reflect the message, with no fake 'Re:' or 'Fwd:'.",
+    "Add a footer with the business postal address (a registered PO box or virtual office is commonly used) and an opt-out line.",
+    "Suppress opt-outs across all senders within 10 business days at most (aim for same-day)."
+   ],
+   "do": [
+    "Keep records of opt-out handling and of who sent what on whose behalf"
+   ],
+   "dont": [
+    "Use deceptive subject lines or fake reply threads",
+    "Assume B2B messages are exempt"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max civil penalty",
+     "value": "$53,088 per violating email",
+     "context": "FTC guide (inflation-adjusted)"
+    },
+    {
+     "metric": "Opt-out deadline",
+     "value": "10 business days",
+     "context": "Mechanism must work >=30 days after send"
+    }
+   ],
+   "sources": [
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "US FTC",
+     "date": "2023-08 (penalty edited 2024-01)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uk-pecr-gdpr-b2b-and-dms",
+   "title": "UK: corporate subscribers vs sole traders, and DMs count as electronic mail",
+   "category": "legal-compliance",
+   "guidance": "Under PECR, the consent rule for electronic mail does not apply to corporate subscribers: companies, LLPs, Scottish partnerships, and employees' work addresses at them. You must still identify yourself and give a valid opt-out address, and the ICO says opt-outs should be honoured. Sole traders and some partnerships are treated like individuals, so emailing them needs consent or the soft opt-in. Many coaches and creators trade as sole traders, and the ICO's advice is to treat an unclear case as an individual. The ICO counts social media direct messages as electronic mail, so the same rules cover cold Instagram and LinkedIn DMs. UK GDPR applies whenever a named person's data is processed. That means a documented legitimate-interests assessment, privacy information within one month when the data came from another source, and an absolute right to object to direct marketing. The ICO says this guidance is under review following the Data (Use and Access) Act.",
+   "as_of": "2026-10",
+   "steps": [
+    "Classify each UK lead as a corporate subscriber (Ltd/LLP, check the company register) or an individual (sole trader, partnership, or unknown).",
+    "Send cold email or DMs only to corporate subscribers. For individuals, use warm or inbound routes (content, ads, referrals) to get consent first.",
+    "Record a legitimate-interests assessment for B2B prospecting to named contacts.",
+    "Include sender identity, an opt-out, and a privacy-notice link in the first message (or within one month)."
+   ],
+   "do": [
+    "Screen phone numbers against both TPS and CTPS before any live sales call"
+   ],
+   "dont": [
+    "Cold-DM UK sole-trader coaches on the assumption that 'B2B' makes it exempt",
+    "Make automated or AI voice calls without specific prior consent"
+   ],
+   "sources": [
+    {
+     "title": "Business-to-business marketing",
+     "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/business-to-business-marketing/",
+     "publisher": "UK Information Commissioner's Office",
+     "date": "undated; marked under review after the Data (Use and Access) Act 2025 (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "canada-casl-b2b-outreach",
+   "title": "Canada: CASL needs consent or a documented exemption, even for B2B",
+   "category": "legal-compliance",
+   "guidance": "CASL covers B2B commercial electronic messages. An email asking for permission to market is itself a commercial message, so it needs its own legal basis. Implied consent through 'conspicuous publication' applies only when the person published the address without saying they don't want unsolicited messages, and the message is relevant to their business role. It does not permit harvesting addresses for unrelated pitches. Every message must identify the sender and anyone it is sent for, give a mailing address and one other contact method, and include a free, easy unsubscribe that is processed within the statutory deadline. Maximum penalties are $10M per violation for organisations ($1M for individuals), and directors can be personally liable.",
+   "as_of": "2026-10",
+   "steps": [
+    "For each Canadian lead, record where and when the address was published, confirm there is no 'no solicitation' statement, and note why the pitch fits the person's role.",
+    "Include the sender's and the on-behalf-of party's identity, mailing address, and a second contact method.",
+    "Provide an unsubscribe that works through the same channel, and suppress across all systems promptly."
+   ],
+   "dont": [
+    "Treat a business email found online as blanket permission to pitch anything"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max administrative penalty",
+     "value": "$10M per violation (organisations); $1M (individuals)",
+     "context": "CASL"
+    }
+   ],
+   "sources": [
+    {
+     "title": "CASL Compliance: The Comprehensive Guide",
+     "url": "https://substancelaw.ca/casl-compliance/",
+     "publisher": "Substance Law",
+     "date": "2026-09"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "instagram-dm-outreach-norms-and-limits",
+   "title": "Instagram DM outreach: engage first, send manually, keep volume low",
+   "category": "instagram",
+   "guidance": "Meta publishes no daily DM limit for the consumer app. Restrictions follow behaviour: near-identical messages, bursts, messaging people with no prior interaction, and recipients ignoring, deleting or reporting messages. Blocks escalate from a day or two to longer suspensions. Meta's official Instagram Messaging API cannot start a conversation. A user must message the professional account first, replies are limited to the standard window (usually 24 hours, with a separate 7-day human-agent tag), and Click-to-Direct ads can extend the window to 7 days. That makes the API suitable for inbound-triggered flows (comment-to-DM, story replies, ads), not for cold outreach. Vendor reports suggest new accounts hit trouble after a couple of dozen cold DMs a day and established accounts after roughly 50-100, but these figures are unverified. Under UK rules, a DM to a sole trader counts as electronic mail.",
+   "as_of": "2026-10",
+   "steps": [
+    "Make the profile credible first: a clear bio saying who you help, proof posts or highlights, a real photo, and a consistent niche.",
+    "Warm each prospect over several days with a follow, a thoughtful comment on recent content, or a genuine story reply.",
+    "Send a short first DM (under ~300 characters; the hard cap is 1,000) built on one specific observation and an interest question, with no link.",
+    "Follow up at most 1-2 times, 2-4 days apart, then stop. Never resend identical text across many accounts.",
+    "Pace manually: start at ~10-20 new conversations a day on a new account, spread through the day, and stop entirely for several days after any action block.",
+    "Use Click-to-Direct ads, keyword comment-to-DM or story prompts to generate inbound conversations that the official API may then handle."
+   ],
+   "do": [
+    "Have a human send cold DMs from the operator's own account",
+    "Log each conversation stage in the CRM so follow-ups aren't duplicated"
+   ],
+   "dont": [
+    "Use unofficial bots or shared logins to mass-DM",
+    "Copy-paste the same pitch to hundreds of accounts",
+    "Keep retrying during an action block"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Message length cap",
+     "value": "1,000 characters",
+     "context": "Reported by Inro; first message ideally <300"
+    },
+    {
+     "metric": "Vendor-reported daily cold-DM tolerance",
+     "value": "~24 (new accounts); ~50-100 (established)",
+     "context": "Unverified vendor estimates; Meta publishes none"
+    },
+    {
+     "metric": "API messaging window",
+     "value": "24h standard; 7-day human-agent tag; up to 7 days after Click-to-Direct ad",
+     "context": "Meta developer docs"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Instagram Messaging API (Instagram API with Instagram Login)",
+     "url": "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api",
+     "publisher": "Meta for Developers",
+     "date": "undated; API v26.0 (accessed 2026-10-27)"
+    },
+    {
+     "title": "Instagram DM Limits: How Many Can You Send?",
+     "url": "https://inro.social/blog/how-many-direct-messages-can-you-send-on-instagram",
+     "publisher": "Inro (DM automation vendor)",
+     "date": "2026-07-21"
+    },
+    {
+     "title": "Business-to-business marketing",
+     "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/business-to-business-marketing/",
+     "publisher": "UK ICO",
+     "date": "undated (accessed 2026-10-27)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "linkedin-outreach-limits-and-practice",
+   "title": "LinkedIn: stay inside invitation limits and avoid automation",
+   "category": "linkedin",
+   "guidance": "LinkedIn publishes no fixed weekly invitation cap. It restricts accounts that send many invitations in a short time or whose invitations are often ignored, left pending or marked as spam. Most restrictions lift within about a week, and a backlog of outstanding invitations can mean waiting up to a month. A withdrawn invitation can't be resent to the same person for up to three weeks, and there is a cap of 30,000 connections. The User Agreement (effective 3 November 2025) bans bots or unauthorised automation that add contacts or send messages, scraping, and using someone else's account, including by sharing credentials or cookies. A third-party system can therefore draft and queue LinkedIn messages, but the member has to send them. Belkins' 2025 data found invitations with a note were accepted slightly less often (25.31% vs 27.56%) but drew more replies after acceptance (8.18% vs 5.28%). Messages to existing connections drew 12.22% replies.",
+   "as_of": "2026-10",
+   "steps": [
+    "Optimise the profile: a headline naming who you help, a featured proof item, and a real photo.",
+    "Send a modest number of targeted invitations each weekday (community-observed ceilings are around 100 a week, which is unofficial).",
+    "Add a short, specific note where the account allows it. Free accounts reportedly get only a few personalised notes a month, so save them for Tier A.",
+    "Withdraw invitations left pending for 2-3+ weeks to keep the outstanding backlog small.",
+    "After acceptance, send a short, non-pitch message about one observation, then an interest question 2-4 days later.",
+    "Message existing first-degree connections in your ICP first."
+   ],
+   "do": [
+    "Reference the email or DM you already sent when connecting in a multichannel sequence"
+   ],
+   "dont": [
+    "Use browser extensions or bots that auto-send invitations or messages",
+    "Give any tool or person your LinkedIn login or session cookies"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Acceptance rate, no note vs note",
+     "value": "27.56% vs 25.31%",
+     "context": "Belkins 2025 data, 112k invite-based sequences"
+    },
+    {
+     "metric": "Reply rate after acceptance, no note vs note",
+     "value": "5.28% vs 8.18%",
+     "context": "Belkins 2025"
+    },
+    {
+     "metric": "Reply rate messaging existing connections",
+     "value": "12.22%",
+     "context": "Belkins 2025"
+    },
+    {
+     "metric": "Personalised notes on free accounts",
+     "value": "~5-10/month (reported)",
+     "context": "Vendor report; not officially published"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Restrictions on sending invitations",
+     "url": "https://www.linkedin.com/help/linkedin/answer/4800",
+     "publisher": "LinkedIn Help",
+     "date": "updated ~late 2025 (page says 11 months ago; accessed 2026-10-27)"
+    },
+    {
+     "title": "User Agreement",
+     "url": "https://www.linkedin.com/legal/user-agreement",
+     "publisher": "LinkedIn",
+     "date": "effective 2025-11-03"
+    },
+    {
+     "title": "Sales follow-up statistics in B2B",
+     "url": "https://belkins.io/blog/sales-follow-up-statistics",
+     "publisher": "Belkins",
+     "date": "2026-06-26"
+    },
+    {
+     "title": "Limited personalized connection request notes for free LinkedIn accounts",
+     "url": "https://help.dripify.com/en/articles/8490987-limited-personalized-connection-request-notes-for-free-linkedin-accounts",
+     "publisher": "Dripify",
+     "date": "2026-07-02"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "follow-up-cadence-multichannel",
+   "title": "Follow up 3-5 times with new angles, then switch channel",
+   "category": "sequencing",
+   "guidance": "Follow-ups matter, but each one returns less, and the datasets disagree on how much. Instantly's 2025 data puts 58% of replies on the first email and 42% on follow-ups. Smartlead's first email replies at 1.18% against 0.33% by the seventh. Belkins' 2025 data credits most email replies to steps 2-6, with step 3 booking the largest share (35.6%) of email-sourced meetings. The common pattern: 3-5 emails over about 2-3 weeks, 2-4 days apart, each adding a new angle, with step 2 written as a short reply in the same thread. Then switch channel (a LinkedIn connection that mentions the email, then a phone call for high-value prospects) and finish with a low-pressure closing note. In Instantly's data, Tuesday and Wednesday have the highest reply rates.",
+   "as_of": "2026-10",
+   "steps": [
+    "Day 1: email with the personalised observation and an interest question.",
+    "Day 3-4: a one-line in-thread bump that adds one new detail.",
+    "Day 7-8: a new angle, such as a mini insight, a relevant result with context, or a different pain.",
+    "Day 9-10: a LinkedIn connection or Instagram engagement that mentions the email.",
+    "Day 12-14: offer a 60-90s teardown video or short audit, but only after asking whether they'd like it.",
+    "Day 17-21: a closing note ('Should I close this out, or is later in the year better?').",
+    "Stop all steps the moment the prospect replies, and route the reply to a human or a qualified-reply workflow."
+   ],
+   "do": [
+    "Make every touch stand alone and add something new",
+    "Launch sequences early in the week"
+   ],
+   "dont": [
+    "Send 'just bumping this' repeatedly",
+    "Run more than ~7 touches without new value; returns fall off sharply"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Share of replies from step 1",
+     "value": "58% (Instantly) vs 41.4% (Belkins)",
+     "context": "Different datasets and definitions"
+    },
+    {
+     "metric": "Reply rate by step",
+     "value": "1.18% (email 1) -> 0.33% (email 7)",
+     "context": "Smartlead H1 2026"
+    },
+    {
+     "metric": "Recommended touchpoints",
+     "value": "4-7 (Instantly); 3-5 email steps then switch channel (Belkins)",
+     "context": "Vendor guidance"
+    },
+    {
+     "metric": "Spacing",
+     "value": "3-4 days",
+     "context": "Instantly 2026"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    },
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    },
+    {
+     "title": "Sales follow-up statistics in B2B",
+     "url": "https://belkins.io/blog/sales-follow-up-statistics",
+     "publisher": "Belkins",
+     "date": "2026-06-26"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "warm-network-first-client-sprint",
+   "title": "Get client #1 from warm relationships first, with cold outreach running in parallel",
+   "category": "first-client",
+   "guidance": "Response rates rise with familiarity. In Belkins' 2025 LinkedIn data, existing connections replied at 12.22% against 7.95% for new prospects. Cold email averages range from under 1% to about 3.4% depending on the dataset. A new operator should therefore first work through the people who already know them, asking either for direct interest or for one introduction to a business owner who fits, while running a small, tightly targeted cold campaign alongside. The ask should be concrete: who you help, the outcome you work toward, and what the first 30 days would include. No promised results.",
+   "as_of": "2026-10",
+   "steps": [
+    "List 50-150 warm contacts: past colleagues, clients, community members, and creators you've genuinely engaged with. This is a practice range, not a benchmark.",
+    "Send personal messages asking for interest or for one referral that fits the ICP. Keep them conversational, not templated.",
+    "In parallel, start cold outreach to 10-30 Tier A leads a day across email and manual DMs.",
+    "Book short diagnostic calls, and offer a structured pilot (see the pilot entry) to the best-fit prospect.",
+    "Ask every conversation, including the ones that say no, for a referral."
+   ],
+   "do": [
+    "Track warm and cold pipelines separately to learn which converts"
+   ],
+   "dont": [
+    "Mass-message friends and family with a generic pitch",
+    "Promise income or growth figures to land the first client"
+   ],
+   "benchmarks": [
+    {
+     "metric": "LinkedIn reply rate, existing connections vs new prospects",
+     "value": "12.22% vs 7.95%",
+     "context": "Belkins 2025"
+    },
+    {
+     "metric": "Cold email average reply rate",
+     "value": "0.74% (Smartlead typical) to 3.43% (Instantly average)",
+     "context": "Methodologies differ"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Sales follow-up statistics in B2B",
+     "url": "https://belkins.io/blog/sales-follow-up-statistics",
+     "publisher": "Belkins",
+     "date": "2026-06-26"
+    },
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    },
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "video-teardown-pitches",
+   "title": "Use short, specific video teardowns after interest is shown",
+   "category": "video",
+   "guidance": "Vidyard's 2025 benchmark covers nearly a million videos created in 2024. Videos under one minute kept 65% of viewers to the end, against 20% for videos over 20 minutes, and engagement peaked in the first quarter of a video's runtime. The reply uplifts it reports (up to 4-5x, or 2x for some teams) come from vendor and customer case studies, not controlled tests. Make a 45-90 second screen recording that shows the prospect's own ad, page or funnel, with the personal hook in the first 10-15 seconds, one diagnosis and one ask. Offer the video before sending it ('Mind if I send a 60-second walkthrough of what I'd change?'). That keeps the first touch link-free and lets the prospect choose to watch.",
+   "as_of": "2026-10",
+   "steps": [
+    "Open the prospect's live asset (ad, landing page, webinar registration) on screen.",
+    "First 10-15 seconds: their name, their asset, and why you're recording.",
+    "Middle: one or two concrete observations and what you'd test, without giving away full implementation.",
+    "End: one interest question or a booking option, if they've already engaged.",
+    "Send with a thumbnail that shows their asset, and note the length ('60 sec')."
+   ],
+   "do": [
+    "Keep each video under ~90 seconds",
+    "Record a new video per prospect for Tier A leads"
+   ],
+   "dont": [
+    "Embed video links in the very first cold email to a new domain's list",
+    "Pass off an AI avatar or cloned voice as a personally recorded message"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Completion, videos <1 min vs >20 min",
+     "value": "65% vs 20%",
+     "context": "Vidyard 2025 report, 2024 data"
+    },
+    {
+     "metric": "Vendor-reported reply uplift from video",
+     "value": "2-5x",
+     "context": "Case studies only; unverified"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Video in Business Benchmark Report",
+     "url": "https://www.vidyard.com/video-benchmark/",
+     "publisher": "Vidyard",
+     "date": "2025 edition (data 2024-01-01 to 2024-12-15)"
+    },
+    {
+     "title": "This surprising cold email CTA will help you book a lot more meetings",
+     "url": "https://www.gong.io/blog/this-surprising-cold-email-cta-will-help-you-book-a-lot-more-meetings",
+     "publisher": "Gong",
+     "date": "2020-05-27 (modified 2026-03-06)"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "free-value-first-offers",
+   "title": "Lead with a small, bounded piece of free value that proves your diagnosis",
+   "category": "offer",
+   "guidance": "A free value offer works when it shows that the operator understands the prospect's specific problem, not when it hands over the full solution. Ask before you deliver it: Gong's data shows that low-friction interest asks beat meeting requests on cold touches. Instantly advises giving each follow-up a new value angle, and Gong's buyer survey says most sales emails miss the buyer's real challenge. Good formats are a 3-point teardown of the registration or sales page, a short audit of the path from ad to booked call, or one tested hook idea for their next ad. Cap the effort (for example 30-60 minutes for Tier A) so it doesn't turn into unpaid spec work, and use the prospect's response to qualify them.",
+   "as_of": "2026-10",
+   "steps": [
+    "Choose one value format that matches the ICP's main pain.",
+    "Offer it with an interest question. Deliver it only if they say yes.",
+    "Deliver it as 3 observations, why each matters, and what you'd test first, plus an invitation to discuss.",
+    "Log the response, and move engaged prospects to a call or pilot conversation."
+   ],
+   "do": [
+    "Base every point on what you actually observed in their assets"
+   ],
+   "dont": [
+    "Build full funnels, ad accounts or campaigns for free",
+    "Pad the value with invented statistics or fake case studies"
+   ],
+   "sources": [
+    {
+     "title": "This surprising cold email CTA will help you book a lot more meetings",
+     "url": "https://www.gong.io/blog/this-surprising-cold-email-cta-will-help-you-book-a-lot-more-meetings",
+     "publisher": "Gong",
+     "date": "2020-05-27 (modified 2026-03-06)"
+    },
+    {
+     "title": "4 data-backed ways to increase your email reply rate and book that meeting",
+     "url": "https://www.gong.io/resources/labs/4-data-backed-ways-to-increase-your-email-reply-rate-and-book-that-meeting/",
+     "publisher": "Gong Labs",
+     "date": "2023-07-07 (modified 2026-03-04)"
+    },
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "pilot-and-case-study-deals",
+   "title": "Structure first-client pilots so they produce honest, usable case studies",
+   "category": "offer",
+   "guidance": "A time-boxed pilot lowers risk for a client trying an unproven operator. Give it a written scope, one baseline metric, a defined fee (often reduced or partly tied to performance), and a clear exit point, and agree the case-study terms up front. The FTC's Endorsement Guides require testimonials to reflect honest opinion and typical results. If the client got a discount or free work in exchange for a testimonial, that is a material connection to disclose, and an incentive can't be conditional on the testimonial being positive. Since October 2024, the FTC's rule on reviews and testimonials has banned fake testimonials, including AI-generated ones and those misrepresenting someone's experience, with civil penalties for knowing violators. Promise refunds or guarantees only if you will honour them exactly as stated. In 2026 the FTC settled with Air AI, which was accused of not honouring refund guarantees; the settlement bans it from marketing business opportunities.",
+   "as_of": "2026-10",
+   "steps": [
+    "Agree in writing: duration (e.g., 30-60 days), deliverables, the single success metric and its baseline value with a date, fee, and payment terms.",
+    "Include written permission to use results and name or logo in a case study, and decide whether a discount is tied to it, which then needs disclosure.",
+    "Capture dated before and after evidence (platform exports, screenshots) for substantiation.",
+    "Hold a review at the end with three options: convert to a retainer or rev-share, extend, or end cleanly.",
+    "Publish case studies with context: timeframe, starting point, spend, and what the client did versus the operator."
+   ],
+   "do": [
+    "Present results as one client's outcome, not as typical or guaranteed"
+   ],
+   "dont": [
+    "Fabricate, embellish or AI-generate testimonials or screenshots",
+    "Offer a 'results or refund' guarantee you can't or won't honour"
+   ],
+   "sources": [
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "US FTC",
+     "date": "undated; Guides revised 2023 (accessed 2026-10-27)"
+    },
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "US FTC",
+     "date": "2024-08-14"
+    },
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities to Settle FTC Charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "US FTC",
+     "date": "2026-03-24"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "no-earnings-or-growth-guarantees",
+   "title": "Keep outreach and programme marketing free of unsubstantiated earnings claims",
+   "category": "legal-compliance",
+   "guidance": "The FTC treats earnings claims as deceptive unless reliable evidence shows that typical people achieve them. A 'results not typical' disclaimer does not fix an atypical testimonial. Lifestyle imagery (wealth, quitting a job) can count as an implied earnings claim, and a hypothetical example misleads if its assumptions don't match most people's experience. Air AI's 2026 settlement shows the stakes. The FTC alleged false earnings claims and unhonoured refund guarantees, and the order bans the company from marketing business opportunities, with an $18M judgment that was largely suspended. Operators pitching clients, and programmes recruiting operators, should describe a process and verifiable past results in context, never promised income or growth.",
+   "as_of": "2026-10",
+   "steps": [
+    "Run every outreach template and landing page through a claims check covering income, revenue, ROAS and 'guaranteed' language.",
+    "Replace each promise with specific, dated, attributable past results, including timeframe, starting point, spend and a statement that results vary.",
+    "Remove lifestyle imagery that implies typical wealth.",
+    "Keep substantiation files (data, client permission) for every result cited."
+   ],
+   "do": [
+    "Say what you'll do and how you'll measure it"
+   ],
+   "dont": [
+    "Write 'we'll add $X/month' or 'guaranteed ROI' in outreach",
+    "Use top-performer screenshots as if they were typical"
+   ],
+   "benchmarks": [
+    {
+     "metric": "FTC civil penalties for deceptive earnings claims (certain cases)",
+     "value": ">$50,000 per violation (inflation-adjusted)",
+     "context": "FTC staff guidance, Apr 2024"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Business Guidance Concerning Multi-Level Marketing (earnings-claims sections)",
+     "url": "https://www.ftc.gov/business-guidance/resources/business-guidance-concerning-multi-level-marketing",
+     "publisher": "US FTC",
+     "date": "2024-04"
+    },
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities to Settle FTC Charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "US FTC",
+     "date": "2026-03-24"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "reply-rate-benchmarks-and-planning-math",
+   "title": "Reply-rate benchmarks vary widely by method, so plan conservatively",
+   "category": "benchmarks",
+   "guidance": "Published cold-email benchmarks disagree a lot because they count replies differently and include different kinds of senders. Instantly's 2025 data gives a 3.43% average, 5.5%+ for the top quartile and 10.7%+ for the top 10%. Smartlead's H1-2026 data (850M+ emails) shows a typical 0.74%, 1.43% for the top quartile and 2.63% for the top 10%. Belkins, which excludes auto-replies, reports about 0.45-0.59% on email, around 7% on LinkedIn, and an 18.6% connect rate on calls. lemlist puts the spread between sources at 7.6x. Plan around a conservative 1-3% total reply rate for a new operator's cold email, then measure your own positive-reply and meeting rates per 100 contacts. No reliable public benchmark exists for Instagram cold DMs.",
+   "as_of": "2026-10",
+   "steps": [
+    "Define metrics up front: total reply rate, positive reply rate, meetings booked per 100 contacts, and pilots or closes per meeting.",
+    "Example planning maths, not a forecast: 400 contacts x 1-3% reply = 4-12 replies, of which perhaps a third to a half are positive, giving a few calls a month.",
+    "Review weekly by segment and by copy variant. Change one variable at a time.",
+    "If total reply rate stays under 1% after about 300 contacts, fix ICP and offer first, then copy, then deliverability."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Cold email avg reply (Instantly)",
+     "value": "3.43%; top quartile 5.5%+; top 10% 10.7%+",
+     "context": "Jan-Dec 2025 data, all replies"
+    },
+    {
+     "metric": "Cold email typical reply (Smartlead)",
+     "value": "0.74%; top 25% 1.43%; top 10% 2.63%",
+     "context": "H1 2026, 850M+ emails"
+    },
+    {
+     "metric": "Email reply / connect rate (Belkins, strict)",
+     "value": "~0.45%",
+     "context": "2025, 7.5M emails, excludes auto-replies"
+    },
+    {
+     "metric": "LinkedIn reply rate (Belkins)",
+     "value": "~7%+",
+     "context": "2025 invite-based sequences"
+    },
+    {
+     "metric": "Cold call connect rate (Belkins)",
+     "value": "18.6%",
+     "context": "2025, 46k+ calls"
+    },
+    {
+     "metric": "Spread between published benchmarks",
+     "value": "7.6x",
+     "context": "lemlist analysis"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Cold Email Benchmark Report 2026",
+     "url": "https://instantly.ai/cold-email-benchmark-report-2026",
+     "publisher": "Instantly",
+     "date": "2026-01-12"
+    },
+    {
+     "title": "The State of Cold Email 2026",
+     "url": "https://www.smartlead.ai/benchmarks",
+     "publisher": "Smartlead",
+     "date": "2026 (H1 2026 data)"
+    },
+    {
+     "title": "Sales follow-up statistics in B2B",
+     "url": "https://belkins.io/blog/sales-follow-up-statistics",
+     "publisher": "Belkins",
+     "date": "2026-06-26"
+    },
+    {
+     "title": "Cold Email Benchmarks 2026",
+     "url": "https://lemlist.com/blog/cold-email-benchmarks/",
+     "publisher": "lemlist",
+     "date": "2026-08-17 (updated 2026-09-28)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "agentic-outreach-guardrails",
+   "title": "Guardrails for AI sending outreach on an operator's behalf",
+   "category": "governance",
+   "guidance": "When software prospects for an operator, platform terms and the law decide what can run automatically. LinkedIn bans bots that send messages or add contacts, and bans using another member's account, including through shared credentials or cookies. Instagram's official API cannot start conversations. So cold DMs and LinkedIn messages should be drafted and queued by the system and sent by the human. Email can be sent automatically from mailboxes the operator owns, under their real identity with accurate headers. CAN-SPAM can hold both the promoted business and the sender liable. The FCC ruled in February 2024 that AI-generated voices count as 'artificial' voices under the TCPA, so AI-voice telemarketing calls need prior express written consent. Every automated action should run against one shared suppression list and be logged.",
+   "as_of": "2026-10",
+   "steps": [
+    "Get explicit written authorisation from the operator covering each channel, mailbox and the persona the system writes as.",
+    "Email: allow automated sending only from verified, authenticated operator mailboxes, with volume caps and the auto-pause thresholds from the monitoring entry.",
+    "LinkedIn and Instagram: produce drafts and a daily send queue. A human reviews and sends in-app, and replies are logged back.",
+    "Phone/SMS: no AI-voice or automated cold calls or texts without documented prior express written consent. Screen UK numbers against TPS/CTPS.",
+    "Have a human approve the first batch of each new template and do a weekly spot-check after that.",
+    "Keep an audit log of message, recipient, channel, lawful basis or consent record, sender and timestamp."
+   ],
+   "do": [
+    "Disclose the operator's real business identity in every message",
+    "Route positive replies to a human quickly"
+   ],
+   "dont": [
+    "Store or use operators' LinkedIn or Instagram passwords or session cookies",
+    "Run unofficial DM bots or scrapers against platform terms",
+    "Let the system improvise claims, guarantees or prices that haven't been approved"
+   ],
+   "sources": [
+    {
+     "title": "User Agreement (Section 8.2)",
+     "url": "https://www.linkedin.com/legal/user-agreement",
+     "publisher": "LinkedIn",
+     "date": "effective 2025-11-03"
+    },
+    {
+     "title": "Instagram Messaging API",
+     "url": "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api",
+     "publisher": "Meta for Developers",
+     "date": "undated; API v26.0 (accessed 2026-10-27)"
+    },
+    {
+     "title": "FCC Makes AI-Generated Voices in Robocalls Illegal",
+     "url": "https://docs.fcc.gov/public/attachments/DOC-400393A1.txt",
+     "publisher": "US FCC",
+     "date": "2024-02-08"
+    },
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "US FTC",
+     "date": "2023-08 (edited 2024-01)"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "Research limitation: the shared web-search budget ran out partway through, and several primary pages could not be read: the Meta Ad Library and its help page (403), the CRTC CASL FAQ (403), Meta's Spam policy and Instagram Terms of Use pages (rendered empty), and the FCC news page (403; the FCC text version was used instead). The guidance on those topics relies on secondary sources or on the pages that did load.",
+  "Instagram cold-DM daily limits: Meta publishes no figure. The cited ranges (~24 a day for new accounts, ~50-100 for established ones) come from DM-automation vendors and are unverified. The widely repeated '200 automated DMs per hour' API limit could not be confirmed in Meta documentation.",
+  "LinkedIn weekly invitation cap (~100 a week is commonly cited), the free-account limit on personalised notes (reported as 5-10 a month) and the 200-character note limit all come from third-party sources; LinkedIn's help pages state no numbers.",
+  "Microsoft Outlook.com: the postmaster page says non-compliant high-volume mail is junked first and may later be rejected, while the support article describes outright rejection with 550 5.7.515. The current enforcement behaviour could not be fully reconciled.",
+  "UK Data (Use and Access) Act 2025: it is unconfirmed whether the higher PECR fines (reported as up to £17.5m or 4% of turnover) have commenced. The ICO says its B2B guidance is under review.",
+  "CASL unsubscribe processing deadline: commonly cited as 10 business days, but this was not verified against CRTC or the regulations in this pass.",
+  "EU member-state rules for B2B cold email (e.g., stricter prior-consent rules in some countries) and Australia's Spam Act were not researched. They need to be covered before targeting those markets.",
+  "Cold-email reply benchmarks conflict sharply (Instantly 3.43% average vs Smartlead 0.74% typical vs Belkins ~0.45%), and the share of replies from step 1 is 58% in Instantly's data vs 41.4% in Belkins'. No independent, non-vendor benchmark was found.",
+  "No credible public reply-rate or conversion benchmarks were found for Instagram cold DMs, Loom-style video prospecting (only vendor case studies), or free-audit offers.",
+  "No primary sources were found on typical growth-operator deal structures (rev-share vs retainer vs pilot fee) or on conversion rates from pilot to retained client. The pilot entry is built on compliance sources plus practice, not outcome data.",
+  "Whether cold outreach under the bulk threshold is materially penalised by Gmail for missing one-click unsubscribe headers, as opposed to only reputational effects, is not stated by Google. Google's guidelines simply advise mailing only opted-in recipients."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

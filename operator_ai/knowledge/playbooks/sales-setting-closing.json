@@ -1,0 +1,1371 @@
+{
+ "domain": "sales-setting-closing",
+ "title": "Appointment setting & closing",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "speed-to-lead-five-minute-routing",
+   "title": "Contact new applicants within 5 minutes, then switch channels instead of redialling",
+   "category": "lead-response",
+   "guidance": "Treat every new application or opt-in as perishable. Route it instantly to an on-shift setter, or to a disclosed AI first touch, and make the first attempt within 5 minutes during the lead's local calling hours. The primary data is a 2007 InsideSales.com study co-run with an MIT researcher: 6 companies, about 15,000 web leads and over 100,000 dials. Calling at 30 minutes instead of 5 cut the odds of reaching the lead about 100x and the odds of qualifying them about 21x, and both fell steeply within the first hour. The same data showed that extra dials after roughly 20 hours did more harm than good, so move to SMS, email or DM at that point. The study measured contact and qualification, not closed revenue. Its multipliers are old and vendors often misquote them as conversion lifts, so treat them as a direction and track your own speed-to-lead against show and close rates.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Odds of contact, first call at 5 min vs 30 min",
+     "value": "~100x higher",
+     "context": "InsideSales/MIT LRM study, 2007, 6 companies, ~15k web leads; measures contact, not sales"
+    },
+    {
+     "metric": "Odds of qualification, 5 min vs 30 min",
+     "value": "~21x higher",
+     "context": "Same study; 5 to 10 min alone cut qualify odds ~4x"
+    },
+    {
+     "metric": "Decline in contact odds within the first hour",
+     "value": ">10x",
+     "context": "Same study"
+    },
+    {
+     "metric": "Point where extra dials stop helping",
+     "value": "~20 hours after lead creation",
+     "context": "Same study; extra dials after this had negative marginal effect"
+    },
+    {
+     "metric": "Best contact window (2007 data)",
+     "value": "4-6pm local; Wed/Thu best days",
+     "context": "Directional only; re-test with your own data"
+    }
+   ],
+   "steps": [
+    "Store lead-created and first-attempt timestamps on every CRM record.",
+    "Auto-assign to an on-shift setter. If nobody picks it up within 2 minutes, send the consented SMS or DM first touch, labelled as automated if it is.",
+    "First call plus text within 5 minutes, second attempt within about 30 minutes, third the same day (subject to state caps).",
+    "After about 20 hours with no contact, stop phone retries and move the lead to a multi-channel nurture sequence.",
+    "Each week, report median and 90th-percentile speed-to-lead next to show and close rates for each lead source."
+   ],
+   "do": [
+    "Capture express consent for calls and texts on the application form",
+    "Call only between 8am and 9pm in the lead's local time (TSR); use 8pm in Florida",
+    "Measure speed-to-lead per setter and per hour of day"
+   ],
+   "dont": [
+    "Quote the 100x figure as a conversion or revenue lift",
+    "Keep redialling the same unreachable lead for days",
+    "Use an AI or prerecorded voice without prior express written consent"
+   ],
+   "sources": [
+    {
+     "title": "Lead Response Management Study (InsideSales.com / MIT)",
+     "url": "https://cdn2.hubspot.net/hub/25649/docs/mit_study.pdf",
+     "publisher": "InsideSales.com / J. Oldroyd (MIT)",
+     "date": "2007-10-16 (web version dated 2008-07-17)"
+    },
+    {
+     "title": "The Short Life of Online Sales Leads",
+     "url": "https://hbr.org/2011/03/the-short-life-of-online-sales-leads",
+     "publisher": "Harvard Business Review",
+     "date": "2011-03"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "setter-qualification-criteria",
+   "title": "Qualify on need, decision-makers, time, and ability to invest, with written disqualifiers",
+   "category": "qualification",
+   "guidance": "Use an adapted BANT checklist, but explore the prospect's situation and goal before asking about money. Before booking a closer, capture: the specific outcome they want and why now; who else must agree (partner, spouse, co-founder) and whether that person can attend; hours per week they can commit; how they would realistically fund the programme; and any of your pre-defined hard disqualifiers. Typical disqualifiers: can only pay by taking on new debt they cannot service, expects guaranteed income, or cannot do the work. In Gong's data on 11,331 B2B opportunities, budget raised on the first call co-occurred with a 49% win rate, versus 7% when budget never came up. That is correlational, but it supports raising the investment range early rather than revealing it at the end. Honest disqualification raises show and close rates and lowers refund, chargeback and complaint risk.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Win rate when budget is discussed on first call vs never",
+     "value": "49% vs 7%",
+     "context": "Gong Labs, 11,331 B2B opportunities with 3+ calls, 2020; correlational"
+    },
+    {
+     "metric": "Win rate by call in which price is first discussed",
+     "value": "1st call 42%, 2nd 32%, 3rd 15%, never 5%",
+     "context": "Same Gong dataset"
+    }
+   ],
+   "steps": [
+    "Open: ask what made them apply today and what they hoped this call would do.",
+    "Situation: current work and income source, relevant skills, available hours.",
+    "Goal and timeline: the target outcome in their own words, and why now.",
+    "Obstacles: what they have already tried and why it did not work.",
+    "Decision-makers: ask whether anyone else is involved in decisions like this, and invite them to the closing call.",
+    "Investment: state the programme's price range, ask how comfortable they are with it and how they would fund it. Never suggest opening new credit.",
+    "Tag the lead Qualified, Nurture or Disqualified and pick a reason from a fixed list. Only Qualified leads go to a closer's calendar."
+   ],
+   "do": [
+    "Write the qualification rubric down and score it the same way across setters and AI setters",
+    "Book the partner or co-decision-maker onto the call",
+    "Send disqualified leads lower-cost resources rather than closer time"
+   ],
+   "dont": [
+    "Book anyone who answers just to hit a meetings quota",
+    "Ask about income only so you can size a financing pitch",
+    "Run BANT as a rigid interrogation before rapport"
+   ],
+   "sources": [
+    {
+     "title": "BANT: the sales qualification framework",
+     "url": "https://blog.hubspot.com/sales/bant",
+     "publisher": "HubSpot",
+     "date": "2019-11 (updated 2025-07-31)"
+    },
+    {
+     "title": "When to discuss price and budget according to data",
+     "url": "https://www.gong.io/blog/data-reveals-the-best-time-to-talk-price-and-budget",
+     "publisher": "Gong Labs",
+     "date": "2020-07-22 (modified 2026-03-06)"
+    },
+    {
+     "title": "Set up and customize pipelines",
+     "url": "https://knowledge.hubspot.com/object-settings/set-up-and-customize-pipelines",
+     "publisher": "HubSpot Knowledge Base",
+     "date": "2026-09-29"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "short-booking-window-pre-call-priming",
+   "title": "Keep the booking window short and send a pre-call agenda",
+   "category": "show-rate",
+   "guidance": "Book qualified leads into the nearest closer slot instead of letting them choose a date a week out. A scheduling vendor recommends offering inbound leads only a 2-3 day window and outbound leads about 5 days. Straight after booking, send a confirmation with the closer's name, a short agenda (their goals, what you will cover, a decision at the end if it fits), one relevant case study that meets testimonial-typicality rules, and what to prepare (for example, the partner attends). Add the event to their calendar with a reschedule link and ask them to confirm by reply. These are vendor recommendations with no published method, so A/B test window length against your own show rate.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Booking window, inbound leads",
+     "value": "2-3 days",
+     "context": "Calendly vendor guidance, 2020; method not disclosed"
+    },
+    {
+     "metric": "Booking window, outbound leads",
+     "value": "next 5 days",
+     "context": "Same source"
+    }
+   ],
+   "steps": [
+    "Configure the scheduler to show only the next 2-3 days of closer availability to inbound leads.",
+    "Send a confirmation immediately: closer name and photo, agenda, call length, the link, and a reschedule link.",
+    "Attach one case study that meets typicality rules plus a short 'how to prepare' note.",
+    "Ask for a reply such as 'Confirmed' and flag unconfirmed bookings for a setter call.",
+    "Track show rate by days between booking and call to find your own cut-off."
+   ],
+   "do": [
+    "Use the prospect's own goal from the setter call in the confirmation",
+    "Invite co-decision-makers explicitly"
+   ],
+   "dont": [
+    "Send income screenshots or atypical results as pre-call proof",
+    "Let leads book 2+ weeks out by default"
+   ],
+   "sources": [
+    {
+     "title": "How to reduce no-show rates for sales meetings",
+     "url": "https://calendly.com/blog/reduce-no-show-rates-sales",
+     "publisher": "Calendly",
+     "date": "2020-06-05"
+    },
+    {
+     "title": "How to reduce no-shows with Calendly meeting reminders",
+     "url": "https://calendly.com/blog/guide-calendly-reminders",
+     "publisher": "Calendly",
+     "date": "2024-06-25"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "reminder-cadence-and-no-show-recovery",
+   "title": "Run a multi-channel reminder sequence and rebook no-shows automatically",
+   "category": "show-rate",
+   "guidance": "Send at least two automated reminders, 24 hours and 15-30 minutes before the call, by both email and SMS, plus a day-of reminder a few hours out. Every reminder should carry a one-tap reschedule link, and a reschedule should count as a save rather than a loss. The best independent evidence comes from healthcare: a Cochrane review of 8 RCTs (6,615 people) found text reminders raised attendance over no reminder (risk ratio 1.14; 67.8% to 78.6%). Text and phone-call reminders worked about equally, but text cost 55-65% less per attended appointment. Calendly says its sales users cut no-shows by 28% on average with reminders, but that figure is self-reported. Get SMS consent at booking, and honor STOP or other reasonable opt-outs within 10 business days under the FCC rule in force since April 11, 2025.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Attendance, text reminder vs no reminder",
+     "value": "RR 1.14 (95% CI 1.03-1.26); 67.8% to 78.6%",
+     "context": "Cochrane review, 7 studies, 5,841 participants, healthcare appointments, 2013"
+    },
+    {
+     "metric": "Text vs phone-call reminder",
+     "value": "RR 0.99 (no meaningful difference)",
+     "context": "Same review; phone 80.3% attendance"
+    },
+    {
+     "metric": "Cost per attended appointment, text vs phone",
+     "value": "55-65% lower for text",
+     "context": "Two studies in the same review"
+    },
+    {
+     "metric": "No-show reduction with automated reminders",
+     "value": "~28% average",
+     "context": "Calendly self-reported sales users; no methodology"
+    },
+    {
+     "metric": "Deadline to honor a call/text opt-out",
+     "value": "≤10 business days",
+     "context": "FCC TCPA revocation rule effective 2025-04-11; 'revoke-all' part delayed to 2027-01-31"
+    }
+   ],
+   "steps": [
+    "At booking: confirmation email and SMS, calendar invite, reschedule link.",
+    "T-24h: email and SMS restating their goal and the agenda.",
+    "T-2 to 4h: SMS asking them to reply 1 to confirm or tap to reschedule.",
+    "T-15 to 30 min: SMS with the join link.",
+    "T+3 to 5 min with no join: the setter calls and texts once to get them on now or rebook.",
+    "Same day: send an automatic rebook email. After 2 no-shows, move the lead to nurture rather than the closer calendar.",
+    "Measure show rate as calls held divided by calls booked, with reschedules tracked separately."
+   ],
+   "do": [
+    "Remind the closer as well as the prospect",
+    "Send texts only within local calling hours"
+   ],
+   "dont": [
+    "Send reminders to numbers without SMS consent",
+    "Require a specific keyword as the only way to opt out"
+   ],
+   "sources": [
+    {
+     "title": "Mobile phone messaging reminders for attendance at healthcare appointments (CD007458)",
+     "url": "https://www.cochrane.org/evidence/CD007458_mobile-phone-messaging-reminders-attendance-healthcare-appointments",
+     "publisher": "Cochrane",
+     "date": "2013-12-05"
+    },
+    {
+     "title": "How to reduce no-show rates for sales meetings",
+     "url": "https://calendly.com/blog/reduce-no-show-rates-sales",
+     "publisher": "Calendly",
+     "date": "2020-06-05"
+    },
+    {
+     "title": "FCC Issues One-Year Limited Waiver of New TCPA Consent Revocation Rule",
+     "url": "https://www.kelleydrye.com/viewpoints/blogs/ad-law-access/fcc-issues-one-year-limited-waiver-of-new-tcpa-consent-revocation-rule",
+     "publisher": "Kelley Drye (Ad Law Access)",
+     "date": "2025-04-08"
+    },
+    {
+     "title": "The FCC Delays Effective Date of TCPA Revoke-All Rule Until January 31, 2027",
+     "url": "https://www.burr.com/telephone-consumer-protection-act/the-fcc-delays-effective-date-of-tcpa-revoke-all-rule-until-january-31-2027",
+     "publisher": "Burr & Forman",
+     "date": "2026-01-07"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "closing-call-structure-discovery-gap-offer",
+   "title": "Run the closing call as frame, discovery, gap, tailored offer, price, then decision",
+   "category": "call-structure",
+   "guidance": "Gong analysed 519,000 discovery calls. The most successful ones surfaced 3-4 distinct problems and asked 11-14 questions spread through the call, not front-loaded. Gong's 2025 update covered 326,000 calls: reps talked about 57% of the time in won deals versus 62% in lost deals, and lost deals actually had more questions (about 20 vs 15-16). Aim for real dialogue, not interrogation. For the gap, get the prospect to state their current and desired situation and what staying put costs them, in their own words. Never supply income numbers yourself, because projected earnings are regulated earnings claims. Then present only the parts of the programme that address the problems they named, and end with the decision or a dated next step. All of this is B2B, correlational vendor data, so treat it as a starting structure and calibrate with your own recorded calls.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Discovery questions linked to best outcomes",
+     "value": "11-14 per call, spread evenly",
+     "context": "Gong Labs, 519k discovery calls, 2017"
+    },
+    {
+     "metric": "Problems uncovered on successful calls",
+     "value": "3-4",
+     "context": "Same source"
+    },
+    {
+     "metric": "Rep talk time, won vs lost deals",
+     "value": "~57% vs ~62%",
+     "context": "Gong 2025 update, 326k calls of 10+ minutes; talk time over 65% linked to lower win rates in 2016 data"
+    },
+    {
+     "metric": "Questions per call, won vs lost",
+     "value": "15-16 vs ~20",
+     "context": "Gong 2025 update; too many questions correlates with losses"
+    }
+   ],
+   "steps": [
+    "Frame (2-3 min): confirm time available, set the agenda, get permission to ask questions, and agree the call ends in yes, no, or a dated next step.",
+    "Situation: where they are now (work, skills, time, what they've tried).",
+    "Goal and why now: the specific target and timeline, in their words.",
+    "Gap: the 3-4 obstacles between the two and what staying put costs them, using their numbers only.",
+    "Decision check: who else decides, and how they would fund a programme of this price range.",
+    "Recap their situation and goal back to them, then ask permission to show how the programme maps to it.",
+    "Tailored offer: show only the components that solve their stated problems, with a realistic time commitment and no promise of results.",
+    "Price and terms about three-quarters of the way through (see the pricing entry), then pause.",
+    "Close: a decision, or a specific follow-up booked with all decision-makers present."
+   ],
+   "do": [
+    "Let the prospect talk at least 40% of the time",
+    "Use their exact phrases in the recap",
+    "Disclose that the call is recorded at the start"
+   ],
+   "dont": [
+    "Front-load 20 questions in the first 10 minutes",
+    "Fill the gap with your own income projections",
+    "Pitch every feature of the programme"
+   ],
+   "sources": [
+    {
+     "title": "Mastering discovery calls to close deals effectively",
+     "url": "https://www.gong.io/blog/deal-closing-discovery-call",
+     "publisher": "Gong Labs",
+     "date": "2017-07-05 (modified 2026-03-04)"
+    },
+    {
+     "title": "Talk-to-listen ratio (2025 update)",
+     "url": "https://www.gong.io/blog/talk-to-listen-conversion-ratio/",
+     "publisher": "Gong Labs",
+     "date": "2025-08-21 (modified 2026-03-04)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "price-presentation-and-material-terms",
+   "title": "Present price clearly about three-quarters through the call, with every material term",
+   "category": "call-structure",
+   "guidance": "In one Gong dataset of 25,537 B2B calls, top reps most often raised price at minutes 40-49 of long calls. Win rates peaked when price came up 3-4 times per call. A later Gong study found first-call price discussion associated with higher win rates, and recommends introducing price about three-quarters of the way through the first call. In a high-ticket call, state the total price, every payment option with its full total, what is and isn't included, the start date, and the refund or cancellation terms in one clear block. Then stop talking and let the prospect respond. Leaving out or obscuring material information is a misleading omission under the UK DMCC Act. Misrepresenting cost or refund policy on a sales call breaches the US Telemarketing Sales Rule.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "When top performers most often discuss price",
+     "value": "Minutes 40-49 of long calls",
+     "context": "Gong Labs, 25,537 B2B calls, 2017; correlational"
+    },
+    {
+     "metric": "Price mentions per call associated with highest win rates",
+     "value": "3-4",
+     "context": "Same source"
+    },
+    {
+     "metric": "Recommended placement",
+     "value": "~75% through the first call",
+     "context": "Gong Labs 2020, 11,331 opportunities"
+    }
+   ],
+   "steps": [
+    "Get agreement that the programme fits before stating price ('Based on what you've told me, does this look like what you need?').",
+    "State the total price once, then each payment plan with its total cost and schedule.",
+    "State inclusions, exclusions, the time commitment, the start date, and refund or cancellation terms exactly as written in the contract.",
+    "Pause and let the prospect speak first.",
+    "Send the same terms in writing before taking any payment."
+   ],
+   "do": [
+    "Use one approved pricing script and written terms sheet for all closers",
+    "Show plan totals, not just monthly amounts"
+   ],
+   "dont": [
+    "Hide fees or upsells until after payment",
+    "Make up discounts or deadlines on the call",
+    "Say price 'pays for itself' or similar implied earnings"
+   ],
+   "sources": [
+    {
+     "title": "When sales reps talk pricing",
+     "url": "https://www.gong.io/blog/sales-reps-talk-pricing/",
+     "publisher": "Gong Labs",
+     "date": "2017-01-07 (modified 2026-03-04)"
+    },
+    {
+     "title": "When to discuss price and budget according to data",
+     "url": "https://www.gong.io/blog/data-reveals-the-best-time-to-talk-price-and-budget",
+     "publisher": "Gong Labs",
+     "date": "2020-07-22"
+    },
+    {
+     "title": "Digital Markets, Competition and Consumers Act 2024, s.227 (misleading omissions)",
+     "url": "https://www.legislation.gov.uk/ukpga/2024/13/section/227",
+     "publisher": "legislation.gov.uk",
+     "date": "in force 2025-04-06; text current to 2026-10-25"
+    },
+    {
+     "title": "Complying with the Telemarketing Sales Rule",
+     "url": "https://www.ftc.gov/business-guidance/resources/complying-telemarketing-sales-rule",
+     "publisher": "FTC",
+     "date": "undated web guide (viewed 2026-10)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "objection-handling-pause-question-isolate",
+   "title": "Handle objections by pausing, asking a question, isolating, reframing, and confirming",
+   "category": "objection-handling",
+   "guidance": "Gong's analysis of 67,149 recorded meetings found that top performers pause about 5x longer after an objection than average reps. They also slow down (about 176 vs 188 words per minute) and answer with a clarifying question 54.3% of the time, versus 31.0% for average reps. The method that follows from this: pause, clarify, validate, isolate the real concern, ask permission, reframe against the prospect's own stated goals, then confirm what is still unresolved. High-ticket objections usually fall into five buckets: money, partner, timing, trust/fit, and fear of failing. The aim is to uncover which one is real, not to wear the prospect down. Hard limits: no invented deadlines, no earnings promises, no pushing debt, and stop when the prospect says no. The FTC treats false urgency and earnings misrepresentation as penalty offences, and UK law bans undue influence and exploiting vulnerability.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Pause after objection, top vs average performers",
+     "value": "~5x longer",
+     "context": "Gong Labs, 67,149 meetings, 2019"
+    },
+    {
+     "metric": "Objections answered with a question",
+     "value": "54.3% (top) vs 31.0% (average)",
+     "context": "Same source"
+    },
+    {
+     "metric": "Speech rate during objections",
+     "value": "~176 wpm (top) vs ~188 wpm (average)",
+     "context": "Same source; source text is inconsistent on labels"
+    }
+   ],
+   "steps": [
+    "Pause before you answer, and keep your pace calm.",
+    "Clarify: 'When you say you need to think about it, what specifically do you want to think through?'",
+    "Validate: acknowledge the concern is reasonable.",
+    "Isolate: 'Apart from that, is there anything else holding you back?'",
+    "Ask permission: 'Can I share a thought on that?'",
+    "Reframe using only facts and the prospect's own stated goals, never income projections.",
+    "Confirm: 'What part of that concern is still open for you?' If the answer is a real no, accept it and agree a follow-up or close the file."
+   ],
+   "do": [
+    "Partner objection: offer a second call with the partner present",
+    "Money objection: discuss existing means and lower-cost options; disqualify if only unaffordable debt works",
+    "Log the true objection category in the CRM"
+   ],
+   "dont": [
+    "Coach a prospect to hide the purchase from a spouse or partner",
+    "Suggest opening credit cards or loans",
+    "Make up a deadline or bonus that expires on the call",
+    "Keep pushing after a clear no"
+   ],
+   "sources": [
+    {
+     "title": "The 7 best objection handling techniques",
+     "url": "https://www.gong.io/blog/here-are-the-7-best-objection-handling-techniques-youll-read-this-year",
+     "publisher": "Gong Labs",
+     "date": "2019-01-24 (modified 2026-03-06)"
+    },
+    {
+     "title": "FTC puts businesses on notice that false money-making claims could lead to big penalties",
+     "url": "https://search.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "FTC",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "DMCC Act 2024, s.228 (aggressive practices)",
+     "url": "https://www.legislation.gov.uk/ukpga/2024/13/section/228",
+     "publisher": "legislation.gov.uk",
+     "date": "in force 2025-04-06"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "follow-up-after-no-close",
+   "title": "Follow up a 'not yet' with a written recap, a booked next step, and a capped, consent-based cadence",
+   "category": "follow-up",
+   "guidance": "Before the call ends, book a specific follow-up with every decision-maker present, rather than agreeing to 'touch base'. Within a few hours, send a written recap: their goal and obstacles in their words, the price and payment options, the refund terms, and the decision date they chose. A typical cadence is recap on day 0, one useful resource on day 2, the booked call on about day 3-5, a check-in about a week later, and a 'shall I close your file?' message around day 14-21 before moving to monthly nurture. This cadence is practitioner convention, not tested data. The legal limits are firm. Email needs an opt-out honored within 10 business days, a postal address, and accurate headers. Call and text opt-outs must be honored within 10 business days. Florida bans unsolicited marketing contacts after 8pm and caps them at 3 attempts per 24 hours, and UK law prohibits persistent unwanted solicitations.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "CAN-SPAM opt-out processing deadline",
+     "value": "10 business days; mechanism must work 30 days after send",
+     "context": "FTC CAN-SPAM guide"
+    },
+    {
+     "metric": "CAN-SPAM civil penalty",
+     "value": "up to $53,088 per violating email",
+     "context": "FTC guide, inflation-adjusted figure"
+    },
+    {
+     "metric": "Florida FTSA contact cap",
+     "value": "3 attempts per 24 hours; no marketing contacts after 8pm",
+     "context": "Unsolicited calls/texts; 2023 amendments kept these limits"
+    },
+    {
+     "metric": "Redial effectiveness horizon",
+     "value": "~20 hours",
+     "context": "2007 LRM study; extra dials after this hurt contact rates"
+    }
+   ],
+   "steps": [
+    "End every no-close call with a dated next step in both calendars, or a clear close-out.",
+    "Within 2 hours, send a written recap with price, terms, refund policy and the agreed decision date.",
+    "Day 2: one relevant resource or case study that meets typicality rules. No pressure language.",
+    "Day 3-5: the booked decision call with all decision-makers.",
+    "About day 10: a single check-in by the prospect's preferred channel.",
+    "Day 14-21: a polite close-the-loop message, then monthly value-only nurture, or stop entirely if they opt out.",
+    "Suppress every channel immediately when the prospect opts out, and log it in the DNC field."
+   ],
+   "do": [
+    "Keep follow-up content factual and tied to their stated goal",
+    "Respect quiet hours in the prospect's time zone"
+   ],
+   "dont": [
+    "Send 'price goes up tonight' messages unless that is literally true and documented",
+    "Call more than 3 times in 24 hours",
+    "Keep messaging after an opt-out"
+   ],
+   "sources": [
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "FTC",
+     "date": "2023-08 (edited 2024-01)"
+    },
+    {
+     "title": "Florida Legislature Narrows Litigation-Spawning Telephone Solicitation Act",
+     "url": "https://www.consumerfinancialserviceslawmonitor.com/2023/05/florida-legislature-narrows-litigation-spawning-telephone-solicitation-act/",
+     "publisher": "Ballard Spahr Consumer Finance Monitor",
+     "date": "2023-05-08"
+    },
+    {
+     "title": "DMCC Act 2024, Schedule 20 (para 28: persistent unwanted solicitations)",
+     "url": "https://www.legislation.gov.uk/ukpga/2024/13/schedule/20",
+     "publisher": "legislation.gov.uk",
+     "date": "in force 2025-04-06"
+    },
+    {
+     "title": "FCC Issues One-Year Limited Waiver of New TCPA Consent Revocation Rule",
+     "url": "https://www.kelleydrye.com/viewpoints/blogs/ad-law-access/fcc-issues-one-year-limited-waiver-of-new-tcpa-consent-revocation-rule",
+     "publisher": "Kelley Drye",
+     "date": "2025-04-08"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "pipeline-stages-and-crm-hygiene",
+   "title": "Define pipeline stages by buyer actions, require fields at each stage, and keep TSR-grade records",
+   "category": "pipeline-crm",
+   "guidance": "Build stages that only move when the buyer does something: New, Contacted, Qualified, Booked, Held, Offer made, then Won (cash collected), Lost (with reason), Nurture or Disqualified. In HubSpot, conditional stage properties can mark fields Required so a record cannot move into a stage until they are filled. Use that for qualification fields, show status, lost reason and cash collected. HubSpot's default stage probabilities run 20/40/60/80/90%. Replace them with your own historical stage-to-won rates before trusting weighted forecasts, and keep both Won and Lost stages so reports work. If setters telemarket, the amended Telemarketing Sales Rule requires 5 years of records: call detail records (numbers, date, time and duration to the second in UTC, disposition, script used), consent records, DNC requests, and each distinct script, kept 5 years after its last use.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "HubSpot default deal-stage probabilities",
+     "value": "Appointment 20%, Qualified 40%, Presentation 60%, Decision-maker bought-in 80%, Contract sent 90%",
+     "context": "Defaults only; replace with your own data"
+    },
+    {
+     "metric": "TSR record retention",
+     "value": "5 years (scripts/ads: 5 years after last use)",
+     "context": "16 CFR 310.5 as amended 2024"
+    },
+    {
+     "metric": "TSR safe harbour for record errors",
+     "value": "Correct within 30 days of discovery, with documented procedures",
+     "context": "16 CFR 310.5"
+    }
+   ],
+   "steps": [
+    "Create stages: New > Contacted > Qualified > Booked > Held > Offer made > Won / Lost / Nurture / Disqualified.",
+    "Make fields required per stage: Qualified (goal, timeline, decision-makers, investment comfort, funding route); Held (show status, recording link); Lost (reason from a fixed list); Won (cash collected, plan type, contract signed, cancellation notice sent).",
+    "Track contracted value and collected cash separately, and add refund and chargeback status fields.",
+    "Log every call with TSR call-detail fields and keep consent and opt-out evidence on the contact record.",
+    "Each week: no deal sits in a stage past its SLA (for example, Offer made for more than 14 days) without a dated next step or a move to Nurture or Lost."
+   ],
+   "do": [
+    "Use picklists, not free text, for lost reasons and objection categories",
+    "Recalculate stage probabilities every quarter from closed deals"
+   ],
+   "dont": [
+    "Mark deals Won on a verbal yes before payment and signed terms",
+    "Delete Lost or DNC records needed for the retention period"
+   ],
+   "sources": [
+    {
+     "title": "Set up and customize pipelines",
+     "url": "https://knowledge.hubspot.com/object-settings/set-up-and-customize-pipelines",
+     "publisher": "HubSpot Knowledge Base",
+     "date": "2026-09-29"
+    },
+    {
+     "title": "16 CFR 310.5 - Recordkeeping requirements (TSR)",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.5",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "amended 89 FR 26784, effective 2024-04-16"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "setter-activity-and-capacity-benchmarks",
+   "title": "Use published SDR benchmarks as a reference for setter capacity and ramp, not as targets",
+   "category": "kpis",
+   "guidance": "The most rigorous public dataset is The Bridge Group's 2025 SDR report: 351 companies, mostly B2B SaaS. Its medians: 10 initial meetings held per month as quota, 6 converted to the next stage, 4.1 quality conversations per day from about 112 activities, a 3.0-month ramp, 40% annual attrition, and only 60% of reps hitting quota. High-ticket coaching setters work mostly by DM and SMS on warm inbound leads, so their volumes run very differently. One AI-setter vendor claims human setters handle 30-50 conversations a day and closers take 3-8 calls a day, but it publishes no method. Set targets from your own first 4-8 weeks of data, and judge setters on qualified shows and closed cash, not raw bookings.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "SDR monthly quota (Stage 0 meetings held)",
+     "value": "10 (median)",
+     "context": "Bridge Group 2025, 351 B2B companies"
+    },
+    {
+     "metric": "Meetings converted to Stage 1 per month",
+     "value": "6 (median)",
+     "context": "Same"
+    },
+    {
+     "metric": "Quality conversations per day",
+     "value": "4.1",
+     "context": "Same; 112 activities/day (44 phone, 41 email, 19 LinkedIn, 8 text/other)"
+    },
+    {
+     "metric": "Ramp time",
+     "value": "3.0 months",
+     "context": "Same"
+    },
+    {
+     "metric": "Annual attrition",
+     "value": "40% median (IQR 21-57%)",
+     "context": "Same"
+    },
+    {
+     "metric": "Share of SDRs at quota",
+     "value": "60%",
+     "context": "Same; lowest in the study's history"
+    },
+    {
+     "metric": "Closer calls per day (high-ticket)",
+     "value": "3-8",
+     "context": "Vendor claim (SetSmart), unverified"
+    },
+    {
+     "metric": "Human setter conversations per day (DM-led)",
+     "value": "30-50",
+     "context": "Vendor claim (SetSmart), unverified"
+    }
+   ],
+   "steps": [
+    "Run 4-8 weeks to establish baselines per lead source and channel.",
+    "Set setter targets on qualified shows per week and on the close rate of their shows.",
+    "Plan for about 3 months of ramp and about 40% annual turnover when sizing the team.",
+    "Review each setter's activity mix (calls vs DM vs SMS) against their show-to-close outcomes, not activity counts."
+   ],
+   "do": [
+    "Treat SaaS SDR numbers as a sanity check only",
+    "Count only shows that met the qualification rubric"
+   ],
+   "dont": [
+    "Copy vendor volume claims straight into quotas",
+    "Reward raw booking counts"
+   ],
+   "sources": [
+    {
+     "title": "2025 SDR Models & Metrics Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "High Ticket Closing: Setter-Closer Playbook",
+     "url": "https://setsmart.io/blog/high-ticket-closing",
+     "publisher": "SetSmart (AI-setter vendor)",
+     "date": "undated (viewed 2026-10)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "funnel-kpi-scorecard-quality-adjusted",
+   "title": "Track a quality-adjusted funnel scorecard from first touch to cash kept after refunds",
+   "category": "kpis",
+   "guidance": "Define every ratio precisely so setters, closers and AI agents are measured the same way, and add quality metrics that catch revenue won by over-promising. The core chain runs from speed-to-lead through contact, qualification, booking, show, offer and close rates to cash collected per held call. Pair it with refund, chargeback and complaint rates at 30 and 90 days, and include the share of recorded calls with compliance flags. Air AI is a cautionary example: its sales relied on earnings claims and refund guarantees that the FTC alleged were false or not honored. It ended in a March 2026 ban from marketing business opportunities and an $18M judgment, mostly suspended. That is why net cash after refunds, plus complaint signals, should outrank gross bookings. I found no independent public benchmark for high-ticket coaching show or close rates, so build your own baseline rather than relying on figures from social media.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Air AI settlement (illustrative risk)",
+     "value": "$18M judgment (largely suspended), $50k payment, ban on marketing business opportunities",
+     "context": "FTC, March 2026"
+    }
+   ],
+   "steps": [
+    "Speed-to-lead = median minutes from lead creation to first attempt.",
+    "Contact rate = leads contacted / leads. Qualification rate = qualified / contacted.",
+    "Booking rate = booked / qualified. Show rate = held / booked, with reschedules tracked separately.",
+    "Offer rate = offers made / held. Close rate = won / held, also reported as won / offers.",
+    "Cash per held call = cash collected / calls held. Track contracted value and paid-in-full share separately.",
+    "Quality: refund rate and chargeback rate at 30 and 90 days, complaints per 100 sales, % of reviewed calls with compliance flags.",
+    "Review weekly by lead source, setter, closer and AI agent, and investigate any rep whose close rate rises while refunds rise."
+   ],
+   "do": [
+    "Set close-rate targets only after 50+ held calls per closer",
+    "Weight leaderboards by cash kept after refunds"
+   ],
+   "dont": [
+    "Report bookings or contracted revenue as headline success",
+    "Benchmark against unsourced social-media show and close rates"
+   ],
+   "sources": [
+    {
+     "title": "Air AI and its owners will be banned from marketing business opportunities to settle FTC charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "2025 SDR Models & Metrics Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "setter-closer-commission-design",
+   "title": "Pay commissions on cash collected after refunds, with written plans and compliance gates",
+   "category": "compensation",
+   "guidance": "Survey-grade pay data exists only for salaried B2B SDRs: The Bridge Group's 2025 median is $80K on-target earnings with a 68:32 base-to-variable split. High-ticket remote closing is mostly commission-only. Vendor and job-board sources put experienced closers at 10-20% of cash collected and beginners at 5-10% plus a base, and setter pay ranges from monthly retainers to per-show fees. These are vendor-only figures, so treat them as indicative. Whatever the rates, design for quality: pay on collected cash rather than contracted value; claw back commission on refunds or chargebacks inside the refund or cancellation window; pay setters on qualified shows plus a share of closed cash so they don't book junk; and forfeit commission on any sale where a review finds a misrepresentation. California requires commission plans for work performed there to be in writing, explain how commission is calculated and paid, and be signed by both sides with a receipt.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "SDR on-target earnings and split (B2B SaaS)",
+     "value": "$80K OTE; 68:32 base:variable",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "High-ticket closer commission (experienced)",
+     "value": "10-20% of cash collected",
+     "context": "Vendor/job-post claims (SetSmart), unverified"
+    },
+    {
+     "metric": "High-ticket closer commission (beginner)",
+     "value": "5-10% plus base",
+     "context": "Vendor claim, unverified"
+    },
+    {
+     "metric": "Setter pay",
+     "value": "~$500-$3,000/month or per-appointment",
+     "context": "Vendor claim, unverified"
+    }
+   ],
+   "steps": [
+    "Write the plan: base (if any), rate, what counts as collected cash, payout timing, clawback window, and the forfeiture rule for compliance breaches.",
+    "Pay closers on cash received; for instalment plans, pay as instalments arrive.",
+    "Pay setters a fee per qualified show plus a small share of closed cash.",
+    "Hold back a reserve until the refund or cancellation window closes (UK consumers: at least the 14-day statutory window).",
+    "Each month, audit a sample of recorded calls per rep before releasing payouts.",
+    "Have counsel check worker classification (employee vs contractor) and minimum-wage exposure in each country you hire in."
+   ],
+   "do": [
+    "Get a signed acknowledgment of the plan from every rep",
+    "Publish the clawback rules up front"
+   ],
+   "dont": [
+    "Pay on bookings alone",
+    "Reward contracted value that is never collected",
+    "Let commission pressure override the disqualification rules"
+   ],
+   "sources": [
+    {
+     "title": "2025 SDR Models & Metrics Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "High Ticket Closing: Setter-Closer Playbook",
+     "url": "https://setsmart.io/blog/high-ticket-closing",
+     "publisher": "SetSmart (vendor)",
+     "date": "undated (viewed 2026-10)"
+    },
+    {
+     "title": "California Labor Code §2751 (commission contracts)",
+     "url": "https://california.public.law/codes/ca_lab_code_section_2751",
+     "publisher": "California Public Law (statute text)",
+     "date": "viewed 2026-10"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "earnings-claims-and-testimonials-on-calls",
+   "title": "Ban income promises on calls and use only substantiated, typical-result testimonials",
+   "category": "compliance-us",
+   "guidance": "In US law, an earnings claim is any statement that conveys a specific or minimum level of income, and that includes lines like 'you'll make your investment back in a year'. Setters, closers and AI agents should therefore work only from an approved claim library backed by written substantiation. In 2021 the FTC sent its Notice of Penalty Offenses to over 1,100 money-making, coaching and MLM businesses. It warns that unsubstantiated earnings claims, saying no experience is needed, false 'act now' urgency, and misleading testimonials can draw civil penalties per violation. The Endorsement Guides require that when a testimonial shows results you cannot show to be representative, the generally expected results must be disclosed clearly. Since October 2024, the FTC's Consumer Reviews and Testimonials Rule also bans fake or AI-generated testimonials, incentives tied to positive sentiment, and undisclosed insider reviews, with civil penalties for knowing violations.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Notice of Penalty Offenses civil penalty (2021 figure)",
+     "value": "up to $43,792 per violation",
+     "context": "Inflation-adjusted annually; FTC guides cite $53,088 in 2025"
+    },
+    {
+     "metric": "Recipients of the 2021 money-making notice",
+     "value": "1,100+ companies",
+     "context": "Includes coaching and investment-coaching firms"
+    }
+   ],
+   "steps": [
+    "Build a claim library: every result-related sentence a rep or AI may say, each with its substantiation file.",
+    "Add banned phrases to AI guardrails and closer scorecards ('guaranteed', 'make it back', 'replace your income in X days', 'no experience needed').",
+    "For any testimonial, show the typical participant outcome next to it, or don't use it.",
+    "Get written permission for each testimonial and keep it, and never script, buy, or AI-generate one.",
+    "Review a sample of recorded calls weekly for implied earnings claims."
+   ],
+   "do": [
+    "Talk about effort, skills and process, not income",
+    "Disclose any material connection of people giving testimonials"
+   ],
+   "dont": [
+    "Show top-earner screenshots as typical",
+    "Offer bonuses for 5-star reviews only",
+    "Let AI improvise success stories"
+   ],
+   "sources": [
+    {
+     "title": "FTC puts businesses on notice that false money-making claims could lead to big penalties",
+     "url": "https://search.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "FTC",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "FTC",
+     "date": "reflects 2023 Guides revision (page undated)"
+    },
+    {
+     "title": "FTC Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "FTC",
+     "date": "2024-08-14"
+    },
+    {
+     "title": "16 CFR 437.1 - Definitions (earnings claim)",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.1",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "business-opportunity-rule-done-for-you-clients",
+   "title": "Promising students their first client or outreach on their behalf can trigger the US Business Opportunity Rule",
+   "category": "compliance-us",
+   "guidance": "Under the FTC's Business Opportunity Rule, an offer is a business opportunity when three things combine: it pitches starting a new business, requires payment, and represents that the seller will provide locations, outlets, accounts or customers. That last prong includes referring buyers to lead-generation firms or otherwise helping them get their own customers; general advertising and training advice is excluded. 'We'll land your first client' or 'our AI will do outreach for you' can therefore bring a growth-operator programme inside the Rule. If it applies: hand over the one-page disclosure document at least 7 calendar days before the buyer signs or pays. Make earnings claims only with a reasonable basis and written substantiation, and give a separate 'EARNINGS CLAIM STATEMENT REQUIRED BY LAW' that shows how many and what percentage of past buyers reached the stated level. Air AI is the cautionary case: the FTC sued in August 2025 for missing disclosures, false earnings claims and unhonored refunds, and the March 2026 settlement bans its operators from selling business opportunities. Get counsel to decide whether your exact offer is covered.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Disclosure document lead time",
+     "value": "≥7 calendar days before contract or any payment",
+     "context": "16 CFR 437.2"
+    },
+    {
+     "metric": "Earnings claim statement contents",
+     "value": "Claim, period dates, number and % of buyers who achieved it, material buyer differences, substantiation-on-request notice",
+     "context": "16 CFR 437.4"
+    }
+   ],
+   "steps": [
+    "List every promise in ads, sales scripts and AI prompts about clients, leads, accounts or outreach provided to students.",
+    "Have counsel decide whether the programme meets the three-part definition.",
+    "If it does: prepare the disclosure document and build a 7-day hold into checkout and the CRM, so no payment is taken earlier.",
+    "If you make any earnings claim, compile written substantiation and an earnings claim statement from real buyer data.",
+    "If you want to stay outside the Rule, cut the scripts back to training and general business-development advice, and remove done-for-you client promises."
+   ],
+   "do": [
+    "Treat any 'we get you clients' copy as legal-review-required",
+    "Keep buyer outcome data current for substantiation"
+   ],
+   "dont": [
+    "Take a deposit to 'hold a spot' before the 7-day period ends where the Rule applies",
+    "Promise clients or buy-back of student services informally on calls"
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 437.1 - Definitions",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.1",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "16 CFR 437.2 - The obligation to furnish written information",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.2",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "16 CFR 437.4 - Earnings claims",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.4",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "FTC",
+     "date": "2025-08-25"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "guarantees-refunds-and-payment-authorization",
+   "title": "State refund guarantees exactly as written, honor them, and get verifiable authorization for non-card payments",
+   "category": "compliance-us",
+   "guidance": "The Air AI complaint describes a pattern closers often fall into: promising a full refund if the buyer doesn't earn back 2-3x within a set period, then delaying, going silent, and refusing. The FTC alleged this breached the FTC Act, the Telemarketing Sales Rule and the Business Opportunity Rule, and the 2026 order bans the operators from that market. A guarantee tied to earnings is also an earnings claim. Closers should read the written refund policy word for word, never improvise a better one, and the CRM should track refund requests against a service-level deadline. When a sale made by phone is paid by a method other than a credit or debit card, such as ACH, the TSR requires express verifiable authorization: advance written authorization, a recording of express oral authorization, or written confirmation sent before the charge.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Air AI alleged consumer harm",
+     "value": "Individual losses up to $250,000 (press release figure)",
+     "context": "FTC, August 2025; allegations"
+    },
+    {
+     "metric": "Air AI order",
+     "value": "$18M judgment (mostly suspended), ban on marketing business opportunities",
+     "context": "FTC, 2026-03-24"
+    }
+   ],
+   "steps": [
+    "Write one refund and guarantee policy in plain language, with every condition and the processing time.",
+    "Show it before payment, and get a signature or click acknowledgment.",
+    "Closers read the policy verbatim. Any deviation is a compliance flag.",
+    "Log each refund request with a deadline and escalate before the deadline passes.",
+    "For non-card payments taken on calls, record the oral authorization or send written confirmation before charging."
+   ],
+   "do": [
+    "Avoid guarantees tied to income outcomes",
+    "Report refund SLA compliance monthly"
+   ],
+   "dont": [
+    "Promise refunds or 'buy-backs' on calls that are not in the contract",
+    "Add hidden hurdles to qualify for a refund"
+   ],
+   "sources": [
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "FTC",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "Air AI and its owners will be banned from marketing business opportunities",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "Complying with the Telemarketing Sales Rule",
+     "url": "https://www.ftc.gov/business-guidance/resources/complying-telemarketing-sales-rule",
+     "publisher": "FTC",
+     "date": "undated web guide (viewed 2026-10)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "telemarketing-rules-for-setter-calls",
+   "title": "Set up setter calling under the TSR and TCPA: disclosures, hours, DNC, consent, no misrepresentation",
+   "category": "compliance-us",
+   "guidance": "Outbound setter calls to US leads are telemarketing. Calls a prospect makes in response to ads for business or money-making opportunities do not get the usual inbound-call exemption, unless the offer is covered by the Franchise or Business Opportunity Rule. Early in each call, state who the seller is, that the call is a sales call, and what is being sold. Call only between 8am and 9pm in the recipient's local time, scrub against the national Do-Not-Call registry and your own internal list, and never misrepresent cost, performance, refund policy or earnings. Since the 2024 amendments, the misrepresentation bans also cover business-to-business calls. That matters when your system or your students cold-call businesses on a student's behalf. The FCC has ruled that AI-generated voices count as 'artificial' voices under the TCPA, so AI voice calls need the same prior express written consent as robocalls. Abandoned calls must stay at or under 3% of answered calls per campaign.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Calling window",
+     "value": "8:00am-9:00pm recipient local time",
+     "context": "TSR 16 CFR 310.4(c); Florida ends marketing at 8pm"
+    },
+    {
+     "metric": "Abandoned-call safe harbour",
+     "value": "≤3% of answered calls per campaign, 15 sec/4 rings, rep within 2 sec",
+     "context": "16 CFR 310.4(b)(4)"
+    },
+    {
+     "metric": "B2B coverage",
+     "value": "Misrepresentation bans apply to B2B calls",
+     "context": "TSR amendments announced 2024-03-07"
+    },
+    {
+     "metric": "AI voice calls",
+     "value": "Prior express written consent required",
+     "context": "FCC Declaratory Ruling, effective 2024-02-08"
+    }
+   ],
+   "steps": [
+    "Open each call: your name, the company, that this is about enrolling in [programme], and what it is.",
+    "Suppress numbers on the national DNC registry and your internal DNC list unless you have signed written permission or an established business relationship.",
+    "Enforce calling hours in the dialer based on the lead's area code and location.",
+    "Store consent text, timestamp and source for every lead, plus call detail records, for 5 years.",
+    "Use AI or prerecorded voice only for leads with prior express written consent, and identify the caller at the start.",
+    "Apply the same scripts and misrepresentation checks to B2B outreach run for students' businesses."
+   ],
+   "do": [
+    "Keep a copy of each distinct script, with dates in use",
+    "Train setters on the exact required opening disclosures"
+   ],
+   "dont": [
+    "Dial leads who opted out on another channel without checking",
+    "Spoof caller ID or use a name that can't be traced to one rep"
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 310.6 - Exemptions (TSR)",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.6",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "16 CFR 310.4 - Abusive telemarketing acts or practices",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.4",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "FTC Implements New Protections for Businesses Against Telemarketing Fraud and Affirms Protections Against AI-enabled Scam Calls",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/03/ftc-implements-new-protections-businesses-against-telemarketing-fraud-affirms-protections-against-ai",
+     "publisher": "FTC",
+     "date": "2024-03-07"
+    },
+    {
+     "title": "FCC Makes AI-Generated Voices in Robocalls Illegal",
+     "url": "https://docs.fcc.gov/public/attachments/DOC-400393A1.txt",
+     "publisher": "FCC",
+     "date": "2024-02-08"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ai-setter-disclosure-and-handoff",
+   "title": "Disclose AI setters and keep a human handoff",
+   "category": "ai-setters",
+   "guidance": "AI agents that DM, text or call prospects should say they are automated in their first message and whenever someone asks, and they should never claim to be human. In California it is unlawful to use an online bot to mislead someone about its artificial identity in order to drive a sale; a clear, conspicuous disclosure is the statute's safe harbour. The EU AI Act's Article 50(1) applies from 2 August 2026. It requires AI systems that interact directly with people to be designed so users know they are dealing with AI, unless that is already obvious. On the phone, the FCC treats AI-generated voices as artificial voices under the TCPA, so consent rules apply as well as disclosure. Keep a human-handoff command, log transcripts, and run the AI under the same claim library and disqualification rules as human setters.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "EU AI Act Art. 50 application date",
+     "value": "2026-08-02",
+     "context": "Per Article 113 timing"
+    },
+    {
+     "metric": "California bot-disclosure safe harbour",
+     "value": "Clear, conspicuous disclosure that it's a bot",
+     "context": "Bus. & Prof. Code §17941"
+    }
+   ],
+   "steps": [
+    "First message: 'I'm [Brand]'s automated assistant. A team member can join any time; just ask.'",
+    "If asked 'Are you a bot?', answer truthfully every time.",
+    "Route to a human on request, on complaint, on signs of distress or vulnerability, and before any payment discussion.",
+    "Block the AI from making earnings, guarantee or urgency claims outside the approved library.",
+    "Store transcripts with consent records, and review a weekly sample."
+   ],
+   "do": [
+    "Use the same qualification rubric and DNC suppression as human setters"
+   ],
+   "dont": [
+    "Give the AI a human persona name and photo with no disclosure",
+    "Let the AI negotiate price or financing on its own"
+   ],
+   "sources": [
+    {
+     "title": "California Business and Professions Code §17941",
+     "url": "https://california.public.law/codes/ca_bus_and_prof_code_section_17941",
+     "publisher": "California Public Law (statute text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "EU AI Act Article 50: Transparency obligations",
+     "url": "https://artificialintelligenceact.eu/article/50/",
+     "publisher": "artificialintelligenceact.eu (Future of Life Institute)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "FCC Makes AI-Generated Voices in Robocalls Illegal",
+     "url": "https://docs.fcc.gov/public/attachments/DOC-400393A1.txt",
+     "publisher": "FCC",
+     "date": "2024-02-08"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "financing-and-ability-to-pay-guardrails",
+   "title": "Never steer prospects into new debt; if you offer finance, use compliant lenders",
+   "category": "financing",
+   "guidance": "The FTC's Seed Consulting case shows the financing pattern regulators target in coaching sales. Prospects allegedly paid $3,000-$4,000 to have many credit cards opened for them, often totalling over $50,000 in credit lines. Their stated incomes were inflated by about $100,000, and their new credit limits were passed to training sellers to size the pitch. The case ended in a $2.1M settlement and a ban. Your closers and AI agents must never suggest opening credit cards or loans, advise on what to write on a credit application, or use a prospect's credit data to set the price. In the US, if you arrange consumer financing, the credit contract must carry the FTC Holder Rule notice, which lets the borrower raise claims against the seller with the lender too. The CFPB withdrew its 2024 BNPL interpretive rule on May 12, 2025. In the UK, third-party BNPL lenders are FCA-regulated from 15 July 2026 and must run affordability checks; merchants extending their own credit remain exempt.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Seed Consulting alleged fee",
+     "value": "$3,000-$4,000 per consumer for 'funding'",
+     "context": "FTC, January 2021"
+    },
+    {
+     "metric": "Seed Consulting settlement",
+     "value": "$2.1M and ban on selling credit services",
+     "context": "FTC, 2021"
+    },
+    {
+     "metric": "UK BNPL regulation start",
+     "value": "2026-07-15",
+     "context": "Third-party lenders authorised by FCA; affordability checks; FOS access"
+    }
+   ],
+   "steps": [
+    "Qualification: ask how they would fund it from existing means. If the only route is new unaffordable debt, disqualify or offer a cheaper product.",
+    "Offer in-house instalment plans that show the full total and schedule.",
+    "If you use a third-party lender, confirm its consumer contracts carry the Holder notice (US) or that it is FCA-authorised (UK BNPL), and get your own regulatory advice.",
+    "Ban 'credit stacking' language and credit-application coaching in scripts and AI guardrails.",
+    "Track the share of sales that are financed against refund and complaint rates."
+   ],
+   "do": [
+    "Treat financial strain as a vulnerability signal and slow down or stop"
+   ],
+   "dont": [
+    "Ask for credit limits or scores to set the offer",
+    "Refer prospects to 'funding' companies",
+    "Say 'it pays for itself'"
+   ],
+   "sources": [
+    {
+     "title": "FTC Acts to Stop Nevada Companies From Charging Consumers Thousands To Open Credit Cards To Pay For Training Schemes",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2021/01/ftc-acts-stop-nevada-companies-charging-consumers-thousands-open-credit-cards-pay-training-schemes",
+     "publisher": "FTC",
+     "date": "2021-01-29"
+    },
+    {
+     "title": "FTC Issues Advisory Opinion on the Holder Rule and Attorneys' Fees and Costs",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2022/01/ftc-issues-advisory-opinion-holder-rule-attorneys-fees-costs",
+     "publisher": "FTC",
+     "date": "2022-01-20"
+    },
+    {
+     "title": "Buy Now, Pay Later (BNPL) products",
+     "url": "https://www.consumerfinance.gov/compliance/compliance-resources/consumer-cards-resources/buy-now-pay-later-bnpl-products/",
+     "publisher": "CFPB",
+     "date": "withdrawal noted 2025-05-12"
+    },
+    {
+     "title": "New protections confirmed for Buy Now Pay Later borrowers",
+     "url": "https://www.fca.org.uk/news/press-releases/new-protections-confirmed-buy-now-pay-later-borrowers",
+     "publisher": "FCA",
+     "date": "2026-02-11"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uk-distance-sale-cancellation-rights",
+   "title": "UK video or phone sales to consumers: build the 14-day cancellation flow into closing",
+   "category": "compliance-uk-eu",
+   "guidance": "A programme sold to a UK consumer over Zoom, phone or chat is a distance contract under the Consumer Contracts Regulations 2013, so the consumer can cancel a service within 14 days. You may start delivery inside that window only if the consumer expressly asks you to. If they then cancel, they owe only a proportionate amount for what was delivered, based on the contract price, or on market value if that price is excessive. They lose the right to cancel only if the service is fully performed after they acknowledged that would happen. If you fail to give the required cancellation information, they pay nothing for early delivery. A 'consumer' is an individual acting wholly or mainly outside their trade. If you claim a buyer was acting as a business (for example, an aspiring operator), the burden of proving it is on you. Whether a would-be business starter counts as a consumer depends on the facts, so take advice and default to treating individuals as consumers.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Cancellation period for services (distance contract)",
+     "value": "14 days from day after contract",
+     "context": "CCR 2013"
+    },
+    {
+     "metric": "Charge if consumer cancels after requested early start",
+     "value": "Proportionate to service supplied",
+     "context": "Reg. 36(4)-(6)"
+    }
+   ],
+   "steps": [
+    "Before payment, give the cancellation information and model form in writing (email counts as a durable medium).",
+    "If the buyer wants to start immediately, get an express request in writing and an acknowledgment of the proportionate-charge and loss-of-right rules.",
+    "Record the contract date and cancellation deadline in the CRM, and hold commission until it passes.",
+    "On cancellation, calculate the proportionate amount from delivered modules or sessions and refund the rest promptly."
+   ],
+   "do": [
+    "Treat individuals as consumers unless you can prove business purpose"
+   ],
+   "dont": [
+    "Tell UK buyers 'all sales final' on calls",
+    "Start onboarding without an express early-start request"
+   ],
+   "sources": [
+    {
+     "title": "Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013, reg. 36",
+     "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/36",
+     "publisher": "legislation.gov.uk",
+     "date": "text current to 2026-10-26"
+    },
+    {
+     "title": "Consumer Rights Act 2015, s.2 (definitions)",
+     "url": "https://www.legislation.gov.uk/ukpga/2015/15/section/2",
+     "publisher": "legislation.gov.uk",
+     "date": "text current to 2026-10-26"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uk-dmcc-pressure-urgency-reviews",
+   "title": "UK DMCC Act: no false deadlines, no persistent chasing, no fake reviews, no undue pressure",
+   "category": "compliance-uk-eu",
+   "guidance": "Since 6 April 2025 the CMA can decide consumer-law breaches itself and fine directly, up to 10% of global turnover. Schedule 20 of the DMCC Act lists practices that are always unfair. Three bear directly on high-ticket closing: falsely claiming a product is only available for a limited time to rush a decision (para 7), fake or concealed-incentive reviews (para 13), and persistent unwanted solicitations (para 28). Section 228 also bans aggressive practices: harassment, coercion, or undue influence (using a position of power to sharply limit informed choice). Exploiting a consumer's vulnerability, or putting disproportionate obstacles in the way of cancelling, both count against you. Run every UK call under a 'real deadlines only' rule: a cohort start date or price change you can document, applied to everyone. Stop the pitch when the prospect asks, or when they show signs of vulnerability.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Maximum CMA direct fine",
+     "value": "Up to 10% of global turnover",
+     "context": "DMCC Act regime in force 2025-04-06"
+    },
+    {
+     "metric": "Always-unfair practices most relevant to closing",
+     "value": "Sched. 20 paras 7, 13, 28",
+     "context": "False limited time, fake/incentivised reviews, persistent solicitation"
+    }
+   ],
+   "steps": [
+    "Keep a deadline register: every scarcity or urgency claim with its evidence (cohort cap, start date, price-change notice).",
+    "Script a standard exit: if the prospect asks to stop, thank them and end the call.",
+    "Flag vulnerability signals (financial distress, bereavement, confusion) for a cooling-off follow-up rather than a close.",
+    "Make cancelling as easy as buying: one email or form, no retention calls required.",
+    "Audit review and testimonial sources against CMA fake-review guidance."
+   ],
+   "do": [
+    "Train closers on the specific Schedule 20 paragraphs",
+    "Keep evidence for every deadline claim"
+   ],
+   "dont": [
+    "Use countdown timers or 'this price ends when we hang up' without a real basis",
+    "Chase non-responders daily across multiple channels"
+   ],
+   "sources": [
+    {
+     "title": "DMCC Act 2024, Schedule 20",
+     "url": "https://www.legislation.gov.uk/ukpga/2024/13/schedule/20",
+     "publisher": "legislation.gov.uk",
+     "date": "in force 2025-04-06"
+    },
+    {
+     "title": "DMCC Act 2024, s.228 (aggressive practices)",
+     "url": "https://www.legislation.gov.uk/ukpga/2024/13/section/228",
+     "publisher": "legislation.gov.uk",
+     "date": "text current to 2026-10-25"
+    },
+    {
+     "title": "Unfair commercial practices (CMA207)",
+     "url": "https://www.gov.uk/government/publications/unfair-commercial-practices-cma207",
+     "publisher": "CMA",
+     "date": "2025-04-04 (updated 2025-11-18)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "call-recording-review-and-rep-ramp",
+   "title": "Record with consent and coach weekly on talk ratio, questions, patience and compliance flags",
+   "category": "training",
+   "guidance": "Record every setter and closer call, and announce it at the start. California makes recording a confidential conversation without the consent of all parties a crime, punishable by fines of up to $2,500 per violation for a first offence. Score a sample of calls per rep each week on a fixed rubric. Use the call-analytics measures above (rep talk share near or below the won-deal norm of about 57%, questions spread through the call, 3-4 problems uncovered, a pause and a clarifying question after objections), plus compliance items: required disclosures, no earnings or guarantee improvisation, correct terms read out. Expect about a 3-month ramp for new reps, per the Bridge Group's SDR median. Use the recordings to build objection role-plays and to retrain AI setters from real transcripts. The TSR requires call detail records and scripts to be kept for 5 years, so retain recordings that serve as evidence of consent or authorization under the same policy.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Won-deal rep talk share",
+     "value": "~57%",
+     "context": "Gong 2025, 326k calls"
+    },
+    {
+     "metric": "New-rep ramp",
+     "value": "~3.0 months",
+     "context": "Bridge Group 2025 SDR median"
+    },
+    {
+     "metric": "California unlawful-recording penalty (first offence)",
+     "value": "up to $2,500 per violation and/or up to 1 year",
+     "context": "Penal Code §632"
+    }
+   ],
+   "steps": [
+    "Use this disclosure at call start: 'This call is recorded for quality and training. Is that OK?' Do not record if they decline.",
+    "Each week, review 2-3 calls per rep against the rubric (structure, talk share, questions, objection handling, compliance).",
+    "Hold 30-minute coaching 1:1s focused on one behaviour at a time.",
+    "Run weekly objection role-plays from real transcripts, anonymized.",
+    "Feed flagged calls into the claim-library and AI-guardrail updates."
+   ],
+   "do": [
+    "Store recordings with access controls and a written retention schedule"
+   ],
+   "dont": [
+    "Record covertly",
+    "Use recordings of prospects in marketing without separate consent"
+   ],
+   "sources": [
+    {
+     "title": "California Penal Code §632",
+     "url": "https://california.public.law/codes/ca_penal_code_section_632",
+     "publisher": "California Public Law (statute text)",
+     "date": "viewed 2026-10"
+    },
+    {
+     "title": "Talk-to-listen ratio (2025 update)",
+     "url": "https://www.gong.io/blog/talk-to-listen-conversion-ratio/",
+     "publisher": "Gong Labs",
+     "date": "2025-08-21"
+    },
+    {
+     "title": "2025 SDR Models & Metrics Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    },
+    {
+     "title": "16 CFR 310.5 - Recordkeeping requirements",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.5",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "effective 2024-04-16"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "false-urgency-and-dark-patterns-us",
+   "title": "US: urgency must be literally true; FTC treats false 'act now' pressure as a penalty offence",
+   "category": "compliance-us",
+   "guidance": "The FTC's 2021 Notice of Penalty Offenses for money-making opportunities names falsely telling consumers they must act immediately as a deceptive practice. Its 2022 staff report on dark patterns covers manipulative interface tactics, including false scarcity and urgency. For closers and booking funnels the rule is simple: a deadline, seat limit or bonus expiry must be real, documented and applied to everyone. 'Decide on this call or lose the price' is acceptable only if the price change genuinely happens and is recorded. Countdown timers that reset, fake 'spots left' counters and invented cohort caps create penalty exposure on top of the reputational and refund costs.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Penalty basis",
+     "value": "Civil penalty per violation for recipients of the Notice of Penalty Offenses",
+     "context": "FTC 2021; amount inflation-adjusted yearly"
+    }
+   ],
+   "steps": [
+    "Inventory every urgency or scarcity element in ads, funnels, scripts and AI prompts.",
+    "For each one, record the real-world basis (cohort start, capacity, scheduled price change) and its owner.",
+    "Delete anything without a basis. Make timers reflect real end dates for every viewer.",
+    "Add 'invented deadline' as an automatic fail item on call scorecards."
+   ],
+   "do": [
+    "Use genuine reasons to decide now (start date, onboarding capacity) and state them neutrally"
+   ],
+   "dont": [
+    "Use evergreen countdowns that reset per visitor",
+    "Offer an 'on-call only' discount that is always available"
+   ],
+   "sources": [
+    {
+     "title": "FTC puts businesses on notice that false money-making claims could lead to big penalties",
+     "url": "https://search.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "FTC",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "Bringing Dark Patterns to Light (staff report)",
+     "url": "https://www.ftc.gov/reports/bringing-dark-patterns-light",
+     "publisher": "FTC",
+     "date": "2022-09-14"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "No independent, methodologically transparent benchmark was found for high-ticket coaching show rates or close rates. Commonly quoted figures such as 60-80% show or 20-35% close come from social media and vendors and were not verified. Build baselines from your own CRM.",
+  "Setter commission norms (per-show fee vs % of cash) and closer percentages (10-20%) come only from a vendor blog and job-board posts. No compensation survey for remote high-ticket sales was found.",
+  "Status of the FTC's January 2025 proposals to extend the Business Opportunity Rule to coaching and money-making opportunities, and to create an Earnings Claim Rule, is unverified as of October 2026. The FTC press release failed to load, and two commissioners voted no at the time.",
+  "Whether a specific growth-operator programme that promises a 'first client' or done-for-you outreach meets the Business Opportunity Rule's 'providing outlets, accounts, or customers' prong needs legal review. The rule text suggests it can, but no FTC opinion on this exact model was found.",
+  "Whether inbound calls from ad-driven applicants to a coaching programme fall within the TSR's 'business opportunities' exception to the inbound-ad exemption depends on how the offer is characterised. The FTC has pleaded TSR counts in coaching and AI-opportunity cases such as Air AI.",
+  "Whether the US FTC Cooling-Off Rule or state home-solicitation or telephone-sales cancellation statutes apply to sales closed over video calls was not researched in this pass.",
+  "Whether UK buyers of business-start coaching count as 'consumers' under the Consumer Rights Act 2015 and Consumer Contracts Regulations 2013 is fact-specific. The trader bears the burden of proof, and no case law was reviewed.",
+  "Whether a UK coaching seller that introduces customers to third-party lenders needs FCA credit-broking permission was not verified. Only the BNPL lender regime from 15 July 2026 was confirmed.",
+  "Utah's AI disclosure statute (Artificial Intelligence Policy Act, as amended 2025) and other US state AI-disclosure bills, such as California AB 410 which stalled in 2025, could not be fetched or confirmed.",
+  "Whether EU 'Digital Omnibus' proposals altered the 2 August 2026 application of AI Act Article 50 transparency duties was not verified.",
+  "The TCPA 'revoke-all' rule is delayed to 31 January 2027, and the FCC may modify it. Re-check before then.",
+  "Speed-to-lead multipliers rest on 2007 data from six companies, measuring contact and qualification, not revenue. No recent independent replication was found, and vendor 2026 claims (for example 21% vs 2.3% conversion) were not verified.",
+  "Gong's call-analytics findings come from B2B SaaS recordings and are correlational. Whether they transfer to consumer or prosumer coaching sales calls has not been validated.",
+  "The web-search budget for this run was exhausted partway through. Further searches, for example on state mini-TCPA laws beyond Florida, ASA/CAP rulings on UK earnings claims, and worker-classification rules for commission-only reps, could be run in a follow-up."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

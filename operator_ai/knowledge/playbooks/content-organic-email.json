@@ -1,0 +1,1220 @@
+{
+ "domain": "content-organic-email",
+ "title": "Content, organic & email",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "ig-reels-ranking-signals",
+   "title": "Instagram Reels: score every reel on watch time, sends per reach and likes per reach",
+   "category": "short-form-video",
+   "guidance": "Instagram leadership said in January 2025 that its top three ranking signals are watch time, likes and sends. Sends count slightly more for reaching non-followers, and likes count slightly more for reaching existing followers. Instagram's ranking explainer says Reels are ranked on how likely a viewer is to reshare, watch to the end, like, or open the audio page. It also says viewers are surveyed on whether a reel was worth their time. The useful per-reel KPIs are therefore average watch time, sends divided by reach, and likes divided by reach, not raw views or comment counts (comments were not named as a top signal). Instagram shows fewer reels that are low-resolution, watermarked, muted, bordered, mostly text, or already posted on Instagram. Its 2025 creator tips say to post consistently and make every reel understandable to a stranger who has never seen the account.",
+   "do": [
+    "Build a per-reel scorecard: reach, average watch time, sends/reach, likes/reach, follows",
+    "Write 'forwardable' content for growth (a checklist, a framework or a sharp take a viewer would send to a specific friend or peer)",
+    "Make each reel standalone: no 'as I said in part 1' openings",
+    "Use audio (voice or music) and upload natively at full resolution"
+   ],
+   "dont": [
+    "Repost clips with another app's watermark or add borders/letterboxing",
+    "Publish muted or text-wall reels",
+    "Optimise for comment volume alone as the primary KPI",
+    "Judge a reel by views without normalising by reach"
+   ],
+   "steps": [
+    "48-72h after posting, pull reach, average watch time, sends, likes and follows from Insights",
+    "Compute sends/reach and likes/reach",
+    "Compare each reel with the account's trailing 10-reel median and flag the top and bottom 20%",
+    "Re-cut top performers into new hook variants (see trial reels entry), and diagnose bottom performers on the first 3 seconds and on originality"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Public numeric thresholds for watch time/sends/likes",
+     "value": "None published by Instagram",
+     "context": "Benchmark against the account's own trailing median. Third-party claims that sends weigh '3-5x' likes are unverified"
+    },
+    {
+     "metric": "Max Reel length",
+     "value": "3 minutes (up from 90 seconds)",
+     "context": "Announced January 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Instagram Shares Insight Into Its Algorithm in 2025",
+     "url": "https://www.socialmediatoday.com/news/instagram-shares-algorithm-insights-2025/738034/",
+     "publisher": "Social Media Today (reporting Instagram head's video)",
+     "date": "2025-01-22"
+    },
+    {
+     "title": "Instagram Ranking Explained",
+     "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained",
+     "publisher": "Instagram",
+     "date": "2023-05-31"
+    },
+    {
+     "title": "Instagram Shares Tips on Maximizing Reels Recommendations",
+     "url": "https://www.socialmediatoday.com/news/instagram-reels-recommendations-tips/741030/",
+     "publisher": "Social Media Today",
+     "date": "2025-02-26"
+    },
+    {
+     "title": "Instagram swoops in with 3-minute Reels and rectangular profile grids",
+     "url": "https://www.engadget.com/social-media/instagram-swoops-in-with-3-minute-reels-and-rectangular-profile-grids-as-the-tiktok-ban-gets-real-201316339.html",
+     "publisher": "Engadget",
+     "date": "2025-01-18"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ig-originality-recommendation-eligibility",
+   "title": "Instagram originality rules now cover Reels, photos and carousels: protect recommendation eligibility",
+   "category": "short-form-video",
+   "guidance": "Since 30 April 2026, Instagram's originality protections apply to photos and carousels as well as Reels. Accounts that mainly post unoriginal material are removed from recommendation surfaces, though followers still see their posts. Adding a border, watermark, subtitles or a credit line does not make reposted content original. Original content means footage you shot, assets you designed, or third-party material you changed substantially by adding new information, context or a point of view, or by using Remix. An account becomes eligible again once most of its recent posts in a rolling 30-day window are original, and creators can check this, remove posts or appeal in Account Status. For a white-label AI system that serves many coaches, every tenant's content must be built from that coach's own footage, stories, client cases and frameworks, and the same asset must never be pushed to several accounts.",
+   "do": [
+    "Generate scripts from each coach's own transcripts, call notes and frameworks, then have the coach film them",
+    "Use Remix or collabs for reaction content, and add real commentary or new data",
+    "Check Account Status weekly as part of the automated account-health check",
+    "Share other creators' work through Stories or reposts rather than re-uploading it to the grid"
+   ],
+   "dont": [
+    "Re-upload trending clips from other creators with only captions or credit added",
+    "Distribute identical AI-generated assets across multiple client accounts",
+    "Rely on watermark removal or speed changes to make content look original"
+   ],
+   "steps": [
+    "Tag every asset in the content library with its origin (self-filmed, designed, licensed, third-party)",
+    "Block publishing of third-party-origin assets unless they carry a material-edit flag (commentary, new data, Remix)",
+    "Each week, compute the share of the last 30 days' posts that are original and alert when it falls toward half",
+    "If an account is flagged, remove the unoriginal posts, appeal in Account Status, and post only original content for 30 days"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Share of US recommendations from original posts",
+     "value": "75%",
+     "context": "Instagram, April 2026"
+    },
+    {
+     "metric": "Eligibility recovery window",
+     "value": "Rolling 30 days, with 'most' recent posts original",
+     "context": "Instagram does not quantify 'most'"
+    }
+   ],
+   "as_of": "2026-04",
+   "sources": [
+    {
+     "title": "Rewarding original creators on Instagram",
+     "url": "https://creators.instagram.com/blog/rewarding-original-creators-on-instagram",
+     "publisher": "Instagram Creators",
+     "date": "2026-04-30"
+    },
+    {
+     "title": "Instagram Ranking Explained",
+     "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained",
+     "publisher": "Instagram",
+     "date": "2023-05-31"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ig-trial-reels-hook-testing",
+   "title": "Use Instagram Trial Reels as a non-follower hook-testing lab",
+   "category": "short-form-video",
+   "guidance": "Trial reels, rolled out to eligible creators from December 2024, are shown to non-followers first. They do not appear on the profile grid or in followers' feeds unless you share them. Views, likes, comments and shares appear about 24 hours after posting, together with a comparison against your earlier trials. You can share a winning trial manually or let Instagram auto-share it to followers if it gets strong views in its first 72 hours. This makes trial reels the cleanest available read on how cold audiences respond to a hook. Test one idea with two or three different openings and promote only the winner. The testing protocol below is our own synthesis, not Instagram guidance.",
+   "do": [
+    "Keep the body of the video constant and vary only the first 3 seconds, the cover text or the opening line",
+    "Log the winning hook pattern (for example a pain question, a contrarian claim or a result-first opening) into a reusable hook library per coach",
+    "Turn on auto-share only for variants you would be happy for followers to see"
+   ],
+   "dont": [
+    "Assume trials are fully hidden: followers can still meet them through DM shares or audio and location pages",
+    "Treat one trial as conclusive: compare against the account's previous trials",
+    "Upload a near-identical copy of a reel that is already published, because Instagram makes already-posted reels less visible"
+   ],
+   "steps": [
+    "Script one idea with 2-3 distinct hooks",
+    "Post each variant as a trial (toggle Trial before sharing)",
+    "At about 24h, compare views, likes, shares and comments against the account's earlier trials",
+    "Share the winner with everyone (or let auto-share act within 72h) and archive the losers",
+    "Record the result in the hook library and reuse the pattern on the next idea"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Time to first trial metrics",
+     "value": "~24 hours",
+     "context": "Instagram, Dec 2024"
+    },
+    {
+     "metric": "Auto-share evaluation window",
+     "value": "First 72 hours",
+     "context": "Instagram, Dec 2024"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Trial reels: Try content with non-followers first to see what performs best",
+     "url": "https://creators.instagram.com/blog/instagram-trial-reels",
+     "publisher": "Instagram Creators",
+     "date": "2024-12-10"
+    },
+    {
+     "title": "Instagram Ranking Explained",
+     "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained",
+     "publisher": "Instagram",
+     "date": "2023-05-31"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "short-form-hook-retention-structure",
+   "title": "Short-form hook and retention spec: value in 3s, hook by 6s, 9:16, captions 5-10 words/sec",
+   "category": "short-form-video",
+   "guidance": "TikTok's creative guidance (updated June 2025) says to state the content's value proposition within the first 3 seconds and land the hook within the first 6. It also recommends shooting vertical 9:16 at 720p or higher, using sound, adding captions or text at roughly 5-10 words per second, and preferring creator-style, less polished footage with one clear call to action. YouTube measures the 'intro' as the share of viewers still watching after 30 seconds. Its fix for weak intros is to make the title and thumbnail match the opening and to experiment with the first 30 seconds. For coaching content, open with the viewer's specific problem or desired outcome in their own words, show the payoff or proof early, teach one idea, and close with one CTA (keyword comment, follow, or watch the long-form video). TikTok's guidance was written for performance ads, so applying it to organic posts is an inference, but it agrees with the retention metrics every platform exposes.",
+   "do": [
+    "Put the outcome or pain point on screen as text in the first frame",
+    "Burn in captions at 5-10 words/sec for sound-off viewers",
+    "Use a single CTA per video",
+    "Keep key text inside platform UI safe zones"
+   ],
+   "dont": [
+    "Open with greetings, logos or 'in this video I will...' preambles",
+    "Stack multiple CTAs (follow + comment + link) in one short",
+    "Use horizontal footage letterboxed into vertical"
+   ],
+   "steps": [
+    "Write hook options as: problem in the viewer's words, a counter-intuitive claim, or the result first",
+    "Make sure the first spoken line and on-screen text deliver the value proposition by second 3",
+    "Cut every pause and filler in the first 6 seconds",
+    "Add captions and check pacing against 5-10 words/sec",
+    "Review the retention curve: if the drop at 0-3s is steep, rework the hook; if it drops mid-video, cut that section"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Value proposition timing",
+     "value": "<=3 seconds",
+     "context": "TikTok for Business, June 2025"
+    },
+    {
+     "metric": "Hook timing",
+     "value": "<=6 seconds",
+     "context": "TikTok for Business, June 2025"
+    },
+    {
+     "metric": "Text overlay pace",
+     "value": "5-10 words per second",
+     "context": "TikTok for Business"
+    },
+    {
+     "metric": "Minimum resolution",
+     "value": "720p, 9:16",
+     "context": "TikTok for Business"
+    },
+    {
+     "metric": "YouTube intro window",
+     "value": "First 30 seconds",
+     "context": "YouTube Analytics 'intro' key moment"
+    }
+   ],
+   "as_of": "2025-06",
+   "sources": [
+    {
+     "title": "Creative best practices for performance ads",
+     "url": "https://ads.tiktok.com/help/article/creative-best-practices?lang=en",
+     "publisher": "TikTok for Business",
+     "date": "2025-06"
+    },
+    {
+     "title": "Measure key moments for audience retention",
+     "url": "https://support.google.com/youtube/answer/9314415?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "youtube-shorts-rules-and-routing",
+   "title": "YouTube Shorts: 3-minute limit, Content ID blocking over 1 minute, no clickable links, so route to long-form",
+   "category": "short-form-video",
+   "guidance": "Square or vertical uploads of up to 3 minutes have counted as Shorts since 15 October 2024. Uploading at 16:9 keeps a video in long-form. Any Short longer than 1 minute that carries an active Content ID claim of any kind is blocked worldwide and cannot be played, recommended or monetized. Use original audio or the YouTube Audio Library for 1-3 minute Shorts; most Shorts Audio Library tracks are limited to 90 seconds, and some to 60 or 30. Links in Shorts descriptions and comments stopped being clickable on 31 August 2023. YouTube added clickable links near the Subscribe button on channel pages and announced a safer way to link a Short to long-form content. So the Short's job is to send viewers to a long-form video or to the channel page, not to an external URL.",
+   "do": [
+    "Use Shorts as trailers for a specific long-form video and link that video to the Short with YouTube's related-video option",
+    "Keep 1-3 minute Shorts free of third-party music",
+    "Put the lead-magnet link in the channel-page links and in long-form video descriptions"
+   ],
+   "dont": [
+    "Paste URLs into Shorts descriptions expecting clicks",
+    "Use popular copyrighted tracks in Shorts longer than 60 seconds",
+    "Assume a 16:9 upload under 3 minutes will be treated as a Short"
+   ],
+   "steps": [
+    "For each long-form video, cut 2-4 vertical Shorts from its strongest moments",
+    "Attach the source long-form video as the related video on each Short",
+    "Close each Short with a verbal CTA to the full video",
+    "Check Studio for copyright claims before publishing any Short over 60 seconds"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max Shorts length",
+     "value": "3 minutes (square/vertical)",
+     "context": "Uploads on or after 2024-10-15"
+    },
+    {
+     "metric": "Content ID block threshold",
+     "value": ">1 minute with any active claim",
+     "context": "Blocked globally, no channel penalty"
+    },
+    {
+     "metric": "Shorts Audio Library track use",
+     "value": "Up to 90s (some 60s/30s)",
+     "context": "YouTube Help"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Understand three-minute YouTube Shorts",
+     "url": "https://support.google.com/youtube/answer/15424877?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "YouTube's banning clickable links from Shorts descriptions and comments",
+     "url": "https://tubefilter.com/2023/08/10/youtube-shorts-comments-spam/",
+     "publisher": "Tubefilter",
+     "date": "2023-08-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "youtube-long-form-sales-asset",
+   "title": "YouTube long-form as a pre-sales asset: valued watch time, chapters, retention fixes, clickable links",
+   "category": "youtube-long-form",
+   "guidance": "YouTube's recommendation system aims at viewer satisfaction. Beyond clicks and watch time, it uses survey ratings as 'valued watchtime', and only 4- and 5-star ratings count. It also predicts shares and likes, and treats dislikes as a negative signal. For a coach, a long-form video works like a recorded pre-sales call: answer one high-intent buyer question in depth, show the method and evidence, handle the main objections, and invite one next step. Links stay clickable in long-form descriptions and comments, so put the lead-magnet or application link in the first lines of the description and in a pinned comment, and mention it out loud at natural breaks. Add manual chapters so prospects can jump to proof and objections. Then use the retention report's key moments to fix the opening, move top moments earlier and cut dips.",
+   "do": [
+    "Title videos around a buyer's question or desired outcome, not the coach's jargon",
+    "Put chapters on case studies, the method and FAQs/objections",
+    "Place the CTA link in description line 1-2 and in a pinned comment",
+    "Turn top retention moments into new videos and Shorts"
+   ],
+   "dont": [
+    "Save all the value for the end: YouTube notes audiences shrink over a video's length",
+    "Use clickbait titles the opening doesn't pay off, which hurts the 30-second intro metric",
+    "Add chapters that break the rules (they won't render)"
+   ],
+   "steps": [
+    "Pick one buyer question per video from sales-call transcripts",
+    "Outline it as hook (matching the title/thumbnail promise), proof, method, objections, CTA",
+    "Add manual chapters starting at 00:00, with at least 3 timestamps, each chapter at least 10 seconds long",
+    "Publish with the lead-magnet link in the description and a pinned comment",
+    "After 1-2 days (once the video passes 100 views), review intro retention, top moments, spikes and dips, then iterate"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Manual chapter requirements",
+     "value": "First at 00:00; >=3 timestamps; each >=10s",
+     "context": "YouTube Help"
+    },
+    {
+     "metric": "Key-moments eligibility",
+     "value": "Video >=60s and >=100 views; data in 1-2 days",
+     "context": "YouTube Help"
+    },
+    {
+     "metric": "Valued watchtime",
+     "value": "Only 4-5 star survey ratings count",
+     "context": "YouTube engineering blog, 2021"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "On YouTube's recommendation system",
+     "url": "https://blog.youtube/inside-youtube/on-youtubes-recommendation-system/",
+     "publisher": "YouTube Official Blog",
+     "date": "2021-09-15"
+    },
+    {
+     "title": "Measure key moments for audience retention",
+     "url": "https://support.google.com/youtube/answer/9314415?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Video chapters",
+     "url": "https://support.google.com/youtube/answer/9884579?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "YouTube's banning clickable links from Shorts descriptions and comments",
+     "url": "https://tubefilter.com/2023/08/10/youtube-shorts-comments-spam/",
+     "publisher": "Tubefilter",
+     "date": "2023-08-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "youtube-ab-test-titles-thumbnails",
+   "title": "YouTube native A/B testing: up to 3 title/thumbnail variants, judged on watch-time share",
+   "category": "youtube-long-form",
+   "guidance": "YouTube Studio on desktop can test up to three titles, three thumbnails, or title-and-thumbnail pairs. The winner is chosen by watch-time share, not click-through rate, so a variant that wins clicks but loses viewers will not win. Results come back as Winner, Performed Same or Inconclusive. Tests run from a few days to about two weeks, depending on impressions and video age. Shorts, scheduled livestreams, Premieres (until they finish), made-for-kids, age-restricted and private videos cannot be tested. Changing the title or thumbnail during a test stops it. YouTube advises starting with older videos, making the variants meaningfully different, and uploading thumbnails at 1280x720 or larger.",
+   "do": [
+    "Test clearly different angles (for example outcome vs. pain vs. curiosity), not small wording changes",
+    "Start with evergreen back-catalogue videos that still get impressions",
+    "Make sure every variant's promise matches the first 30 seconds of the video"
+   ],
+   "dont": [
+    "Edit the title or thumbnail mid-test",
+    "Use third-party CTR-only testers as the main decision tool for a sales asset",
+    "Upload thumbnails below 1280x720 (all variants are downscaled to 854x480)"
+   ],
+   "steps": [
+    "Pick a video with steady impressions",
+    "Create 2-3 distinct title/thumbnail concepts",
+    "Run the test in Studio's A/B testing panel for up to 2 weeks",
+    "Apply the winner, log the winning angle per niche, and reuse it on new uploads"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max variants",
+     "value": "3",
+     "context": "Titles and/or thumbnails"
+    },
+    {
+     "metric": "Test duration",
+     "value": "A few days to ~2 weeks",
+     "context": "Depends on impressions"
+    },
+    {
+     "metric": "Decision metric",
+     "value": "Watch-time share",
+     "context": "Not CTR"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "A/B test titles & thumbnails",
+     "url": "https://support.google.com/youtube/answer/16391400?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tiktok-fyf-eligibility-commercial-disclosure",
+   "title": "TikTok: originality for For You eligibility, and commercial disclosure even when promoting your own coaching",
+   "category": "platform-policy",
+   "guidance": "Under TikTok's Community Guidelines (released 25 August 2026, effective 24 September 2026), unoriginal or reused material that adds nothing new is not eligible for the For You feed. Content that pushes people to inflate likes, follows or gifts is also ineligible. Ineligible videos can still show in search and on the profile, and analytics show whether a video was excluded. Creators must switch on the content disclosure setting when they promote their own business, product or service, as well as for branded or incentivised content. Undisclosed promotion can lose visibility or have the label applied by TikTok, and repeat failures can lead to posting restrictions or a ban. Financial scams, including 'get-rich-quick' schemes, and multi-level marketing are not allowed, so coaching offers about earning money need careful, substantiated framing.",
+   "do": [
+    "Turn on content disclosure on any video that promotes the coach's own programme, call or paid product",
+    "Add genuine commentary or new information to any reused clip",
+    "Check each video's analytics for FYF-ineligibility flags"
+   ],
+   "dont": [
+    "Use 'follow for follow' or 'like to unlock' engagement mechanics",
+    "Frame offers as fast or guaranteed wealth",
+    "Repost other creators' content without new value"
+   ],
+   "steps": [
+    "Classify each post as educational, own-offer promotion or branded content before publishing",
+    "Have the publishing pipeline enable the disclosure toggle automatically for own-offer and branded posts",
+    "Run a claims check that blocks income promises and 'quick money' framing",
+    "Review FYF eligibility in analytics 24h after posting"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Guidelines effective date",
+     "value": "2026-09-24",
+     "context": "Released 2026-08-25"
+    }
+   ],
+   "as_of": "2026-09",
+   "sources": [
+    {
+     "title": "Community Guidelines: Integrity and Authenticity",
+     "url": "https://www.tiktok.com/community-guidelines/en/integrity-authenticity",
+     "publisher": "TikTok",
+     "date": "2026-08-25"
+    },
+    {
+     "title": "Community Guidelines: Regulated Goods and Commercial Activities",
+     "url": "https://www.tiktok.com/community-guidelines/en/regulated-commercial-activities",
+     "publisher": "TikTok",
+     "date": "2026-08-25"
+    },
+    {
+     "title": "Community Guidelines: For You Feed Eligibility Standards",
+     "url": "https://www.tiktok.com/community-guidelines/en/fyf-standards",
+     "publisher": "TikTok",
+     "date": "2026-08-25"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ai-generated-content-disclosure",
+   "title": "AI-assisted content: what must be labelled on YouTube and TikTok, and what is exempt",
+   "category": "platform-policy",
+   "guidance": "YouTube requires creators to tick the 'AI use' setting for realistic altered or synthetic content. That covers making a real person seem to say or do something, altering real events or places, creating realistic scenes that never happened, and AI music that is the main focus of a video. Using AI for scripts, outlines, titles, thumbnails, infographics, idea generation, captions and audio repair does not need disclosure, and neither does cloning your own voice for a voiceover. YouTube may also auto-label content made with its tools, carrying C2PA metadata, or detected as AI. Disclosure alone does not reduce reach or monetization, but creators who consistently fail to disclose can be labelled, have content removed, or be suspended from the Partner Program. TikTok requires a label on AI-generated or heavily edited content showing realistic scenes or people. The FTC says AI avatars are not banned in themselves, but they must not deliver fake testimonials.",
+   "do": [
+    "Build a per-asset 'realistic synthetic?' flag into the publishing pipeline and map it to each platform's disclosure toggle",
+    "Use AI freely for scripting, outlines, titles and thumbnails (exempt on YouTube)",
+    "Keep testimonials limited to real clients' own words and footage"
+   ],
+   "dont": [
+    "Generate realistic avatar 'clients' or fabricated results footage",
+    "Clone another person's likeness or voice",
+    "Strip C2PA metadata to avoid labels"
+   ],
+   "steps": [
+    "At generation time, record which assets contain realistic synthetic people, voices or scenes",
+    "Auto-set YouTube's AI-use disclosure and TikTok's AI label for flagged assets",
+    "Block any synthetic asset presented as a customer testimonial",
+    "Audit labels monthly against platform notifications in Studio"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Disclosing use of altered or synthetic content",
+     "url": "https://support.google.com/youtube/answer/14328491?hl=en",
+     "publisher": "YouTube Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Community Guidelines: Integrity and Authenticity",
+     "url": "https://www.tiktok.com/community-guidelines/en/integrity-authenticity",
+     "publisher": "TikTok",
+     "date": "2026-08-25"
+    },
+    {
+     "title": "Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "FTC",
+     "date": "2024-11"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "instagram-comment-to-dm-messaging-rules",
+   "title": "Instagram comment-keyword DMs: one private reply, 7-day limit, 24h window only after the user replies",
+   "category": "dm-automation",
+   "guidance": "A DM triggered by a comment on Instagram is a Private Reply. Each commenter can receive only one, and it must be sent within 7 days of the comment; for Live, it can only be sent while the broadcast is running. A comment does not open a conversation. Follow-ups are allowed only after the person replies, and only within 24 hours of that reply. The standard window lasts 24 hours from the user's last action. Conversations that start from a Click-to-Direct ad can stay open for up to 7 days. The Human Agent tag gives a person, not a bot, a separate 7 days to answer. Messages to non-followers arrive in Requests rather than the Inbox. Using this requires an Instagram professional account and the comment and messaging permissions. An app serving accounts it does not own needs Advanced Access through App Review. Meta also says automated chats should disclose that they are automated, which is required by law in places such as California and Germany and recommended everywhere else.",
+   "do": [
+    "Make the single private reply count: ask a question or offer a button so the user responds and opens the 24h window",
+    "Disclose automation in the first message ('automated assistant, a human can step in')",
+    "Hand off to a human (using the Human Agent tag) for sales conversations that go past 24h",
+    "Get Advanced Access before onboarding client accounts you don't own"
+   ],
+   "dont": [
+    "Send multiple automated messages to a commenter who has not replied",
+    "Use the Human Agent tag for automated sequences",
+    "Promise prospects ongoing DM drips on Instagram; move nurture to email"
+   ],
+   "steps": [
+    "Subscribe webhooks to comments (and live_comments)",
+    "On a matching keyword, send one private reply with a quick-reply or button prompt",
+    "On the user's response, deliver the resource and ask for email within 24h",
+    "Route high-intent replies to a human inbox (Conversation Routing; Handover Protocol is no longer supported for Instagram as of Oct 2025)",
+    "Log consent and the timestamp of every window-opening event"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Private replies per commenter",
+     "value": "1",
+     "context": "Within 7 days of comment"
+    },
+    {
+     "metric": "Follow-up window after user reply",
+     "value": "24 hours",
+     "context": "Standard window"
+    },
+    {
+     "metric": "Click-to-Direct ad window",
+     "value": "Up to 7 days from user's first message",
+     "context": "Meta policy"
+    },
+    {
+     "metric": "Human Agent window",
+     "value": "7 days, human replies only",
+     "context": "Meta policy"
+    },
+    {
+     "metric": "Text message size",
+     "value": "<=1,000 bytes UTF-8",
+     "context": "Instagram Messaging API"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Send a Private Reply to a Commenter",
+     "url": "https://developers.facebook.com/docs/instagram-platform/private-replies/",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Instagram Messaging API (Instagram API with Instagram Login)",
+     "url": "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Messenger Platform and Instagram Messaging API Policy",
+     "url": "https://developers.facebook.com/documentation/business-messaging/messenger-platform/policy",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Messenger Platform changelog",
+     "url": "https://developers.facebook.com/documentation/business-messaging/messenger-platform/changelog/",
+     "publisher": "Meta for Developers",
+     "date": "2026-04-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "instagram-messaging-rate-limits",
+   "title": "Instagram messaging throughput: 750 private replies/hour per account; plan queues for viral posts",
+   "category": "dm-automation",
+   "guidance": "Meta's documented Instagram limits apply per professional account. Private Replies to post and reel comments are capped at 750 calls per hour, and replies to Live comments at 100 calls per second. The Send API allows 300 calls per second for text, links, reactions and stickers and 10 per second for audio or video, and the Conversations API allows 2 calls per second. Once an account has sent and received more than 72,000 messages, new messages stop appearing in the Inbox and sending is blocked until volume falls. The widely quoted '200 automated DMs per hour' cap does not appear in Meta's Instagram rate-limit documentation; treat it as a tool-side pacing convention. A post that draws 3,000 keyword comments in an hour therefore needs about 4 hours to clear, which is well inside the 7-day private-reply limit but slow enough to cost conversions. Meta's changelog also matters: three message tags (CONFIRMED_EVENT_UPDATE, ACCOUNT_UPDATE, POST_PURCHASE_UPDATE) returned errors from 27 April 2026.",
+   "do": [
+    "Queue private replies with per-account pacing under 750/hour and prioritise the newest comments",
+    "Show 'sending your link now' expectations in the caption when a viral post is likely",
+    "Monitor the 72,000-message threshold on high-volume accounts"
+   ],
+   "dont": [
+    "Hard-code third-party '200/hour' or '5,000/hour' figures as Meta rules",
+    "Burst identical public comment replies, which risks spam filters",
+    "Rely on deprecated message tags for re-engagement"
+   ],
+   "steps": [
+    "Implement a per-account token bucket for private replies (750/hour) and the Send API",
+    "Alert when the queue delay goes past 30 minutes and suggest a story or broadcast fallback",
+    "Re-check Meta's rate-limit page and changelog each quarter"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Private Replies (posts/reels)",
+     "value": "750 calls/hour per IG professional account",
+     "context": "Meta rate-limiting docs"
+    },
+    {
+     "metric": "Private Replies (Live)",
+     "value": "100 calls/second",
+     "context": "Meta"
+    },
+    {
+     "metric": "Send API text",
+     "value": "300 calls/second",
+     "context": "Meta"
+    },
+    {
+     "metric": "Send API audio/video",
+     "value": "10 calls/second",
+     "context": "Meta"
+    },
+    {
+     "metric": "Inbox volume cap",
+     "value": ">72,000 messages blocks new inbox/sending",
+     "context": "Meta"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Messenger Platform rate limits",
+     "url": "https://developers.facebook.com/docs/messenger-platform/overview/rate-limiting",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Messenger Platform changelog",
+     "url": "https://developers.facebook.com/documentation/business-messaging/messenger-platform/changelog/",
+     "publisher": "Meta for Developers",
+     "date": "2026-04-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "comment-keyword-dm-funnel-design",
+   "title": "Comment-keyword DM funnel design: earn the reply, capture email in 24h, nurture off-platform",
+   "category": "dm-automation",
+   "guidance": "Instagram allows only one automated private reply per commenter, and nothing more until the person responds. The first DM should therefore earn a tap or reply rather than drop a bare link, because the response is what opens the 24-hour window for delivery and email capture. Once the window is open, deliver the promised resource, ask for an email address (with clear marketing consent), and ask one qualifying question. Longer nurture belongs in email, where you control the cadence. Tool vendors document that keyword triggers usually fire only on a user's first comment per post, so use a short, unique keyword per post and show it both on screen and in the caption. Public conversion numbers are mostly vendor case studies. One Manychat-published story reports 53,000 email leads and an 85% webinar-registration rate from comments over 12 months, but these figures are not independently verified, so each account should measure its own funnel stages.",
+   "do": [
+    "Use one memorable keyword per post (e.g., a single word tied to the resource)",
+    "Make the first DM's question or button match the commenter's intent",
+    "Ask for email and one qualifier (role, revenue band, main goal) inside the window",
+    "Tag DM leads by source post for attribution"
+   ],
+   "dont": [
+    "Gate the resource behind a required follow or other engagement condition (check each platform's rules first)",
+    "Send the raw link as the only content of the one allowed private reply",
+    "Treat vendor case-study rates as targets"
+   ],
+   "steps": [
+    "Comment keyword triggers one private reply with a button or question",
+    "User taps or replies: deliver the resource link and request email with consent wording",
+    "Ask one qualifying question; high-fit answers get a booking or application link and a human alert",
+    "Sync the contact to the email platform's welcome sequence",
+    "Track the stages: comments, private replies sent, responses, emails captured, applications, calls booked"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Vendor-reported webinar registration from comments",
+     "value": "85%",
+     "context": "Manychat-published case study, unverified; not a neutral benchmark"
+    },
+    {
+     "metric": "Vendor-reported leads",
+     "value": "53,000 email leads in 12 months",
+     "context": "Manychat-published case study, unverified"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Send a Private Reply to a Commenter",
+     "url": "https://developers.facebook.com/docs/instagram-platform/private-replies/",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Instagram Messaging API (Instagram API with Instagram Login)",
+     "url": "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api",
+     "publisher": "Meta for Developers",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Manychat customer case study: Instagram DM funnels",
+     "url": "https://www.casestudies.com/company/manychat/case-study/jenna-kutcher-drives-17m-in-sales-with-manychat",
+     "publisher": "CaseStudies.com (Manychat-supplied)",
+     "date": "undated"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "email-deliverability-bulk-sender-rules",
+   "title": "Email deliverability 2025-26: SPF+DKIM+DMARC, spam rate <0.1%, one-click unsubscribe honoured in 48h",
+   "category": "email",
+   "guidance": "Gmail and Yahoo require every sender to authenticate with SPF or DKIM, keep valid forward and reverse DNS, use TLS (Gmail) and send RFC-compliant messages. Bulk senders must have SPF and DKIM, publish DMARC (p=none is acceptable), and align the From domain with SPF or DKIM. Gmail defines a bulk sender as one that sends close to 5,000 or more messages a day to personal Gmail accounts, and the status is permanent once reached. Keep the user-reported spam rate below 0.1% and never let it reach 0.3%. Above 0.3%, Gmail withholds mitigation until the rate stays under it for 7 consecutive days, and Gmail began ramping up enforcement in November 2025, including temporary and permanent rejections. Marketing mail needs one-click unsubscribe (List-Unsubscribe plus List-Unsubscribe-Post, per RFC 8058) and a visible unsubscribe link, with requests honoured within 48 hours or 2 days. Microsoft rejects mail from senders of 5,000+ messages to its consumer domains that fails its authentication requirements, with error 550 5.7.515.",
+   "do": [
+    "Use a dedicated sending subdomain per coach/tenant with its own SPF, DKIM and DMARC",
+    "Monitor Google Postmaster Tools spam rate daily and pause campaigns as it approaches 0.1%",
+    "Process unsubscribes in real time, well inside 48h",
+    "Warm new domains gradually (Gmail applies an accelerated timetable to new domains)"
+   ],
+   "dont": [
+    "Send from free-mail From addresses (e.g., @gmail.com) through an ESP",
+    "Import purchased or scraped lists",
+    "Hide the unsubscribe link or require a login to unsubscribe"
+   ],
+   "steps": [
+    "Publish SPF, DKIM (2048-bit recommended) and DMARC p=none with a rua reporting address, then check alignment",
+    "Enable RFC 8058 one-click headers in the ESP",
+    "Register the domain in Google Postmaster Tools and monitor Microsoft authentication results",
+    "Set an automatic brake: if spam rate >0.08%, send only to engaged segments until it recovers",
+    "Sunset subscribers who haven't clicked in 90-180 days (practitioner convention)"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Spam rate target",
+     "value": "<0.10%",
+     "context": "Gmail guidance"
+    },
+    {
+     "metric": "Spam rate hard ceiling",
+     "value": "Never >=0.30%",
+     "context": "Gmail and Yahoo"
+    },
+    {
+     "metric": "Mitigation recovery",
+     "value": "7 consecutive days below 0.3%",
+     "context": "Gmail"
+    },
+    {
+     "metric": "Unsubscribe honour time",
+     "value": "48 hours / 2 days",
+     "context": "Gmail FAQ, Yahoo"
+    },
+    {
+     "metric": "Bulk sender threshold",
+     "value": "~5,000 msgs/day",
+     "context": "Gmail (personal accounts); Microsoft (consumer domains)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google Workspace Admin Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google Workspace Admin Help",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Sender Best Practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Fix NDR error 550 5.7.515 in Outlook.com",
+     "url": "https://support.microsoft.com/en-us/outlook/fix-ndr-error-550-5-7-515-in-outlook-com",
+     "publisher": "Microsoft Support",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "email-consent-and-unsubscribe-law",
+   "title": "Email consent law for lead magnets: CAN-SPAM basics, UK specific-consent rule, opt-outs",
+   "category": "email-compliance",
+   "guidance": "US CAN-SPAM rules: no misleading headers or subject lines, mark the message as an advertisement, include a valid physical postal address, and give a clear opt-out. Opt-outs must be honoured within 10 business days, the mechanism must keep working for at least 30 days after sending, and it cannot charge a fee or ask for more than an email address. Each violating email can draw penalties of up to $53,088 (the January 2024 figure, adjusted for inflation each year). The UK rule is stricter: marketing email to individuals needs specific consent to hear from you. The 'soft opt-in' covers only people who bought, or discussed buying, a similar product and were offered an opt-out. Someone who only downloaded a freebie is not covered, so lead-magnet forms need clear consent wording. The ICO says its guidance is under review following the Data (Use and Access) Act. This is a summary, not legal advice.",
+   "do": [
+    "Add explicit consent wording on every lead-magnet form ('you'll also get emails from X; unsubscribe anytime')",
+    "Store consent source, timestamp, IP and form version per contact",
+    "Include a postal address and a working unsubscribe link in every marketing email",
+    "Keep a suppression list that is checked before every send and import"
+   ],
+   "dont": [
+    "Assume a freebie download gives UK/EU marketing consent without disclosure",
+    "Ask subscribers to submit friends' emails",
+    "Sell or share opted-out addresses"
+   ],
+   "steps": [
+    "Detect the subscriber's region at signup and apply the stricter consent template where needed",
+    "Log a consent record for each contact",
+    "Process unsubscribes immediately (this meets the 48h mailbox-provider rule and the 10-business-day legal rule)",
+    "Review legal templates whenever ICO, FTC or CRTC guidance changes"
+   ],
+   "benchmarks": [
+    {
+     "metric": "CAN-SPAM opt-out processing",
+     "value": "<=10 business days",
+     "context": "FTC"
+    },
+    {
+     "metric": "CAN-SPAM opt-out mechanism lifetime",
+     "value": ">=30 days after send",
+     "context": "FTC"
+    },
+    {
+     "metric": "CAN-SPAM max penalty per email",
+     "value": "$53,088",
+     "context": "FTC figure as of Jan 2024; inflation-adjusted annually"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "FTC",
+     "date": "2024-01"
+    },
+    {
+     "title": "Electronic mail marketing (Guide to PECR)",
+     "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guide-to-pecr/electronic-and-telephone-marketing/electronic-mail-marketing/",
+     "publisher": "UK Information Commissioner's Office",
+     "date": "accessed 2026-10 (under review)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "email-newsletter-benchmarks-2025",
+   "title": "Email and newsletter benchmarks for coaching: judge on clicks, not opens",
+   "category": "email-benchmarks",
+   "guidance": "MailerLite's 2025 medians, from 3.6 million campaigns sent December 2024 to November 2025, are a 43.46% open rate, 2.09% click rate, 6.81% click-to-open rate and 0.22% unsubscribe rate. Coaching senders had above-average opens (48.07%) but below-average clicks (1.42%), a lower CTOR (4.9%) and higher unsubscribes (0.3%). That pattern suggests coaching emails get opened but often lack a compelling click. beehiiv's report on 2025 data puts platform opens above 41% and gives a median of 66 days to first revenue for newsletters launched in 2025. Mailbox privacy features inflate open rates, so treat click rate, CTOR and replies as the real health metrics. These are vendor platform medians, not neutral industry data.",
+   "do": [
+    "Set KPIs on click rate and CTOR per email and per sequence",
+    "Give each email one primary link and one job",
+    "Use reply-prompt emails ('reply with your #1 bottleneck') to build engagement signals and gather lead intelligence"
+   ],
+   "dont": [
+    "Report open rate as the success metric to clients",
+    "Compare a coach's list against e-commerce averages"
+   ],
+   "steps": [
+    "Compute 30-day rolling click rate, CTOR and unsubscribe rate per tenant",
+    "Flag accounts with clicks below about 1.4% or unsubscribes above about 0.3% (coaching medians) for a copy and offer review",
+    "Test the subject line and the first-screen CTA separately"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Open rate (all industries, median)",
+     "value": "43.46%",
+     "context": "MailerLite 2025"
+    },
+    {
+     "metric": "Click rate (all, median)",
+     "value": "2.09%",
+     "context": "MailerLite 2025"
+    },
+    {
+     "metric": "Coaching open / click / CTOR / unsub",
+     "value": "48.07% / 1.42% / 4.9% / 0.3%",
+     "context": "MailerLite 2025"
+    },
+    {
+     "metric": "Consulting open / click / CTOR / unsub",
+     "value": "45.96% / 2.41% / 7.67% / 0.23%",
+     "context": "MailerLite 2025"
+    },
+    {
+     "metric": "Online courses open / click / CTOR / unsub",
+     "value": "43.1% / 1.39% / 5.23% / 0.23%",
+     "context": "MailerLite 2025"
+    },
+    {
+     "metric": "Median days to first revenue (new newsletters)",
+     "value": "66 days",
+     "context": "beehiiv, 2025 launches"
+    }
+   ],
+   "as_of": "2026-04",
+   "sources": [
+    {
+     "title": "Email marketing benchmarks 2025",
+     "url": "https://www.mailerlite.com/blog/compare-your-email-performance-metrics-industry-benchmarks",
+     "publisher": "MailerLite",
+     "date": "2025-12-03 (modified 2026-04-07)"
+    },
+    {
+     "title": "The State of Newsletters 2026",
+     "url": "https://www.beehiiv.com/blog/beehiiv-the-state-of-newsletters-2026",
+     "publisher": "beehiiv",
+     "date": "2026-01-05"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "nurture-sequence-automation",
+   "title": "Automated nurture sequences outperform broadcasts by a wide margin: build the welcome flow first",
+   "category": "email-nurture",
+   "guidance": "Omnisend's 2025 dataset (more than 20 billion campaign emails and 470 million automated sends) shows automated emails with a 4.66% click rate against 0.74% for campaigns. Automations converted at 1.49% against 0.08%, and earned about $3.41 per email against $0.155. Welcome series did best among automations, at a 2.11% conversion rate and 11.19% CTOR. The data is e-commerce, so for coaching read 'conversion' as booked calls or applications, but the gap between triggered and broadcast email is large enough to set priorities. MailerLite also reports much higher open rates for automations. Build the trigger-based welcome and lead-magnet sequences before investing in a weekly newsletter. The sequence below is a practitioner starting point, not a benchmarked standard.",
+   "do": [
+    "Trigger the sequence on the specific lead magnet or keyword so the first emails continue that exact topic",
+    "Include one case story with documented, typical results and one objection-handling email",
+    "Put the booking or application CTA in every email after the first, framed as an option"
+   ],
+   "dont": [
+    "Send new leads straight into a generic weekly newsletter",
+    "Use countdown urgency that isn't real (see the FTC entries)",
+    "Let sequences run on after a lead books a call: branch them on booking status"
+   ],
+   "steps": [
+    "Email 0 (immediately): deliver the resource with one quick-win action",
+    "Day 1: the core belief shift or framework behind the resource",
+    "Day 2-3: a documented client case story (with typicality context)",
+    "Day 4-5: objections and FAQs, plus an invitation to apply or book",
+    "Day 6-7: a direct 'is this for you / not for you' email with the CTA",
+    "Then move to the newsletter, with re-entry triggers on high-intent clicks"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Automated vs campaign click rate",
+     "value": "4.66% vs 0.74%",
+     "context": "Omnisend 2025 (e-commerce)"
+    },
+    {
+     "metric": "Automated vs campaign conversion",
+     "value": "1.49% vs 0.08%",
+     "context": "Omnisend 2025"
+    },
+    {
+     "metric": "Welcome series conversion / CTOR",
+     "value": "2.11% / 11.19%",
+     "context": "Omnisend 2025"
+    },
+    {
+     "metric": "Revenue per email",
+     "value": "$3.41 automated vs $0.155 campaign",
+     "context": "Omnisend 2025"
+    }
+   ],
+   "as_of": "2026-05",
+   "sources": [
+    {
+     "title": "Email marketing benchmarks",
+     "url": "https://www.omnisend.com/blog/email-marketing-benchmarks/",
+     "publisher": "Omnisend",
+     "date": "2026-05-12"
+    },
+    {
+     "title": "Email marketing benchmarks 2025",
+     "url": "https://www.mailerlite.com/blog/compare-your-email-performance-metrics-industry-benchmarks",
+     "publisher": "MailerLite",
+     "date": "2025-12-03"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lead-magnet-landing-page-benchmarks",
+   "title": "Lead-magnet opt-in pages: median about 6.6%; education and online-course pages convert higher; keep copy short and plain",
+   "category": "lead-magnets",
+   "guidance": "Unbounce's benchmark covers more than 41,000 landing pages, 464 million visitors and 57 million conversions between July 2023 and July 2024. It found a median conversion rate of 6.6% across industries and 8.4% for education. Online-course pages had a median of 18.3% and general course pages 13%. In education, email-sourced traffic converted best (14.1%), ahead of paid search (7.3%) and paid social (5.1%). Mobile made up about 85% of education traffic but converted below desktop (10.2% vs 12%). Copy at a 12th-grade reading level or simpler converted 54% to more than 2x better than college-level copy, and education pages needed the fewest words of any industry, about 363 words to reach the median. For coaches, this points to a single specific promise, a short mobile-first page, and plain language.",
+   "do": [
+    "Promise one specific, quick result (a checklist, script, template or short training)",
+    "Write at or below a 12th-grade reading level and keep pages around or under 300-400 words",
+    "Design for mobile first, then check desktop",
+    "Send email and DM traffic to the page (the highest-converting sources)"
+   ],
+   "dont": [
+    "Ask for more fields than you will use in the first week",
+    "Offer broad 'ultimate guides' with no concrete outcome",
+    "Use jargon-heavy copy"
+   ],
+   "steps": [
+    "Choose a lead magnet that solves a sub-problem of the paid offer",
+    "Write a headline with outcome and timeframe, 3 bullets, a form (email plus optional one qualifier) and a consent line",
+    "Score readability and word count before publishing",
+    "Track opt-in rate by traffic source and A/B test the headline first"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Median landing page conversion (all)",
+     "value": "6.6%",
+     "context": "Unbounce, Jul 2023-Jul 2024 data"
+    },
+    {
+     "metric": "Education median",
+     "value": "8.4%",
+     "context": "Unbounce"
+    },
+    {
+     "metric": "Online course pages median",
+     "value": "18.3%",
+     "context": "Unbounce"
+    },
+    {
+     "metric": "Email-sourced traffic (education)",
+     "value": "14.1%",
+     "context": "Unbounce"
+    },
+    {
+     "metric": "Word count to hit education median",
+     "value": "~363 words",
+     "context": "Unbounce"
+    }
+   ],
+   "as_of": "2024-07",
+   "sources": [
+    {
+     "title": "Education conversion rate benchmarks",
+     "url": "https://unbounce.com/conversion-benchmark-report/education-conversion-rate/",
+     "publisher": "Unbounce",
+     "date": "2024 report"
+    },
+    {
+     "title": "Conversion Benchmark Report methodology",
+     "url": "https://unbounce.com/conversion-benchmark-report/methodology/",
+     "publisher": "Unbounce",
+     "date": "data 2023-07-23 to 2024-07-23"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "content-to-call-conversion-framework",
+   "title": "Content-to-call pipeline: instrument every hop and route all platforms into an owned list",
+   "category": "content-to-call",
+   "guidance": "The most reliable organic path for a coach is: content, then a keyword DM or link, then a lead magnet and email capture, then an automated nurture, then an application or booking, then the call. Each hop has a measurable rate and a known failure mode. There are no neutral, public 2025-26 benchmarks for coaching show-up or close rates, so the system should build each tenant's own baselines rather than quote industry numbers. The verified reference points are opt-in pages (about 6.6% median, higher for email traffic), automated email (welcome series converting at about 2.11% in e-commerce data) and platform rules that cap what DMs can do. Short-form content mostly creates reach, while YouTube long-form and email carry most of the trust-building before a call, so send call CTAs mainly from long-form, nurture emails and qualified DM conversations.",
+   "do": [
+    "Use UTM parameters or keyword-to-source mapping on every CTA",
+    "Qualify before the calendar: an application or at least one qualifier question",
+    "Send pre-call assets (a long-form video and a case study) after booking",
+    "Report weekly by stage: reach, leads, applications, booked, showed, closed"
+   ],
+   "dont": [
+    "Push cold short-form viewers straight to a sales call link",
+    "Quote vendor or 'guru' close rates as expectations to clients",
+    "Optimise booked calls without tracking show rate and fit"
+   ],
+   "steps": [
+    "Map each content piece to one CTA destination",
+    "Capture source on every lead (post ID, keyword, video ID)",
+    "Run the nurture sequence with the booking CTA, branched on clicks",
+    "Calculate stage conversion each week and fix the weakest stage first",
+    "Feed call-outcome reasons (no-fit, price, timing) back into content topics"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Opt-in page median",
+     "value": "6.6%",
+     "context": "Unbounce (cross-industry)"
+    },
+    {
+     "metric": "Welcome-series conversion",
+     "value": "2.11%",
+     "context": "Omnisend 2025, e-commerce proxy"
+    },
+    {
+     "metric": "Coaching call show/close rates",
+     "value": "No verified neutral public benchmark",
+     "context": "Measure per tenant"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Education conversion rate benchmarks",
+     "url": "https://unbounce.com/conversion-benchmark-report/education-conversion-rate/",
+     "publisher": "Unbounce",
+     "date": "2024 report"
+    },
+    {
+     "title": "Email marketing benchmarks",
+     "url": "https://www.omnisend.com/blog/email-marketing-benchmarks/",
+     "publisher": "Omnisend",
+     "date": "2026-05-12"
+    },
+    {
+     "title": "Manychat customer case study: Instagram DM funnels",
+     "url": "https://www.casestudies.com/company/manychat/case-study/jenna-kutcher-drives-17m-in-sales-with-manychat",
+     "publisher": "CaseStudies.com (Manychat-supplied)",
+     "date": "undated"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "ftc-earnings-claims-business-coaching",
+   "title": "FTC enforcement on business-coaching marketing: no unsubstantiated income, 'no experience', urgency or AI claims",
+   "category": "compliance",
+   "guidance": "The FTC keeps suing money-making and business-coaching sellers. In January 2026 the Growth Cave defendants, whose alleged consumer harm was about $50 million, agreed to orders banning them from selling business opportunities and from misleading claims about earnings, testimonials and artificial intelligence. In March 2026, Air AI and its owners settled allegations of unsupported earnings claims and refund or buy-back guarantees that were not honoured. That settlement carries an $18 million judgment (largely suspended), a ban on selling business opportunities, and a bar on earnings claims without substantiation. The FTC's 2021 Notice of Penalty Offenses, sent to more than 1,100 companies including business coaches, puts marketers on notice that civil penalties can follow from false earnings claims, claims that represented results are typical, false 'no experience needed' claims, false urgency, and misleading testimonials. For an AI that writes content, DMs and sales scripts for coaches, these are hard guardrails rather than style preferences.",
+   "do": [
+    "Run every generated asset through a claims filter for income figures, guarantees, 'anyone can', 'no experience' and time-bound wealth promises",
+    "Pair any result example with substantiation and typicality context, kept on file",
+    "State refund terms exactly as the contract says and honour them",
+    "Describe AI capabilities only as demonstrated"
+   ],
+   "dont": [
+    "Use phrases like 'six figures in 90 days' or 'replace your income'",
+    "Present outlier student results as typical",
+    "Invent deadlines or scarcity",
+    "Let setters, closers or affiliates use scripts with stronger claims than the approved copy (the bans also cover assisting others)"
+   ],
+   "steps": [
+    "Maintain a banned-claims lexicon plus an LLM classifier on all outbound copy",
+    "Require a substantiation record ID for any numeric result claim",
+    "Log approvals of compliance-sensitive copy per tenant",
+    "Audit DM and call-script outputs monthly"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Growth Cave alleged consumer losses",
+     "value": "~$50 million",
+     "context": "FTC, Jan 2026 settlement"
+    },
+    {
+     "metric": "Air AI judgment",
+     "value": "$18 million (largely suspended)",
+     "context": "FTC, Mar 2026"
+    },
+    {
+     "metric": "Penalty per violation (2021 notice)",
+     "value": "Up to $43,792 at the time",
+     "context": "Inflation-adjusted since"
+    }
+   ],
+   "as_of": "2026-03",
+   "sources": [
+    {
+     "title": "FTC Secures Settlement Banning Growth Cave Defendants from Marketing and Selling Business Opportunities",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/01/ftc-secures-settlement-banning-growth-cave-defendants-marketing-selling-business-opportunities",
+     "publisher": "FTC",
+     "date": "2026-01-27"
+    },
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities to Settle FTC Charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "FTC Puts Businesses on Notice that False Money-Making Claims Could Lead to Big Penalties",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "FTC",
+     "date": "2021-10-26"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ftc-reviews-testimonials-rule",
+   "title": "Testimonials and social proof: FTC rule bans fake reviews, sentiment-conditioned incentives and fake follower/view counts",
+   "category": "compliance",
+   "guidance": "The FTC's Consumer Reviews and Testimonials Rule took effect on 21 October 2024. It bans writing, buying or selling fake or false reviews and testimonials. Incentives cannot be tied to a positive sentiment, even if the incentive is disclosed. Testimonials from insiders such as staff, executives or their relatives need a clear disclosure of the relationship. Reviews cannot be suppressed through threats or false accusations. Buying or knowingly spreading fake followers, views or other indicators of influence is also banned. AI avatars are not banned outright, but an avatar that delivers a fake testimonial or uses someone's likeness without permission can break the rule. Courts can impose civil penalties for knowing violations. For a coaching system that automates case studies and social proof, every testimonial must trace back to a real, consenting client.",
+   "do": [
+    "Collect testimonials through a consent form that records the client's identity, date and permission",
+    "Ask all clients for reviews, not only happy ones",
+    "Disclose staff or affiliate relationships in any testimonial they give"
+   ],
+   "dont": [
+    "Generate or 'polish' testimonials beyond light editing that keeps the meaning",
+    "Offer bonuses for 5-star reviews only",
+    "Buy followers, views or engagement pods for any client account"
+   ],
+   "steps": [
+    "Store testimonial source media and the consent record",
+    "Tag testimonials with typicality context when they include results",
+    "Block publication of any testimonial without a linked consent record"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Rule effective date",
+     "value": "2024-10-21",
+     "context": "FTC"
+    }
+   ],
+   "as_of": "2024-11",
+   "sources": [
+    {
+     "title": "Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "FTC",
+     "date": "2024-11"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "Research was cut short when the session's web-search budget ran out, so Kit (ConvertKit) 2025 creator benchmarks, LinkedIn organic and newsletters, Substack data, CASL details (the CRTC page returned 403) and SMS/TCPA rules were not covered.",
+  "Does Meta demote 'comment KEYWORD' calls to action as engagement bait on Instagram or Facebook? Meta's 'Types of content we demote' page is rendered by JavaScript and could not be read.",
+  "Instagram Trial Reels eligibility (professional account? follower minimum?) was not confirmed; the announcement points to the Help Center, which was not read.",
+  "The 'sends weigh 3-5x likes' claim and the '200 automated DMs per hour' Instagram cap appear only in third-party sources; neither appears in Meta's documentation.",
+  "YouTube's 'above typical intros' threshold (some secondary text cites 50% still watching at 30 seconds) was not confirmed on the current Help page.",
+  "The current UI and availability of YouTube's Shorts 'related video' link to long-form content was not re-verified after the 2023 announcement.",
+  "Microsoft's exact enforcement start date for its high-volume sender rules (cited secondarily as May 2025) was not confirmed on a primary Microsoft page.",
+  "No neutral, public 2025-26 benchmarks were found for coaching booked-call show rates, application-to-call rates, close rates or webinar attendance. ON24's benchmark page returned 403.",
+  "Whether Meta's Messenger rule that automated bots must respond within 30 seconds also applies to Instagram-only automations is unclear.",
+  "The ICO's PECR email marketing guidance is under review because of the UK Data (Use and Access) Act, so the soft opt-in scope may change.",
+  "The current inflation-adjusted CAN-SPAM and FTC civil penalty amounts for 2026 were not confirmed; the pages show the January 2024 figure ($53,088) and the 2021 figure ($43,792).",
+  "The Manychat-supplied case study's sales figure does not match its linked blog URL, which mentions '900k', so vendor DM-funnel metrics should be treated as unverified."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

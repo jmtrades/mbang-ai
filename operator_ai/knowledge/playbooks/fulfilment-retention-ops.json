@@ -1,0 +1,872 @@
+{
+ "domain": "fulfilment-retention-ops",
+ "title": "Fulfilment, retention & ops",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "onboarding-first-value-window",
+   "title": "Design onboarding around a dated 'first value' milestone, not a content dump",
+   "category": "onboarding",
+   "guidance": "Recent onboarding surveys say early value is what keeps customers. Nearly half abandon onboarding when value is slow to arrive, and companies that cut onboarding investment report churn rising within about six months. Both figures come from vendors, so treat the size of the effect as directional. For a coaching or growth-operator programme, define one concrete first-value event per offer, such as an offer doc approved, a first campaign live, or the first booked call from outreach. Give it a deadline that is tracked like a project, not left as a vague 'week 1-2' expectation. Standardise the repeatable parts, like handoff checklists and portal steps, before personalising. Plan a re-onboarding touchpoint for longer-tenured clients whose goals have shifted.",
+   "steps": [
+    "Within 24-48 hours of payment: send a welcome message with portal access, the kickoff booking link and a short intake form covering goals, baseline numbers, assets and access credentials, collected through the platform's secure fields rather than chat.",
+    "Kickoff call: confirm the written first-value milestone, its owner and its due date, and record them in the CRM or project tool.",
+    "Days 1-7: complete access/setup tasks and have the client write 2-3 if-then action plans (see the activation entry).",
+    "Day 7 and day 14: run automated checks. If a milestone is late, open a CSM task with a 1-business-day response SLA.",
+    "Day 30: hold a value review comparing baseline with current numbers. Document wins and blockers.",
+    "Every 6-12 months, or when goals change: re-onboard by repeating intake and resetting milestones."
+   ],
+   "do": [
+    "Offer tiered onboarding: a self-serve portal plus done-with-you sessions for higher tiers.",
+    "Automate status updates and reminders so humans spend time on blockers."
+   ],
+   "dont": [
+    "Measure onboarding by 'modules unlocked'. Measure it by milestone reached.",
+    "Leave time-to-first-value unmeasured. Older industry surveys found about half of teams don't benchmark it."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Customers who abandon onboarding without quick value",
+     "value": "48%",
+     "context": "OnRamp vendor survey of 161 SaaS CS/onboarding leaders, May 2025"
+    },
+    {
+     "metric": "Companies that cut onboarding investment and saw churn rise within 6 months",
+     "value": "57%",
+     "context": "Same OnRamp survey"
+    },
+    {
+     "metric": "Digital-onboarding adopters reducing time to value by >=25%",
+     "value": "65%",
+     "context": "Same OnRamp survey"
+    },
+    {
+     "metric": "Organisations planning AI in onboarding in 2025",
+     "value": "~90%",
+     "context": "Rocketlane State of Customer Onboarding 2025 (950+ respondents)"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "OnRamp releases industry report revealing customer onboarding as the new battleground for SaaS retention and revenue",
+     "url": "https://aijourn.com/onramp-releases-industry-report-revealing-customer-onboarding-as-the-new-battleground-for-saas-retention-and-revenue/",
+     "publisher": "AI Journal (OnRamp press release via PR Newswire)",
+     "date": "2025-05-07"
+    },
+    {
+     "title": "Top 5 trends from The 2025 State of Customer Onboarding Report",
+     "url": "https://www.rocketlane.com/blogs/the-state-of-customer-onboarding-2025",
+     "publisher": "Rocketlane",
+     "date": "2025 (page undated; likely March 2025)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "sales-to-delivery-handoff",
+   "title": "Close the promise gap: a mandatory sales-to-fulfilment handoff record",
+   "category": "onboarding",
+   "guidance": "Recent FTC cases against business-opportunity and AI or e-commerce programmes describe a recurring pattern. Sales calls promised results, refund guarantees or timelines that delivery never matched. Services launched months late or not at all. Support went quiet and refunds came only after complaints to outside bodies. The operational fix is to treat every promise made in sales as a fulfilment requirement. The closer completes a structured handoff and fulfilment confirms it before kickoff. Any promise that is not in the written agreement is flagged and either corrected with the client in writing or escalated.",
+   "steps": [
+    "Closer submits a handoff form within 24 hours of payment. It covers the client's stated goal, baseline metrics, offer purchased, contract version, payment plan, any guarantee terms quoted, objections raised, and the call recording or transcript link.",
+    "Ops runs an automated check that the guarantee or refund terms quoted match the signed contract text exactly. A mismatch blocks kickoff.",
+    "Kickoff opens by reading back the scope, deliverables and timeline so the client confirms them on record.",
+    "Track 'days from payment to service live' per client and alert when it exceeds the published timeline."
+   ],
+   "do": [
+    "Keep call recordings and scripts (also needed for telemarketing recordkeeping where it applies).",
+    "Give every client a named point of contact and a published response-time SLA."
+   ],
+   "dont": [
+    "Let sales quote income multiples, 'guaranteed' outcomes or refund conditions that are not in the contract.",
+    "Wait for a BBB or regulator complaint before processing a valid refund request."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity that Has Cost Consumers At Least $14 Million",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "FTC",
+     "date": "2025-03-18"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "FTC",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "Top 5 trends from The 2025 State of Customer Onboarding Report",
+     "url": "https://www.rocketlane.com/blogs/the-state-of-customer-onboarding-2025",
+     "publisher": "Rocketlane",
+     "date": "2025"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "student-activation-if-then-plans",
+   "title": "Week-1 student activation: convert goals into written if-then plans",
+   "category": "student-success",
+   "guidance": "A widely cited meta-analysis of 94 tests found that implementation intentions have a medium-to-large effect on goal attainment (d about 0.65). Implementation intentions are concrete 'if situation X, then I will do Y' plans. Building these into week-1 onboarding is a cheap, evidence-based way to raise activation in a coaching programme. Tie each plan to the programme's core weekly behaviour, such as prospecting messages sent, sales calls booked, ads launched or content published. Then check completion automatically. Note that d is an effect size, not a percentage increase in success, so don't market it as a guarantee.",
+   "steps": [
+    "In onboarding, have each student pick 1 outcome goal for the next 30 days and 2-3 lead behaviours that drive it.",
+    "For each behaviour, write an if-then plan with a specific time and place, e.g. 'If it is Monday-Friday 9:00, then I send 20 personalised outreach messages before checking email.'",
+    "Add one obstacle plan, e.g. 'If I miss a block, then I do it at 19:00 the same day.'",
+    "Store plans in the student record and have the AI coach reference them in check-ins.",
+    "Activation definition: the student completes the planned lead behaviour on at least 3 of the first 7 days."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Implementation-intention effect on goal attainment",
+     "value": "Cohen's d = 0.65 (95% CI 0.6-0.7)",
+     "context": "Gollwitzer & Sheeran 2006 meta-analysis, 94 tests, as cited in Frontiers in Psychology 2021"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Frontiers in Psychology article citing Gollwitzer & Sheeran (2006) implementation-intentions meta-analysis",
+     "url": "https://www.frontiersin.org/articles/10.3389/fpsyg.2021.565202/full",
+     "publisher": "Frontiers in Psychology",
+     "date": "2021-05-12"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "weekly-progress-reports-accountability",
+   "title": "Accountability loop: weekly written progress reports to a peer or coach",
+   "category": "student-success",
+   "guidance": "A randomised study at Dominican University of California compared five conditions over 4 weeks: unwritten goals, written goals, written goals plus action commitments, sharing those commitments with a friend, and sharing plus weekly progress reports to that friend. The study's conclusion was that writing goals and adding accountability improved self-reported achievement. The weekly-report group did best. Its sample was small (267 recruited, 149 completed), outcomes were self-reported and it was not a large peer-reviewed trial, so use it as directional support for a weekly check-in ritual rather than a precise effect size. In practice, require a short weekly written report from every student. Route it to a pod partner and to the coach or AI coach, and treat missed reports as a leading churn and refund signal.",
+   "steps": [
+    "Same weekday every week, students submit a 5-field report: numbers for their lead behaviours, the outcome metric, a win, a blocker, and next week's commitments.",
+    "Auto-share the report to an assigned accountability partner or pod (3-6 people).",
+    "The coach or AI replies within 24 hours with one specific recommendation.",
+    "Escalate after 2 consecutive missed reports with a personal outreach call. After 3, add a success-manager intervention."
+   ],
+   "dont": [
+    "Cite the debunked 'Harvard/Yale written goals study'. The Dominican researcher notes it never existed.",
+    "Quote the study's percentages as guaranteed outcomes."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Goals Research Summary (Gail Matthews, Dominican University of California)",
+     "url": "https://www.dominican.edu/sites/default/files/2020-02/gailmatthews-harvard-goals-researchsummary.pdf",
+     "publisher": "Dominican University of California",
+     "date": "file posted 2020-02 (study c. 2007-2015)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "paced-cohorts-over-self-paced",
+   "title": "Use paced cohorts with fixed weekly deadlines rather than fully self-paced access",
+   "category": "student-success",
+   "guidance": "A controlled comparison on a repeated MITx MOOC run found that switching from instructor-paced to self-paced lowered completion by 6%, pass rate by 10% and engagement score by 7%, with satisfaction unchanged. This is real but modest evidence that pacing matters. Marketing claims that cohort courses reach 75-96% completion are not independently verified and are confounded by price and learner selection. For high-ticket programmes, run start dates and weekly milestones with live touchpoints, and keep a self-paced library as a supplement, not the main path.",
+   "steps": [
+    "Open enrolment into monthly or bi-weekly cohorts with a fixed start date.",
+    "Publish a week-by-week milestone map. Each week has one deliverable, which is reviewed.",
+    "Hold a weekly live call per cohort, with recordings and timestamps for absentees.",
+    "Track per-cohort completion of weekly deliverables. Flag any cohort below its trailing average."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Effect of switching to self-paced (single MITx MOOC)",
+     "value": "Completion -6%, pass rate -10%, engagement -7%, satisfaction unchanged",
+     "context": "MIT master's thesis, 2019"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Using learning analytics to evaluate design changes in MOOCs: a case study on assessing course pacing",
+     "url": "https://dspace.mit.edu/entities/publication/1746a463-1bfe-4fb1-bdf7-2b6c0dd3ea0c",
+     "publisher": "MIT DSpace",
+     "date": "2019"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "community-pods-small-groups",
+   "title": "Structure community around small pods; size is not what drives success",
+   "category": "student-success",
+   "guidance": "A community platform's benchmark found that its top-performing communities were not larger than average. About three-quarters had 500 or fewer members, and they clustered in the 101-500 band (44% vs 26% for standard communities). For coaching programmes, this argues for designing intimacy rather than chasing headcount. Use small accountability pods inside the larger community, with regular live rituals. This is vendor data with limited methodology disclosed, so validate it against your own cohort retention.",
+   "steps": [
+    "Assign each new student to a pod of 4-8 within 72 hours, matched by stage or niche.",
+    "Run one pod call a week, with a peer facilitator rotating or an AI-generated agenda drawn from weekly reports.",
+    "Post weekly win threads and track the share of members who post or attend each week.",
+    "Re-balance pods every quarter. Merge pods whose attendance falls below 50%."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Top-tier ('Platinum') communities with <=500 members",
+     "value": "76% (vs 82% of standard)",
+     "context": "Circle 2024 creator community report"
+    },
+    {
+     "metric": "Top-tier communities in the 101-500 member band",
+     "value": "44% (vs 26% of standard)",
+     "context": "Same report"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "2024 Community Benchmark Report (Creators)",
+     "url": "https://circle.so/2024-creator-community-report",
+     "publisher": "Circle",
+     "date": "2024"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "weekly-scorecard",
+   "title": "One weekly scorecard: 5-15 leading indicators, one owner each, 13-week trail",
+   "category": "kpis-reporting",
+   "guidance": "A widely used small-business operating framework recommends that the leadership team review a weekly scorecard. It holds 5-15 numbers, each with one owner and a weekly target, shows 13 weeks of history, and marks each number on-track or off-track. Off-track numbers go to an issues list instead of being debated during the review. The framework favours activity-based leading indicators, such as qualified calls booked or onboarding completions, over lagging P&L figures. For a growth-operator programme, run one scorecard for the business and a smaller one per client account. Let the AI compile it automatically from the CRM, ad platforms and payments data.",
+   "steps": [
+    "Programme-level example numbers: new leads, booked calls, show rate, close rate, cash collected, active students, weekly-report submission rate, students at first milestone, refund requests opened, disputes opened, open support tickets older than 24 hours.",
+    "Client-account example numbers: ad spend, cost per lead, cost per booked call, show rate, close rate, cash collected, CAC, and the pipeline to come.",
+    "Give each number a single owner and a weekly goal. Mark it green if at or above goal, red if below.",
+    "Review in 5 minutes. Every red item becomes an issue for the solving segment of the meeting."
+   ],
+   "dont": [
+    "Assign shared owners. When several people own a number, no one does.",
+    "Fill the scorecard with monthly revenue and profit only. They arrive too late to act on."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "What is an EOS Scorecard? Weekly Leading Indicators for Business",
+     "url": "https://www.eosworldwide.com/scorecard",
+     "publisher": "EOS Worldwide",
+     "date": "undated (c. 2026)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "operating-cadence-weekly-meeting",
+   "title": "Operating cadence: same-time weekly 90-minute leadership meeting plus 30-60 minute team meetings",
+   "category": "project-cadence",
+   "guidance": "The same framework prescribes a fixed weekly leadership meeting that starts and ends on time. It runs for 90 minutes: 5 minutes each for good news, scorecard, quarterly-priority review, customer and employee headlines, and to-do review, then 60 minutes to identify, discuss and solve the top issues in ranked order, and 5 minutes to conclude with a 1-10 rating. Department meetings follow the same agenda in 30-60 minutes, and the ideal group is about 6-7 people. Pair it with quarterly priorities (90-day goals) and 7-day to-dos. For client fulfilment, run the same pattern per pod of accounts so that issues surface weekly, not at renewal.",
+   "steps": [
+    "Fix the day and time, with the same facilitator and scribe each week.",
+    "Before the meeting, the AI pre-fills the scorecard, the status of quarterly priorities, and to-dos due.",
+    "Rank the top 3 issues and solve them to root cause. Every solution becomes an owned to-do due within 7 days.",
+    "Each attendee rates the meeting 1-10. Discuss any average below 8."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Level 10 Meeting Agenda: How to Run Effective Meetings",
+     "url": "https://www.eosworldwide.com/blog/the-level-10-meeting",
+     "publisher": "EOS Worldwide",
+     "date": "undated (c. 2026)"
+    },
+    {
+     "title": "What is an EOS Scorecard?",
+     "url": "https://www.eosworldwide.com/scorecard",
+     "publisher": "EOS Worldwide",
+     "date": "undated (c. 2026)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "client-reporting-meta-attribution-2026",
+   "title": "Weekly client ad reports must use the 2026 Meta attribution windows and snapshot data",
+   "category": "dashboards",
+   "guidance": "Since 12 January 2026, Meta's Ads Insights API no longer returns 7-day-view or 28-day-view attribution. The windows still available are 1-day click, 7-day click, 28-day click, 1-day engaged view and 1-day view. Historical breakdowns are also capped: 13 months for unique-count fields and hourly breakdowns, 6 months for frequency breakdowns. Total values remain available for up to 37 months. Dashboards built on the old view windows will show drops in conversions that are not real performance changes. Standardise one attribution setting across all client reports, annotate the change on trend charts, and store weekly snapshots in your own warehouse so breakdown history isn't lost.",
+   "steps": [
+    "Set a default report window, e.g. 7-day click plus 1-day view, and print it in every report header.",
+    "Back-test historical client reports on the new windows and annotate the 12 Jan 2026 break on charts.",
+    "Snapshot weekly campaign, ad set and ad data with frequency and hourly breakdowns into your own database.",
+    "Reconcile platform-reported conversions against CRM booked calls and cash collected every week. Report both."
+   ],
+   "dont": [
+    "Compare pre-2026 results using 28-day view against post-2026 results without a note.",
+    "Let media buyers choose attribution windows per client ad hoc."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Ads Insights API metric availability updates",
+     "url": "https://developers.facebook.com/blog/post/2025/10/16/ads-insights-api-metric-availability-updates/",
+     "publisher": "Meta for Developers",
+     "date": "2025-10-16"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "client-reporting-and-retention",
+   "title": "Client reporting as a retention lever: weekly async report plus monthly strategy review",
+   "category": "retention",
+   "guidance": "In a 2025 survey of over 220 agency leaders, 70% said client reporting plays a critical role in retention. 43% reported average client lifespans of 2-5 years, and relationships and communication were described as the backbone of retention. For growth operators serving clients, a consistent weekly report keeps value visible between results. It should cover what we did, what happened in numbers, what we learned and what's next. This is a vendor survey without churn-reason data, so pair it with your own exit interviews.",
+   "steps": [
+    "Weekly, on a fixed day: a one-page report with 5-8 KPIs against target, 3 actions taken, 1 insight, and next week's plan. Generate it automatically and have a human review it.",
+    "Monthly: a 30-minute strategy review with the decision-maker, re-confirming goals and showing the trend against baseline.",
+    "Quarterly: a business review with an ROI summary and next-quarter plan. Ask about renewal or expansion here, not at contract end.",
+    "Log every client touchpoint. Alert if a client has had no human contact for 14+ days."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Agency leaders saying reporting is critical to retention",
+     "value": "70%",
+     "context": "AgencyAnalytics 2025 Marketing Agency Benchmarks, 220+ leaders"
+    },
+    {
+     "metric": "Agencies reporting average client lifespan of 2-5 years",
+     "value": "43%",
+     "context": "Same report"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "2025 Marketing Agency Benchmarks Report (press release)",
+     "url": "https://agencyanalytics.com/company/newsroom/2025-marketing-agency-benchmarks-report",
+     "publisher": "AgencyAnalytics",
+     "date": "2025-09-10"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "health-score-early-warning",
+   "title": "Student and client health score: 4-6 weighted signals, validated against actual churn and refunds",
+   "category": "retention",
+   "guidance": "Customer-success practice recommends a composite health score built from 4-6 signals covering usage, support, sentiment and engagement. Weights should be set from historical data on what predicted churn or renewal, not from intuition, and bands such as 0-30 critical, 31-70 at risk and 71-100 healthy drive playbooks. Login or time-on-platform alone is a poor proxy, because confused users also spend a lot of time. For coaching programmes, use behaviour that predicts results and refund risk. After 2-3 cohorts, re-weight using which signals actually preceded refunds, disputes and non-renewals.",
+   "steps": [
+    "Example starting signals: weekly report submitted (25%), lead behaviour vs plan (25%), milestone on schedule (20%), live-call attendance (10%), sentiment from check-ins and support (10%), payment status (10%).",
+    "Recompute daily. A drop of 20+ points in a week or entry into the critical band opens an intervention task.",
+    "Playbooks: at-risk gets a coach reach-out within 48 hours. Critical gets a call within 24 hours plus a reset plan.",
+    "Each quarter, compare the score distribution of churned or refunded students with retained ones and re-weight."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Recommended number of health-score metrics",
+     "value": "4-6",
+     "context": "Gainsight guidance"
+    },
+    {
+     "metric": "Example weights",
+     "value": "Usage 40% / support 25% / sentiment 20% / exec engagement 15%",
+     "context": "Illustrative, Gainsight"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Customer Health Score Explained: Metrics, Models & Tools",
+     "url": "https://www.gainsight.com/blog/customer-health-scores/",
+     "publisher": "Gainsight",
+     "date": "2022-03-16"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "retention-metrics-definitions",
+   "title": "Measure retention with GRR and NRR, not just testimonials",
+   "category": "kpis-reporting",
+   "guidance": "Define retention the way investors and benchmark studies do. NRR is revenue this period from customers who existed a year earlier, divided by their revenue then, including upsells and price increases. GRR is the same calculation excluding expansion, so it can never exceed 100%. Churn is roughly 1 minus GRR. A 2025 survey of private B2B SaaS companies found a median NRR of 102% (top quartile 111%, bottom quartile 97%) for contracts of $25-50k, and that higher contract values correlate with higher retention. Services and coaching retention will differ from SaaS, so use these as definitions and a rough reference, and benchmark against your own cohorts.",
+   "steps": [
+    "Track monthly logo churn and GRR for growth-operator retainer clients, and NRR including upsells.",
+    "For coaching: track the renewal or ascension rate into the next tier at programme end, the refund rate within the guarantee window, and the payment-plan default rate.",
+    "Report every metric by cohort (start month) so that changes to onboarding are visible."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Median NRR, private B2B SaaS, ACV $25-50k",
+     "value": "102% (top quartile 111%, bottom quartile 97%)",
+     "context": "SaaS Capital 2025 retention benchmarks"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "2025 SaaS Retention Benchmarks for Private B2B Companies",
+     "url": "https://www.saas-capital.com/research/saas-retention-benchmarks-for-private-b2b-companies/",
+     "publisher": "SaaS Capital",
+     "date": "2025-09-18"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "card-network-dispute-thresholds",
+   "title": "Dispute-ratio guardrails: low-volume, high-ticket sellers can trip network programmes with a handful of disputes",
+   "category": "refunds-disputes",
+   "guidance": "Stripe treats dispute activity above 0.75% as excessive by industry standard, and spikes can trigger monitoring earlier. Networks count disputes received regardless of whether they are won, lost, refunded or withdrawn. Visa's VAMP ratio counts disputes plus fraud reports (early fraud warnings) against captured transactions in the same month. Stripe documents a non-compliant level at 0.5% with a count of 5, and an excessive level at 1.5% with a count of 1,500 outside CEMEA. Mastercard's ECM level starts at 100-299 chargebacks and a 1.5-2.99% rate, measured against the prior month's transactions, with fines from month 2. High-ticket programmes process few transactions, so 3-5 disputes in a month can move the ratio sharply. Monitor daily, set internal alerts well below network levels, and investigate root causes per offer and per closer.",
+   "steps": [
+    "Dashboard daily: disputes and early fraud warnings by card network, offer, closer and payment plan. Compute a Visa-style ratio of (disputes + fraud reports) / captured transactions for the month.",
+    "For US Stripe accounts, mirror the network calendar by counting disputes from the 5th of one month to the 5th of the next.",
+    "Use one static statement-descriptor prefix across products so Visa aggregates them, and change descriptors only at month end.",
+    "Internal alerts: any 2 disputes in a week, or a monthly ratio above 0.3%, triggers a review of the sales calls and onboarding of the affected clients.",
+    "If placed in a programme: file a remediation plan (Stripe provides a template). Mastercard exits require 3 consecutive months below threshold."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Industry 'excessive' dispute activity",
+     "value": ">0.75%",
+     "context": "Stripe docs"
+    },
+    {
+     "metric": "Visa VAMP merchant thresholds (per Stripe)",
+     "value": "Non-compliant: ratio 0.5% and count 5. Excessive: ratio 1.5% and count 1,500 (2.2% and 150 in CEMEA)",
+     "context": "Stripe monitoring-programs doc, current 2026"
+    },
+    {
+     "metric": "Mastercard ECM / HECM",
+     "value": "100-299 chargebacks and 1.5-2.99% / 300+ and 3%+. ECM fines $1,000 in months 2-3, rising to $100,000 at month 19+",
+     "context": "Stripe monitoring-programs doc"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Dispute and fraud card monitoring programs",
+     "url": "https://docs.stripe.com/disputes/monitoring-programs",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Measuring disputes",
+     "url": "https://docs.stripe.com/disputes/measuring",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dispute-response-playbook",
+   "title": "Dispute response playbook: deadlines, evidence package, and when to accept",
+   "category": "refunds-disputes",
+   "guidance": "Cardholders usually have 120 days to dispute, and for prepaid future services the window can start on the service date. Merchants typically get 7-21 days to respond, and issuers then take 60-75 days, so the full cycle runs 2-3 months. Evidence should be short, chronological and specific to the reason code. That means a signed agreement, a screenshot of how the full terms and refund policy were shown at checkout (a bare link may be rejected), proof of service delivered such as logins, call attendance and deliverables, and only the relevant message excerpts. Even the strongest cases win only about 60% of the time by Stripe's own estimate. Accept disputes you agree with, and remember that a withdrawn dispute still counts toward your ratio.",
+   "steps": [
+    "On any dispute webhook: create a case and pull the contract, checkout terms screenshot, payment and IP data, a portal activity log, call attendance with dates, deliverables, and relevant communications.",
+    "Write a 3-5 sentence neutral summary, e.g. client X purchased Y on date Z, accessed the portal N times and attended M calls.",
+    "Combine evidence by type into PDF, JPEG or PNG under 4.5MB total and under 50 pages (19 for Mastercard), with 12pt+ text and callouts rather than colour highlighting.",
+    "For fraud-coded Visa disputes, check eligibility for Compelling Evidence 3.0 (prior non-disputed transactions from the same cardholder).",
+    "If a partial refund was already issued and the full amount is disputed, always respond with proof of the credit.",
+    "Submit by day 5 to leave buffer before the network deadline."
+   ],
+   "dont": [
+    "Ask a client to withdraw a dispute in exchange for a refund. It still counts. Accept it or respond.",
+    "Upload the entire terms of service or send links. Issuers do not follow links."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Merchant response window",
+     "value": "7-21 days",
+     "context": "Stripe"
+    },
+    {
+     "metric": "Issuer decision window",
+     "value": "60-75 days",
+     "context": "Stripe"
+    },
+    {
+     "metric": "Win likelihood by Stripe's 1-5 dot score",
+     "value": "5%, 15%, 25%, 40%, 60%",
+     "context": "Stripe Radar estimate"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "How disputes work",
+     "url": "https://docs.stripe.com/disputes/how-disputes-work",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Dispute evidence best practices",
+     "url": "https://docs.stripe.com/disputes/best-practices",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dispute-prevention-billing-hygiene",
+   "title": "Prevent disputes upstream: recognisable descriptors, full-terms consent, reminders, fast refunds",
+   "category": "refunds-disputes",
+   "guidance": "Most avoidable disputes come from clients who don't recognise a charge, are surprised by recurring or instalment billing, or can't easily reach support. Stripe's guidance is to use a recognisable statement descriptor, require agreement to terms shown in full at checkout, and send billing reminders, typically 7 days before an annual renewal and 2-3 days before a monthly charge. Make support easy to reach and refund quickly where the policy allows. On early fraud warnings, about 40% become disputes if not refunded. Auto-refunding is economical only on charges near the dispute fee, so for high-ticket charges contact the cardholder instead. Small accounts with fewer than about 100 payments a month should refund confirmed fraud aggressively, because single disputes move the ratio.",
+   "steps": [
+    "Set a statement descriptor of 5-22 characters that matches the brand the client knows, and use one static prefix across products.",
+    "At checkout, show the full refund, cancellation and payment-plan terms with a required checkbox, and save a screenshot per version.",
+    "Send a receipt immediately plus reminders before each instalment (2-3 days) or renewal (7 days).",
+    "When an early fraud warning arrives on a high-ticket charge, verify with the client within 24 hours. If they don't recognise it, refund as fraud.",
+    "Run a separate payment account per business so descriptors and support contacts stay accurate."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Dispute and fraud card monitoring programs (best practices section)",
+     "url": "https://docs.stripe.com/disputes/monitoring-programs",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "Best practices for preventing fraud",
+     "url": "https://docs.stripe.com/disputes/prevention/best-practices",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "How disputes work (early fraud warnings)",
+     "url": "https://docs.stripe.com/disputes/how-disputes-work",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "refund-policy-and-guarantees",
+   "title": "Refund and guarantee design: objective conditions, honoured fast, never income-based",
+   "category": "refunds-disputes",
+   "guidance": "In 2025-2026 the FTC sued and then settled with a company that promised full refunds if buyers didn't earn 2-3 times their investment within set months, then rarely honoured those refunds. The order bans the operators from selling business opportunities and from misrepresenting refund policies, with an $18M judgment that is mostly suspended. In another 2025 case, refunds allegedly came only after customers complained to the BBB or law enforcement, and contracts contained non-disparagement clauses that are unlawful in consumer form contracts. Write guarantees as objective, verifiable conditions the client controls, such as completing defined actions by a date. Never tie them to income outcomes. Publish a refund decision SLA and process qualifying requests without friction.",
+   "steps": [
+    "Draft the guarantee as specific, checkable criteria (e.g. attended X of Y calls, submitted all weekly reports, completed modules 1-4 within 60 days) with a clear request window.",
+    "Log every refund request with a timestamp. Decide within 5 business days and pay qualifying refunds within 10 business days.",
+    "Track refund requests by closer, offer and cohort, and treat clusters as a sales-promise problem.",
+    "Remove any non-disparagement, review-penalty or review-IP-assignment clauses from client form contracts."
+   ],
+   "dont": [
+    "Promise refunds, buy-backs or 'money back if you don't make $X'.",
+    "Threaten clients with lawsuits for complaints or reviews."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities to Settle FTC Charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "FTC Sues to Stop Air AI from Using Deceptive Claims about Business Growth, Earnings Potential, and Refund Guarantees",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/08/ftc-sues-stop-air-ai-using-deceptive-claims-about-business-growth-earnings-potential-refund",
+     "publisher": "FTC",
+     "date": "2025-08-25"
+    },
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "FTC",
+     "date": "2025-03-18"
+    },
+    {
+     "title": "Consumer Review Fairness Act: What Businesses Need to Know",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-review-fairness-act-what-businesses-need-know",
+     "publisher": "FTC",
+     "date": "2017-02"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "results-ledger-testimonials-earnings",
+   "title": "Keep a results ledger before publishing student wins or earnings claims",
+   "category": "student-success",
+   "guidance": "Under the FTC's Endorsement Guides, if a testimonial shows exceptional results, the advertiser must be able to show those results are generally achieved, or else clearly disclose what people generally achieve. The 2024 fake reviews rule bars fake or AI-fabricated testimonials, incentives conditioned on positive sentiment, undisclosed insider reviews and review suppression, and allows civil penalties. Where the Business Opportunity Rule applies, earnings claims need written substantiation plus a separate statement giving the number and percentage of buyers who achieved the result and the time period. In January 2025 the FTC proposed extending these duties to business-coaching 'money-making opportunities', and that proposal's final status is unverified. In practice, a programme should keep an auditable ledger of real student outcomes by cohort before using any result in marketing or sales.",
+   "steps": [
+    "Ledger fields per student: cohort, start date, milestone dates, verified outcome metric and its source (e.g. a payment-processor screenshot), and costs incurred.",
+    "Per cohort, compute the share reaching each milestone within 30, 60 and 90 days, and median outcomes including zeros.",
+    "Every testimonial must link to a ledger record with consent on file. Display typical results next to exceptional ones.",
+    "Offer review incentives only if they are unconditional on sentiment. Disclose any staff or affiliate relationship."
+   ],
+   "dont": [
+    "Use AI-generated or composite student stories presented as real.",
+    "Quote gross revenue figures without the costs required to earn them."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "FTC",
+     "date": "Guides revised 2023"
+    },
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "FTC",
+     "date": "2024-08-14"
+    },
+    {
+     "title": "Concerned about deceptive earnings claims? So's the FTC, and we want your feedback",
+     "url": "https://www.ftc.gov/business-guidance/blog/2025/01/concerned-about-deceptive-earnings-claims-sos-ftc-we-want-your-feedback",
+     "publisher": "FTC",
+     "date": "2025-01-13"
+    },
+    {
+     "title": "Selling a Work-at-Home or Other Business Opportunity? Revised Rule May Apply to You",
+     "url": "https://www.ftc.gov/business-guidance/resources/selling-work-home-or-other-business-opportunity-revised-rule-may-apply-you-1",
+     "publisher": "FTC",
+     "date": "2011-11"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "setter-closer-telemarketing-compliance",
+   "title": "Setter and closer calls: telemarketing rule exposure, scripts and 5-year records",
+   "category": "hiring-training",
+   "guidance": "The FTC's Telemarketing Sales Rule generally exempts inbound calls that respond to general media ads. That exemption does not cover calls about investment opportunities (offers based on income or profit representations) or business opportunities outside the Business Opportunity Rule, and upsells are never exempt. Since 2024 the rule's ban on misrepresentations also covers business-to-business calls. Records, including scripts, promotional materials, consent records and, since 15 October 2024, call detail records, must be kept for 5 years. The FTC cited the rule in its 2025 complaint against an AI business-opportunity seller. Whether a given coaching offer triggers coverage is a legal question, so treat sales calls as potentially covered and build compliance in.",
+   "steps": [
+    "Have counsel review a script library. Ban income, guarantee and 'done-for-you profits' claims that aren't substantiated and in the contract.",
+    "Record calls where lawful, with consent, and retain recordings, scripts, ad creatives and call detail records for 5 years.",
+    "Run QA on 5-10% of calls per rep per week against a compliance checklist, with an automated keyword pre-screen.",
+    "Treat every upsell or ascension call as covered."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Complying with the Telemarketing Sales Rule",
+     "url": "https://www.ftc.gov/business-guidance/resources/complying-telemarketing-sales-rule",
+     "publisher": "FTC",
+     "date": "undated (references amendments through 2015+)"
+    },
+    {
+     "title": "Mark your calendars, telemarketers and sellers! October 15 is the Telemarketing Sales Rule's Record Store Day",
+     "url": "https://www.ftc.gov/business-guidance/blog/2024/10/mark-your-calendars-telemarketers-sellers-october-15-telemarketing-sales-rules-record-store-day",
+     "publisher": "FTC",
+     "date": "2024-10"
+    },
+    {
+     "title": "FTC Implements New Protections for Businesses Against Telemarketing Fraud",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/03/ftc-implements-new-protections-businesses-against-telemarketing-fraud-affirms-protections-against-ai",
+     "publisher": "FTC",
+     "date": "2024-03"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "setter-team-capacity-ramp",
+   "title": "Plan setter/SDR capacity with real ramp, attrition and activity benchmarks",
+   "category": "hiring-training",
+   "guidance": "The 2025 edition of a long-running SDR benchmark (351 B2B companies, mostly SaaS) reports an average ramp of 3.0 months, average tenure of 1.9 years and median annual attrition of 40%. Only 60% of reps hit quota. Reps averaged 112 daily activities (44 calls, 41 emails, 19 LinkedIn, 8 text) yielding 4.1 quality conversations a day, with a median OTE of $80k split 68:32 base to variable and 6.4 reps per manager. Appointment setters for coaching offers are a different market, so use these as planning priors, not targets. The implication is to hire ahead of need, expect about a 90-day ramp, and keep spans of control small.",
+   "steps": [
+    "Hire in pairs or cohorts. Run a structured 2-week training: offer and ICP, script, objection library, CRM hygiene, compliance, then shadowing and graded roleplays.",
+    "Set week-by-week ramp targets: activity first (weeks 1-4), then conversation-to-booking rate (weeks 5-8), then booked-and-showed quota (weeks 9-12).",
+    "Budget backfill for roughly 40% annual turnover and keep a warm bench of candidates.",
+    "Keep at most about 6-8 reps per team lead, with daily stand-ups and weekly 1:1s."
+   ],
+   "benchmarks": [
+    {
+     "metric": "SDR ramp time",
+     "value": "3.0 months",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "SDR median annual attrition",
+     "value": "40% (13% involuntary, 11% voluntary, 16% promoted)",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "Daily activities / quality conversations",
+     "value": "112 / 4.1",
+     "context": "Bridge Group 2025"
+    },
+    {
+     "metric": "Reps per first-line manager",
+     "value": "6.4",
+     "context": "Bridge Group 2025"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "2025 SDR Models & Metrics Report",
+     "url": "https://www.bridgegroupinc.com/research/2025-sdr-models-metrics-report-the-bridge-group",
+     "publisher": "The Bridge Group",
+     "date": "2025-02-06"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "sales-worker-classification-pay",
+   "title": "Classify and pay setters and closers deliberately: contractor test and the inside-sales trap",
+   "category": "hiring-training",
+   "guidance": "Commission-only remote setters and closers are common, but classification carries legal risk. Federally, the US Department of Labor stopped enforcing its 2024 contractor rule in 2025 (Field Assistance Bulletin 2025-1). In February 2026 it proposed a test whose two core factors are control over the work and the worker's opportunity for profit or loss, and that weighs actual practice over contract wording. No final rule has been verified. If reps are employees, phone and internet sales from a fixed site, including a home office, generally don't qualify for the outside-sales exemption, so minimum wage and overtime rules apply. States such as California (ABC test), Massachusetts and New Jersey are stricter, so get local advice before scaling a team.",
+   "steps": [
+    "Decide per role: employee (you control schedule, scripts and supervision) or contractor (they control how and when, may work for others, and bear profit or loss).",
+    "Make daily practice match the contract. Mandated shifts, supervised dialling and required scripts point toward employee status.",
+    "For commission-heavy employees, verify that pay per workweek meets minimum wage and overtime.",
+    "Re-review classification whenever the DOL finalises its rule or you hire in a new state or country."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Fact Sheet #17F: Exemption for Outside Sales Employees Under the FLSA",
+     "url": "https://www.dol.gov/agencies/whd/fact-sheets/17f-overtime-outside-sales",
+     "publisher": "U.S. Department of Labor",
+     "date": "Revised 2024-08"
+    },
+    {
+     "title": "Independent contractor rulemaking",
+     "url": "https://www.dol.gov/agencies/whd/flsa/misclassification/rulemaking",
+     "publisher": "U.S. Department of Labor",
+     "date": "accessed 2026-10 (NPRM 2026-02-26)"
+    },
+    {
+     "title": "DOL proposes independent contractor rule to replace Biden-era standard",
+     "url": "https://www.dlapiper.com/en-ie/insights/publications/2026/03/dol-proposes-independent-contractor-rule",
+     "publisher": "DLA Piper",
+     "date": "2026-03-02"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "manager-weekly-one-on-ones",
+   "title": "Weekly 15-30 minute 1:1s for every setter, closer, media buyer and coach",
+   "category": "hiring-training",
+   "guidance": "Gallup's research finds that employees whose manager holds one meaningful conversation with them each week are about four times as likely to be highly engaged. These conversations can take 15-30 minutes and cover recognition, goals and priorities, collaboration and strengths. 42% of voluntary leavers say their exit was preventable, and 45% say no leader discussed their satisfaction, performance or future in the 3 months before they left. Gallup also finds that manager talent and weekly feedback matter more than team size: teams receiving weekly feedback run about 7 in 10 engaged, versus about 1 in 4 otherwise. This is correlational survey data, but the practice is cheap and fits the fulfilment cadence.",
+   "steps": [
+    "Book a recurring 1:1 on a fixed weekday: 5 minutes of wins and recognition, 10 minutes on scorecard numbers and one skill to improve (with call or ad-account review), 5 minutes on blockers and career.",
+    "The AI pre-builds the 1:1 brief from the rep's scorecard, call QA flags and student or client health changes.",
+    "Track 1:1 completion rate as a manager KPI, with a target of at least 90% of weeks.",
+    "Keep managers' own individual-contributor workload limited. Gallup finds engagement drops as teams grow when managers spend more than about 40% of time on IC work."
+   ],
+   "benchmarks": [
+    {
+     "metric": "Engagement uplift with weekly meaningful conversation",
+     "value": "~4x as likely to be highly engaged",
+     "context": "Gallup, July 2024, updated Feb 2026"
+    },
+    {
+     "metric": "Voluntary turnover described as preventable",
+     "value": "42%",
+     "context": "Gallup"
+    },
+    {
+     "metric": "Median team size per manager",
+     "value": "~5-6",
+     "context": "Gallup, January 2026"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "42% of Employee Turnover Is Preventable but Often Ignored",
+     "url": "https://www.gallup.com/workplace/646538/employee-turnover-preventable-often-ignored.aspx",
+     "publisher": "Gallup",
+     "date": "2024-07-09 (updated 2026-02-16)"
+    },
+    {
+     "title": "Span of Control: What's the Optimal Team Size for Managers?",
+     "url": "https://www.gallup.com/workplace/700718/span-control-optimal-team-size-managers.aspx",
+     "publisher": "Gallup",
+     "date": "2026-01-13"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "sop-system-document-control",
+   "title": "SOP system: tested by a second person, version-controlled, checklists at the point of use",
+   "category": "sop-systems",
+   "guidance": "Long-standing US EPA quality guidance on SOPs makes several points. Someone other than the author should test each procedure before it is finalised. Each SOP carries an ID, revision number, issue date and approver. Checklists are embedded at the exact steps where they are used. SOPs are reviewed periodically (the guidance suggests every 1-2 years), and obsolete ones are withdrawn and archived. Evidence from the 2009 WHO surgical checklist pilot across 8 hospitals, where major complications fell from 11% to 7% and inpatient deaths by more than 40%, shows how much short checklists at defined pause points can improve consistency in complex team work. For fast-changing ad and sales operations, shorten the review cycle and tie every SOP to a scorecard metric.",
+   "steps": [
+    "Inventory the 20-30 recurring fulfilment workflows (onboarding, campaign launch, weekly report, refund request, dispute response, rep onboarding, call QA) and give each an owner.",
+    "Template: purpose, scope, roles, prerequisites, numbered steps in the imperative, embedded checklist, linked records and forms, revision log (ID, rev no., date, approver).",
+    "Have someone other than the author run each SOP before publishing. Fix every step they stumbled on.",
+    "Define 2-3 pause-point checklists for high-risk moments, e.g. before a campaign goes live and before kickoff.",
+    "Review quarterly for ad and sales SOPs and yearly for others, and archive retired versions."
+   ],
+   "benchmarks": [
+    {
+     "metric": "WHO checklist pilot: major complications",
+     "value": "11% -> 7%",
+     "context": "8 hospitals, NEJM 2009 (via UW News)"
+    },
+    {
+     "metric": "EPA suggested SOP review cycle",
+     "value": "every 1-2 years (plus on any process change)",
+     "context": "EPA QA/G-6, April 2007"
+    }
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "Guidance for Preparing Standard Operating Procedures (EPA QA/G-6)",
+     "url": "https://www.epa.gov/sites/default/files/2015-06/documents/g6-final.pdf",
+     "publisher": "U.S. EPA",
+     "date": "2007-04"
+    },
+    {
+     "title": "Surgery checklist proves worth in worldwide study",
+     "url": "https://www.washington.edu/news/2009/01/22/surgery-checklist-proves-worth-in-worldwide-study",
+     "publisher": "University of Washington News",
+     "date": "2009-01-22"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "churn-refund-early-warning-signals",
+   "title": "Early-warning triggers that precede churn, refund requests and disputes",
+   "category": "retention",
+   "guidance": "The sources point to the same pattern. Value that arrives late drives abandonment, services that launch late and support that goes quiet precede refund demands and complaints, and unanswered pre-dispute inquiries can escalate into chargebacks that are hard to win. Turn these into automated triggers with response SLAs instead of waiting for a cancellation email. The specific thresholds below are starting points to calibrate against your own data, not published benchmarks.",
+   "steps": [
+    "Trigger: no first-value milestone by its due date. Action: success manager call within 24 hours and a reset plan.",
+    "Trigger: 2 missed weekly reports or 2 missed live calls in a row. Action: personal outreach within 48 hours.",
+    "Trigger: negative sentiment in a message or check-in, or the words 'refund', 'chargeback' or 'bank'. Action: same-day senior response. Never ignore it.",
+    "Trigger: a failed instalment payment. Action: a friendly reminder the same day, with a human follow-up if not fixed in 3 days.",
+    "Trigger: a client account with no human touch for 14 days, or a support ticket open longer than 24 hours. Action: escalate to the pod lead.",
+    "Trigger: a bank inquiry or early fraud warning. Action: respond or contact the client within 24 hours."
+   ],
+   "as_of": "2026-10",
+   "sources": [
+    {
+     "title": "OnRamp industry report press release (onboarding and churn)",
+     "url": "https://aijourn.com/onramp-releases-industry-report-revealing-customer-onboarding-as-the-new-battleground-for-saas-retention-and-revenue/",
+     "publisher": "AI Journal / OnRamp",
+     "date": "2025-05-07"
+    },
+    {
+     "title": "How disputes work (inquiries and early fraud warnings)",
+     "url": "https://docs.stripe.com/disputes/how-disputes-work",
+     "publisher": "Stripe Docs",
+     "date": "accessed 2026-10"
+    },
+    {
+     "title": "FTC Acts to Stop 'Click Profit' Online Business Opportunity",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-acts-stop-click-profit-online-business-opportunity-has-cost-consumers-least-14-million",
+     "publisher": "FTC",
+     "date": "2025-03-18"
+    }
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "open_questions": [
+  "FTC Business Opportunity Rule amendment (proposed 13 Jan 2025) extending earnings-claim duties to business-coaching 'money-making opportunities': not verified whether it was finalised, changed or withdrawn by Oct 2026. Check the Federal Register docket for 16 CFR Part 437.",
+  "FTC 'Click-to-Cancel' negative option rule: law-firm commentary says the Eighth Circuit vacated it on 8 July 2025 and that the FTC planned a new rulemaking. The FTC's current re-proposal status was not verified from a primary source. ROSCA, state auto-renewal laws and the older negative option rule still apply to recurring billing.",
+  "DOL independent contractor rule: the NPRM of 26 Feb 2026 closed comments on 28 Apr 2026. No final rule was verified.",
+  "Visa VAMP thresholds: Stripe documents excessive at 1.5% (2.2% in CEMEA) and non-compliant at 0.5% with a count of 5. Third-party blogs conflict (some cite 0.9% for 2026), and Visa's own fact sheet PDF could not be parsed. Confirm with your acquirer, which may also use undisclosed internal thresholds.",
+  "Cohort-course completion claims (75%+ from an investor post, ~96% for Maven from one instructor's blog) are unverified. Only the MIT pacing study (-6% completion when self-paced) was confirmed.",
+  "OnRamp 2026 report figures circulating in roundups ('~70% of churn in first 90 days', 'time-to-first-value under 14 days best-in-class') could not be read from the image-only PDF and are excluded.",
+  "The weekly-progress-report study (Dominican University) results are reported secondhand as >70% vs ~35-43% goal achievement. Only the design (N=267 recruited, 149 completed, 4 weeks, 5 groups) was confirmed from the primary summary.",
+  "Meta Blueprint Media Buying Professional exam details (cost up to $150, 60 questions, 105 minutes, validity) come only from third-party guides. The official certification page was not reachable.",
+  "High-ticket closer and setter commission norms (e.g. 10-20% of cash collected) have no primary data. Only B2B SaaS SDR comp benchmarks (Bridge Group) were verified.",
+  "Not researched because the web-search budget ran out: state two-party call-recording consent laws, TCPA/FCC consent rules for SMS and outbound setter outreach after the 2025 court decision on one-to-one consent, consumer financing or BNPL for coaching (lender complaints, TILA), and first-week activation benchmarks for online communities.",
+  "Agency client churn rates by retainer type (e.g. ~18% vs 42% annual) appear only in an unverified secondary source and are excluded."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

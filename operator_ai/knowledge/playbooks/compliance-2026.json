@@ -1,0 +1,1180 @@
+{
+ "domain": "compliance-2026",
+ "title": "Compliance",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "ftc-earnings-claims-core",
+   "title": "Income and earnings claims: back them with evidence or leave them out",
+   "category": "FTC advertising: earnings claims",
+   "guidance": "The FTC counts any stated or implied statement about what a buyer will or could earn as an earnings claim. That includes revenue screenshots, 'replace your salary' framing, lifestyle imagery and 'first client in X days' timelines. Each one must be true, represent typical results, and be backed by evidence at the moment it is made. In October 2021 the FTC sent Notices of Penalty Offenses on money-making claims to more than 1,100 companies, naming business coaches among them. Those notices let it seek civil penalties from anyone who knows the conduct is unlawful. Recent coaching and business-opportunity cases turned on the same patterns: passive-income promises, 'impossible to fail' language, profit guarantees, testimonials made by employees, and social posts used as proof of earnings. For an AI that writes ads, VSLs, DMs and scripts, the safe default is to make no specific income or timeline claim unless a substantiation file exists and the typical result is shown next to it.",
+   "as_of": "2026-10",
+   "steps": [
+    "Keep an earnings-claims register. Every number or outcome used in marketing gets its source data, its date range, and the count and percentage of ALL buyers who reached it.",
+    "In the copy generator, hard-block these phrases unless they map to a register entry: guaranteed, passive income, risk-free, impossible to fail, quit your job, replace your income, $X in Y days.",
+    "Treat revenue screenshots, car, house and travel imagery and 'my students made $X' captions as earnings claims, and route them through the same check.",
+    "Put the typical (median) result right next to any permitted claim. A footnote is not enough.",
+    "Have counsel review the register and the top-spend creatives before ads are scaled."
+   ],
+   "do": [
+    "Describe the work, skills and effort involved, and the risk of earning nothing",
+    "Keep dated evidence for every claim for at least the life of the campaign plus 3 years"
+   ],
+   "dont": [
+    "Promise income, profit or a refund-if-you-don't-earn guarantee",
+    "Use lifestyle content as implied proof of results",
+    "Claim no experience is needed, or create fake urgency, when that is not true"
+   ],
+   "benchmarks": [
+    {
+     "metric": "FTC Act civil penalty cap per violation (Section 5(m)(1)(A))",
+     "value": "$53,088",
+     "context": "Figure after the January 2025 inflation adjustment, as quoted on the FTC CAN-SPAM guide. The 2021 notice cited $43,792."
+    },
+    {
+     "metric": "Growth Cave settlement judgment",
+     "value": "$48,597,538 (partly suspended) plus a permanent ban on selling business opportunities",
+     "context": "FTC, January 2026"
+    },
+    {
+     "metric": "Air AI settlement judgment",
+     "value": "$18M (largely suspended) plus a ban on marketing business opportunities",
+     "context": "FTC, March 2026"
+    }
+   ],
+   "sources": [
+    {
+     "title": "FTC Puts Businesses on Notice that False Money-Making Claims Could Lead to Big Penalties",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2021/10/ftc-puts-businesses-notice-false-money-making-claims-could-lead-big-penalties",
+     "publisher": "FTC",
+     "date": "2021-10-26"
+    },
+    {
+     "title": "FTC Takes Action to Stop Sprawling 'Growth Cave' Business Opportunity and Credit Repair Scam",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-takes-action-stop-sprawling-growth-cave-business-opportunity-credit-repair-scam",
+     "publisher": "FTC",
+     "date": "2025-03-07"
+    },
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities to Settle FTC Charges",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "FTC Secures Settlement Banning Growth Cave Defendants from Marketing and Selling Business Opportunities",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/01/ftc-secures-settlement-banning-growth-cave-defendants-marketing-selling-business-opportunities",
+     "publisher": "FTC",
+     "date": "2026-01-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "bizopp-rule-client-acquisition-trigger",
+   "title": "Promising to find members their clients, or running outreach for them, can make the programme a regulated 'business opportunity'",
+   "category": "FTC Business Opportunity Rule (16 CFR 437)",
+   "guidance": "A business opportunity under 16 CFR 437.1 has three parts. The seller solicits someone to start a new business. The buyer makes a required payment. The seller says or implies that it, or someone it designates, will supply locations, outlets, accounts or customers, or will buy back what the buyer produces. 'Providing customers' is read broadly. It includes recommending or listing lead-generation firms, collecting fees for them, or otherwise helping the buyer find customers, while general advertising and business-building training are excluded. A programme that only teaches outreach is usually outside the rule. One that sells 'we land your first client', done-for-you outreach in the member's name, or bundled lead lists as part of the required fee is very likely inside it. Once inside, the seller must deliver a one-page disclosure document at least 7 calendar days before the buyer signs or pays, and must keep records for 3 years. The FTC charged violations of this rule in both the Air AI and Growth Cave matters.",
+   "as_of": "2026-10",
+   "steps": [
+    "Classify every offer. Flag it if any part of the required fee buys client acquisition, appointments, leads or outreach done for the member.",
+    "For flagged offers, either remove the client-acquisition promise from the required purchase or comply with the rule in full. Get counsel to make this call.",
+    "If complying, generate the disclosure document from Appendix A of the rule. It covers seller identity, earnings claims (yes/no), legal actions in the prior 10 years, refund policy, and at least 10 references from the last 3 years.",
+    "Enforce the wait in checkout: no contract or payment until 7 full calendar days after the disclosure delivery timestamp. Collect a signed and dated receipt.",
+    "Update disclosures at least quarterly (the reference list monthly until there are 10 buyers), and keep every version, receipt, contract and substantiation file for 3 years."
+   ],
+   "do": [
+    "Log when and how each disclosure was delivered",
+    "Describe client-acquisition support accurately, including how likely it is to produce customers"
+   ],
+   "dont": [
+    "Overstate the chance of finding customers or accounts (437.6(j))",
+    "Present the opportunity as a job (437.6(m))",
+    "Ask buyers to waive reliance on the disclosure (437.6(a))"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Disclosure lead time",
+     "value": ">= 7 calendar days before signing or payment, whichever comes first"
+    },
+    {
+     "metric": "Litigation lookback in disclosure",
+     "value": "10 years"
+    },
+    {
+     "metric": "References",
+     "value": "At least 10 purchasers from the last 3 years (or a full list)"
+    },
+    {
+     "metric": "Record retention",
+     "value": "3 years"
+    }
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 437.1 Definitions",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.1",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "16 CFR 437.2 Obligation to furnish written documents",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.2",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "16 CFR 437.3 The disclosure document",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.3",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "16 CFR 437.7 Record retention",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.7",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "bizopp-earnings-claim-statement-template",
+   "title": "If you must make an earnings claim, use the Business Opportunity Rule's earnings-claim format",
+   "category": "FTC Business Opportunity Rule (16 CFR 437)",
+   "guidance": "Under 437.4, an earnings claim needs a reasonable basis and written substantiation at the time it is made. Prospects and the FTC must be able to get that substantiation on request. Claims made to an individual prospect need a separate 'Earnings Claim Statement Required by Law' document. It states who made the claim and when, the claim itself, the period over which it was achieved, the number and percentage of ALL purchasers before that end date who reached at least that level, and any ways those purchasers differ materially from the prospect. Claims in general media such as ads, webinars and social posts must show the date range and the number and percentage of buyers who achieved the result right next to the claim. Even where the rule does not technically apply, this is the most defensible template for coaching programmes. It also counters the selection bias of showing only winners.",
+   "as_of": "2026-10",
+   "steps": [
+    "Choose a fixed cohort window, for example everyone who enrolled from January to June 2025.",
+    "Compute the numerator (buyers who reached the result) over all buyers in the window, including refunds and dropouts.",
+    "Record material differences, such as prior agency experience or existing audience.",
+    "Generate the statement automatically from CRM data, and attach the substantiation pack (exports and calculations).",
+    "For ads and webinars, place the date range and 'N of M buyers (P%)' text right beside the claim."
+   ],
+   "do": [
+    "Report median and percentage-achieved figures alongside any standout case"
+   ],
+   "dont": [
+    "Add extra marketing material inside the disclosure or earnings statement (437.6(c))",
+    "Use paid or related 'references' without disclosing the payment or relationship (437.6(r))",
+    "Say a law stops you from sharing earnings data (437.6(e))"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Required general-media disclosure next to the claim",
+     "value": "Begin and end dates, plus the number and % of all purchasers achieving the claim"
+    }
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 437.4 Earnings claims",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.4",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "16 CFR 437.6 Other prohibited practices",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.6",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "pending-money-making-opportunity-rule",
+   "title": "Proposed rule would explicitly cover business coaching. Build to it now.",
+   "category": "FTC rulemaking watch",
+   "guidance": "In January 2025 the FTC proposed extending the Business Opportunity Rule to 'money-making opportunities', naming business coaching and investment opportunities, and renaming it the Business and Money-Making Opportunity Rule. Coaching sellers would then face the rule's ban on material misrepresentations, its substantiation duty for earnings claims (with substantiation available to prospects and the FTC), its recordkeeping requirements, and a ban on misrepresenting how payments are calculated. The two commissioners who voted no now lead the agency. I could not confirm whether the rule has been finalised or withdrawn. Because the FTC Act already requires substantiation, building to the proposed standard costs little and future-proofs the platform.",
+   "as_of": "2026-10",
+   "steps": [
+    "Apply the substantiation and recordkeeping workflow to every coaching offer, not only those that meet the Business Opportunity Rule definition.",
+    "Set a quarterly check of the FTC rulemaking docket (Matter R511993)."
+   ],
+   "do": [
+    "Keep substantiation in a form you could hand to a prospect on request"
+   ],
+   "dont": [
+    "Assume coaching is exempt because the current rule's definition doesn't fit neatly"
+   ],
+   "sources": [
+    {
+     "title": "Business Opportunity Rule NPRM (Federal Register notice, Matter No. R511993)",
+     "url": "https://www.ftc.gov/node/87052",
+     "publisher": "FTC",
+     "date": "2025-01-13"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "testimonials-typical-results",
+   "title": "Testimonials must reflect typical results. 'Results not typical' no longer protects you.",
+   "category": "FTC Endorsement Guides (16 CFR 255)",
+   "guidance": "Under the 2023 Endorsement Guides, a customer testimonial about a central benefit is read as showing what buyers generally get. The advertiser therefore needs proof that the result is typical, or must clearly show the generally expected result. The FTC's own examples say disclaimers like 'results not typical' or 'you may not get similar results' do not fix a misleading net impression. They also give guidance on how to present results: use the median when outliers skew the average, avoid ranges so broad they tell people nothing, and don't base the figure only on people who finished the programme if many drop out. For coaching, the disclosure should describe what someone who enrols can expect, measured across all enrollees. Testimonials still need substantiation for any performance claim they carry, and actors must be disclosed as such.",
+   "as_of": "2026-10",
+   "steps": [
+    "For each testimonial, tag the outcome type (first client, MRR, time to result).",
+    "From CRM data, compute the median for that outcome across all enrollees in a defined period, counting dropouts and refunds.",
+    "Show the typical-result line near the testimonial, in the same format (audio and visual in video).",
+    "Get signed consent and evidence files from each testimonial giver, and record any payment, discount or other relationship."
+   ],
+   "do": [
+    "Use a concrete line such as 'Typical member: median $0–$X revenue in first 90 days; N% signed a client' when the data supports it"
+   ],
+   "dont": [
+    "Rely on 'results not typical' or 'individual results vary' as the only qualifier",
+    "Use a range too broad to inform, like '$0–$50k/month'",
+    "Report results only for people who completed the programme"
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 255.2 Consumer endorsements",
+     "url": "https://www.law.cornell.edu/cfr/text/16/255.2",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27 (2023 revision)"
+    },
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "FTC",
+     "date": "reflects 2023 revision; no update date shown"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "material-connections-affiliates-monitoring",
+   "title": "Disclose material connections for affiliates, ambassadors, staff and discounted clients, and monitor them",
+   "category": "FTC Endorsement Guides (16 CFR 255)",
+   "guidance": "Any tie the audience wouldn't expect must be disclosed clearly and conspicuously. That covers payments, commissions, free or discounted coaching, employment, family ties and perks. It applies even when no positive review was required. The FTC says '#ad' and 'This is an ad for BRAND' work. Labels like '#partner', '#ambassador' or '#client' don't. Disclosures hidden behind links, posted only in comments, or placed in video descriptions are generally not enough either. In video, the disclosure should be spoken and shown on screen near the endorsement, repeated during live streams, and kept on screen long enough in Stories. Advertisers are responsible for what their endorsers say. They should train endorsers, pre-approve or check posts, act on problems, and keep monitoring for a few months after a deal ends.",
+   "as_of": "2026-10",
+   "steps": [
+    "Keep a register of every endorser (affiliate, student ambassador, employee, comped client) with relationship and compensation.",
+    "Auto-insert the right disclosure into generated affiliate and ambassador copy, at the start of the post or caption.",
+    "Pre-approve endorser scripts, and scan live posts periodically for missing disclosures or banned income claims.",
+    "Log warnings and removals as monitoring evidence."
+   ],
+   "do": [
+    "Disclose the employment relationship in employee posts. A bio line isn't enough.",
+    "Put affiliate disclosures right next to the links"
+   ],
+   "dont": [
+    "Count on platform 'paid partnership' toggles alone",
+    "Let affiliates make earnings claims you couldn't make yourself"
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 255.5 Disclosure of material connections",
+     "url": "https://www.law.cornell.edu/cfr/text/16/255.5",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "FTC",
+     "date": "reflects 2023 revision"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ftc-consumer-reviews-rule",
+   "title": "FTC Consumer Reviews and Testimonials Rule: six banned practices, civil penalties",
+   "category": "FTC rule (16 CFR 465), in force since October 21, 2024",
+   "guidance": "The rule bans six practices, and courts can impose civil penalties for knowing violations. (1) Creating, buying or spreading fake reviews or testimonials, including AI-generated ones and those from people with no real experience, when you knew or should have known they were fake. (2) Offering incentives that require or imply a particular sentiment. (3) Undisclosed reviews from insiders such as officers, managers or their relatives. (4) Company-controlled 'independent' review sites. (5) Suppressing reviews through threats, intimidation or false accusations. (6) Buying or selling fake followers or views to misrepresent influence for commercial purposes. Rewarding reviews is allowed only when the reward doesn't depend on the review being positive. The FTC's 2025 Growth Cave complaint cited this rule, alleging ads used employee-made testimonials and reused customer testimonials from a different product. The FTC has also begun sending warning letters that ask companies to confirm fixes.",
+   "as_of": "2026-10",
+   "steps": [
+    "Collect testimonials only from verified buyers, keeping the buyer ID, date, original wording and consent.",
+    "Ask every customer for reviews with the same neutral wording (e.g. 'share your honest experience'). Never offer rewards only for 5-star or positive reviews.",
+    "Label every staff, contractor or family review with the relationship in the first line.",
+    "Never buy followers, views or engagement, and audit growth vendors for bot traffic.",
+    "Respond to negative reviews factually. No legal threats unless a claim is genuinely defamatory and counsel has reviewed it."
+   ],
+   "do": [
+    "Keep evidence for every published testimonial"
+   ],
+   "dont": [
+    "Generate testimonials or reviews with AI",
+    "Reuse testimonials from one offer to promote a different offer",
+    "Offer refunds or bonuses on condition that a review is removed or changed"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max civil penalty per violation",
+     "value": "$53,088 (2025 inflation-adjusted FTC Act figure)",
+     "context": "Applies to knowing violations; check whether a 2026 adjustment has been published"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "FTC",
+     "date": "2024-11"
+    },
+    {
+     "title": "Federal Trade Commission Announces Final Rule Banning Fake Reviews and Testimonials",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/08/federal-trade-commission-announces-final-rule-banning-fake-reviews-testimonials",
+     "publisher": "FTC",
+     "date": "2024-08-14"
+    },
+    {
+     "title": "16 CFR 465.8 Fake indicators of social media influence",
+     "url": "https://www.law.cornell.edu/cfr/text/16/465.8",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "FTC Takes Action to Stop Sprawling 'Growth Cave' Business Opportunity and Credit Repair Scam",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-takes-action-stop-sprawling-growth-cave-business-opportunity-credit-repair-scam",
+     "publisher": "FTC",
+     "date": "2025-03-07"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ai-generated-testimonials-and-ai-claims",
+   "title": "AI avatars, AI-written testimonials and 'AI-powered' income claims",
+   "category": "FTC: AI in marketing",
+   "guidance": "The FTC's Reviews Rule Q&A says AI avatars aren't banned outright. An avatar testimonial breaks the rule when the underlying testimonial is fake or false. Using a real person's likeness without permission can also break the rule. In September 2024 the FTC's 'Operation AI Comply' targeted business-opportunity sellers that used 'AI-powered' tools to promise passive income: Ascend Ecom (at least $25M in alleged losses), Ecommerce Empire Builders, and FBA Machine (more than $15.9M). Those operators have since agreed to bans on selling business opportunities. The 2026 Growth Cave orders specifically bar misrepresentations about the use of AI. In December 2025 the FTC set aside its 2024 order against Rytr, an AI review-writing tool, which narrows liability for tool makers. Sellers who publish AI-made fake reviews remain fully liable. A white-label AI system should therefore refuse to invent testimonials and should not claim AI automation delivers income.",
+   "as_of": "2026-10",
+   "steps": [
+    "Block prompts that ask the AI to write customer reviews, testimonials or 'student wins' that didn't happen.",
+    "If an AI avatar or voice presents a real testimonial, keep the original source and the customer's consent, and label the presentation as AI-generated.",
+    "Strip claims that 'the AI does the work' or that results are automatic or passive. Describe AI features as tools, with honest limits."
+   ],
+   "do": [
+    "Keep test evidence for any capability claims about the AI product itself"
+   ],
+   "dont": [
+    "Present AI-generated people as real customers",
+    "Advertise 'AI-powered' income, 'done-for-you AI agents that close deals', or similar outcome promises"
+   ],
+   "sources": [
+    {
+     "title": "Consumer Reviews and Testimonials Rule: Questions and Answers",
+     "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+     "publisher": "FTC",
+     "date": "2024-11"
+    },
+    {
+     "title": "FTC Announces Crackdown on Deceptive AI Claims and Schemes",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2024/09/ftc-announces-crackdown-deceptive-ai-claims-schemes",
+     "publisher": "FTC",
+     "date": "2024-09-25"
+    },
+    {
+     "title": "Artificial Intelligence (FTC industry page listing AI enforcement)",
+     "url": "https://www.ftc.gov/industry/technology/artificial-intelligence",
+     "publisher": "FTC",
+     "date": "accessed 2026-10-27; lists Rytr order set aside 2025-12-22"
+    },
+    {
+     "title": "FTC Secures Settlement Banning Growth Cave Defendants",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/01/ftc-secures-settlement-banning-growth-cave-defendants-marketing-selling-business-opportunities",
+     "publisher": "FTC",
+     "date": "2026-01-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tcpa-consent-calls-texts-ai-voice",
+   "title": "TCPA consent for automated texts and AI-voice or prerecorded calls",
+   "category": "TCPA / FCC rules (47 CFR 64.1200)",
+   "guidance": "In February 2024 the FCC ruled that AI-generated voices count as 'artificial' voices under the TCPA. An outbound call from an AI voice agent is therefore treated like a prerecorded robocall. It needs prior express consent, and prior express written consent (PEWC) when it is telemarketing. Calls to mobile numbers using an autodialer or artificial voice also need consent. Under 64.1200(f), PEWC means a signed agreement (e-signatures count) naming the specific phone number, clearly authorising such calls or texts, and stating that agreeing is not a condition of purchase. Artificial or prerecorded messages must identify the caller at the start and give a callback number. Telemarketing messages must also offer an automated opt-out within 2 seconds of that identification. Solicitations are limited to 8am–9pm in the recipient's local time, and both the national and internal do-not-call lists apply. Private plaintiffs can recover $500 per call or text, up to $1,500 if the violation is willful.",
+   "as_of": "2026-10",
+   "steps": [
+    "Let AI voice agents call only leads with stored PEWC that covers AI or prerecorded voice and automated texts, tied to that exact number.",
+    "Start each AI call with the business name and a callback number. On telemarketing calls, offer a key-press or voice opt-out within 2 seconds.",
+    "Enforce quiet hours using the lead's timezone (area code plus IP and form data). Default to the strictest state window when unsure.",
+    "Scrub against the national DNC list and the internal DNC list before every campaign, and log which registry version was used.",
+    "Keep the consent record (form copy, timestamp, IP, page version) for at least 5 years."
+   ],
+   "do": [
+    "Have a human take over on request"
+   ],
+   "dont": [
+    "Use AI voice to cold-call purchased lists",
+    "Treat a webinar sign-up without PEWC language as consent to AI calls"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Statutory damages",
+     "value": "$500 per violation; up to $1,500 if willful or knowing"
+    },
+    {
+     "metric": "Calling window",
+     "value": "8:00–21:00 recipient local time (federal)"
+    },
+    {
+     "metric": "Opt-out offer in prerecorded or AI telemarketing",
+     "value": "Within 2 seconds of the identification"
+    },
+    {
+     "metric": "Internal DNC record retention",
+     "value": "5 years"
+    }
+   ],
+   "sources": [
+    {
+     "title": "47 CFR 64.1200 Delivery restrictions",
+     "url": "https://www.law.cornell.edu/cfr/text/47/64.1200",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "47 U.S. Code 227",
+     "url": "https://www.law.cornell.edu/uscode/text/47/227",
+     "publisher": "Cornell LII",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "FCC: AI-Generated Robocalls Illegal Under the TCPA",
+     "url": "https://cooley.com/news/insight/2024/2024-02-15-fcc-ai-generated-robocalls-illegal-under-the-tcpa",
+     "publisher": "Cooley LLP",
+     "date": "2024-02-15"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tcpa-consent-revocation-2025",
+   "title": "Opt-out (revocation) handling for calls and texts since April 11, 2025",
+   "category": "TCPA / FCC rules",
+   "guidance": "Since April 11, 2025, consumers can revoke consent by any reasonable means. A sender cannot insist on one exclusive opt-out method. Replies of stop, quit, end, revoke, opt out, cancel or unsubscribe are conclusive. Other wording creates a rebuttable presumption that consent was revoked. Opt-outs must be honoured within a reasonable time of no more than 10 business days, which also shortened the internal do-not-call window from 30 days. One confirmation text with no marketing is allowed if it goes out within 5 minutes. Systems that can't receive replies must say so in every message and offer other ways to opt out. The 'revoke-all' provision, under which an opt-out from one message type stops all robocalls and robotexts from that sender, was delayed again by a January 6, 2026 order to January 31, 2027 while the FCC considers changes.",
+   "as_of": "2026-10",
+   "steps": [
+    "Use NLP to classify every inbound reply. The seven keywords suppress automatically, and opt-out intent in natural language ('please stop texting me') also triggers suppression.",
+    "Suppress within minutes rather than days, and send at most one confirmation with no marketing within 5 minutes.",
+    "Sync suppression across channels and sub-accounts. Design for 'revoke-all' now so the January 2027 date isn't a scramble.",
+    "Log revocations with timestamp and channel."
+   ],
+   "dont": [
+    "Require opt-outs to come only through a link or a specific keyword",
+    "Put any promotional content in the confirmation text"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Max time to honour opt-out",
+     "value": "10 business days (legal ceiling)"
+    },
+    {
+     "metric": "Confirmation text window",
+     "value": "Within 5 minutes, no marketing"
+    },
+    {
+     "metric": "Revoke-all compliance date",
+     "value": "January 31, 2027 (per January 2026 FCC order)"
+    }
+   ],
+   "sources": [
+    {
+     "title": "FCC's Revocation Rule to Take Effect April 2025",
+     "url": "https://www.manatt.com/insights/newsletters/tcpa-connect/fcc%E2%80%99s-revocation-rule-to-take-effect-april-2025",
+     "publisher": "Manatt",
+     "date": "2024-12-13"
+    },
+    {
+     "title": "FCC Issues One-Year Limited Waiver of New TCPA Consent Revocation Rule",
+     "url": "https://www.kelleydrye.com/viewpoints/blogs/ad-law-access/fcc-issues-one-year-limited-waiver-of-new-tcpa-consent-revocation-rule",
+     "publisher": "Kelley Drye",
+     "date": "2025-04-08"
+    },
+    {
+     "title": "The FCC Delays Effective Date of TCPA Revoke-All Rule Until January 31, 2027",
+     "url": "https://www.burr.com/telephone-consumer-protection-act/the-fcc-delays-effective-date-of-tcpa-revoke-all-rule-until-january-31-2027",
+     "publisher": "Burr & Forman",
+     "date": "2026-01-07"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lead-form-consent-after-one-to-one-vacatur",
+   "title": "Lead-form consent language after the one-to-one consent rule was struck down",
+   "category": "TCPA / lead generation",
+   "guidance": "On January 24, 2025, the Eleventh Circuit vacated the FCC's 'one-to-one' consent rule (Insurance Marketing Coalition v. FCC). That rule would have limited each consent to a single seller and required calls to be 'logically and topically associated' with the original interaction. The pre-existing PEWC definition still applies, so automated telemarketing still needs signed written consent with the required disclosures. Consents covering several sellers are legally possible again, but carriers, messaging providers and some states may still expect seller-specific consent. Best practice for coaching funnels is to name the actual seller, cover AI and prerecorded voice and automated texts, and keep strong proof that consent was given.",
+   "as_of": "2026-10",
+   "steps": [
+    "On opt-in forms, add an unticked checkbox that names the brand, lists the channels (calls, texts, AI or prerecorded voice), and says consent is not a condition of purchase.",
+    "Capture the phone number in the same form, plus timestamp, IP, user agent, page URL, form version and a screenshot or session replay ID.",
+    "Give each white-label client's forms that client's own brand name. Never share consent across tenants."
+   ],
+   "dont": [
+    "Buy 'shared' leads with vague consent mentioning 'marketing partners' and dial them with AI",
+    "Bury the consent text below the submit button"
+   ],
+   "sources": [
+    {
+     "title": "Eleventh Circuit Vacates FCC's TCPA One-to-One Consent Rule",
+     "url": "https://www.mofo.com/resources/insights/250130-eleventh-circuit-vacates-fcc-s-tcpa-one-to-one-consent-rule",
+     "publisher": "Morrison Foerster",
+     "date": "2025-01-30"
+    },
+    {
+     "title": "47 CFR 64.1200 (definition of prior express written consent at (f)(9))",
+     "url": "https://www.law.cornell.edu/cfr/text/47/64.1200",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "state-mini-tcpa-florida-texas",
+   "title": "State mini-TCPAs: Florida and Texas add their own rules for texts and calls",
+   "category": "State telemarketing law",
+   "guidance": "Florida's Telephone Solicitation Act (s. 501.059, last amended 2023) requires prior express written consent for sales calls and texts that use an automated system for selecting and dialing numbers, or that play a recorded message. That consent must name the number and state it is not a condition of purchase, and a checkbox or an affirmative text reply can count as the signature. For texts, a recipient must first reply STOP. The sender then has 15 days to stop, may send one confirmation, and can be sued only if texts continue after that. Damages are $500 per violation, up to triple if willful. Texas SB 140, effective September 1, 2025, extends 'telephone solicitation' under Chapter 302 to text, image and graphic messages. It also makes violations of the telemarketing chapters actionable under the state Deceptive Trade Practices Act, which opens private lawsuits. Other states have their own versions, so the strictest applicable rule should be applied by the recipient's state.",
+   "as_of": "2026-10",
+   "steps": [
+    "Add a state rules table (FL, TX, OK, MD, WA and others) to the sending engine, keyed by the recipient's area code and address.",
+    "For Florida numbers, honour STOP immediately, even though the statute allows 15 days.",
+    "For Texas, have counsel confirm whether Chapter 302 registration or exemptions now apply to SMS campaigns."
+   ],
+   "dont": [
+    "Assume federal compliance alone is enough for texts to FL or TX residents"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Florida FTSA damages",
+     "value": "$500 per violation, up to 3x if willful or knowing"
+    },
+    {
+     "metric": "Florida text cure window",
+     "value": "15 days after the STOP reply"
+    },
+    {
+     "metric": "Texas SB 140 effective date",
+     "value": "2025-09-01"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Florida Statutes 501.059 Telephone solicitation (2025)",
+     "url": "https://www.flsenate.gov/Laws/Statutes/2025/501.059",
+     "publisher": "Florida Senate",
+     "date": "2025 statutes"
+    },
+    {
+     "title": "Texas SB 140 (89R) bill history",
+     "url": "https://capitol.texas.gov/BillLookup/History.aspx?LegSess=89R&Bill=SB140",
+     "publisher": "Texas Legislature Online",
+     "date": "signed 2025-06-20; effective 2025-09-01"
+    },
+    {
+     "title": "Texas SB 140 enrolled text",
+     "url": "https://capitol.texas.gov/tlodocs/89R/billtext/html/SB00140F.htm",
+     "publisher": "Texas Legislature Online",
+     "date": "2025"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "a2p-10dlc-registration",
+   "title": "A2P 10DLC registration for business texting in the US",
+   "category": "SMS carrier compliance",
+   "guidance": "Any application sending SMS or MMS over a standard 10-digit number to US recipients must register a Brand (who is sending) and a Campaign (purpose, opt-in method, opt-out and help handling). Unregistered 10DLC traffic has been blocked by US carriers since early February 2025. Telnyx gives the date as February 3, 2025. Brand type sets daily throughput. Sole proprietors get 1 campaign and about 1,000 segments a day to T-Mobile. Low-volume standard brands get up to 5 campaigns and about 2,000 a day to T-Mobile. Standard brands scale with their trust score. Standard brands need a tax ID, and each EIN gets one brand. For a white-label platform, each client business normally needs its own brand registration, and campaign descriptions must match the messages actually sent.",
+   "as_of": "2026-10",
+   "steps": [
+    "During tenant onboarding, collect legal name, EIN, address, website and privacy policy, and register the brand.",
+    "Register campaigns with accurate use cases, sample messages and a description of the opt-in flow, and keep opt-in screenshots.",
+    "Send one opt-in confirmation that includes the brand name, message frequency, 'Msg & data rates may apply', and HELP/STOP instructions.",
+    "Watch the carrier error codes for unregistered or filtered traffic, and pause campaigns automatically when error rates spike."
+   ],
+   "dont": [
+    "Send texts that make income claims or point to undisclosed links. Carriers filter for deceptive content.",
+    "Route many tenants' traffic through one brand registration"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Sole proprietor throughput",
+     "value": "~1,000 segments/day to T-Mobile (~3,000 across US carriers)"
+    },
+    {
+     "metric": "Low-volume standard throughput",
+     "value": "~2,000 segments/day to T-Mobile (~6,000 across carriers)"
+    },
+    {
+     "metric": "Campaigns per brand",
+     "value": "1 (sole prop) / up to 5 (standard)"
+    }
+   ],
+   "sources": [
+    {
+     "title": "A2P 10DLC (Twilio Docs)",
+     "url": "https://www.twilio.com/docs/messaging/compliance/a2p-10dlc",
+     "publisher": "Twilio",
+     "date": "modified 2026-07-07"
+    },
+    {
+     "title": "Frequently asked questions about 10DLC",
+     "url": "https://support.telnyx.com/en/articles/3679260-frequently-asked-questions-about-10dlc",
+     "publisher": "Telnyx",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "can-spam-commercial-email",
+   "title": "CAN-SPAM for marketing and cold B2B email",
+   "category": "US email law",
+   "guidance": "CAN-SPAM covers all commercial email, including business-to-business. Header and routing information must be accurate. Subject lines can't mislead. The message must say it is an ad, include a valid postal address, and offer a clear opt-out. That opt-out must work for at least 30 days, be honoured within 10 business days, cost nothing, and need no more than a reply or one web page. Both the company whose product is promoted and any agency or tool that sends for it can be held liable. The FTC guide puts the penalty at up to $53,088 per non-compliant email. Note that US law doesn't require prior consent for cold B2B email, but mailbox-provider rules effectively punish unwanted mail.",
+   "as_of": "2026-10",
+   "steps": [
+    "Insert the sender's postal address and a working unsubscribe link and header into every marketing template automatically.",
+    "Keep one suppression list per tenant (sender), shared across all of that tenant's sending domains and inboxes.",
+    "Check that subject lines match the body. Ban fake 'Re:' or 'Fwd:' prefixes and fake personal-relationship subjects.",
+    "Contractually require clients to approve any messages sent in their name, and keep send logs."
+   ],
+   "dont": [
+    "Ask for a login or extra details to unsubscribe",
+    "Rotate look-alike domains to dodge suppression"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Opt-out processing",
+     "value": "<= 10 business days"
+    },
+    {
+     "metric": "Opt-out mechanism lifetime",
+     "value": ">= 30 days after send"
+    },
+    {
+     "metric": "Penalty",
+     "value": "Up to $53,088 per email"
+    }
+   ],
+   "sources": [
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "FTC",
+     "date": "2023-08 (penalty figure updated)"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "mailbox-provider-sender-requirements",
+   "title": "Gmail, Yahoo and Outlook bulk-sender requirements",
+   "category": "Email deliverability policy",
+   "guidance": "Gmail treats anyone sending close to 5,000 or more messages a day to personal Gmail accounts as a bulk sender. Subdomains count toward the total, and the status is permanent once triggered. Bulk senders need SPF and DKIM, a DMARC record (p=none is acceptable), From-domain alignment, and one-click unsubscribe (List-Unsubscribe plus List-Unsubscribe-Post) on marketing mail. Google says to keep spam rates in Postmaster Tools under 0.10% and never reach 0.30%. Above 0.30% a sender loses mitigation support until it stays below that for 7 days, and since November 2025 non-compliant mail faces temporary or permanent rejection. Yahoo has similar rules and requires unsubscribes to be honoured within 2 days. Microsoft requires SPF, DKIM and DMARC for domains sending 5,000 or more messages to its consumer services, and rejects failures with error 550 5.7.515.",
+   "as_of": "2026-10",
+   "steps": [
+    "Check SPF, DKIM (2048-bit), DMARC with rua reporting, alignment, PTR and TLS before any domain sends.",
+    "Add RFC 8058 one-click unsubscribe headers plus a visible body link to all marketing mail, and process unsubscribes within 48 hours.",
+    "Pull Postmaster Tools and complaint data daily. Throttle automatically at 0.08% and pause at 0.10%.",
+    "Keep cold outreach on separate, warmed domains with low volume, and never send cold mail from the primary brand domain."
+   ],
+   "dont": [
+    "Spoof a gmail.com From address",
+    "Let one client's complaint rate poison a shared sending domain"
+   ],
+   "benchmarks": [
+    {
+     "metric": "User-reported spam rate",
+     "value": "Target < 0.10%; never >= 0.30%"
+    },
+    {
+     "metric": "Unsubscribe processing",
+     "value": "<= 2 days (Google/Yahoo)"
+    },
+    {
+     "metric": "Bulk threshold",
+     "value": "~5,000 messages/day (Gmail); 5,000+ (Microsoft)"
+    },
+    {
+     "metric": "DKIM key length",
+     "value": ">= 1024 bits; 2048 recommended"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google Workspace Admin Help",
+     "date": "requirements effective 2024-02-01; accessed 2026-10-27"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google Workspace Admin Help",
+     "date": "notes November 2025 enforcement ramp-up; accessed 2026-10-27"
+    },
+    {
+     "title": "Sender Best Practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "enforcement from 2024-02; accessed 2026-10-27"
+    },
+    {
+     "title": "Fix NDR error 550 5.7.515 in Outlook.com",
+     "url": "https://support.microsoft.com/en-US/Outlook/fix-ndr-error-550-5-7-515-in-outlook-com",
+     "publisher": "Microsoft",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "agentic-outreach-on-members-behalf",
+   "title": "Guardrails for AI doing outreach on a member's or client's behalf",
+   "category": "Outreach operations / platform terms",
+   "guidance": "When the system prospects, messages or books calls in a member's name, every sender rule applies to the member and often to the platform too. CAN-SPAM liability reaches both the advertiser and the party that sends. LinkedIn's terms forbid bots and automation that add contacts, send or redirect messages, like, comment or scrape profiles, and accounts that use them can be restricted or shut down. For EU and UK prospects, data from enrichment tools or scraping triggers GDPR Article 14. The prospect must be told the source, purpose, legal basis and their right to object by the first message at the latest. Business-to-business calls are mostly exempt from the Telemarketing Sales Rule, but its bans on misrepresentation still apply. AI-written messages must stay truthful about who is writing, what the member has done before, and what results they can deliver.",
+   "as_of": "2026-10",
+   "steps": [
+    "Get written authorisation from the member for each channel and identity used, and log every approval.",
+    "Keep a human approval step for first-touch templates and for any message that makes a performance claim.",
+    "On LinkedIn, draft messages for the member to send by hand. Don't run automated sending or scraping.",
+    "For EU and UK prospects, add a short privacy notice to the first message (data source, purpose, opt-out link) and record a legitimate interests assessment.",
+    "Apply the earnings and claims filter to outreach copy too (no invented case studies or client logos)."
+   ],
+   "dont": [
+    "Claim results, clients or credentials the member doesn't have",
+    "Share or reuse one member's prospect lists or suppression data with another member"
+   ],
+   "sources": [
+    {
+     "title": "Prohibited software and extensions",
+     "url": "https://www.linkedin.com/help/linkedin/answer/a1341387",
+     "publisher": "LinkedIn Help",
+     "date": "accessed 2026-10-27 (page says updated ~2 years ago)"
+    },
+    {
+     "title": "CAN-SPAM Act: A Compliance Guide for Business",
+     "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business",
+     "publisher": "FTC",
+     "date": "2023-08"
+    },
+    {
+     "title": "Art. 14 GDPR: Information to be provided where personal data have not been obtained from the data subject",
+     "url": "https://gdpr-info.eu/art-14-gdpr/",
+     "publisher": "gdpr-info.eu (GDPR text)",
+     "date": "Regulation (EU) 2016/679"
+    },
+    {
+     "title": "16 CFR 310.6 Exemptions (B2B exemption and exceptions)",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.6",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "tsr-sales-calls-coaching",
+   "title": "Telemarketing Sales Rule: sales calls for money-making programmes are not exempt even when the lead calls in",
+   "category": "FTC Telemarketing Sales Rule (16 CFR 310)",
+   "guidance": "Calls a customer makes in response to an ad are usually exempt from the TSR. That exemption doesn't apply when the ad is for investment opportunities, debt relief, tech support, or business opportunities not covered by the Franchise or Business Opportunity Rules, and it never covers upsells made during the call. In the Air AI case the FTC charged TSR violations for misrepresenting services, refund policies, and the risk and profitability of a coaching-plus-licence offer. Since the 2024 amendments, sellers and telemarketers must keep detailed records for 5 years. These include call details down to the second in UTC, every script and substantially different ad, consent records, call outcomes, and DNC registry versions. B2B calls remain mostly exempt, but the bans on misrepresentation apply to them.",
+   "as_of": "2026-10",
+   "steps": [
+    "Version-control every closer and setter script, plus each AI sales-agent prompt, and keep each version for 5 years after retirement.",
+    "Log every call's metadata (numbers, times in UTC, duration, disposition, script version).",
+    "Scan call transcripts with QA for income guarantees, refund misstatements, 'risk-free' wording and fake scarcity, and coach or pause agents that break the rules.",
+    "Disclose total cost, refund terms and any financing before taking payment on a call."
+   ],
+   "dont": [
+    "Use upsell calls to push financing or extra programmes with new income promises"
+   ],
+   "benchmarks": [
+    {
+     "metric": "TSR record retention",
+     "value": "5 years (scripts and ads: 5 years from last use)"
+    },
+    {
+     "metric": "Call time precision",
+     "value": "Nearest second, UTC"
+    }
+   ],
+   "sources": [
+    {
+     "title": "16 CFR 310.6 Exemptions",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.6",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "16 CFR 310.5 Recordkeeping requirements",
+     "url": "https://www.law.cornell.edu/cfr/text/16/310.5",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "amended 89 FR 26784, 2024-04-16"
+    },
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "meta-ads-income-coaching-policy",
+   "title": "Meta ads: get-rich-quick, personal attributes and complaint-driven enforcement",
+   "category": "Platform ad policy: Meta",
+   "guidance": "Meta's ad standards now point to the Community Standard on Prohibited Commercial Practices. The old 'Unacceptable business practices' ad page now redirects there. That standard bans 'get rich quick' offers, described as unrealistic financial reward for unclear or minimal effort. It also bans guaranteed or risk-free investment returns, quick-return claims, using past returns to set expectations, and celebrity or brand bait. Separately, the Personal Attributes policy bars ads that state or imply a viewer's personal attributes, including vulnerable financial status. 'Are you broke?' or 'Tired of your dead-end job?' aimed at the viewer is out. Plain 'you' language without an attribute is fine. Meta also acts on patterns of negative user feedback about non-delivery, broken refund policies, unclear subscriptions and misleading pricing, up to disabling ad accounts. Enforcement has been inconsistent, so passing review doesn't mean an ad is compliant.",
+   "as_of": "2026-10",
+   "steps": [
+    "Run every generated ad through a Meta lint before upload. Flag income or timeline promises, 'passive', 'guaranteed', second-person attribute questions about finances, health or employment, and any public figure's name or likeness.",
+    "Make sure the landing page and VSL keep the same claim discipline. Meta reviews the whole experience.",
+    "Watch refund and chargeback rates and post-purchase feedback as account-health signals."
+   ],
+   "do": [
+    "Lead with the skill, the process and who it's for, without assuming the viewer's circumstances"
+   ],
+   "dont": [
+    "Use fake news-article formats or unlicensed celebrity or creator likeness",
+    "Write hooks like 'Are you struggling to pay rent?'"
+   ],
+   "sources": [
+    {
+     "title": "Prohibited commercial practices (Community Standards)",
+     "url": "https://transparency.meta.com/policies/community-standards/prohibited-commercial-practices/",
+     "publisher": "Meta Transparency Center",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "Prohibited commercial practices (Ad Standards; redirect from Unacceptable business practices)",
+     "url": "https://transparency.meta.com/policies/ad-standards/fraud-scams/unacceptable-business-practices/",
+     "publisher": "Meta Transparency Center",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "Privacy violations and personal attributes (Ad Standards)",
+     "url": "https://transparency.meta.com/policies/ad-standards/objectionable-content/privacy-violations-personal-attributes/",
+     "publisher": "Meta Transparency Center",
+     "date": "change log 2024-06-27; accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "google-ads-misrepresentation",
+   "title": "Google Ads: improbable-result claims can mean suspension without warning",
+   "category": "Platform ad policy: Google",
+   "guidance": "Under Google's Misrepresentation policy, 'unreliable claims' include presenting an improbable result as the likely outcome, even if that result is possible. Coaching ads promising fast income or guaranteed clients fall squarely here. The same policy bans misleading statements or omissions about identity, affiliations or qualifications. It requires clear disclosure of the payment model and full cost, and it bans clickbait that uses negative life events to pressure action. Egregious violations lead to suspension on detection with no warning, and the advertiser may not return.",
+   "as_of": "2026-10",
+   "steps": [
+    "Show the full programme price (or 'from $X' plus payment-plan terms) on the landing page before the booking form.",
+    "Remove 'as seen on' logos or partner claims unless they're documented.",
+    "Apply the same income-claim filter used for Meta to search and YouTube ad copy."
+   ],
+   "dont": [
+    "Hide the price until a sales call when the ad suggests a low-cost or free offer",
+    "Use bankruptcy, debt or job loss to create urgency"
+   ],
+   "sources": [
+    {
+     "title": "Misrepresentation (Google Ads policy)",
+     "url": "https://support.google.com/adspolicy/answer/6020955",
+     "publisher": "Google Advertising Policies Help",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "sales-call-recording-consent",
+   "title": "Recording and AI-transcribing sales calls: assume every party must consent",
+   "category": "Call recording / wiretap law",
+   "guidance": "Most states allow recording with one party's consent. California, Connecticut, Florida, Illinois, Maryland, Massachusetts, Montana, New Hampshire, Pennsylvania and Washington require consent from all parties, and some other states have variations. California Penal Code 632.7 makes it a crime to record mobile or cordless calls without everyone's consent, and 637.2 lets people sue for the greater of $5,000 per violation or three times actual damages, without proving harm. When callers are in different states it's hard to know which law applies, so the practical rule for a national sales team or an AI notetaker is to get every participant's consent on every call. Disclosure should come at the very start, before any substantive talk, and the consent should be logged.",
+   "as_of": "2026-10",
+   "steps": [
+    "Put a recording and transcription notice in the booking confirmation and calendar invite. Mention AI analysis if transcripts train or score anything.",
+    "Have the AI or human open each call with a verbal notice, and capture the prospect's spoken 'yes' at the start of the recording.",
+    "If the prospect declines, turn off recording and transcription and tag the call 'no-record'.",
+    "Restrict who can access recordings, and set a retention policy that respects deletion requests."
+   ],
+   "dont": [
+    "Let a third-party AI notetaker join silently",
+    "Use recordings for model training without disclosing it"
+   ],
+   "benchmarks": [
+    {
+     "metric": "California private damages",
+     "value": "Greater of $5,000 per violation or 3x actual damages"
+    },
+    {
+     "metric": "All-party consent states (common list)",
+     "value": "CA, CT, FL, IL, MD, MA, MT, NH, PA, WA (verify nuances: MI, NV, OR, DE, HI)"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Recording Phone Calls and Conversations",
+     "url": "https://www.dmlp.org/legal-guide/recording-phone-calls-and-conversations",
+     "publisher": "Digital Media Law Project (no longer updated)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "California Penal Code 632.7",
+     "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PEN&sectionNum=632.7",
+     "publisher": "California Legislative Information",
+     "date": "amended 2022 (eff. 2023-01-01)"
+    },
+    {
+     "title": "California Penal Code 637.2",
+     "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PEN&sectionNum=637.2",
+     "publisher": "California Legislative Information",
+     "date": "amended 2016 (eff. 2017-01-01)"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ai-disclosure-bots-voice-clones",
+   "title": "Disclosing AI agents and licensing cloned voices or personas",
+   "category": "AI disclosure / impersonation",
+   "guidance": "California's BOT Act (Bus. & Prof. Code 17941) makes it unlawful to use a bot online with intent to mislead a California resident about its artificial identity to drive a sale. A clear, conspicuous disclosure that it is a bot removes that liability. From August 2, 2026, Article 50 of the EU AI Act requires that people be told at first interaction when they are dealing with an AI system (unless obvious), and that deepfake audio and video be labelled. Tennessee's 2024 ELVIS Act added voice to its right-of-publicity law to cover AI clones. The FTC's Impersonation Rule bans falsely posing as a business or its officers, or misrepresenting affiliation or endorsement. An AI that talks or writes as a named coach therefore needs that person's written licence, and should identify itself as AI in sales and support conversations.",
+   "as_of": "2026-10",
+   "steps": [
+    "Get a signed voice and likeness licence from each persona owner covering scope, channels, revocation and approval rights.",
+    "Have every AI chat or voice agent say it is an AI assistant for [brand] in the first message or first seconds, and answer honestly when asked.",
+    "Label AI-generated video or audio of a real person used in ads, and watermark it where tools support that.",
+    "Never imitate third-party public figures or claim partnerships that don't exist."
+   ],
+   "dont": [
+    "Let an AI DM setter pretend to be the human coach",
+    "Use a cloned voice for outbound calls without PEWC (it counts as an artificial voice under the TCPA)"
+   ],
+   "benchmarks": [
+    {
+     "metric": "EU AI Act Art. 50 application date",
+     "value": "2026-08-02 (check Digital Omnibus changes)"
+    }
+   ],
+   "sources": [
+    {
+     "title": "California Business and Professions Code 17941 (BOT Act)",
+     "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=17941",
+     "publisher": "California Legislative Information",
+     "date": "operative 2019-07-01"
+    },
+    {
+     "title": "Article 50: Transparency Obligations for Providers and Deployers of Certain AI Systems",
+     "url": "https://artificialintelligenceact.eu/article/50/",
+     "publisher": "artificialintelligenceact.eu (EU AI Act text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "Gov. Lee Signs ELVIS Act Into Law",
+     "url": "https://www.tn.gov/governor/news/2024/3/21/photos--gov--lee-signs-elvis-act-into-law.html",
+     "publisher": "Office of the Governor of Tennessee",
+     "date": "2024-03-21"
+    },
+    {
+     "title": "16 CFR 461.3 Impersonation of businesses and officers",
+     "url": "https://www.law.cornell.edu/cfr/text/16/461.3",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "gdpr-uk-lead-data",
+   "title": "EU GDPR, UK GDPR and PECR basics for lead data and outreach",
+   "category": "EU/UK privacy and e-marketing",
+   "guidance": "Under UK PECR, marketing emails and texts (including social media DMs and voicemail) to individuals need specific consent. The exception is the 'soft opt-in': existing customers who bought or negotiated for similar products, were offered an opt-out at collection, and get one in every message. Prospects and purchased lists never qualify. Companies, LLPs and public bodies (corporate subscribers) can be emailed without consent. Sole traders and some partnerships count as individuals. Under the GDPR, a prospect has an unconditional right to object to direct marketing, and that right must be raised clearly and separately by the first communication at the latest. When data comes from enrichment or scraping, Article 14 notices (source, purpose, legal basis, rights) are due within a month, or at first contact if sooner. All data-protection provisions of the UK Data (Use and Access) Act 2025 were in force by June 2026. The Act confirms direct marketing can be a legitimate interest, adds a charity soft opt-in, and requires complaint handling with acknowledgement within 30 days.",
+   "as_of": "2026-10",
+   "steps": [
+    "Tag each lead by jurisdiction and type (individual, sole trader or corporate). Route UK and EU individuals to consent-only flows.",
+    "For corporate B2B outreach, record a legitimate interests assessment and include an opt-out and privacy notice in the first message.",
+    "Keep a cross-tenant 'do not contact' list where legally appropriate, plus a per-tenant one, and screen every import against them.",
+    "Build a complaints intake that acknowledges within 30 days."
+   ],
+   "dont": [
+    "Text or email UK or EU consumers from scraped or bought lists",
+    "Ask leads for friends' contact details for marketing"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Art. 14 notice timing",
+     "value": "Within 1 month, or at first communication if earlier"
+    },
+    {
+     "metric": "UK complaint acknowledgement (DUAA)",
+     "value": "Within 30 days"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Electronic mail marketing (Guide to PECR)",
+     "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guide-to-pecr/electronic-and-telephone-marketing/electronic-mail-marketing/",
+     "publisher": "ICO",
+     "date": "under review after DUAA 2025; accessed 2026-10-27"
+    },
+    {
+     "title": "When can we rely on legitimate interests?",
+     "url": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/lawful-basis/legitimate-interests/when-can-we-rely-on-legitimate-interests/",
+     "publisher": "ICO",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "The Data (Use and Access) Act 2025: what does it mean for organisations?",
+     "url": "https://ico.org.uk/about-the-ico/what-we-do/legislation-we-cover/data-use-and-access-act-2025/the-data-use-and-access-act-2025-what-does-it-mean-for-organisations/",
+     "publisher": "ICO",
+     "date": "updated 2026-06-19"
+    },
+    {
+     "title": "Art. 21 GDPR: Right to object",
+     "url": "https://gdpr-info.eu/art-21-gdpr/",
+     "publisher": "gdpr-info.eu (GDPR text)",
+     "date": "Regulation (EU) 2016/679"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uk-fake-reviews-dmcc",
+   "title": "UK: fake and concealed-incentive reviews are banned, and publishers must take active steps",
+   "category": "UK consumer law (DMCC Act 2024)",
+   "guidance": "Since the April 2025 changes under the Digital Markets, Competition and Consumers Act, the UK bans fake reviews, reviews paid for or incentivised without that being made clear, and misleading review information such as star ratings or counts built on them. The CMA expects any business that publishes reviews to have a published policy, a regular risk assessment, detection and investigation processes, and reasonable, proportionate steps to prevent and remove banned content. It stays responsible even if it outsources moderation. UK-facing coaching brands that display testimonials or star ratings on their own sites therefore need a written review policy and a moderation log.",
+   "as_of": "2026-10",
+   "steps": [
+    "Publish a review policy on the site (no fake reviews; how incentives are handled and disclosed).",
+    "Run and document a risk assessment at least annually and before changes to how reviews are collected.",
+    "Flag incentivised reviews visibly, and exclude unverifiable ones from aggregate ratings."
+   ],
+   "dont": [
+    "Show star averages that include reviews you can't verify"
+   ],
+   "sources": [
+    {
+     "title": "Short guide for businesses: publishing consumer reviews and complying with consumer protection law (CMA208)",
+     "url": "https://www.gov.uk/government/publications/fake-reviews/short-guide-for-businesses-publishing-consumer-reviews-and-complying-with-consumer-protection-law",
+     "publisher": "Competition and Markets Authority / GOV.UK",
+     "date": "2025-04-04"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "subscriptions-auto-renewal",
+   "title": "Recurring memberships, SaaS seats and continuity offers: ROSCA and California's auto-renewal law",
+   "category": "Negative option / auto-renewal",
+   "guidance": "Federal ROSCA bars charging for an online negative-option offer unless all material terms are clearly disclosed before billing details are collected, express informed consent is obtained before the charge, and a simple way to stop recurring charges is provided. California's Automatic Renewal Law (BPC 17602) goes further. Terms must sit next to the consent request, consent must be affirmative and kept for at least 3 years (or 1 year after termination, if longer), and an acknowledgment must include how to cancel. Anything bought online must be cancellable online, at will, through a prominent link or button or a prefilled termination email. A reminder is required 3–21 days before a free trial or promotional price longer than 31 days ends, and 15–45 days before an annual or longer term renews. Retention offers are allowed only if the customer stays free to cancel.",
+   "as_of": "2026-10",
+   "steps": [
+    "Show price, billing frequency, renewal and cancellation terms next to the purchase button, and require an unticked consent checkbox.",
+    "Store consent proof (version, timestamp, IP) for at least 3 years.",
+    "Email an acknowledgment with the terms and a cancellation link.",
+    "Provide one-click online cancellation inside the account. Schedule renewal and trial-end reminders automatically for California customers.",
+    "If cancellation by phone is offered, answer promptly, and return voicemail cancellation requests within 1 business day."
+   ],
+   "dont": [
+    "Force a 'cancellation call' with closers for plans bought online",
+    "Bury continuity charges inside a high-ticket programme fee"
+   ],
+   "benchmarks": [
+    {
+     "metric": "CA consent record retention",
+     "value": ">= 3 years or 1 year after termination, whichever is longer"
+    },
+    {
+     "metric": "CA trial or promo reminder (>31 days)",
+     "value": "3–21 days before it ends"
+    },
+    {
+     "metric": "CA annual renewal reminder",
+     "value": "15–45 days before renewal"
+    }
+   ],
+   "sources": [
+    {
+     "title": "15 U.S. Code 8403 (ROSCA)",
+     "url": "https://www.law.cornell.edu/uscode/text/15/8403",
+     "publisher": "Cornell LII",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "California Business and Professions Code 17602",
+     "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=17602",
+     "publisher": "California Legislative Information",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "refund-guarantees-financing-credit-stacking",
+   "title": "Refund guarantees, financing and 'business credit' upsells: a frequent trigger for enforcement",
+   "category": "FTC enforcement patterns",
+   "guidance": "Recent FTC cases show the same pattern. Sellers promise a refund or 'profit guarantee' if the buyer doesn't earn a set amount, then attach conditions so few buyers ever qualify. Air AI was charged with promising refund or buy-back guarantees and rarely honouring them. Growth Cave sold a $10,000 profit guarantee, then a $6,800 'credit repair' and '0% business loan' service that, the FTC alleges, opened several business credit cards for buyers and left many in debt. The Business Opportunity Rule separately bans misrepresenting refund terms and failing to refund buyers who meet the stated conditions. Meta also acts against advertisers when users repeatedly report broken refund policies. For a coaching programme, any guarantee should be simple, measurable within the buyer's control, honoured without friction, and tracked.",
+   "as_of": "2026-10",
+   "steps": [
+    "Write guarantee conditions in plain language and show them before purchase and in the contract.",
+    "Track every refund request, the decision and its timing in the CRM, and report the honour rate monthly.",
+    "Disclose total financed cost, APR and the lender's identity before any financing application. Never open credit products for buyers.",
+    "Make sure the AI agent never cites the guarantee as a reason the buyer 'can't lose'."
+   ],
+   "dont": [
+    "Offer earnings-based guarantees ('make $X or your money back')",
+    "Upsell credit repair, 'credit stacking' or business-loan help to fund the programme"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Growth Cave alleged consumer losses",
+     "value": "~$50M",
+     "context": "FTC complaint, March 2025"
+    },
+    {
+     "metric": "Air AI alleged per-consumer losses",
+     "value": "Up to $250,000",
+     "context": "FTC press release, August 2025, as cited in the March 2026 settlement coverage"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Air AI and its Owners will be Banned from Marketing Business Opportunities",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2026/03/air-ai-its-owners-will-be-banned-marketing-business-opportunities-settle-ftc-charges-company-misled",
+     "publisher": "FTC",
+     "date": "2026-03-24"
+    },
+    {
+     "title": "FTC Takes Action to Stop Sprawling 'Growth Cave' Business Opportunity and Credit Repair Scam",
+     "url": "https://www.ftc.gov/news-events/news/press-releases/2025/03/ftc-takes-action-stop-sprawling-growth-cave-business-opportunity-credit-repair-scam",
+     "publisher": "FTC",
+     "date": "2025-03-07"
+    },
+    {
+     "title": "16 CFR 437.6 Other prohibited practices",
+     "url": "https://www.law.cornell.edu/cfr/text/16/437.6",
+     "publisher": "Cornell LII (eCFR text)",
+     "date": "accessed 2026-10-27"
+    },
+    {
+     "title": "Prohibited commercial practices (Community Standards)",
+     "url": "https://transparency.meta.com/policies/community-standards/prohibited-commercial-practices/",
+     "publisher": "Meta Transparency Center",
+     "date": "accessed 2026-10-27"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "The session's web-search budget ran out partway through, so several items below could not be verified. They need a follow-up research pass.",
+  "FTC civil penalty amounts for 2026: the latest confirmed figure is $53,088 per violation (January 2025 adjustment). I could not confirm whether a January 2026 adjustment to 16 CFR 1.98 was published.",
+  "Status of the FTC's January 2025 proposal to extend the Business Opportunity Rule to business coaching ('Business and Money-Making Opportunity Rule') and of the companion Earnings Claim Rule: finalised, withdrawn, or dormant?",
+  "Status of the FCC's August 2024 proposed rule on AI-generated calls and texts (consent and in-call disclosure for AI content), and of the October 2025 proposal on modifying the 'revoke-all' rule.",
+  "McLaughlin Chiropractic v. McKesson (US Supreme Court, June 2025) reportedly held that district courts are not bound by FCC interpretations of the TCPA. I did not verify this against a primary source, or its effect on AI-voice and consent litigation.",
+  "Whether the FTC's 2024 'click-to-cancel' amendments to the Negative Option Rule were vacated (reportedly by the 8th Circuit in July 2025) and whether the FTC restarted rulemaking. ROSCA and state laws apply either way.",
+  "Florida and other state limits on calling hours (reportedly 8am–8pm in Florida) and caps on calls per 24 hours. Also mini-TCPAs in Oklahoma, Maryland, Washington and other states. Not verified in this pass.",
+  "Texas: whether sellers that only send texts must now register with the Secretary of State under Chapter 302 after SB 140, and which exemptions apply.",
+  "UK: whether the Data (Use and Access) Act 2025 raised PECR fines to UK GDPR levels (reported as up to £17.5m or 4% of turnover). This was not confirmed on the ICO pages read. Also the CMA's maximum fine for fake-review breaches under the DMCC Act (reported as up to 10% of global turnover).",
+  "EU AI Act: whether the 'Digital Omnibus' changes delay or soften Article 50 obligations (particularly machine-readable marking under 50(2)) beyond 2 August 2026.",
+  "Utah's AI disclosure law (as amended in 2025), Colorado's AI Act timing, and California's digital-replica laws: not verified this session.",
+  "Recording consent: exact current rules in Michigan, Nevada, Oregon (phone vs in-person), Delaware and Hawaii. The DMLP survey used is no longer updated, and its Illinois note predates Illinois' 2014 statutory amendment.",
+  "The exact wording of CTIA's Messaging Principles and Best Practices could not be read (PDF not machine-readable). Opt-in confirmation elements here come from carrier and aggregator documentation.",
+  "Whether Meta's Special Ad Categories (employment or financial products) apply to coaching offers framed as career or income opportunities.",
+  "Specific TCPA vicarious-liability rules for a platform that places AI calls or texts on behalf of tenant businesses: not researched in this pass."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}

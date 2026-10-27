@@ -1,0 +1,1031 @@
+{
+ "domain": "webinars-vsl-funnels",
+ "title": "Webinars, VSLs & funnels",
+ "researched": "2026-10-27",
+ "entries": [
+  {
+   "id": "webinar-show-up-benchmarks-2026",
+   "title": "Set webinar show-up targets from 2025-26 platform data, then calibrate to your own traffic",
+   "category": "benchmarks",
+   "guidance": "The largest recent platform dataset (Livestorm, 33,786 sessions held in 2025) puts live show-up at 47.7%, slightly down from 48.9% in 2024. Goldcast's 2024 data (more than 19K webinars) shows a 33% average attendance rate. ON24 reports roughly 60% registrant-to-attendee once on-demand viewers are counted. All three datasets are mostly B2B with warm lists, so for cold paid-social coaching webinars treat them as a ceiling, not a promise. Always say which definition you are using (live only or live plus replay; average of per-webinar ratios or pooled totals), because the same funnel can read about 21% or 33% depending on the maths. Treat live show-up below about 30% as a leak to diagnose (reminders, timing, list quality). That threshold is a vendor rule of thumb.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Live show-up rate",
+     "value": "47.7% (48.9% in 2024)",
+     "context": "Livestorm 2026 report, 2025 data, 33,786 sessions from 3,199 orgs; mostly B2B"
+    },
+    {
+     "metric": "Average registrants / live attendees per webinar",
+     "value": "175 / 83",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Average attendance rate (mean of per-webinar ratios)",
+     "value": "33% (up from 29%)",
+     "context": "Goldcast 2025 report, 2024 data, 19K+ webinars, 418 brands; B2B"
+    },
+    {
+     "metric": "Registrant-to-attendee including on-demand",
+     "value": "~60%",
+     "context": "ON24 2026 report on 2025 data, cited secondhand; ON24's attendee-count and minutes figures conflict across summaries"
+    },
+    {
+     "metric": "Leak threshold",
+     "value": "<30% live show-up",
+     "context": "EasyWebinar vendor heuristic, not a measured benchmark"
+    }
+   ],
+   "do": [
+    "Report three rates separately: registration to live, registration to any view (live plus replay), and live attendee to offer click",
+    "Segment show-up by traffic source (own list, organic, paid cold, retargeting), because blended rates hide problems",
+    "Record the definition and averaging method next to every benchmark in the dashboard"
+   ],
+   "dont": [
+    "Don't promise clients B2B-level show-up rates for cold consumer traffic",
+    "Don't compare a live-only rate with an ON24-style live-plus-on-demand rate"
+   ],
+   "sources": [
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "40+ Webinar Statistics B2B Marketers Should Know for 2025",
+     "url": "https://www.goldcast.io/blog-post/2025-webinar-statistics-b2b-marketers-should-know",
+     "publisher": "Goldcast",
+     "date": "2025-07-08"
+    },
+    {
+     "title": "Webinar registration and attendance statistics 2026 (roundup citing ON24 and Livestorm)",
+     "url": "https://stealthagents.com/research/webinar-registration-attendance-statistics-2026",
+     "publisher": "Stealth Agents",
+     "date": "2026-09-23"
+    },
+    {
+     "title": "How to Increase Webinar Show-Up Rates",
+     "url": "https://easywebinar.com/blog/how-to-drive-webinar-attendance/",
+     "publisher": "EasyWebinar",
+     "date": "2026-05-29"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "registration-window-and-timing",
+   "title": "Put most promotion in the final 7 days, keep registration open until start, and plan around seasonality more than weekday",
+   "category": "registration",
+   "guidance": "In Livestorm's 2025 data (about 7M registrations), 49.7% of registrations came in the final 7 days, 15.3% on the day itself, and only 16.4% three or more weeks early. Weekday makes little difference to show-up: Tuesday is best at 51.7% and Friday or weekend is 50.3%. Season matters more: January was highest at 50.4% and August lowest at 42.9%. Top-performing teams leave registration open right up to the start. Email is the main registration driver, named as a top-3 channel by 86.3% of surveyed teams, against 20.4% for paid social. So a coaching client's own list and email warm-up matter more than ad spend alone. For cold paid traffic, offering a session within the next few days limits how much interest decays between opt-in and the event. That is an inference from the timing data, not a measured result.",
+   "as_of": "2026-10",
+   "steps": [
+    "For list-driven live events, open registration 10-14 days out",
+    "Put at least half of the promotional emails, posts and ad budget into the final 7 days",
+    "For cold paid traffic, offer the next 1-3 session times within about a week, or a just-in-time option",
+    "Keep the registration page live until start time and send a direct 'join now' path on the day",
+    "Avoid August and major holiday weeks for flagship launches; test two time slots instead of agonising over the weekday"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Registrations in final 7 days",
+     "value": "49.7%",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Day-of registrations",
+     "value": "15.3%",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Registrations 3+ weeks early",
+     "value": "16.4%",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Show-up by weekday",
+     "value": "Tue 51.7%, Mon 51.5%, Wed 51%, Thu 50.9%, Fri/weekend 50.3%",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Show-up by month",
+     "value": "Jan 50.4% (high), Aug 42.9% (low)",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Email as a top-3 registration channel",
+     "value": "86.3% of teams (paid social 20.4%)",
+     "context": "Livestorm survey of 853 B2B GTM teams, Dec 2025"
+    }
+   ],
+   "sources": [
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "40+ Webinar Statistics B2B Marketers Should Know for 2025",
+     "url": "https://www.goldcast.io/blog-post/2025-webinar-statistics-b2b-marketers-should-know",
+     "publisher": "Goldcast",
+     "date": "2025-07-08"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "reminder-sequence-email-sms-calendar",
+   "title": "Use a D-3 / D-1 / day-of / 1 hour / 'live now' reminder ladder across email, calendar and consented SMS",
+   "category": "show-up",
+   "guidance": "Livestorm's top performers (show-up above 60%) pair stricter registrant qualification with personalised reminders at 3 days, 1 day and the day of the event. That is a description of what they do, not a controlled test. Stronger evidence comes from randomised trials of appointment reminders: SMS raised attendance from 67.8% to 78.6% compared with no reminder (risk ratio 1.14) and matched phone-call reminders at lower cost. That makes SMS worth adding wherever you hold valid consent. Keep SMS to logistics (time, link, one-line reason to come) and carry the persuasion in email. Vendor guidance caps SMS at roughly 5-8 per event, because more drives opt-outs. Add the event to the attendee's calendar at the moment they register.",
+   "as_of": "2026-10",
+   "steps": [
+    "At registration: confirmation email, add-to-calendar link or .ics file, and an SMS confirmation only if express written consent was captured",
+    "D-3: email stating the specific takeaway, plus 'reply with your biggest question'",
+    "D-1: email and SMS",
+    "Morning of the event: email",
+    "T-60 minutes: email and SMS with the direct join link",
+    "T-0 to T+5: 'we're live' email and SMS",
+    "T+10 to T+15: 'already started, join now' to registrants who haven't joined",
+    "Within 1-2 hours after: replay email, with different copy for attendees and no-shows"
+   ],
+   "do": [
+    "Personalise reminders with the registrant's stated goal or question captured on the form",
+    "Send the SMS sequence from a 10DLC-registered number and honour STOP immediately"
+   ],
+   "dont": [
+    "Don't send marketing texts before 8am or after 9pm in the recipient's local time",
+    "Don't send more than about 8 SMS per event",
+    "Don't text anyone whose number was collected without TCPA-grade consent"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Attendance with SMS reminder vs none",
+     "value": "78.6% vs 67.8% (RR 1.14, 95% CI 1.03-1.26)",
+     "context": "Cochrane review, 7 RCTs, 5,841 participants; healthcare appointments, not webinars"
+    },
+    {
+     "metric": "No-show reduction from automated reminders",
+     "value": "28% average drop",
+     "context": "Calendly sales users; vendor-reported, no methodology given"
+    },
+    {
+     "metric": "Recommended booking-reminder timing",
+     "value": "24 hours and 4 hours before",
+     "context": "Calendly guidance"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Mobile phone messaging reminders for attendance at healthcare appointments (CD007458)",
+     "url": "https://www.cochrane.org/evidence/CD007458_mobile-phone-messaging-reminders-attendance-healthcare-appointments",
+     "publisher": "Cochrane",
+     "date": "2013-12-05"
+    },
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "How to decrease sales no-show rates",
+     "url": "https://calendly.com/blog/reduce-no-show-rates-sales",
+     "publisher": "Calendly",
+     "date": "2020-06-05"
+    },
+    {
+     "title": "How to Increase Webinar Show-Up Rates",
+     "url": "https://easywebinar.com/blog/how-to-drive-webinar-attendance/",
+     "publisher": "EasyWebinar",
+     "date": "2026-05-29"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "webinar-length-and-offer-moment",
+   "title": "Run 60-75 minutes, but tease the offer early and make the core pitch before most live viewers leave",
+   "category": "webinar-structure",
+   "guidance": "Livestorm's 2025 webinars averaged 68 minutes, but average watch time was 26 minutes (38% of the session). The largest average live audiences were at 60-75 minute sessions (205 attendees). Goldcast finds 58.3% of webinars run 45-60 minutes with about 29 minutes of average watch time, and sessions under 30 minutes rose from 3% to 11.3% of the total. A pitch at minute 55 therefore reaches only a minority of live viewers. Announce the next step early, start the offer around the midpoint, and keep a CTA button visible from then on. Wistia's data supports long-form for decisions: videos over 30 minutes had 17% of viewers act on the CTA, and its guidance for 30-60 minute videos is to place the CTA in the second half. The timings below are an inference from these datasets, not a tested template.",
+   "as_of": "2026-10",
+   "steps": [
+    "0-5 min: the specific outcome, who it is and isn't for, the agenda, and a clear note that you'll explain how to work together near the end",
+    "5-30 min: teach 2-3 belief shifts or frameworks, with proof that includes typical-results context",
+    "30-45 min: the offer: who it fits, what's included, how the strategy or enrolment call works, and investment framing. State a deadline or bonus only if it is real and enforced",
+    "From the offer onward: a persistent on-screen button to apply or book, with the link repeated in chat",
+    "45-70 min: live Q&A used to handle objections, restating the CTA about every 10 minutes",
+    "Log every question asked in the session to the CRM as objection data for the closers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average webinar length / average watch time",
+     "value": "68 min / 26 min (38%)",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Average attendees by duration",
+     "value": "60-75 min: 205; 45-59 min: 161; 30-44 min: 152",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Most common length",
+     "value": "45-60 min (58.3% of webinars)",
+     "context": "Goldcast, 2024 data"
+    },
+    {
+     "metric": "CTA conversion, videos over 30 min",
+     "value": "17% (vs 5% for 3-5 min, 2% for under 3 min)",
+     "context": "Wistia 2025 State of Video (2024 data), via Chief Marketer"
+    }
+   ],
+   "sources": [
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "40+ Webinar Statistics B2B Marketers Should Know for 2025",
+     "url": "https://www.goldcast.io/blog-post/2025-webinar-statistics-b2b-marketers-should-know",
+     "publisher": "Goldcast",
+     "date": "2025-07-08"
+    },
+    {
+     "title": "How to Add a Video CTA to Increase Conversions",
+     "url": "https://wistia.com/learn/marketing/using-video-ctas",
+     "publisher": "Wistia",
+     "date": "2026-04-22"
+    },
+    {
+     "title": "Wistia State of Video Report: Engagement Rates Down, Content Less Promoted",
+     "url": "https://chiefmarketer.com/wistia-state-of-video-report-engagement-down-content-under-promoted",
+     "publisher": "Chief Marketer",
+     "date": "2025-04-11"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "replay-strategy",
+   "title": "Send the replay to every registrant within hours, clip the teaching publicly, and treat replay viewers who reach the offer as hot leads",
+   "category": "replay",
+   "guidance": "Replays carry real volume. ON24 reports that on-demand viewing is now roughly half of all webinar attendance. Goldcast found 80% of webinars published on-demand (up from 53%), 31% of live attendees rewatching, and 9.5% of registrants watching on-demand. In Livestorm's 2025 data, public replays averaged 14.6 views, against 3.97 for registered-only and 3.12 for closed: about 3.7 times the reach. For a high-ticket coaching funnel, the full replay that contains the offer should stay behind the existing registration (no second form), while a clipped teaching segment goes out publicly to reach more people. Short replay windows (48-72 hours) are common practice but have no published conversion data. Use one only when the deadline is genuine and enforced.",
+   "as_of": "2026-10",
+   "steps": [
+    "Within 1-2 hours of the live session, email (and SMS, if consented) the replay link to all registrants, with separate copy for attendees and no-shows",
+    "Add chapters and a CTA overlay that appears once the offer section starts",
+    "Track replay watch depth; anyone who watches past the offer start goes to a setter follow-up task",
+    "Cut 2-4 short teaching clips for public posting, ending with a link to the next live session or the VSL",
+    "If you advertise a replay deadline, take the replay down at that time and don't reopen it quietly"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average on-demand views by access setting",
+     "value": "Public 14.60; registered-only 3.97; closed 3.12",
+     "context": "Livestorm 2025 data (20% / 62% / 18% of teams use each)"
+    },
+    {
+     "metric": "Live attendees who rewatch",
+     "value": "31%",
+     "context": "Goldcast, 2024 data"
+    },
+    {
+     "metric": "Registrants who watch on-demand",
+     "value": "9.5% (7.15% on-demand only)",
+     "context": "Goldcast, 2024 data"
+    },
+    {
+     "metric": "On-demand share of attendance",
+     "value": "~50-51%",
+     "context": "ON24 2025-26 benchmarks via secondary summaries; B2B with long on-demand availability"
+    }
+   ],
+   "sources": [
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "40+ Webinar Statistics B2B Marketers Should Know for 2025",
+     "url": "https://www.goldcast.io/blog-post/2025-webinar-statistics-b2b-marketers-should-know",
+     "publisher": "Goldcast",
+     "date": "2025-07-08"
+    },
+    {
+     "title": "ON24 status update summary (2026 benchmarks)",
+     "url": "https://quartr.com/events/on24-inc-ontf-status-update_3ev5xdj9",
+     "publisher": "Quartr",
+     "date": "2026-07-08"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "evergreen-vs-live",
+   "title": "Prove the offer live, then automate the best session, and never fake 'live' signals",
+   "category": "evergreen",
+   "guidance": "Most practitioner guidance says to validate an offer live first: run the same webinar several times, fix the objections that show up, and record and automate only once conversion is stable. One vendor suggests 5-10 sessions and about 10% attendee-to-buyer conversion for lower-priced offers. For high-ticket, the equivalent gate is a stable attendee-to-booked-call rate. Vendors claim just-in-time or evergreen sessions reach 55-70% show-up against 25-50% for live, but these numbers come only from companies selling evergreen software. Treat them as hypotheses to split-test. Evergreen trades live Q&A and genuine urgency for consistency, around-the-clock availability, and clean A/B testing. If a session is automated, don't present it as live, and don't fabricate chat messages, attendee counters or 'spots left' timers. The FTC's reviews rule prohibits fake social-proof indicators, and invented scarcity is deception risk.",
+   "as_of": "2026-10",
+   "steps": [
+    "Run live sessions until the attendee-to-application or booked-call rate holds within about ±20% over at least 3 consecutive sessions",
+    "Record the strongest session; edit out dated references and keep real Q&A segments, labelled as recorded",
+    "Launch evergreen with just-in-time or same-day session times and the same reminder ladder",
+    "Run live 'encore' or Q&A sessions periodically to refresh proof and capture new objections",
+    "Re-record whenever the offer, price, guarantee or proof changes"
+   ],
+   "dont": [
+    "Don't simulate live chat or attendee counts",
+    "Don't run countdown timers that reset per visitor or show 'seats left' that aren't real"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Attendee-to-buyer gate before automating",
+     "value": "~10%, sustained",
+     "context": "EasyWebinar author heuristic for lower-ticket offers; not a measured benchmark"
+    },
+    {
+     "metric": "Evergreen/JIT vs live show-up",
+     "value": "55-70% vs 25-50%",
+     "context": "Vendor-only claims, no methodology"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Live vs. Automated vs. Evergreen Webinars: Which Should You Run?",
+     "url": "https://easywebinar.com/blog/live-vs-automated-webinar/",
+     "publisher": "EasyWebinar",
+     "date": "2026-05-04"
+    },
+    {
+     "title": "FTC Issues Final Rule on Consumer Reviews and Testimonials",
+     "url": "https://www.morganlewis.com/pubs/2024/08/ftc-issues-final-rule-on-consumer-reviews-and-testimonials",
+     "publisher": "Morgan Lewis",
+     "date": "2024-08-26"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "vsl-length-and-structure",
+   "title": "For a call-booking VSL, use a longer form that filters for intent, with a tight hook and the CTA in the second half",
+   "category": "vsl",
+   "guidance": "Wistia's 2024 platform data shows a trade-off. The average share of a video watched falls from 47% (under 5 minutes) to 38% (5-30 minutes) to 21% (over 30 minutes). Meanwhile the share of viewers acting on the in-video CTA rises from 2% (under 3 minutes) to 5% (3-5 minutes) to 17% (over 30 minutes). Longer videos lose casual viewers and keep the people ready to act. For a high-ticket offer whose next step is an application or call, that points to a long-form VSL on the booking page. Roughly 15-45 minutes is an inference, not a tested VSL benchmark. Pair it with a 60-120 second cut for retargeting and the confirmation page. Wistia's guidance for 30-60 minute videos is to place the CTA in the second half, and it notes engagement drops about 11% once videos pass 30 minutes, so cut padding. A neutral structure: outcome-and-audience hook, who it's not for, the problem and why common fixes fail, the mechanism, proof with typical-results context, what working together looks like, what happens on the call, then FAQ and objections.",
+   "as_of": "2026-10",
+   "steps": [
+    "Write 3-5 alternative openings (the first 30-60 seconds) and test them first, because early retention gates everything after it",
+    "Name the audience and the outcome in the first sentence and disqualify the wrong buyers early",
+    "Show the mechanism (why this approach works) before the offer",
+    "Use proof that states typical results, not only outliers",
+    "Reveal the CTA button below the video once the offer section starts, and keep it visible",
+    "Add an FAQ section or chapters so high-intent viewers can jump to price, fit and process"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average engagement by length",
+     "value": "Under 5 min 47%; 5-30 min 38%; over 30 min 21%",
+     "context": "Wistia 2025 State of Video (2024 data), via Chief Marketer; all business video, not VSL-specific"
+    },
+    {
+     "metric": "CTA conversion by length",
+     "value": "Over 30 min 17%; 3-5 min 5%; under 3 min 2%",
+     "context": "Same source"
+    },
+    {
+     "metric": "Engagement drop past 30 min",
+     "value": "~11%",
+     "context": "Wistia optimal-length guidance"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Wistia State of Video Report: Engagement Rates Down, Content Less Promoted",
+     "url": "https://chiefmarketer.com/wistia-state-of-video-report-engagement-down-content-under-promoted",
+     "publisher": "Chief Marketer",
+     "date": "2025-04-11"
+    },
+    {
+     "title": "Optimal Video Length: How Long Should A Marketing Video Be?",
+     "url": "https://wistia.com/blog/optimal-video-length",
+     "publisher": "Wistia",
+     "date": "2025-07-01"
+    },
+    {
+     "title": "How to Add a Video CTA to Increase Conversions",
+     "url": "https://wistia.com/learn/marketing/using-video-ctas",
+     "publisher": "Wistia",
+     "date": "2026-04-22"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "vsl-instrumentation-and-testing",
+   "title": "Instrument every VSL with play, unmute, 25/50/90% retention, CTA-click and opt-in rates, and test in funnel order",
+   "category": "vsl",
+   "guidance": "VSL hosting built for conversion now reports a standard set of metrics: play rate, unmute rate, bounce rate, retention at 25%, 50% and 90%, CTA click rate, opt-in rate (from a play gate), and conversion rate, benchmarked by industry and video type. Fix the funnel from the top down. Play rate depends on thumbnail, autoplay and placement. Early retention depends on the hook. CTA clicks depend on offer clarity and when the button appears. Conversion depends on the booking page. Benchmarks from these tools are anonymised platform aggregates and should be read as guidance, not rules. Vendor claims such as 'smart autoplay lifts play rate to over 90%' have no published methodology. Because Wistia reports an average CTA conversion of about 16% across its platform, a VSL CTA well below that on warm traffic is a strong sign to rework the offer section or button timing.",
+   "as_of": "2026-10",
+   "steps": [
+    "Tag every VSL with traffic source, so play and retention can be compared across cold, warm and retargeting traffic",
+    "Test thumbnail and autoplay or unmute prompt first (play and unmute rates)",
+    "Then test openings (25% retention)",
+    "Then test the offer section and button reveal time (CTA click rate)",
+    "Fire a server-side conversion event when a booked call follows a VSL view, so you can attribute down to the video variant"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average CTA conversion across Wistia",
+     "value": "~16%",
+     "context": "Wistia platform average, all video types"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Benchmarks report (Vidalytics help centre)",
+     "url": "https://help.vidalytics.com/en/articles/12685462-benchmarks-report",
+     "publisher": "Vidalytics",
+     "date": "2026"
+    },
+    {
+     "title": "How to Add a Video CTA to Increase Conversions",
+     "url": "https://wistia.com/learn/marketing/using-video-ctas",
+     "publisher": "Wistia",
+     "date": "2026-04-22"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "application-funnel-instant-booking",
+   "title": "Qualify on the form, then show pooled closer availability instantly on the same page",
+   "category": "application-funnel",
+   "guidance": "Chili Piper's 2026 benchmark (2.93M mid-market form submissions, July 2025 to June 2026) found 36% of submissions booked a meeting (top quartile 58 per 100, bottom quartile 26). Of qualified submissions, 62% booked. Routing method mattered most: when qualified buyers saw the combined open times of every rep who could take the call, 76% booked, against 18% when shown a single rep's calendar. About half of meetings were set for the same or next day, 90% within a week, and 40% were booked outside business hours (14% at weekends). Translated to a coaching application funnel: ask a few qualifying questions, send qualified applicants straight to a pooled closer calendar on the same page, keep the booking window short, and route people who don't qualify to a lower-priced offer or nurture path, not a dead end. This is B2B inbound data; cold consumer traffic will book at lower rates.",
+   "as_of": "2026-10",
+   "steps": [
+    "Application form: name, email, phone (with a separate, unticked SMS consent box), plus 3-6 qualifiers (current situation, goal, timeline, ability to invest, 'why now')",
+    "Score responses in real time; route qualified applicants straight to a round-robin calendar across all eligible closers",
+    "Offer slots only within the next 2-5 days (Calendly suggests 2-3 days for inbound)",
+    "Allow after-hours and weekend slots if closers can cover them",
+    "Send applicants who don't qualify to a lower-priced offer or nurture sequence",
+    "If someone submits the form but doesn't book, trigger speed-to-lead follow-up within minutes"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Form submission to booked meeting",
+     "value": "36% (top quartile 58%, bottom 26%)",
+     "context": "Chili Piper 2026 mid-market benchmark, B2B inbound"
+    },
+    {
+     "metric": "Qualified submissions that book",
+     "value": "62%",
+     "context": "Same source"
+    },
+    {
+     "metric": "Booking rate by routing",
+     "value": "Pooled availability 76% vs single-rep 18% vs named owner ~50%",
+     "context": "Same source, qualified buyers"
+    },
+    {
+     "metric": "Meetings booked after hours",
+     "value": "40% (14% weekends)",
+     "context": "Same source"
+    }
+   ],
+   "sources": [
+    {
+     "title": "2026 Web Conversion Benchmark (mid-market)",
+     "url": "https://www.chilipiper.com/reports/mid-market-conversion-benchmark",
+     "publisher": "Chili Piper",
+     "date": "2026"
+    },
+    {
+     "title": "How to decrease sales no-show rates",
+     "url": "https://calendly.com/blog/reduce-no-show-rates-sales",
+     "publisher": "Calendly",
+     "date": "2020-06-05"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "speed-to-lead",
+   "title": "Contact applicants who don't book within minutes, not hours",
+   "category": "sales-process",
+   "guidance": "The best-known study of online-lead decay (HBR, 2011) found that companies contacting a lead within an hour were nearly 7 times as likely to qualify it as those that waited even one more hour. They were more than 60 times as likely as those that waited 24 hours or longer. In the same audit of 2,241 US firms, only 37% responded within an hour, the average response was 42 hours, and 23% never responded. The data is old, but no stronger independent study has replaced it, and newer booking data still shows buyers prefer same-day or next-day meetings. Operationally, a lead who applies or registers without booking should get an automated, consented SMS and email within about 5 minutes and a human or AI setter call shortly after. The call must also stay within TCPA consent and quiet-hours rules.",
+   "as_of": "2026-10",
+   "steps": [
+    "Trigger: application submitted but no booking within 10 minutes, or a webinar attendee clicked the offer button but didn't book",
+    "Within 5 minutes: SMS (if consented) plus email with a direct booking link and one sentence based on their application answers",
+    "Within 15-60 minutes: setter call attempt during permitted hours",
+    "Then 3-5 more attempts over 3 days on varied channels, stopping immediately if they opt out"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Qualification likelihood, contact within 1 h vs 1 h later",
+     "value": "~7x",
+     "context": "HBR 2011, 1.25M leads from 42 companies"
+    },
+    {
+     "metric": "Qualification likelihood, within 1 h vs 24 h+",
+     "value": ">60x",
+     "context": "Same study"
+    },
+    {
+     "metric": "Average firm response time",
+     "value": "42 hours; 37% within 1 h; 23% never",
+     "context": "Audit of 2,241 US companies"
+    }
+   ],
+   "sources": [
+    {
+     "title": "The Short Life of Online Sales Leads",
+     "url": "https://hbr.org/2011/03/the-short-life-of-online-sales-leads",
+     "publisher": "Harvard Business Review",
+     "date": "2011-03"
+    },
+    {
+     "title": "How fast do marketing leads turn cold (summary of the HBR findings)",
+     "url": "https://ventureharbour.com/how-fast-do-marketing-leads-turn-cold-and-how-to-stop-it-happening/",
+     "publisher": "Venture Harbour",
+     "date": "2026-04-13"
+    },
+    {
+     "title": "2026 Web Conversion Benchmark (mid-market)",
+     "url": "https://www.chilipiper.com/reports/mid-market-conversion-benchmark",
+     "publisher": "Chili Piper",
+     "date": "2026"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "sales-call-show-rate",
+   "title": "Protect call show rate with confirmation content, 24 h and short-notice reminders, and automatic rebooking",
+   "category": "show-up",
+   "guidance": "Automated reminders reliably cut missed appointments. Randomised trials show SMS reminders lift attendance about 14% relative to no reminder. Calendly reports its sales users saw an average 28% drop in no-shows, though that figure is vendor-reported. Recommended timing is one reminder 24 hours before and one about 4 hours before. After booking, send prep material (a short video on what will happen on the call, relevant case studies with typical-results context, an agenda), because a booked call competes with the prospect's other commitments. Keep the gap between booking and call short, since most meetings in recent booking data happen within a few days. Automatically send no-shows a rebooking link within minutes, then follow up with a setter.",
+   "as_of": "2026-10",
+   "steps": [
+    "Confirmation page: short video on what to expect, plus a request to add the call to their calendar and confirm by SMS",
+    "Immediately: calendar invite plus an email with the agenda and prep questions",
+    "24 h before: email and SMS reminder",
+    "2-4 h before: SMS with the join link",
+    "10 min before: 'starting soon' SMS from the closer's identity",
+    "No-show at +5 min: call once, then send an SMS and email with a rebooking link; one more attempt the next day"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Attendance uplift from SMS reminders",
+     "value": "RR 1.14 (78.6% vs 67.8%)",
+     "context": "Cochrane, healthcare RCTs"
+    },
+    {
+     "metric": "No-show reduction from automated reminders",
+     "value": "28% average",
+     "context": "Calendly, vendor-reported"
+    }
+   ],
+   "sources": [
+    {
+     "title": "How to decrease sales no-show rates",
+     "url": "https://calendly.com/blog/reduce-no-show-rates-sales",
+     "publisher": "Calendly",
+     "date": "2020-06-05"
+    },
+    {
+     "title": "Mobile phone messaging reminders for attendance at healthcare appointments (CD007458)",
+     "url": "https://www.cochrane.org/evidence/CD007458_mobile-phone-messaging-reminders-attendance-healthcare-appointments",
+     "publisher": "Cochrane",
+     "date": "2013-12-05"
+    },
+    {
+     "title": "2026 Web Conversion Benchmark (mid-market)",
+     "url": "https://www.chilipiper.com/reports/mid-market-conversion-benchmark",
+     "publisher": "Chili Piper",
+     "date": "2026"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "unit-economics-cost-per-booked-call",
+   "title": "Model cost per booked call and per enrolled client from stage rates; don't trust published 'cost per call' numbers",
+   "category": "unit-economics",
+   "guidance": "No independent benchmark exists for cost per booked call in high-ticket coaching. Published figures are agency or vendor anecdotes, so the system should calculate it from each client's own stage rates. The usable public inputs are Meta lead costs. WordStream's 2025 data puts the leads-objective CPL at $27.66 overall (up about 21% year on year) and $28.22 for Education & Instruction, and Q4 typically runs 30-40% more expensive than Q1. Chain the stages: cost per booked call = CPL ÷ lead-to-booking rate; cost per held call = that figure ÷ show rate; cost per enrolment = cost per held call ÷ close rate. Set scale-or-kill thresholds from the maximum affordable cost per enrolment (gross margin and cash-collection terms), not from CPL alone.",
+   "as_of": "2026-10",
+   "steps": [
+    "Track six counts per cohort in the CRM: registrations or opt-ins, attendees or VSL viewers, applications, booked calls, held calls, enrolments, plus cash collected",
+    "Compute the chained costs weekly by traffic source and creative",
+    "Set a maximum cost per held call = (target cost per enrolment) × (trailing close rate)",
+    "Illustration only, not a benchmark: $28 CPL with 10% booking gives $280 per booked call; at 70% show that's $400 per held call; at 20% close that's $2,000 per enrolment",
+    "Raise Q4 budgets carefully, expecting CPL inflation"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Meta leads-objective CPL, overall",
+     "value": "$27.66 (+20.94% YoY)",
+     "context": "WordStream 2025 report, US, via AdManage summary"
+    },
+    {
+     "metric": "Meta CPL, Education & Instruction",
+     "value": "$28.22",
+     "context": "Same source"
+    },
+    {
+     "metric": "Q4 vs Q1 CPL",
+     "value": "+30-40% typical",
+     "context": "AdManage summary of 2025 data; Superads global data shows ~28%"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Facebook Ads Cost Per Lead Benchmarks",
+     "url": "https://admanage.ai/blog/facebook-ads-cost-per-lead-benchmarks",
+     "publisher": "AdManage.ai (citing WordStream 2025)",
+     "date": "2026-07-20"
+    },
+    {
+     "title": "2026 Web Conversion Benchmark (mid-market)",
+     "url": "https://www.chilipiper.com/reports/mid-market-conversion-benchmark",
+     "publisher": "Chili Piper",
+     "date": "2026"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "meta-attribution-2026",
+   "title": "Since January 2026, judge webinar and VSL ad spend on CRM cohorts, because Meta's long view-through windows are gone",
+   "category": "measurement",
+   "guidance": "On 12 January 2026, Meta removed the 7-day view and 28-day view attribution windows, and any combined windows that used them, from the Ads Insights API. Requests using them now return empty data rather than an error. What remains: 1-day click, 7-day click (default), 28-day click (comparison only), 1-day view and 1-day engaged-view. High-ticket funnels often take 1-3 weeks from opt-in to booked call to close, so in-platform reporting undercounts later conversions, and history from before 2026 isn't comparable. Optimise ads toward the earliest high-quality event that reliably happens within 7 days (a qualified registration or booked call). Send booked, held and closed events server-side (Conversions API or offline events), and make budget decisions on cost per booked call and per enrolment by cohort in the CRM.",
+   "as_of": "2026-10",
+   "steps": [
+    "Standardise reporting on 7-day click plus 1-day view and annotate the January 2026 break in dashboards",
+    "Fire server-side events for Registration, QualifiedApplication, BookedCall, HeldCall and Purchase, with deduplication IDs",
+    "Use the BookedCall event for optimisation once volume is sufficient; until then use QualifiedApplication",
+    "Reconcile platform-reported results with CRM cohorts every week"
+   ],
+   "sources": [
+    {
+     "title": "Meta Ads attribution window removed January 2026",
+     "url": "https://www.dataslayer.ai/blog/meta-ads-attribution-window-removed-january-2026",
+     "publisher": "Dataslayer",
+     "date": "2026-01-19"
+    },
+    {
+     "title": "Meta attribution window changes 2026",
+     "url": "https://www.conversios.io/blog/meta-attribution-window-changes-2026-fix-your-tracking/",
+     "publisher": "Conversios",
+     "date": "2026-03-26"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "earnings-claims-compliance",
+   "title": "Treat every income or result claim in webinars, VSLs, ads and sales calls as something that must be substantiated",
+   "category": "compliance",
+   "guidance": "The FTC already treats false or unsubstantiated earnings claims in money-making opportunities as deceptive. Companies that received its Notice of Penalty Offenses on money-making opportunities can face civil penalties of up to $50,120 per violation, a cap that is inflation-adjusted each January. In January 2025 the FTC proposed extending the Business Opportunity Rule to business coaching and investment opportunities. The proposal would require written substantiation for earnings claims, supplied to prospective buyers and the FTC on request, and would keep records for 3 years. It passed 3-2 over dissents from commissioners who now lead the agency, and its final status is unconfirmed. Whatever happens to it, the safe operating standard is the same: no specific income promises; any figure shown must be typical or carry the generally expected results; and closers' scripts and call recordings fall under the same rules as the webinar.",
+   "as_of": "2026-10",
+   "steps": [
+    "Keep a claims register: every number or result claim, where it appears (ad, webinar slide, VSL timestamp, email, closer script), its substantiation file, and the review date",
+    "Compile real cohort outcome data (median and distribution, not best case) before using any student result",
+    "Replace 'you will make X' language with process and skill language, plus the documented typical results",
+    "Review a sample of sales-call recordings each week for verbal income promises",
+    "Keep records for at least 3 years, matching the proposed rule's retention period"
+   ],
+   "dont": [
+    "Don't say or imply that buyers will replace their income or reach a set revenue within a timeframe",
+    "Don't rely on a small-print 'results not typical' line to rescue an outlier claim",
+    "Don't let AI-written ad, email or chat copy publish income language without human review"
+   ],
+   "sources": [
+    {
+     "title": "FTC proposes rules to curb deceptive earnings claims (press release)",
+     "url": "https://www.ftc.gov/node/87160",
+     "publisher": "Federal Trade Commission",
+     "date": "2025-01-13"
+    },
+    {
+     "title": "Business Opportunity Rule NPRM (R511993)",
+     "url": "https://www.ftc.gov/node/87052",
+     "publisher": "Federal Trade Commission",
+     "date": "2025-01-13"
+    },
+    {
+     "title": "Penalty Offenses",
+     "url": "https://ftc.gov/enforcement/penalty-offenses",
+     "publisher": "Federal Trade Commission",
+     "date": "2026"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "testimonials-and-reviews-compliance",
+   "title": "Use testimonials only with typical-results context, disclosed connections, and in-video disclosures",
+   "category": "compliance",
+   "guidance": "Under the FTC's Endorsement Guides, if an advertiser can't show that a testimonial reflects what people generally achieve, the ad must make clear what the generally expected results are. Any material connection, such as payment, a free or discounted programme, or an affiliate commission, must be disclosed clearly and conspicuously. In video, the disclosure belongs in the video itself, in the same form as the endorsement: visual, audio or both. In live streams it should run continuously, because viewers join mid-stream. The Consumer Reviews and Testimonials Rule (in force since 21 October 2024) separately bans several practices. Banned: fake or misrepresented testimonials, including invented personas presented as real people; incentives conditioned on positive sentiment; undisclosed insider testimonials; suppressing negative reviews; and buying fake followers or views. Penalties started at up to $51,744 per violation, adjusted for inflation each year.",
+   "as_of": "2026-10",
+   "steps": [
+    "Store each testimonial with written consent, the date, a verification note and any compensation or relationship",
+    "Add an on-screen and spoken typical-results line wherever outlier wins appear",
+    "Disclose 'received a free/discounted programme' or 'affiliate' in the video, on screen and spoken, before the endorsement",
+    "Never generate AI testimonials or AI 'students' presented as real people",
+    "Ask all clients for reviews regardless of sentiment, and publish them without filtering"
+   ],
+   "sources": [
+    {
+     "title": "FTC's Endorsement Guides: What People Are Asking",
+     "url": "https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking",
+     "publisher": "Federal Trade Commission",
+     "date": "2026"
+    },
+    {
+     "title": "FTC Issues Final Rule on Consumer Reviews and Testimonials",
+     "url": "https://www.morganlewis.com/pubs/2024/08/ftc-issues-final-rule-on-consumer-reviews-and-testimonials",
+     "publisher": "Morgan Lewis",
+     "date": "2024-08-26"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "sms-and-call-compliance-tcpa",
+   "title": "Gate every reminder text, setter call and AI outreach on TCPA consent, quiet hours, fast opt-out handling and 10DLC registration",
+   "category": "compliance",
+   "guidance": "Marketing calls and texts sent with an autodialer or an artificial or prerecorded voice need prior express written consent. That means a signed (e-signature counts) agreement naming the phone number, with a clear disclosure that consent is not a condition of purchase. Telephone solicitations are barred before 8am and after 9pm in the recipient's local time. Since April 2025, consumers can revoke consent by any reasonable means (replying 'stop' or 'unsubscribe' counts automatically), and requests must be honoured within 10 business days. One non-marketing confirmation text is allowed, presumed fine if sent within 5 minutes. The FCC's 'revoke one, revoke all' extension, which would apply an opt-out from one message type to all of a caller's automated messages, is waived until 31 January 2027. Plan for it anyway. Separately, US A2P texting from 10-digit numbers needs carrier registration of the brand (with a tax ID) and of each campaign's use case, opt-in, opt-out and help flows. Unregistered traffic is filtered or carries extra fees.",
+   "as_of": "2026-10",
+   "steps": [
+    "Put a separate, unticked SMS and call consent checkbox on every registration and application form, worded to name the business and say consent is not a condition of purchase; log the timestamp, IP, form version and page URL",
+    "Register each client brand and campaign (reminders, marketing) for 10DLC before sending",
+    "Enforce recipient-local quiet hours (8am-9pm) in the sending engine",
+    "Process STOP and natural-language opt-outs across all channels immediately (well inside 10 business days); send at most one non-marketing confirmation within 5 minutes",
+    "Treat an opt-out from any message type as opting out of all marketing (prepares for the 2027 'revoke all' rule)"
+   ],
+   "sources": [
+    {
+     "title": "47 CFR § 64.1200 - Delivery restrictions",
+     "url": "https://www.law.cornell.edu/cfr/text/47/64.1200",
+     "publisher": "Cornell Legal Information Institute (eCFR text)",
+     "date": "2025-08-29"
+    },
+    {
+     "title": "FCC extends waiver on revocation of consent rules, delaying broad applicability until 2027",
+     "url": "https://www.gmlaw.com/news/fcc-extends-waiver-on-revocation-of-consent-rules-delaying-broad-applicability-until-2027-2/",
+     "publisher": "Greenspoon Marder",
+     "date": "2026-01-14"
+    },
+    {
+     "title": "A2P 10DLC",
+     "url": "https://www.twilio.com/docs/messaging/compliance/a2p-10dlc",
+     "publisher": "Twilio",
+     "date": "2026-07-07"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "email-deliverability-bulk-senders",
+   "title": "Meet Gmail, Yahoo and Outlook bulk-sender rules before any launch sequence, or reminders won't reach the inbox",
+   "category": "deliverability",
+   "guidance": "Launch, webinar and reminder sequences routinely push a coaching brand past 5,000 emails a day, which brings in all three big mailbox providers' bulk-sender rules. Gmail and Yahoo require SPF and DKIM, a DMARC record (p=none is the minimum) aligned with the From domain, one-click unsubscribe headers (RFC 8058) plus a visible unsubscribe link, and a user-reported spam rate kept below 0.3% (Gmail recommends below 0.1%). Yahoo requires unsubscribes to be honoured within 2 days. Gmail began ramping up enforcement in November 2025, including temporary and permanent rejections of non-compliant mail. Microsoft has applied similar SPF, DKIM and DMARC requirements to senders of more than 5,000 emails a day to Outlook.com, Hotmail and Live addresses since 5 May 2025. Non-compliant mail goes to junk first, with outright rejection to follow; sources disagree on when.",
+   "as_of": "2026-10",
+   "steps": [
+    "Authenticate each client's sending domain (SPF, 2048-bit DKIM, DMARC with a reporting address) before the first send",
+    "Send promotional email and reminder email from separate subdomains so complaints about promotions don't sink reminders",
+    "Implement List-Unsubscribe and List-Unsubscribe-Post headers and process unsubscribes within 48 hours",
+    "Monitor Google Postmaster Tools daily during launches; pause promotional sends if the spam rate goes above 0.1%",
+    "Suppress people who haven't engaged in 90+ days before big launch pushes"
+   ],
+   "benchmarks": [
+    {
+     "metric": "User-reported spam rate ceiling",
+     "value": "<0.3% required; <0.1% recommended",
+     "context": "Gmail and Yahoo"
+    },
+    {
+     "metric": "Unsubscribe processing",
+     "value": "Within 2 days",
+     "context": "Yahoo requirement; Gmail recommends 48 h"
+    },
+    {
+     "metric": "Bulk-sender threshold",
+     "value": "5,000+ messages/day",
+     "context": "Gmail, Yahoo, Microsoft consumer domains"
+    }
+   ],
+   "sources": [
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "2026"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google",
+     "date": "2026"
+    },
+    {
+     "title": "Sender best practices",
+     "url": "https://senders.yahooinc.com/best-practices/",
+     "publisher": "Yahoo",
+     "date": "2026"
+    },
+    {
+     "title": "Microsoft sender requirements",
+     "url": "https://www.mailgun.com/blog/deliverability/microsoft-sender-requirements/",
+     "publisher": "Mailgun",
+     "date": "2025-05-01"
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "in-session-engagement",
+   "title": "Script 2-3 polls and a Q&A capture into every live session, and pipe the answers to closers",
+   "category": "webinar-structure",
+   "guidance": "In Livestorm's 2025 data, chat was used in 90% of webinars, Q&A in 65%, and polls in only 28%. Sessions averaged 20.4 Q&A questions and 2.77 polls. In 60-75 minute webinars, only 15.4% of attendees actively participated, sending 0.58 chat messages per attendee on average. For a high-ticket funnel, polls and questions are the cheapest qualification data available. Ask about current situation and readiness in the first 10 minutes, ask about intent right after the offer, and route those answers into the CRM so setters and closers open the call already knowing them. The data shows how often features are used, not whether they cause higher conversion, so measure the effect in each client's own funnel.",
+   "as_of": "2026-10",
+   "steps": [
+    "Poll 1 (minutes 3-8): current stage or situation (it doubles as segmentation)",
+    "Poll 2 (mid-teaching): the biggest obstacle (it feeds the objection-handling part of the pitch)",
+    "Poll 3 (right after the offer): 'Want help implementing this? Yes / Not yet / Questions'",
+    "Tag each attendee's answers in the CRM; anyone answering 'Yes' who hasn't booked within 15 minutes gets an immediate setter task"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Feature usage",
+     "value": "Chat 90%, Q&A 65%, polls 28%",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Average Q&A questions per session / polls per webinar",
+     "value": "20.4 / 2.77",
+     "context": "Livestorm 2025 data"
+    },
+    {
+     "metric": "Active participation rate (60-75 min sessions)",
+     "value": "15.4%",
+     "context": "Livestorm 2025 data"
+    }
+   ],
+   "sources": [
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "challenge-funnels",
+   "title": "Run 3-5 day challenges as a daily-reminder webinar series with one result per day and the offer on the last day",
+   "category": "challenge",
+   "guidance": "No independent benchmark for challenge funnels was found. Published conversion figures (for example, '15-30% of participants buy') are unsourced platform marketing and shouldn't be shown to clients. What is supported: how-to and educational content holds attention better than other video types, Wistia advises keeping individual sessions under about 30 minutes, and webinar audiences respond to reminders on the event day. Structurally, a challenge is a multi-day series where each day delivers one small, completable result. Expect attendance to fall each day, so the system should measure attendance and completion separately for each day. Put the offer and booking CTA on the final day (and the replay), with clear criteria for who the programme fits.",
+   "as_of": "2026-10",
+   "steps": [
+    "Day 0: registration plus a community or group invite and a calendar series invite",
+    "Each day: morning email plus SMS (if consented) with the session link; a 20-45 minute session teaching one action; homework with a visible check-in",
+    "Track per-day live attendance, replay views and homework completions by person",
+    "Final day: recap the wins, present the offer and the application or booking link; send high-completion participants to closers first",
+    "Within 48 hours: replay of the final day plus follow-up only to engaged non-buyers"
+   ],
+   "dont": [
+    "Don't present invented completion counts or fake community activity",
+    "Don't promise income outcomes for completing the challenge"
+   ],
+   "sources": [
+    {
+     "title": "Optimal Video Length: How Long Should A Marketing Video Be?",
+     "url": "https://wistia.com/blog/optimal-video-length",
+     "publisher": "Wistia",
+     "date": "2025-07-01"
+    },
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    }
+   ],
+   "confidence": "low"
+  },
+  {
+   "id": "what-changed-2025-2026",
+   "title": "What changed in 2025-2026: shorter sessions, more on-demand, weaker video attention, stricter inboxes, shorter ad attribution",
+   "category": "trends",
+   "guidance": "Webinar formats are getting shorter and more on-demand. Goldcast saw sessions under 30 minutes rise from 3% to 11.3% and sessions over 60 minutes fall from 21% to 11%, while publishing on-demand rose from 53% to 80%. Livestorm's live show-up slipped from 48.9% to 47.7%. Video attention is weaker overall: Wistia's 2025 report showed engagement at a four-year low, with 3-5 minute videos down about 10%, yet long videos still convert best on CTAs. Mailbox providers tightened enforcement: Microsoft from May 2025, Gmail ramping up rejections from November 2025. Meta removed the 7-day and 28-day view-through windows in January 2026, which shortens what ad dashboards can credit to a campaign. The playbook implications: shorter live teaching with an earlier offer, a deliberate replay strategy, compliant multi-channel reminders, and measurement through CRM cohorts.",
+   "as_of": "2026-10",
+   "benchmarks": [
+    {
+     "metric": "Webinars under 30 min",
+     "value": "3% to 11.3%",
+     "context": "Goldcast, 2023 to 2024 data"
+    },
+    {
+     "metric": "Webinars published on-demand",
+     "value": "53% to 80%",
+     "context": "Goldcast"
+    },
+    {
+     "metric": "Live show-up",
+     "value": "48.9% (2024) to 47.7% (2025)",
+     "context": "Livestorm"
+    }
+   ],
+   "sources": [
+    {
+     "title": "40+ Webinar Statistics B2B Marketers Should Know for 2025",
+     "url": "https://www.goldcast.io/blog-post/2025-webinar-statistics-b2b-marketers-should-know",
+     "publisher": "Goldcast",
+     "date": "2025-07-08"
+    },
+    {
+     "title": "2026 Webinar Benchmark Report",
+     "url": "https://livestorm.co/webinar-benchmark-report-2026",
+     "publisher": "Livestorm",
+     "date": "2026-09-01"
+    },
+    {
+     "title": "Email sender guidelines FAQ",
+     "url": "https://support.google.com/a/answer/14229414",
+     "publisher": "Google",
+     "date": "2026"
+    },
+    {
+     "title": "Meta Ads attribution window removed January 2026",
+     "url": "https://www.dataslayer.ai/blog/meta-ads-attribution-window-removed-january-2026",
+     "publisher": "Dataslayer",
+     "date": "2026-01-19"
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "agentic-outreach-guardrails",
+   "title": "Build the AI operator's outreach on a consent ledger, per-client sender identity and hard compliance gates",
+   "category": "system-design",
+   "guidance": "If the system sends reminders, follow-ups or setter outreach on a client's behalf, the client is the sender of record, so every guardrail must be enforced in code rather than left to prompts. The minimum is four things. First, a consent ledger: per phone number and email, what was consented to, when, on which form version, and any revocation. Second, per-client sender identity: an authenticated email domain with SPF, DKIM and DMARC, and a 10DLC brand and campaign for texts. Third, hard gates for quiet hours (8am-9pm recipient local), opt-out handling across all channels, and spam-rate circuit breakers. Fourth, a claims filter that blocks unreviewed income or result language in generated copy. Calls or voicemails using an artificial or prerecorded voice for marketing need prior express written consent, and synthetic voices should be assumed to fall in that category. Keep every outbound message and call log for audit.",
+   "as_of": "2026-10",
+   "steps": [
+    "Before any send, check the consent ledger; block if consent is missing, revoked or for a different purpose",
+    "Check quiet hours using the recipient's area code or stored timezone; queue rather than drop",
+    "Check the domain or 10DLC registration status for the client; block if not registered",
+    "Run generated copy through an earnings and testimonial claims filter; send flagged copy to human review",
+    "When anyone replies STOP or otherwise asks to stop, mark them opted out across email, SMS and call lists immediately and send at most one non-marketing confirmation",
+    "Pause promotional email automatically if Postmaster spam rate exceeds 0.1%"
+   ],
+   "sources": [
+    {
+     "title": "47 CFR § 64.1200 - Delivery restrictions",
+     "url": "https://www.law.cornell.edu/cfr/text/47/64.1200",
+     "publisher": "Cornell Legal Information Institute (eCFR text)",
+     "date": "2025-08-29"
+    },
+    {
+     "title": "A2P 10DLC",
+     "url": "https://www.twilio.com/docs/messaging/compliance/a2p-10dlc",
+     "publisher": "Twilio",
+     "date": "2026-07-07"
+    },
+    {
+     "title": "Email sender guidelines",
+     "url": "https://support.google.com/a/answer/81126",
+     "publisher": "Google",
+     "date": "2026"
+    },
+    {
+     "title": "FCC extends waiver on revocation of consent rules, delaying broad applicability until 2027",
+     "url": "https://www.gmlaw.com/news/fcc-extends-waiver-on-revocation-of-consent-rules-delaying-broad-applicability-until-2027-2/",
+     "publisher": "Greenspoon Marder",
+     "date": "2026-01-14"
+    }
+   ],
+   "confidence": "high"
+  }
+ ],
+ "open_questions": [
+  "The web-search budget for this run ran out before research finished. These were not searched: FTC 2025 enforcement actions against coaching or business-opportunity sellers (e.g., Click Profit, IM Mastery Academy, and a possible Growth Cave case), the 11th Circuit's January 2025 vacatur of the FCC one-to-one lead-generator consent rule, and state mini-TCPA laws (e.g., Florida, Oklahoma) with stricter quiet hours or frequency limits. All should be verified in a follow-up run.",
+  "No independent benchmark was found for consumer or coaching webinars on cold paid social traffic (show-up, attendee-to-application, close rate). All attendance benchmarks found are B2B-heavy platform datasets (Livestorm, Goldcast, ON24).",
+  "No independent benchmark was found for cost per booked call, strategy-call show rate, or close rate in high-ticket coaching. Published figures are agency or vendor anecdotes.",
+  "ON24's 2026 benchmark figures could not be opened directly (HTTP 403), and secondary summaries conflict: 239 vs 211 average attendees, 49 vs 52 minutes, and an on-demand share of 43%, 50%, 51% or 52%.",
+  "The status of the FTC's January 2025 proposed Business Opportunity Rule amendments (extending coverage to business coaching) is unconfirmed: not finalised, withdrawn or advanced as far as this research could tell. Two dissenting commissioners now lead the agency.",
+  "Meta's own Advertising Standards pages on income or business-opportunity claims and personal attributes are rendered with JavaScript and couldn't be opened. Exact current wording (e.g., bans on 'quick compensation for little investment' framing) needs verification against Meta's Transparency Center.",
+  "The FCC's February 2024 declaratory ruling that AI-generated voices count as 'artificial voice' under the TCPA could not be opened (HTTP 403). Confirm it before deploying any AI voice outreach.",
+  "The date Microsoft starts hard-rejecting non-compliant bulk mail (550 5.7.515), as opposed to routing it to junk, is inconsistent across sources.",
+  "Optimal VSL length for high-ticket call booking has no independent study. The 15-45 minute range is an inference from Wistia's all-video length and conversion data.",
+  "Challenge-funnel conversion and daily attendance-decay benchmarks were not found from any credible source. The '15-30% of participants buy' claim is unsourced vendor marketing.",
+  "Evergreen or just-in-time show-up claims (55-70%) and the claim that live converts better per session come only from evergreen-webinar software vendors.",
+  "Speed-to-lead evidence relies on the 2011 HBR/InsideSales study. No newer independent replication was found.",
+  "Whether the FTC Telemarketing Sales Rule (including its 2024 amendments) applies to inbound sales calls for coaching programmes sold after webinars or VSLs was not researched."
+ ],
+ "note": "Researched from public sources and written in our own words. Dated; check sources before acting. Not the programme's course material."
+}
