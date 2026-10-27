@@ -294,6 +294,17 @@ def chain_pick(lead_id: Id, b: PickBody, ctx: Ctx = Depends(require("sales"))):
 
 @router.post("/bookings/{event_id}/cancel")
 def cancel_booking(event_id: Id, ctx: Ctx = Depends(require("sales"))):
+    if ctx.role != "owner":
+        # a call someone booked with their OWN prospect (held as "prospect-<id>") is theirs: the sales team's rights
+        # cover the programme's leads, never a student's own calendar holds
+        with ctx.tenant.db() as c:
+            ev = c.execute("SELECT ext_id FROM calendar_events WHERE id=?", (event_id,)).fetchone()
+            ext = (ev["ext_id"] or "") if ev else ""
+            if ext.startswith("prospect-"):
+                p = c.execute("SELECT owner_user_id FROM prospects WHERE id=?",
+                              (int(ext[9:]) if ext[9:].isdigit() else 0,)).fetchone()
+                if p is None or p["owner_user_id"] != ctx.user["id"]:
+                    raise HTTPException(404, "Not found")
     try:
         return delivery.cancel_booking(ctx.tenant, event_id, ctx.actor)
     except KeyError:

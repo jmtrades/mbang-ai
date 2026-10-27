@@ -130,10 +130,12 @@ def board(tenant, coach_id: int | None = None) -> dict:
     return {"students": out, "counts": dict(levels), "total": len(out), "ms": int((time.time() - t0) * 1000)}
 
 
-def retention_star(tenant) -> dict:
+def retention_star(tenant, coach_id: int | None = None) -> dict:
     """Five-point community health (each 0-1): check-in rate, outreach consistency, show-rate
-    health, mood, progress (clients/wins)."""
+    health, mood, progress (clients/wins). With coach_id: that coach's students only."""
     students, by = _load(tenant)
+    if coach_id:
+        students = [s for s in students if s["coach_id"] == coach_id]
     if not students:
         return {"points": [], "overall": 0}
     now = time.time()
@@ -169,11 +171,13 @@ PLAN = ["Load check-ins", "Score risk + trend", "Interventions per signal (cited
         "Coach escalation tasks", "Owner digest"]
 
 
-def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict:
+def run_interventions(tenant, user: dict | None = None, limit: int = 50, coach_id: int | None = None) -> dict:
+    """The sweep over every student, or over one coach's students (coach_id): a coach never drafts nudges, files
+    tasks or reads the digest for another coach's students."""
     actor = f"{user['username']}({user['role']})" if user else "system"
 
     def fn(run: runtime.Run):
-        b = run.step("board", {}, lambda: board(tenant), "Load check-ins")
+        b = run.step("board", {}, lambda: board(tenant, coach_id), "Load check-ins")
         at_risk = [s for s in b["students"] if s["level"] != "low"][:limit]
         run.note("risk", {"students": b["total"]}, {"at_risk": len(at_risk), "counts": b["counts"]}, label="Score risk + trend")
 
@@ -231,7 +235,7 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
             return tasks
 
         run.step("escalations", {}, _tasks, "Coach escalation tasks")
-        dg = run.step("digest", {}, lambda: digest(tenant, b), "Owner digest")
+        dg = run.step("digest", {}, lambda: digest(tenant, b, coach_id), "Owner digest")
         return {"at_risk": len(at_risk), "nudges": nudges, "tasks": tasks, "digest": dg, "citations": cites,
                 "skipped": skipped}
 
@@ -239,11 +243,15 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
     return {**out["result"], "run_id": out["run_id"]}
 
 
-def digest(tenant, b: dict | None = None) -> dict:
-    b = b or board(tenant)
+def digest(tenant, b: dict | None = None, coach_id: int | None = None) -> dict:
+    b = b or board(tenant, coach_id)
     with tenant.db() as c:
         coaches = {r["id"]: r["display"] for r in c.execute("SELECT id, display FROM users WHERE role='coach'")}
-        open_tasks = c.execute("SELECT COUNT(*) FROM coach_tasks WHERE status='open'").fetchone()[0]
+        if coach_id:
+            open_tasks = c.execute("SELECT COUNT(*) FROM coach_tasks WHERE status='open' AND coach_id=?",
+                                   (coach_id,)).fetchone()[0]
+        else:
+            open_tasks = c.execute("SELECT COUNT(*) FROM coach_tasks WHERE status='open'").fetchone()[0]
     per_coach = defaultdict(lambda: {"students": 0, "high": 0, "medium": 0})
     for s in b["students"]:
         pc = per_coach[coaches.get(s["coach_id"], "Unassigned")]

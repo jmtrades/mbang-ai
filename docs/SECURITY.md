@@ -8,6 +8,7 @@ How Operator AI protects accounts, tenants, secrets and the public demo. Every c
 - Passwords: scrypt (n=2^14, r=8, p=1), constant-time compare. An unknown username costs the same scrypt work as a
   wrong password, so response timing doesn't reveal which usernames exist.
 - Throttle: 8 failed sign-ins per 15 minutes per IP or per username → 429.
+- MCP (`/mcp`): at most 20 calls per JSON-RPC batch and 120 calls a minute per network (`OPERATOR_LIMIT_MCP`).
 - Sessions: a random 256-bit token; only its SHA-256 is stored. Expiry `OPERATOR_SESSION_HOURS` (12 h). Deactivated
   users lose access at once. Logout deletes the session server-side.
 - **No session fixation:** every sign-in (password or demo one-click) creates a new server-side session and ends any
@@ -30,6 +31,11 @@ FastAPI only parses JSON bodies sent as `application/json`, so a cross-site HTML
   route's dependencies and fails on any new route without one (`test_every_tenant_api_route_needs_a_session`;
   signed webhooks, MCP and the public minis are the only other session-free routes, each with its own check). Each route needs the tab its page belongs to (`deps.require("<tab>")`); owner-only
   actions use `require_owner`. Non-owners only see their own rows (queue items they own, their students, their threads).
+- Run traces carry private data (a student's prospects, their questions to the coach, their clients). The owner reads
+  every trace; a coach reads their own and those of the people they coach (students.coach_id, users.coach_id, team
+  assignments), plus the trace of a reply that arrived in one of those people's inboxes; everyone else only their own.
+  Actors are matched exactly (`name(role)`), never by prefix. A coach's student digest, sweep, Retention Star and
+  Morning brief cover only their own students (no clients, no logins). `tests/test_isolation_review.py`.
 - Tenant ids come from the URL and must match `^[a-z0-9][a-z0-9_-]{1,31}$`; anything else is simply "not found"
   before any database or file is touched.
 - KB admin (exclusions, provenance, priority, Drive inbox) and proof records: owner only, refused in the demo.
@@ -73,6 +79,13 @@ Anyone on the internet can sign in to `/t/demo/` with one click, as any role, in
   `scripts/tenant_admin.py switch demo demo_course_material on --owner-yes "<recorded reason>"`.
 - **Read-only where it matters.** KB admin, Drive sync, uploads to the knowledge base and proof records can't be
   changed in the demo (403 with a plain note; the upload checkbox is hidden there).
+- **Heavy runs budgeted.** Evals, the lead burst (at most 500 leads in the demo) and the Academy build share 6 runs per
+  hour per network and 60 overall (`OPERATOR_LIMIT_DEMO_HEAVY`, `OPERATOR_LIMIT_DEMO_HEAVY_ALL`): the demo runs in the
+  same process as every real workspace.
+- **Public demo pages say so.** The webinar sign-up, client intake, mini and proposal pages served for the demo carry a
+  "Pitch demo (DEMO)" notice, and their forms take only made-up addresses ending in `@example.invalid` (anyone can sign
+  in as the demo owner and read what was typed). The demo's logo can only be a path on this site, never another
+  site's image (every visitor's browser would fetch it).
 
 ## Secrets
 

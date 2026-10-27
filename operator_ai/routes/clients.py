@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from .. import client_ops, db, tenancy, webinars
+from .. import client_ops, db, public_demo, tenancy, webinars
 from ..agents import fulfilment
 from ..deps import Ctx, client_ip, require
 
@@ -260,11 +260,13 @@ def intake_page(tid: str, token: str):
     days = "".join(f"<option value='{i}'{' selected' if i == cl['report_weekday'] else ''}>{d}</option>"
                    for i, d in enumerate(client_ops.WEEKDAYS))
     cfg = json.dumps({"base": f"/c/{tid}/{token}"}).replace("<", "\\u003c")
-    return HTMLResponse(INTAKE_HTML.format(
+    return HTMLResponse(public_demo.label(t, INTAKE_HTML.format(
         name=html.escape(cl["name"]), css=_CSS, offer=html.escape(b.get("offer") or cl.get("offer") or ""),
         audience=e("audience"), niche=html.escape(b.get("niche") or cl.get("niche") or ""), outcome=e("outcome"),
         mechanism=e("mechanism"), pain=e("pain"), timeframe=e("timeframe"), email=html.escape(cl.get("email") or ""),
-        days=days, cfg=cfg), headers={"X-Robots-Tag": "noindex"})
+        days=days, cfg=cfg)),
+        # the page shows the client's own details: never cached, and the link (its token) never leaks as a referrer
+        headers={"X-Robots-Tag": "noindex", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
 @public_router.post("/c/{tid}/{token}")
@@ -283,6 +285,9 @@ async def intake_submit(tid: str, token: str, request: Request):
         raise HTTPException(422, "Expected a JSON object")
     if d.get("website"):  # honeypot
         return {"ok": True}
+    refused = public_demo.email_refused(t, d.get("email"))
+    if refused:
+        raise HTTPException(422, refused)
     if webinars.rate_limited(t.id, client_ip(request), "intake", 10, 600):
         raise HTTPException(429, "Too many submissions. Please try again in a few minutes.")
     try:

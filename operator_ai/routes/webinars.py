@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from .. import tenancy, webinars
+from .. import public_demo, tenancy, webinars
 from ..deps import Ctx, client_ip, require
 
 router = APIRouter()
@@ -211,10 +211,10 @@ def reg_page(tid: str, slug: str):
         return HTMLResponse(CLOSED_HTML.format(title=e(w["title"]), css=_CSS, brand=e(_brand(t)), message=e(msg)))
     p = w["page"] or {}
     cfg = json.dumps({"base": f"/w/{tid}/{slug}"}).replace("<", "\\u003c")
-    return HTMLResponse(REG_HTML.format(
+    return HTMLResponse(public_demo.label(t, REG_HTML.format(
         title=e(w["title"]), css=_CSS, brand=e(_brand(t)), headline=e(p.get("headline") or w["title"]),
         subhead=e(p.get("subhead") or ""), when=e(w["when"]), bullets="".join(f"<li>{e(b)}</li>" for b in p.get("bullets", [])),
-        consent=e(p.get("consent") or ""), button=e(p.get("button") or "Save my seat"), cfg=cfg))
+        consent=e(p.get("consent") or ""), button=e(p.get("button") or "Save my seat"), cfg=cfg)))
 
 
 @public_router.post("/w/{tid}/{slug}/register")
@@ -231,6 +231,9 @@ async def register(tid: str, slug: str, request: Request):
         raise HTTPException(422, "Malformed JSON")
     if not isinstance(d, dict):
         raise HTTPException(422, "Expected a JSON object")
+    refused = None if d.get("website") else public_demo.email_refused(t, d.get("email"))  # bots still get "thanks"
+    if refused:
+        raise HTTPException(422, refused)
     try:
         return webinars.register(t, slug, d.get("name"), d.get("email"), d.get("consent"), d.get("website") or "",
                                  d.get("source") or "", client_ip(request))
@@ -244,6 +247,9 @@ def unsubscribe_page(tid: str, slug: str, r: str = ""):
     w = webinars.by_slug(t, slug) if _SLUG.match(slug or "") else None
     if w is None or not re.match(r"^[A-Za-z0-9_-]{10,80}$", r or ""):
         raise HTTPException(404, "Not found")
+    with t.db() as c:  # only a real registrant's link shows the page (a made-up token never reveals a draft's title)
+        if c.execute("SELECT 1 FROM webinar_registrants WHERE webinar_id=? AND token=?", (w["id"], r)).fetchone() is None:
+            raise HTTPException(404, "Not found")
     return HTMLResponse(UNSUB_HTML.format(css=_CSS, title=html.escape(w["title"]), token=html.escape(r)))
 
 

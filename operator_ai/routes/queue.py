@@ -86,22 +86,56 @@ def reject(qid: QueueId, b: RejectBody | None = None, ctx: Ctx = Depends(require
         _qerr(e)
 
 
+def _actor_username(actor: str | None) -> str | None:
+    """'jo@x.com(student)' -> 'jo@x.com'. Matched exactly, never by prefix ('stu(student)x(student)' isn't stu's)."""
+    a = actor or ""
+    i = a.rfind("(")
+    return a[:i] if i > 0 and a.endswith(")") else None
+
+
+def _run_scope(ctx: Ctx) -> tuple[set[str], set[int]] | None:
+    """What run traces this person may read: None = all (owner). Otherwise (usernames whose runs they may read,
+    run ids linked to a reply in an inbox they may read). Traces carry private data (a student's prospects, their
+    questions to the coach, their clients), so a coach reads only their own runs and those of the people they coach
+    (students.coach_id, users.coach_id, team_assignments); setters, closers and students only their own."""
+    if ctx.role == "owner":
+        return None
+    names, run_ids = {ctx.user["username"]}, set()
+    if ctx.role == "coach":
+        uid = ctx.user["id"]
+        with ctx.tenant.db() as c:
+            ids = {r["id"] for r in c.execute(
+                "SELECT id FROM users WHERE coach_id=? OR student_id IN (SELECT id FROM students WHERE coach_id=?)",
+                (uid, uid))}
+            ids |= {r["member_id"] for r in c.execute("SELECT member_id FROM team_assignments WHERE manager_id=?", (uid,))}
+            ids.discard(uid)
+            if ids:
+                ph = ",".join("?" * len(ids))
+                names |= {r["username"] for r in c.execute(f"SELECT username FROM users WHERE id IN ({ph})", sorted(ids))}
+                # a reply that came in by webhook is traced by a system run; the inbox shows it to the student's coach
+                run_ids = {r["run_id"] for r in c.execute(
+                    f"SELECT run_id FROM inbound_messages WHERE run_id IS NOT NULL AND owner_user_id IN ({ph})", sorted(ids))}
+    return names, run_ids
+
+
+def _run_visible(scope: tuple[set[str], set[int]] | None, r: dict) -> bool:
+    return scope is None or _actor_username(r.get("actor")) in scope[0] or r.get("id") in scope[1]
+
+
 @router.get("/runs")
 def runs(agent: str | None = Query(None, max_length=40), limit: int = Query(50, ge=1, le=500),
          ctx: Ctx = Depends(get_ctx)):
-    # owners and coaches see every run; other roles see runs they started
-    rows = runtime.recent(ctx.tenant, limit, agent)
-    if ctx.role not in ("owner", "coach"):
-        rows = [r for r in rows if (r.get("actor") or "").startswith(ctx.user["username"] + "(")]
-    return {"runs": rows}
+    scope = _run_scope(ctx)
+    if scope is None:
+        return {"runs": runtime.recent(ctx.tenant, limit, agent)}
+    rows = [r for r in runtime.recent(ctx.tenant, 5000, agent) if _run_visible(scope, r)]
+    return {"runs": rows[:limit]}
 
 
 @router.get("/runs/{run_id}")
 def run(run_id: Annotated[int, Path(ge=1, le=2 ** 53)], ctx: Ctx = Depends(get_ctx)):
     r = runtime.get(ctx.tenant, run_id)
-    if r is None:
-        raise HTTPException(404, "Not found")
-    if ctx.role not in ("owner", "coach") and not (r.get("actor") or "").startswith(ctx.user["username"] + "("):
+    if r is None or not _run_visible(_run_scope(ctx), r):
         raise HTTPException(404, "Not found")
     return r
 

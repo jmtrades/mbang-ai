@@ -166,6 +166,10 @@ def update_from_api(tenant, key: str, value, actor: str) -> None:
     if key not in API_EDITABLE:
         raise KeyError(key)
     value = validate(key, value)
+    if key == "brand" and getattr(tenant, "is_demo", False) and str(value.get("logo") or "").startswith("https://"):
+        # anyone can be the demo's owner: a logo on another site would be fetched by every visitor's browser (their
+        # address and browser handed to whoever runs that site), including on the demo's sign-in page
+        _bad(key, "in the pitch demo the logo must be a path on this site (for example /logo.png)")
     tenant.set(key, value)
     if key in ("banned_names", "persona"):
         from . import guardrails

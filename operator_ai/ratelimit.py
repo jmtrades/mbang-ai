@@ -58,3 +58,20 @@ def hit(bucket: str, key: str, max_hits: int, window: float, message: str | None
 def clear() -> None:
     with _lock:
         _hits.clear()
+
+
+# The public demo's expensive owner actions (evals run the whole gold set, a burst queues hundreds of jobs for the
+# workers, the Academy build re-reads the material). Anyone on the internet can be the demo owner, and the demo runs
+# in the same process as every real workspace, so these share one small hourly budget per network and overall.
+DEMO_HEAVY_PER_IP = 6
+DEMO_HEAVY_ALL = 60
+DEMO_BURST_MAX = 500
+
+
+def demo_heavy(tenant, ip: str) -> None:
+    if not getattr(tenant, "is_demo", False):
+        return
+    hit("demo-heavy", ip, limit("demo_heavy", DEMO_HEAVY_PER_IP), 3600,
+        "The pitch demo allows a few of these heavy runs per hour from each network. Try again later.")
+    hit("demo-heavy-all", "*", limit("demo_heavy_all", DEMO_HEAVY_ALL), 3600,
+        "The pitch demo has run this many times this hour. Try again later.")

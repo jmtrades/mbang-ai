@@ -8,12 +8,14 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 
-from .. import channels, console, mcp_server, tenancy
+from .. import channels, console, mcp_server, public_demo, tenancy
 from ..deps import client_ip, get_tenant
 
 router = APIRouter()  # tenant API (nothing here; everything below is public)
 public_router = APIRouter()
 MAX_BODY = 256 * 1024
+MCP_MAX_BATCH = 20
+MCP_PER_MINUTE = 120
 
 
 async def _body(request: Request) -> bytes:
@@ -86,6 +88,15 @@ async def payments(request: Request, tenant: tenancy.Tenant = Depends(get_tenant
     return _ch(lambda: console.payment_webhook(tenant, request.headers.get("x-signature"), body))
 
 
+def _mcp_budget(request: Request, calls: int) -> None:
+    """MCP calls per network per minute (anyone can mint a token in the public demo, so per-token isn't enough)."""
+    from .. import ratelimit
+
+    for _ in range(max(1, calls)):
+        ratelimit.hit("mcp", client_ip(request), ratelimit.limit("mcp", MCP_PER_MINUTE), 60,
+                      "Too many MCP calls from this network. Wait a minute and try again.")
+
+
 async def _mcp(request: Request, tid: str | None):
     t = mcp_server.tenant_for_token(request.headers.get("authorization"), tid)
     if t is None:
@@ -97,10 +108,16 @@ async def _mcp(request: Request, tid: str | None):
     except ValueError:
         return JSONResponse({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
     if isinstance(req, list):
+        # every call in a batch runs a search or a coach answer: a 256 KB body could otherwise carry thousands
+        if len(req) > MCP_MAX_BATCH:
+            return JSONResponse({"jsonrpc": "2.0", "id": None,
+                                 "error": {"code": -32600, "message": f"Invalid Request: at most {MCP_MAX_BATCH} calls per batch"}})
+        _mcp_budget(request, len(req))
         out = [r for r in (mcp_server.handle(t, x) for x in req if isinstance(x, dict)) if r is not None]
         return JSONResponse(out)
     if not isinstance(req, dict):
         return JSONResponse({"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}})
+    _mcp_budget(request, 1)
     res = mcp_server.handle(t, req)
     return Response(status_code=202) if res is None else JSONResponse(res)
 
@@ -149,14 +166,18 @@ def mini_page(tid: str, slug: str):
         raise HTTPException(404, "Not found")
     import html
 
-    return MINI_HTML.format(title=html.escape(m["title"]), limit=m["question_limit"], consent=html.escape(m["consent_text"]),
-                            tid=html.escape(tid), slug=html.escape(slug))
+    return public_demo.label(t, MINI_HTML.format(title=html.escape(m["title"]), limit=m["question_limit"],
+                                                 consent=html.escape(m["consent_text"]), tid=html.escape(tid),
+                                                 slug=html.escape(slug)))
 
 
 @public_router.post("/m/{tid}/{slug}/start")
 async def mini_start(tid: str, slug: str, request: Request):
     t = get_tenant(tid)
     d = _json(await _body(request))
+    refused = public_demo.email_refused(t, d.get("email"))
+    if refused:
+        raise HTTPException(422, refused)
     return _ch(lambda: console.mini_start(t, slug, str(d.get("email", "")), bool(d.get("consent")), client_ip(request)))
 
 

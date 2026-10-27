@@ -21,7 +21,7 @@ def command_centre(ctx: Ctx = Depends(require("command"))):
 
 @router.get("/brief")
 def brief(ctx: Ctx = Depends(require("brief"))):
-    return reports.morning_brief(ctx.tenant)
+    return reports.morning_brief(ctx.tenant, ctx.user)
 
 
 @router.get("/golive")
