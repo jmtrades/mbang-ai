@@ -523,6 +523,11 @@ def test_exam_needs_l2_hides_answers_pauses_the_coach_and_has_a_cooldown(client)
     assert res["passed"] and res["score"] >= 0.85
     crit = certify.criteria(t, student, "growth_operator", "L3")
     assert next(c for c in crit if c["key"] == "exam")["met"]
+    # the role-play feature seeds the demo student a role-play the demo coach signed off: real evidence, it counts
+    assert next(c for c in crit if c["key"] == "signoff")["met"]
+    with t.db() as c:  # without a coach's sign-off the criterion is not met
+        c.execute("UPDATE roleplays SET score=json_remove(score,'$.signoff') WHERE user_id=?", (student["id"],))
+    crit = certify.criteria(t, student, "growth_operator", "L3")
     assert not next(c for c in crit if c["key"] == "signoff")["met"]
 
 

@@ -101,7 +101,8 @@ def _money_norm(t: str) -> str:
 # dash or new subject in between) and within a few words. "Determiner" negators (no, without, nothing)
 # only govern the phrase right after them; verbs like avoid/stop govern their direct object.
 _NEG_AUX = r"never|not|don't|dont|do not|doesn't|doesnt|does not|didn't|did not|won't|wont|will not|isn't|aren't|" \
-           r"wasn't|weren't|can't|cant|cannot|can not|shouldn't|should not|must not|mustn't|wouldn't|would not"
+           r"wasn't|weren't|can't|cant|cannot|can not|shouldn't|should not|must not|mustn't|wouldn't|would not|" \
+           r"(?:no one|no-one|nobody|none of us) (?:can|could|will|would|should|may|might)"  # "no one can guarantee results"
 _NEG_OBJ = r"avoid|avoiding|stop|stopped|refuse|refuses|refused|ban|bans|banned|forbid|forbids|forbidden|prohibit|" \
            r"prohibits|prohibited|skip|ditch"
 _NEG_DET = r"no|without|nothing|nobody|none|zero"
@@ -112,6 +113,9 @@ _NOT_NEG = re.compile(r"\b(?:not only|not just|no doubt|no wonder|no more|no lon
 # a negator that governs an interjection, not the claim: "Don't worry guaranteed results", "Not kidding, ...",
 # "You can't lose with guaranteed results". Any of these words between the negator and the match means the
 # negator is about something else.
+_OBJ_PRONOUN = re.compile(r"\b(tell|telling|want|wanting|ask|asking|need|needing|expect|expecting|advise|advising|"
+                          r"recommend|recommending|encourage|encouraging|push|pushing|pressure|pressuring|urge|urging|"
+                          r"let|make|making|get|getting)\s+(?:you|them|him|her|us)\b", re.I)
 _INTERJECT = {"worry", "worries", "worrying", "stress", "stressing", "panic", "hesitate", "fret", "sweat", "kid", "kidding",
               "joke", "joking", "lie", "lying", "fear", "regret"}
 _CUT = re.compile(r"[,;:()\[\]]|\s-\s|\s--\s|\b(?:but|however|yet|although|though|except|instead|rather|whereas|while|"
@@ -136,6 +140,9 @@ def negated(text: str, start: int) -> bool:
     if cut >= 0:
         prefix = prefix[cut + 1:]
     prefix = re.sub(r"\bnever,\s*ever\b", "never ever", prefix, flags=re.I)
+    # a pronoun that is the OBJECT of the governed verb is not a new subject: "I would never tell you to borrow
+    # from family", "I don't want you to put it on a credit card" (spoken-call rules in the role-play simulator)
+    prefix = _OBJ_PRONOUN.sub(lambda m: m.group(1) + " ", prefix)
     last_cut = 0
     for m in _CUT.finditer(prefix):
         last_cut = m.end()
