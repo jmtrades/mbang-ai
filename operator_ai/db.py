@@ -188,7 +188,15 @@ CREATE TABLE IF NOT EXISTS persona_profiles (
 CREATE TABLE IF NOT EXISTS invites (
   id INTEGER PRIMARY KEY, email TEXT, role TEXT, token_hash TEXT UNIQUE, created_by TEXT, created REAL, expires REAL,
   used REAL);
+CREATE TABLE IF NOT EXISTS app_events (
+  id INTEGER PRIMARY KEY, name TEXT, payload TEXT, created REAL);
+CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 """
+
+# Columns added to existing tables after first release. CREATE TABLE IF NOT EXISTS never alters a table that
+# already exists, so each new column is listed here and added on open when missing: (table, column, declaration).
+COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
+]
 
 REGISTRY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS tenants (
@@ -217,9 +225,20 @@ def init_tenant_db(path: Path | str) -> None:
     conn = connect(path)
     try:
         conn.executescript(TENANT_SCHEMA)
+        _migrate_columns(conn)
     finally:
         conn.close()
     _initialised.add(key)
+
+
+def _migrate_columns(conn: sqlite3.Connection) -> None:
+    have: dict[str, set[str]] = {}
+    for table, col, decl in COLUMN_MIGRATIONS:
+        if table not in have:
+            have[table] = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if col not in have[table]:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+            have[table].add(col)
 
 
 def init_registry(path: Path | str) -> None:

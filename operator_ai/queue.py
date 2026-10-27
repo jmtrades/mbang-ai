@@ -213,6 +213,8 @@ def approve(tenant, qid: int, actor: str, role: str = "owner", user_id: int | No
                   (db.jdump(flags), actor, db.now(), delivered, qid))
     audit.log(tenant, actor, "queue.approve", {"id": qid, "kind": item["kind"], "delivered": delivered})
     _after_approve(tenant, item, actor)
+    if delivered.startswith(("live:", "mock:")):
+        _after_sent(tenant, {**item, "delivered": delivered}, actor)
     return get(tenant, qid)
 
 
@@ -287,6 +289,30 @@ def _after_approve(tenant, item: dict, actor: str) -> None:
     handlers.load()
     for fn in _HOOKS.get(item["kind"], []) + _HOOKS.get("*", []):
         fn(tenant, item, actor)
+
+
+_SENT_HOOKS: dict[str, list] = {}
+
+
+def on_sent(kind: str):
+    """Runs when an item has really gone out (live provider accepted it, a mock transport took it in a demo,
+    or a person confirmed a manual send). Use this, not on_approve, for anything that counts sends."""
+    def deco(fn):
+        _SENT_HOOKS.setdefault(kind, []).append(fn)
+        return fn
+
+    return deco
+
+
+def _after_sent(tenant, item: dict, actor: str) -> None:
+    from . import events, handlers
+
+    handlers.load()
+    for fn in _SENT_HOOKS.get(item["kind"], []) + _SENT_HOOKS.get("*", []):
+        fn(tenant, item, actor)
+    events.emit(tenant, "item_sent", {"queue_id": item["id"], "kind": item["kind"], "channel": item["channel"],
+                                      "owner_user_id": (item.get("meta") or {}).get("owner_user_id"),
+                                      "delivered": item.get("delivered")})
 
 
 def counts(tenant) -> dict:
