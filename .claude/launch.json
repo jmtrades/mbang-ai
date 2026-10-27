@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "operator-ai",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/run.sh"],
+      "port": 8850
+    }
+  ]
+}

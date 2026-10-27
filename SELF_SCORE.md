@@ -19,8 +19,8 @@ questions about that material).
 
 | ID | Item | Score | Status | Evidence | Notes |
 |---|---|---|---|---|---|
-| A1 | Chat in the creator's voice (cited, honest 'not covered', replay when AI off) | 2 | NEEDS_AI_BUDGET | `tests/test_phase4_agents.py::test_thunder_dome_cited_sop_answer`<br>`tests/test_phase4_agents.py::test_tiktok_shop_not_covered`<br>`tests/test_phase4_agents.py::test_ai_answer_then_labelled_replay_when_ai_off` | Rules path: extractive answers from passages; style needs AI.; waiting for: AI key + ai_token_budget for voice/style rewriting |
-| A2 | Files, screenshots, links (uploads + local OCR + receipt) | 1 | REAL_OK | `tests/test_phase8_platform.py::test_upload_kinds_and_receipt`<br>`tests/test_phase8_platform.py::test_image_ocr_local`<br>`tests/test_phase8_platform.py::test_upload_pdf_and_docx` | OCR via tesseract (Docker image) or macOS Vision. Links are not fetched (no outbound web access); paste the text instead. |
+| A1 | Chat in the creator's voice (cited, honest 'not covered', replay when AI off) | 2 | NEEDS_AI_BUDGET | `tests/test_phase4_agents.py::test_thunder_dome_cited_sop_answer`<br>`tests/test_phase4_agents.py::test_tiktok_shop_not_covered`<br>`tests/test_phase4_agents.py::test_ai_answer_then_labelled_replay_when_ai_off`<br>`tests/test_router_chat.py::test_chat_api_routes_each_intent_into_one_thread`<br>`tests/test_ui_playwright.py::test_one_chat_routes_question_numbers_review_and_csv` | One chat routes questions, numbers, scripts/ads/DMs, screenshots and Ads exports; follow-ups read in context. Rules path answers in cited bullet points; the creator's voice/style needs AI.; waiting for: AI key + ai_token_budget for voice/style rewriting |
+| A2 | Files, screenshots, links (uploads + local OCR + receipt) | 1 | REAL_OK | `tests/test_phase8_platform.py::test_upload_kinds_and_receipt`<br>`tests/test_phase8_platform.py::test_image_ocr_local`<br>`tests/test_phase8_platform.py::test_upload_pdf_and_docx`<br>`tests/test_router_chat.py::test_chat_upload_ads_csv_and_screenshot` | Screenshots, PDFs, transcripts and Ads exports can be dropped straight into the chat (local OCR). Links are still not fetched (no outbound web access); paste the text instead. |
 | A3 | Threads and history | 2 | REAL_OK | `tests/test_phase8_platform.py::test_threads_title_rename_search_archive_share` |  |
 | A4 | Projects and memory (scoped, user-deletable) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_projects_scoped_user_deletable_memory` |  |
 | A5 | Business profile (8 sections, read by every skill) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_profile_8_sections_read_by_skills`<br>`tests/test_phase6_chains_studio_ads.py::test_brief_builder_reports_missing_and_reads_profile` |  |
@@ -32,18 +32,18 @@ questions about that material).
 | A11 | Sales-call analysis (consent → transcript → score → drills) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_call_review_requires_every_party_consent` | Transcripts are pasted/uploaded; audio transcription needs a model (not bundled). |
 | A12 | Lead Rescue Desk (anonymous ids) | 2 | REAL_OK | `tests/test_phase5_ops_agents.py::test_rescue_desk_anonymous` |  |
 | A13 | Execution chain (webinar chain, linked queue items) | 2 | REAL_OK | `tests/test_phase6_chains_studio_ads.py::test_webinar_chain_produces_linked_queue_items`<br>`tests/test_phase6_chains_studio_ads.py::test_rerun_only_dependents` |  |
-| A14 | Web voice (consent, quota, transcript, recap; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_web_voice_consent_quota_transcript_recap` | Mock: transcript typed in; consent and quota enforced.; waiting for: a speech-to-text provider for real audio |
-| A15 | Phone and SMS (opt-in first, fictional numbers; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_sms_opt_in_first_and_fictional_numbers` | waiting for: sms_account_sid, sms_auth_token (SMS provider) |
-| A16 | Telegram (link code, ask, check-in, group; mock after approval) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_telegram_link_ask_checkin_group` | waiting for: telegram_bot_token |
-| A17 | Slack (signature check, DM, mention; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_slack_signature` | waiting for: slack_bot_token, slack_signing_secret |
-| A18 | Email channel (inbound parse, quote strip, drafts only) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_email_inbound_parse_quote_strip_drafts_only` | waiting for: smtp_host, smtp_user, smtp_password, an inbound email webhook |
+| A14 | Web voice (consent, quota, transcript, recap; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_web_voice_consent_quota_transcript_recap`<br>`tests/test_voice_line.py::test_voice_line_answers_opted_in_caller` | Chat has browser dictation and on-device read-aloud; a real phone Q&A line (Twilio-style, neutral voice, opted-in callers) is built behind live_channels_enabled.; waiting for: sms_auth_token + a provider phone number for the phone line |
+| A15 | Phone and SMS (opt-in first, fictional numbers; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_sms_opt_in_first_and_fictional_numbers`<br>`tests/test_live_senders.py::test_telegram_slack_sms_live_after_approval` | Real sender built and tested against a fake provider; off by default.; waiting for: sms_account_sid, sms_auth_token, sms_from_number + live_channels_enabled (server CLI) |
+| A16 | Telegram (link code, ask, check-in, group; mock after approval) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_telegram_link_ask_checkin_group`<br>`tests/test_live_senders.py::test_telegram_slack_sms_live_after_approval` | Real Bot API sender built (after approval only); off by default.; waiting for: telegram_bot_token + live_channels_enabled (server CLI) |
+| A17 | Slack (signature check, DM, mention; mock) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_slack_signature`<br>`tests/test_live_senders.py::test_telegram_slack_sms_live_after_approval` | Real chat.postMessage sender built; off by default.; waiting for: slack_bot_token, slack_signing_secret + live_channels_enabled |
+| A18 | Email channel (inbound parse, quote strip, drafts only) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_email_inbound_parse_quote_strip_drafts_only`<br>`tests/test_live_senders.py::test_email_via_smtp` | Real SMTP sender built; off by default.; waiting for: smtp_host, smtp_user, smtp_password, smtp_from + live_channels_enabled |
 | A19 | MCP server (read-only, token auth) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_mcp_read_only_token_auth` |  |
-| A20 | Meta Ads (diagnose read-only, propose PAUSED; mock; live client coded and off) | 2 | NEEDS_LOGIN | `tests/test_phase6_chains_studio_ads.py::test_propose_queues_only`<br>`tests/test_phase9_live_tenancy.py::test_meta_ads_adapter_forces_paused` | waiting for: meta_access_token, meta_app_secret, live_meta_enabled + allowlist (server CLI) |
+| A20 | Meta Ads (diagnose read-only, propose PAUSED; mock; live client coded and off) | 2 | NEEDS_LOGIN | `tests/test_phase6_chains_studio_ads.py::test_propose_queues_only`<br>`tests/test_phase9_live_tenancy.py::test_meta_ads_adapter_forces_paused`<br>`tests/test_router_chat.py::test_ads_export_audit_kill_and_winner` | Real-data audits work today from an Ads Manager CSV export dropped into the chat (read-only).; waiting for: meta_access_token, meta_app_secret, live_meta_enabled + allowlist (server CLI) |
 | A21 | CRM / GoHighLevel-style (mock; terminal moves need approval) | 2 | NEEDS_LOGIN | `tests/test_phase8_platform.py::test_crm_terminal_moves_need_approval` | Mock CRM only; a real GoHighLevel adapter is not written.; waiting for: crm_api_key, crm_location_id (real CRM adapter not built) |
 | A22 | App marketplace / integrations list mapped to vault | 2 | REAL_OK | `tests/test_phase8_platform.py::test_integrations_list`<br>`tests/test_phase8_platform.py::test_vault_api_set_not_set_only` |  |
 | A23 | General sandbox / Studio (7 lines from rules; free-form needs AI) | 2 | REAL_OK | `tests/test_phase6_chains_studio_ads.py::test_each_studio_line_queues_reviewed_drafts` | waiting for: AI budget for free-form drafts |
 | A24 | KB admin (licence, provenance, priority, notes) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_kb_admin_labels_priority_notes` |  |
-| A25 | Source sync (local Drive inbox: list → diff → fetch → screen → stage) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_drive_list_diff_fetch_screen_stage` | Local inbox folder; Google Drive API sync not built.; waiting for: drive_folder_id for a real Google Drive sync |
+| A25 | Source sync (local Drive inbox: list → diff → fetch → screen → stage) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_drive_list_diff_fetch_screen_stage`<br>`tests/test_phase8_platform.py::test_drive_daily_auto_sync_and_synced_folder` | Daily auto-sync; point OPERATOR_DRIVE_INBOX_<TENANT> at a Google Drive for desktop folder for real Drive sync. No Drive API client. |
 | A26 | Personality (name, limits, banned words always enforced) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_personality_banned_words_always_enforced`<br>`tests/test_phase8_platform.py::test_daily_question_limit` | Style rewriting needs AI.; waiting for: AI budget for style |
 | A27 | Branding and embed (white-label, embed widget, local preview) | 2 | REAL_OK | `tests/test_phase8_platform.py::test_mini_scope_limit_consent_embed`<br>`tests/test_phase11_quality.py::test_no_hardcoded_brand_names` |  |
 | A28 | Access and roles (5 roles, RBAC matrix test) | 2 | REAL_OK | `tests/test_phase3_auth_demo.py::test_rbac_api`<br>`tests/test_phase11_quality.py::test_rbac_matrix_every_tab` |  |
@@ -132,6 +132,7 @@ questions about that material).
 | E. Quality | 9 | 12 |
 | **All** | **158** | **162** |
 
+
 ## Eval numbers (fixture corpus — see the note above)
 
 | Metric | Target | Hashed local embedding (tests) | bge-small-en-v1.5 (local, cached) |
@@ -159,7 +160,7 @@ Sources: `docs/evidence/load_test.txt`, `docs/evidence/api_sweep.txt`.
 
 ## Tests
 
-- **327 passed, 0 failed** (`.venv/bin/pytest`, 2 m 45 s; `docs/evidence/pytest_summary.txt`), all offline: AI off,
+- **351 passed, 0 failed** (`.venv/bin/pytest`, 2 m 45 s; `docs/evidence/pytest_summary.txt`), all offline: AI off,
   temp data dir, in-process fakes for Meta / Google / the model; any socket to a non-loopback host raises.
 - Browser: `tests/test_ui_playwright.py` visits every page for every role at 1440×900 and 390×844 — **159 screens**
   with no console errors, no error boxes and no horizontal overflow on mobile (screenshots in `screens/desktop/` and
@@ -173,16 +174,26 @@ Sources: `docs/evidence/load_test.txt`, `docs/evidence/api_sweep.txt`.
   `docs/evidence/builder_demo_click.txt`
 - `tests/test_builder_headless.py::test_headless_click_through_three_times`: passes 3/3 with AI off.
 
+## Compared with Jeremy AI
+
+See `docs/VS_JEREMY_AI.md` for a row-by-row comparison with the sources. Short version: ahead on doing the
+work, safety, grounding, students, white-label and price; behind on the size of the trained archive, conversational
+quality without an AI key, and cloned voice.
+
 ## Known gaps (honest)
 
 1. **Measured on a fictional corpus.** All quality numbers above. Junior's real transcripts (garbled Whisper output,
    ~100 files) will be harder; expect to tune the coverage-judge thresholds and synonyms.
-2. **No real sending anywhere.** Instagram DMs, Telegram, Slack, SMS/phone and email replies are mock transports;
-   approved items are "ready to send manually". Only the Google Calendar insert and Meta Graph calls are real client
-   code (tested against fakes, never against the real APIs).
-3. **Links are not fetched** (A2 scored 1): there is no outbound web access by design; paste the text instead.
-4. **No audio transcription.** Voice notes, web voice and sales calls take text/SRT/VTT transcripts.
-5. **CRM is mock only.** No GoHighLevel adapter; no Google Drive API sync (the "Drive inbox" is a local folder).
+2. **Real sending is built but has never been switched on.** Telegram, Slack, SMS (Twilio-style), SMTP email, a phone
+   Q&A line, Google Calendar and Meta are real client code, tested only against in-process fakes of those APIs and
+   gated by server-only switches that are off. Instagram DMs have no sender (Meta app review needed); approved DMs are
+   "ready to send manually".
+3. **Links are not fetched** (A2 scored 1): there is no outbound web access by design. Screenshots, PDFs, transcripts
+   and Ads exports can be dropped into the chat instead.
+4. **No audio transcription or cloned voice.** The chat uses the browser's dictation and on-device read-aloud; the
+   phone line uses the provider's speech recognition and a neutral voice. A real person's voice is never cloned.
+5. **CRM is mock only** (no GoHighLevel adapter). Drive sync is a synced folder (e.g. Google Drive for desktop), not
+   the Drive API.
 6. **AI paths are tested only against a fake model.** No real model call was ever made (budget 0, no key). The AI
    prompts (coach JSON answers, reviewer criteria, critique rewrites, builder pass) have not been tuned on real output.
 7. **Rules-mode quality is basic.** Extractive answers stitch 2–4 source sentences; call-review stage scores are
