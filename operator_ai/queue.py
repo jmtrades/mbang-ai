@@ -54,7 +54,7 @@ def blocked_recipients(tenant, recipient_ref: str | None, meta: dict | None) -> 
     cands = set()
     for s in [recipient_ref or ""] + [str(x) for x in (meta or {}).get("attendees", [])]:
         cands |= {canonical_email(m) for m in _EMAIL.findall(s)}
-        if s and "@" not in s:
+        if s and ("@" not in s or s.strip().startswith("@")):  # numbers, chat ids and @handles match as written
             cands.add(s.strip().lower())
     return sorted(c for c in cands if c in bl)
 

@@ -24,6 +24,18 @@ def test_voice_line_answers_opted_in_caller(client):
     assert "isn't registered" in r.text
     with t.db() as c:
         c.execute("INSERT INTO channel_links(channel,ext_id,opted_in,status,created) VALUES('phone','+1-555-0142',1,'opted_in',0)")
+    # an opted-in caller nobody knows is thanked and routed to the inbox, never read course material
+    r = _post(client, {"From": "+1-555-0142", "SpeechResult": "What are the rules for a Thunder Dome test?"}, token="voicetok")
+    assert "passed your message to the team" in r.text and "creatives" not in r.text
+    # a student who linked this number hears the cited coach
+    from operator_ai import auth
+
+    uid = auth.create_user(t, "caller-student", "x" * 16, "student")
+    with t.db() as c:
+        sid = c.execute("INSERT INTO students(name,email) VALUES('Caller Student','caller@example.invalid')").lastrowid
+        c.execute("UPDATE users SET student_id=? WHERE id=?", (sid, uid))
+        c.execute("INSERT INTO channel_links(channel,ext_id,user_id,opted_in,status,created) VALUES('phone','+1-555-0142',?,1,'linked',1)",
+                  (uid,))
     r = _post(client, {"From": "+1-555-0142"}, token="voicetok")
     assert "<Gather" in r.text
     r = _post(client, {"From": "+1-555-0142", "SpeechResult": "What are the rules for a Thunder Dome test?"}, token="voicetok")

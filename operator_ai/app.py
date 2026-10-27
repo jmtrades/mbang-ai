@@ -47,6 +47,13 @@ def create_app(start_workers: bool = True) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         tenancy.ensure_defaults()
+        try:  # crash recovery: runs left "running" by a restart become "interrupted" (escalations.recover_runs)
+            from . import escalations
+
+            for t in tenancy.list_all():
+                escalations.recover_runs(t)
+        except Exception as e:  # noqa: BLE001 - recovery must never stop the app from starting
+            log.warning("run recovery skipped: %s", redact(type(e).__name__))
         if start_workers:
             from . import index, workers
 

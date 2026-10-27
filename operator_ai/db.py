@@ -197,6 +197,27 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [prospects] tables
 -- [delivery] tables
 -- [inbound] tables
+CREATE TABLE IF NOT EXISTS conversations (
+  id INTEGER PRIMARY KEY, party_type TEXT, party_id INTEGER, channel TEXT, ext_id TEXT, scope INTEGER NOT NULL DEFAULT 0,
+  display TEXT, owner_user_id INTEGER, state TEXT, last_in REAL, last_out REAL, last_class TEXT, demo INTEGER DEFAULT 0,
+  created REAL, UNIQUE(channel, ext_id, scope));
+CREATE INDEX IF NOT EXISTS conversations_party ON conversations(party_type, party_id);
+CREATE INDEX IF NOT EXISTS conversations_owner ON conversations(owner_user_id, last_in);
+CREATE TABLE IF NOT EXISTS inbound_messages (
+  id INTEGER PRIMARY KEY, conversation_id INTEGER, channel TEXT, ext_id TEXT, reply_ref TEXT, provider_id TEXT,
+  party_type TEXT, party_id INTEGER, owner_user_id INTEGER, subject TEXT, body TEXT, classification TEXT,
+  confidence REAL, class_mode TEXT, matched TEXT, status TEXT, queue_id INTEGER, run_id INTEGER, escalation_id INTEGER,
+  note TEXT, created REAL, handled_at REAL, demo INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS inbound_conv ON inbound_messages(conversation_id, created);
+CREATE INDEX IF NOT EXISTS inbound_class ON inbound_messages(classification, status, created);
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id INTEGER PRIMARY KEY, provider TEXT NOT NULL, event_id TEXT NOT NULL, created REAL, UNIQUE(provider, event_id));
+CREATE TABLE IF NOT EXISTS escalations (
+  id INTEGER PRIMARY KEY, mission_id INTEGER, kind TEXT, severity TEXT, detail TEXT, assignee_user_id INTEGER,
+  status TEXT, due REAL, ref TEXT, note TEXT, created REAL, acked_by TEXT, acked_at REAL, resolved_by TEXT, resolved REAL,
+  demo INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS escalations_status ON escalations(status, created);
+CREATE INDEX IF NOT EXISTS escalations_ref ON escalations(kind, ref);
 -- [client_ops] tables
 -- [webinars] tables
 -- [persona] tables
@@ -215,6 +236,8 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [prospects]
     # [delivery]
     # [inbound]
+    ("channel_messages", "conversation_id", "INTEGER"),
+    ("leads", "do_not_contact", "INTEGER DEFAULT 0"),
     # [client_ops]
     # [webinars]
     # [persona]
