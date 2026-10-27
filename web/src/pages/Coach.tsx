@@ -209,7 +209,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
                       <Extra meta={m.meta} />
                       <Citations items={m.meta.citations} />
                       {m.meta.not_used?.length > 0 && (
-                        <details className="text-[11.5px] text-muted"><summary>{m.meta.not_used.length} passage(s) not used</summary>
+                        <details className="text-[11.5px] text-muted"><summary>{m.meta.not_used.length} {m.meta.not_used.length === 1 ? "passage" : "passages"} not used</summary>
                           {m.meta.not_used.map((n: any, j: number) => <div key={j}>{n.label} ({n.file} L{n.lines})</div>)}
                         </details>
                       )}

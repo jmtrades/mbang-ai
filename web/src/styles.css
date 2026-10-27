@@ -240,6 +240,9 @@
   }
   * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
   ::selection { background: color-mix(in oklab, var(--brand) 26%, transparent); }
+  /* no orphaned last words in headings ("Day One with Operator / AI"), fewer ragged paragraph endings */
+  h1, h2, h3, .t-display { text-wrap: balance; }
+  p { text-wrap: pretty; }
   code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
   :not(pre) > code { padding: 0.1em 0.35em; border-radius: 5px; background: var(--neutral-soft); border: 1px solid var(--line-2); }
   hr { border-color: var(--line); }
@@ -340,6 +343,12 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 .pulse-dot { animation: pulse-dot 2.4s ease-out infinite; }
+
+/* soft top/bottom edges on a scrolling list, so rows fade out instead of being sliced by the header/footer */
+.fade-edges {
+  mask-image: linear-gradient(to bottom, transparent 0, black 10px, black calc(100% - 22px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 10px, black calc(100% - 22px), transparent 100%);
+}
 
 .scroll-thin { scrollbar-width: thin; }
 .scroll-none { scrollbar-width: none; }

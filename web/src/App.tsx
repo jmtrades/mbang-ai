@@ -249,9 +249,16 @@ function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; 
   useEffect(() => {
     if (open) setTimeout(() => navRef.current?.querySelector<HTMLElement>("[aria-current=page], a")?.focus({ preventScroll: true }), 50);
   }, [open]);
+  const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // keep the active link visible in a long sidebar
-    navRef.current?.querySelector("[aria-current=page]")?.scrollIntoView({ block: "center" });
+    // Keep the active link visible in a long sidebar, but never move the list when it already is:
+    // a sidebar that re-centres on every click loses the reader's place.
+    const list = listRef.current;
+    const el = list?.querySelector<HTMLElement>("[aria-current=page]");
+    if (!list || !el) return;
+    const a = el.getBoundingClientRect();
+    const b = list.getBoundingClientRect();
+    if (a.top < b.top + 12 || a.bottom > b.bottom - 24) el.scrollIntoView({ block: "nearest" });
   }, [page]);
   return (
     <aside
@@ -271,7 +278,7 @@ function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; 
           <ThemeToggle small className="md:hidden" />
           <IconButton label="Close menu" size="icon-sm" className="md:hidden" onClick={onClose}><X className="size-4" /></IconButton>
         </div>
-        <div className="scroll-thin flex-1 overflow-y-auto px-2.5 pb-4 pt-1">
+        <div ref={listRef} className="scroll-thin fade-edges flex-1 scroll-py-6 overflow-y-auto px-2.5 pb-6 pt-2">
           {sections.map((s) => {
             const hasActive = s.items.some((i) => i.key === page);
             const isOpen = !collapsed.includes(s.group) || hasActive;

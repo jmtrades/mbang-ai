@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ApiError, post, put } from "../api";
 import { FileText } from "lucide-react";
-import { Badge, Button, Card, Empty, ErrorBox, Field, Input, Loading, PageHeader, Select, Stat, Table, Tabs, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, Empty, ErrorBox, Field, Input, Loading, PageHeader, Select, Stat, Table, Tabs, useApi, useApp, humanize } from "../components/ui";
 
 export default function KbAdmin() {
   const { openSource } = useApp();
@@ -63,7 +63,7 @@ export default function KbAdmin() {
       )}
       {tab === "provenance" && prov.data && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{Object.entries(prov.data.by_provenance).map(([k, v]) => <Stat key={k} label={k} value={v as number} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{Object.entries(prov.data.by_provenance).map(([k, v]) => <Stat key={k} label={humanize(k)} value={v as number} />)}</div>
           <Card><p className="text-sm text-muted">{prov.data.unconfirmed_note}</p></Card>
         </div>
       )}

@@ -1,33 +1,57 @@
 import { useState } from "react";
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
+import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ApiError, post } from "../api";
-import { Badge, Button, Card, CopyButton, DemoBadge, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
+import { MoveRight, TrendingDown, TrendingUp } from "lucide-react";
+import { Badge, Button, Card, CopyButton, DemoBadge, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, cx, humanize, isDemo, useApi, useApp } from "../components/ui";
 
 const LEVEL: Record<string, any> = { high: "bad", medium: "warn", low: "good" };
+
+/** Axis labels short enough to sit beside a radar in a narrow card ("Progress (clients / wins)" → "Progress"). */
+const shortAxis = (l: string) => {
+  const s = String(l).replace(/\s*\(.*?\)\s*/g, "").trim();
+  return s.length > 12 ? s.split(/\s+/)[0] : s;
+};
 
 export function RetentionStar() {
   const { data, error, loading, reload } = useApi<any>("/students/star");
   return (
-    <Card title="Retention Star" subtitle="Five-point community health">
+    <Card title="Retention Star" subtitle={data ? `Five-point community health · ${data.students} students` : "Five-point community health"}
+      actions={data && data.points.length > 0 && (
+        <span className="flex items-baseline gap-1" title="Overall score out of 100">
+          <span className="text-[24px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink">{Math.round(data.overall * 100)}</span>
+          <span className="text-[12px] text-muted">/ 100</span>
+        </span>
+      )}>
       {loading && <Loading />}
       <ErrorBox error={error} retry={reload} />
       {data && data.points.length > 0 && (
-        <div className="grid items-center gap-2 md:grid-cols-[1fr_160px]">
-          <div className="h-56" data-testid="retention-star">
-            <ResponsiveContainer>
-              <RadarChart data={data.points.map((p: any) => ({ ...p, v: Math.round(p.value * 100) }))}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="label" tick={{ fontSize: 11 }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                <Radar dataKey="v" stroke="var(--brand)" fill="var(--brand)" fillOpacity={0.25} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="text-center"><div className="text-4xl font-semibold">{Math.round(data.overall * 100)}</div><div className="text-xs text-muted">overall / 100 · {data.students} students</div></div>
+        <div className="h-56" data-testid="retention-star">
+          <ResponsiveContainer>
+            <RadarChart data={data.points.map((p: any) => ({ ...p, v: Math.round(p.value * 100) }))} outerRadius="70%" margin={{ top: 6, right: 8, bottom: 6, left: 8 }}>
+              <PolarGrid stroke="var(--line)" />
+              <PolarAngleAxis dataKey="label" tickFormatter={shortAxis} tick={{ fontSize: 11.5, fill: "var(--muted)" }} />
+              <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+              <Tooltip formatter={(v: any) => [`${v} / 100`, "Score"]} />
+              <Radar dataKey="v" stroke="var(--viz-1)" fill="var(--viz-1)" fillOpacity={0.22} strokeWidth={1.5} />
+            </RadarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </Card>
   );
+}
+
+const TREND: Record<string, { icon: typeof TrendingUp; label: string; cls: string }> = {
+  rising: { icon: TrendingUp, label: "Rising", cls: "text-bad" },
+  falling: { icon: TrendingDown, label: "Falling", cls: "text-good" },
+  flat: { icon: MoveRight, label: "Flat", cls: "text-muted" },
+};
+
+function Trend({ t }: { t: string }) {
+  const d = TREND[t];
+  if (!d) return <span className="text-muted">{humanize(t) || "—"}</span>;
+  const I = d.icon;
+  return <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-2" title={`Risk ${t}`}><I className={cx("size-3.5", d.cls)} />{d.label}</span>;
 }
 
 export default function Students() {
@@ -69,7 +93,7 @@ export default function Students() {
               <Stat label="Students" value={data.total} demo={me.is_demo} />
               <Stat label="High risk" value={data.counts.high || 0} tone="bad" />
               <Stat label="Medium risk" value={data.counts.medium || 0} tone="warn" />
-              <Stat label="Board computed in" value={`${data.ms} ms`} />
+              <Stat label="Low risk" value={data.counts.low || 0} tone="good" hint={`Board computed in ${data.ms} ms`} />
             </div>
           )}
           <Card pad={false}><div className="p-3">
@@ -77,9 +101,9 @@ export default function Students() {
             <ErrorBox error={error} retry={reload} />
             {data && <Table rows={data.students.slice(0, 300)} empty="No students yet" cols={[
               { key: "name", label: "Student", render: (s) => <span className="flex items-center gap-1.5">{s.name.replace(" (DEMO)", "")} {isDemo(s.name) && <DemoBadge />}</span> },
-              { key: "level", label: "Risk", render: (s) => <Badge tone={LEVEL[s.level]}>{s.level} · {s.risk}</Badge> },
-              { key: "trend", label: "Trend" },
-              { key: "signals", label: "Signals", render: (s) => <span className="text-xs text-muted">{s.signals.map((x: any) => x.label).join(" · ") || "—"}</span> },
+              { key: "level", label: "Risk", render: (s) => <Badge tone={LEVEL[s.level]} className="tabular-nums">{humanize(s.level)} · {s.risk}</Badge> },
+              { key: "trend", label: "Risk trend", render: (s) => <Trend t={s.trend} /> },
+              { key: "signals", label: "Signals", render: (s) => <span className="text-[12.5px] text-muted">{s.signals.map((x: any) => x.label).join(" · ") || "—"}</span> },
             ]} />}
           </div></Card>
         </>
@@ -87,7 +111,7 @@ export default function Students() {
       {tab === "star" && <RetentionStar />}
       {tab === "tasks" && (
         <Card title="Open coach tasks">{tasks.loading && <Loading />}<ErrorBox error={tasks.error} retry={tasks.reload} />
-          {tasks.data && <Table rows={tasks.data.items} empty="No open tasks" cols={[{ key: "student", label: "Student" }, { key: "kind", label: "Kind" }, { key: "detail", label: "Detail" }, { key: "due", label: "Due", render: (t) => new Date(t.due * 1000).toLocaleDateString() }]} />}
+          {tasks.data && <Table rows={tasks.data.items} empty="No open tasks" cols={[{ key: "student", label: "Student" }, { key: "kind", label: "Kind", render: (t) => humanize(t.kind) }, { key: "detail", label: "Detail" }, { key: "due", label: "Due", render: (t) => new Date(t.due * 1000).toLocaleDateString() }]} />}
         </Card>
       )}
       {tab === "digest" && (

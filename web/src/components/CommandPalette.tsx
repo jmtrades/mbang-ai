@@ -173,7 +173,7 @@ export function CommandPalette({ open, onClose, commands }: { open: boolean; onC
                 spellCheck={false}
                 className="h-[52px] min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-placeholder"
               />
-              <Kbd className="hidden sm:inline-flex">Esc</Kbd>
+              <Kbd className="max-sm:hidden pointer-coarse:hidden">Esc</Kbd>
             </div>
             <div ref={listRef} id={listId} role="listbox" aria-label="Results" className="scroll-thin flex-1 overflow-y-auto p-2">
               {flat.length === 0 && (
@@ -208,7 +208,7 @@ export function CommandPalette({ open, onClose, commands }: { open: boolean; onC
                           <Highlight text={c.label} hits={hits} />
                         </span>
                         {c.hint && <span className="hidden shrink-0 text-[12px] text-muted sm:inline">{c.hint}</span>}
-                        {c.shortcut && <Kbd className="hidden sm:inline-flex">{c.shortcut}</Kbd>}
+                        {c.shortcut && <Kbd className="max-sm:hidden pointer-coarse:hidden">{c.shortcut}</Kbd>}
                         {on && <CornerDownLeft className="size-3.5 shrink-0 text-muted" />}
                       </div>
                     );
@@ -216,7 +216,7 @@ export function CommandPalette({ open, onClose, commands }: { open: boolean; onC
                 </div>
               ))}
             </div>
-            <div className="hidden items-center gap-4 border-t border-line-2 bg-panel-2 px-4 py-2 text-[12px] text-muted sm:flex">
+            <div className="hidden items-center gap-4 border-t border-line-2 bg-panel-2 px-4 py-2 text-[12px] text-muted sm:flex pointer-coarse:hidden!">
               <span className="flex items-center gap-1.5"><Kbd>↑</Kbd><Kbd>↓</Kbd> to move</span>
               <span className="flex items-center gap-1.5"><Kbd>↵</Kbd> to open</span>
               <span className="flex items-center gap-1.5"><Kbd>Esc</Kbd> to close</span>

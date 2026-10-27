@@ -1,5 +1,5 @@
 import { ArrowRight, Sunrise } from "lucide-react";
-import { Button, Card, CopyButton, Empty, ErrorBox, Loading, PageHeader, Reveal, useApi, useApp } from "../components/ui";
+import { Button, Card, CopyButton, Empty, ErrorBox, Loading, PageHeader, Reveal, tidyCount, useApi, useApp } from "../components/ui";
 
 export default function MorningBrief() {
   const { me, go } = useApp();
@@ -17,7 +17,7 @@ export default function MorningBrief() {
             <Reveal as="li" key={it.rank} i={i}>
               <a href={it.href} className="focus-ring card card-hover group flex items-start gap-4 p-4 hover:border-brand-line sm:p-5">
                 <div className={i === 0 ? "grid size-8 shrink-0 place-items-center rounded-full bg-brand text-[13px] font-semibold tabular-nums text-[var(--brand-ink)]" : "grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-[13px] font-semibold tabular-nums text-brand ring-1 ring-brand-line"}>{it.rank}</div>
-                <div className="min-w-0 flex-1"><div className="text-[15px] font-semibold text-ink">{it.title}</div><div className="mt-0.5 text-[13.5px] text-muted">{it.why}</div></div>
+                <div className="min-w-0 flex-1"><div className="text-[15px] font-semibold text-ink">{tidyCount(it.title)}</div><div className="mt-0.5 text-[13.5px] text-muted">{tidyCount(it.why || "")}</div></div>
                 <ArrowRight className="mt-1.5 size-4 text-faint transition-[transform,color] group-hover:translate-x-0.5 group-hover:text-brand" />
               </a>
             </Reveal>

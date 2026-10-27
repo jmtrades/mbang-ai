@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Check, Inbox, Pencil, X } from "lucide-react";
 import { ApiError, post, put } from "../api";
-import { Badge, Button, DemoBadge, Empty, ErrorBox, FlagList, Loading, PageHeader, Reveal, Select, TextArea, TraceLink, cx, isDemo, useApi, useApp } from "../components/ui";
+import { Badge, Button, DemoBadge, Empty, ErrorBox, FlagList, Loading, PageHeader, Reveal, Select, TextArea, TraceLink, cx, humanize, isDemo, useApi, useApp } from "../components/ui";
 
 const STATUS_TONE: Record<string, any> = { pending: "info", held: "bad", needs_human: "warn", approved: "good", rejected: "neutral" };
 const STATUS_LABEL: Record<string, string> = { pending: "Pending approval", held: "Held by guardrails", needs_human: "Needs a person", approved: "Approved", rejected: "Rejected" };
+// most urgent first, whatever order the server counts arrive in
+const STATUS_ORDER = ["held", "needs_human", "pending", "approved", "rejected"];
+const DOT: Record<string, string> = { held: "bg-bad", needs_human: "bg-warn", pending: "bg-info", approved: "bg-good", rejected: "bg-faint" };
 
 function Item({ it, index = 0, onChange }: { it: any; index?: number; onChange: () => void }) {
   const { toast } = useApp();
@@ -37,19 +40,20 @@ function Item({ it, index = 0, onChange }: { it: any; index?: number; onChange: 
   return (
     <Reveal as="li" i={index} className="card overflow-hidden" data-testid="queue-item" data-status={it.status}>
       <div className="p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        {/* phones: badges drop below the title instead of squeezing it into a narrow column */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px] text-muted">
               <span className="tabular-nums">#{it.id}</span>
               <span aria-hidden>·</span>
               <span>{kind}</span>
               {channel && channel !== kindRaw && <><span aria-hidden>·</span><span>{channel}</span></>}
-              {it.recipient_ref && <><span aria-hidden>·</span><span className="min-w-0 truncate">To {it.recipient_ref}</span></>}
+              {it.recipient_ref && <><span aria-hidden>·</span><span className="min-w-0 break-all">To {it.recipient_ref}</span></>}
               {it.run_id ? <><span aria-hidden>·</span><TraceLink runId={it.run_id} /></> : null}
             </div>
             <h3 className="mt-1 text-[15px] font-semibold leading-snug text-ink">{it.title || "(untitled)"}</h3>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
             {(it.demo || isDemo(it.title) || isDemo(it.recipient_ref)) && <DemoBadge />}
             {it.meta?.client_asset && <Badge tone="info">Client asset</Badge>}
             {it.meta?.prospect_facing && <Badge tone="warn">Prospect-facing</Badge>}
@@ -99,26 +103,37 @@ export default function Queue({ query }: { query: URLSearchParams }) {
   if (tag) params.set("tag", tag);
   if (query.get("chain_id")) params.set("chain_id", query.get("chain_id")!);
   const { data, error, loading, reload } = useApi<any>(`/queue?${params.toString()}`, [status, ids, tag]);
+  // The server's counts cover the whole workspace. Everyone but the owner sees only the items they can
+  // decide, so their chips are counted from that same list; otherwise the chips promise work the list doesn't show.
+  const owner = me.user.role === "owner";
+  const mine = useApi<any>(owner || !data ? null : "/queue", [data]);
+  const counts: Record<string, number> = owner
+    ? data?.counts || {}
+    : (mine.data?.items || []).reduce((acc: Record<string, number>, it: any) => ({ ...acc, [it.status]: (acc[it.status] || 0) + 1 }), {});
+  const chips = STATUS_ORDER.filter((k) => counts[k]).concat(Object.keys(counts).filter((k) => !STATUS_ORDER.includes(k) && counts[k]));
   return (
     <div>
       <PageHeader
         title="Approval queue"
         subtitle="Everything outbound waits here. Approving marks it ready to send manually or delivers it to a mock transport — nothing reaches a real person from here."
-        right={<Select value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: "open", label: "Open" }, "pending", "held", "needs_human", "approved", "rejected", { value: "all", label: "All" }]} aria-label="Filter" />}
       />
       {(ids || tag) && <p className="mb-3 text-sm text-muted">Filtered to {ids ? `${ids.split(",").length} items from a run` : `tag ${tag}`}. <a className="text-brand" href="#/queue">Show all</a></p>}
-      {data?.counts && Object.keys(data.counts).length > 0 && (
-        <div className="mb-5 flex flex-wrap gap-2" aria-label="Show only">
-          {Object.entries(data.counts).map(([k, v]) => (
-            <button key={k} type="button" onClick={() => setStatus(k)} aria-pressed={status === k}
-              className={cx("focus-ring inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[12.5px] font-medium transition-colors", status === k ? "border-brand-line bg-brand-soft text-ink" : "border-line bg-panel text-ink-2 shadow-xs hover:border-line-strong hover:text-ink")}>
-              <span className={cx("size-1.5 rounded-full", k === "held" ? "bg-bad" : k === "needs_human" ? "bg-warn" : k === "pending" ? "bg-info" : k === "approved" ? "bg-good" : "bg-faint")} />
-              {STATUS_LABEL[k] || k}
-              <span className="tabular-nums text-muted">{v as number}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {chips.length > 0 && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Show only">
+            {chips.map((k) => (
+              <button key={k} type="button" onClick={() => setStatus(status === k ? "open" : k)} aria-pressed={status === k}
+                className={cx("focus-ring inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[12.5px] font-medium transition-colors", status === k ? "border-brand-line bg-brand-soft text-ink" : "border-line bg-panel text-ink-2 shadow-xs hover:border-line-strong hover:text-ink")}>
+                <span className={cx("size-1.5 rounded-full", DOT[k] || "bg-faint")} />
+                {STATUS_LABEL[k] || humanize(k)}
+                <span className="tabular-nums text-muted">{counts[k]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <Select className="sm:ml-auto sm:w-48" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter"
+          options={[{ value: "open", label: "All open" }, ...STATUS_ORDER.map((k) => ({ value: k, label: STATUS_LABEL[k] })), { value: "all", label: "Everything" }]} />
+      </div>
       {loading && <Loading rows={6} />}
       <ErrorBox error={error} retry={reload} />
       {data && data.items.length === 0 && (

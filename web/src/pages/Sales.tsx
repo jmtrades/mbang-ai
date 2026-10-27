@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { MousePointerClick, Zap } from "lucide-react";
 import { ApiError, get, post } from "../api";
-import { Badge, Button, Card, Citations, DemoBadge, Empty, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, DemoBadge, Empty, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, humanize, isDemo, useApi, useApp } from "../components/ui";
 
 const TIER_TONE: Record<string, any> = { hot: "bad", warm: "warn", cold: "info" };
+const yesNo = (v: unknown) => (v === true || v === "true" ? "Yes" : v === false || v === "false" ? "No" : String(v ?? "—"));
 
 export function BurstPanel() {
   const [batch, setBatch] = useState<string | null>(null);
@@ -49,8 +50,8 @@ export function BurstPanel() {
           <div className="h-2 overflow-hidden rounded-full bg-[var(--neutral-soft)]"><div className="h-full bg-brand transition-all" style={{ width: `${pct}%` }} /></div>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge>{st.done + st.failed}/{st.total}</Badge>
-            <Badge tone={st.failed ? "bad" : "good"}>{st.failed} failures</Badge>
-            {Object.entries(st.tiers || {}).map(([k, v]) => <Badge key={k} tone={TIER_TONE[k]}>{k}: {v as number}</Badge>)}
+            <Badge tone={st.failed ? "bad" : "good"}>{st.failed} {st.failed === 1 ? "failure" : "failures"}</Badge>
+            {Object.entries(st.tiers || {}).map(([k, v]) => <Badge key={k} tone={TIER_TONE[k]}>{humanize(k)}: {v as number}</Badge>)}
             <DemoBadge />
           </div>
           {st.complete && <p className="text-sm text-good">Burst complete.</p>}
@@ -78,25 +79,25 @@ function LeadDetail({ lead, onDone }: { lead: any; onDone: () => void }) {
     }
   };
   return (
-    <Card title={<span className="flex items-center gap-2">{lead.name} {isDemo(lead.name) && <DemoBadge />}</span>} subtitle={`${lead.source} · ${lead.answers?.business || ""}`}
+    <Card title={<span className="flex items-center gap-2">{lead.name.replace(" (DEMO)", "")} {isDemo(lead.name) && <DemoBadge />}</span>} subtitle={[humanize(lead.source), lead.answers?.business].filter(Boolean).join(" · ")}
       actions={<Button tone="primary" size="sm" loading={busy} onClick={run}>Qualify & draft</Button>}>
       <ErrorBox error={err} retry={run} />
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-        {Object.entries(lead.answers || {}).flatMap(([k, v]) => [<dt key={k + "k"} className="text-muted">{k}</dt>, <dd key={k + "v"}>{String(v)}</dd>])}
+      <dl className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-x-4 gap-y-2 text-[13.5px]">
+        {Object.entries(lead.answers || {}).flatMap(([k, v]) => [<dt key={k + "k"} className="text-muted">{humanize(k)}</dt>, <dd key={k + "v"} className="min-w-0 text-ink">{yesNo(v)}</dd>])}
       </dl>
       {res && (
         <div className="mt-4 space-y-3" data-testid="lead-result">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={TIER_TONE[res.tier]}>{res.tier}</Badge><Badge>score {res.score}</Badge><Badge>→ {res.route}</Badge><TraceLink runId={res.run_id} />
+            <Badge tone={TIER_TONE[res.tier]}>{humanize(res.tier)}</Badge><Badge className="tabular-nums">Score {res.score}</Badge><Badge>Route: {humanize(res.route)}</Badge><TraceLink runId={res.run_id} />
           </div>
-          <Table rows={res.factors} cols={[{ key: "factor", label: "Factor" }, { key: "value", label: "Value", render: (f) => String(f.value) }, { key: "points", label: "Points" }]} />
+          <Table rows={res.factors} cols={[{ key: "factor", label: "Factor", render: (f) => humanize(f.factor) }, { key: "value", label: "Value", render: (f) => yesNo(f.value) }, { key: "points", label: "Points", className: "text-right tabular-nums" }]} />
           <div>
-            <div className="mb-1 text-xs font-semibold text-muted">Setter script</div>
+            <div className="t-overline mb-1.5">Setter script</div>
             <ol className="list-decimal space-y-1 pl-5 text-sm">{res.script.lines.map((l: string, i: number) => <li key={i}>{l}</li>)}</ol>
             <Citations items={res.script.citations} />
           </div>
           <div>
-            <div className="mb-1 text-xs font-semibold text-muted">Pre-call brief</div>
+            <div className="t-overline mb-1.5">Pre-call brief</div>
             <p className="text-sm">Goal: {res.brief.goal} · Numbers: {res.brief.current_numbers} · Timeline: {res.brief.timeline}</p>
             <Citations items={res.brief.citations} />
           </div>
@@ -127,12 +128,23 @@ function LiveChain() {
       <ErrorBox error={err || error} retry={reload} />
       {loading && <Loading />}
       {data && <Table rows={data.leads} empty="No chain leads yet. Signed Meta lead webhooks land here." cols={[
-        { key: "leadgen_id", label: "Lead" }, { key: "tier", label: "Tier", render: (l) => <Badge tone={TIER_TONE[l.tier]}>{l.tier}</Badge> },
-        { key: "stage", label: "Stage" }, { key: "citations", label: "Cited from", render: (l) => <Citations items={l.citations} /> },
+        { key: "leadgen_id", label: "Lead" }, { key: "tier", label: "Tier", render: (l) => <Badge tone={TIER_TONE[l.tier]}>{humanize(l.tier)}</Badge> },
+        { key: "stage", label: "Stage", render: (l) => humanize(l.stage) }, { key: "citations", label: "Cited from", render: (l) => <Citations items={l.citations} /> },
         { key: "x", label: "", render: (l) => l.stage === "qualified" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/reply`, { text: "Recorded reply" }), (r) => go(`/queue?ids=${r.booking_dm},${r.invite}`))}>Record reply</Button>
           : l.stage === "booked" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/outcome`, { outcome: "showed" }))}>Mark showed</Button> : null },
       ]} />}
-      {data && <pre className="prose-pre mt-3 rounded-lg bg-panel-2 p-2 text-xs">{JSON.stringify({ stages: data.report.leads_by_stage, inbox: data.report.inbox }, null, 1)}</pre>}
+      {data && (
+        <div className="mt-4 grid gap-3 border-t border-line-2 pt-4 sm:grid-cols-2">
+          <div>
+            <div className="t-overline mb-1.5">Leads by stage</div>
+            <div className="flex flex-wrap gap-1.5">{Object.entries(data.report.leads_by_stage || {}).map(([k, v]) => <Badge key={k} className="tabular-nums">{humanize(k)} {String(v)}</Badge>)}{!Object.keys(data.report.leads_by_stage || {}).length && <span className="text-[13px] text-muted">None yet</span>}</div>
+          </div>
+          <div>
+            <div className="t-overline mb-1.5">Inbox</div>
+            <div className="flex flex-wrap gap-1.5">{Object.entries(data.report.inbox || {}).map(([k, v]) => <Badge key={k} className="tabular-nums">{humanize(k)} {typeof v === "object" ? JSON.stringify(v) : String(v)}</Badge>)}{!Object.keys(data.report.inbox || {}).length && <span className="text-[13px] text-muted">Empty</span>}</div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -151,23 +163,24 @@ export default function Sales() {
         <>
           {data?.tiers && (
             <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {["hot", "warm", "cold", "unscored"].map((t) => <Stat key={t} label={t} value={data.tiers[t] || 0} demo={me.is_demo} />)}
+              {["hot", "warm", "cold", "unscored"].map((t) => <Stat key={t} label={t === "unscored" ? "Not scored yet" : `${humanize(t)} leads`} value={data.tiers[t] || 0} demo={me.is_demo} />)}
             </div>
           )}
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid items-start gap-4 xl:grid-cols-2">
             <Card pad={false}>
               <div className="p-3">
                 {loading && <Loading rows={6} />}
                 <ErrorBox error={error} retry={reload} />
-                {data && <Table rows={data.items} onRow={setSel} empty="No leads yet" cols={[
+                {data && <Table rows={data.items} onRow={setSel} selected={(l) => sel?.id === l.id} empty="No leads yet" cols={[
                   { key: "name", label: "Lead", render: (l) => <span className="flex items-center gap-1.5">{l.name.replace(" (DEMO)", "")} {isDemo(l.name) && <DemoBadge />}</span> },
-                  { key: "source", label: "Source" },
-                  { key: "tier", label: "Tier", render: (l) => l.tier ? <Badge tone={TIER_TONE[l.tier]}>{l.tier}</Badge> : <span className="text-muted">—</span> },
-                  { key: "stage", label: "Stage" },
+                  { key: "source", label: "Source", className: "max-sm:hidden", render: (l) => humanize(l.source) },
+                  { key: "tier", label: "Tier", render: (l) => l.tier ? <Badge tone={TIER_TONE[l.tier]}>{humanize(l.tier)}</Badge> : <span className="text-muted">—</span> },
+                  { key: "stage", label: "Stage", render: (l) => humanize(l.stage) },
                 ]} />}
               </div>
             </Card>
-            <div>{sel ? <LeadDetail key={sel.id} lead={sel} onDone={reload} /> : <Empty icon={<MousePointerClick />} title="Pick a lead" hint="Select a lead on the left to qualify it and draft the setter reply, follow-ups, booking and reminders." />}</div>
+            {/* sticky beside a long table, and scrollable on its own so a long result is never cut off */}
+            <div className="scroll-thin xl:sticky xl:top-20 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:rounded-[var(--radius-lg)]">{sel ? <LeadDetail key={sel.id} lead={sel} onDone={reload} /> : <Empty icon={<MousePointerClick />} title="Pick a lead" hint="Select a lead on the left to qualify it and draft the setter reply, follow-ups, booking and reminders." />}</div>
           </div>
         </>
       )}
@@ -176,7 +189,7 @@ export default function Sales() {
           {rescue.loading && <Loading />}
           <ErrorBox error={rescue.error} retry={rescue.reload} />
           {rescue.data && <Table rows={rescue.data.items} empty="No stalled leads" cols={[
-            { key: "anon_id", label: "Lead (anonymous)" }, { key: "stage", label: "Stage" }, { key: "days_stalled", label: "Days stalled" },
+            { key: "anon_id", label: "Lead (anonymous)" }, { key: "stage", label: "Stage", render: (r) => humanize(r.stage) }, { key: "days_stalled", label: "Days stalled", className: "tabular-nums" },
             { key: "suggestion", label: "Value-only next step" },
           ]} />}
         </Card>

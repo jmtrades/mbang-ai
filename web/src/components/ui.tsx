@@ -112,21 +112,60 @@ export function IconButton({ label, children, className, tone = "ghost", size = 
   );
 }
 
-export function Card({ title, subtitle, actions, children, className, pad = true }: { title?: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; children?: React.ReactNode; className?: string; pad?: boolean }) {
+export function Card({ title, subtitle, actions, children, className, pad = true, bodyClassName }: { title?: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; children?: React.ReactNode; className?: string; pad?: boolean; bodyClassName?: string }) {
   return (
     <section className={cx("card", className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-line-2 px-4 py-3 sm:px-5">
-          <div className="min-w-0">
+        <header className={cx("flex flex-wrap justify-between gap-x-3 gap-y-2 border-b border-line-2 px-4 py-3 sm:px-5", subtitle ? "items-start" : "min-h-[52px] items-center")}>
+          {/* the title block grows and wraps its own text first, so a short action stays on the title's line */}
+          <div className="min-w-0 flex-[1_1_7rem]">
             {title && <h3 className="t-h3 text-ink">{title}</h3>}
             {subtitle && <p className="mt-0.5 text-[12.5px] leading-snug text-muted">{subtitle}</p>}
           </div>
-          {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+          {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={pad ? "p-4 sm:p-5" : ""}>{children}</div>
+      <div className={cx(pad && "p-4 sm:p-5", bodyClassName)}>{children}</div>
     </section>
   );
+}
+
+// ---------------------------------------------------------------- display text
+const ACRONYMS: Record<string, string> = { ai: "AI", dm: "DM", dms: "DMs", sms: "SMS", vsl: "VSL", kpi: "KPI", faq: "FAQ", crm: "CRM", cta: "CTA", url: "URL", api: "API", id: "ID", mcp: "MCP", meta: "Meta", usp: "USP", roas: "ROAS", cpl: "CPL", ctr: "CTR" };
+
+/** Turns a raw key ("needs_human", "meta_lead_form", "hot") into sentence-case display text ("Needs human", "Meta lead form", "Hot"). */
+export function humanize(v: unknown): string {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  if (!/^[a-z0-9_\-\s]+$/.test(s)) return s; // already display text
+  const words = s.replace(/[_-]+/g, " ").split(/\s+/).map((w) => ACRONYMS[w] || w);
+  const first = words[0];
+  words[0] = first === first.toLowerCase() ? first[0].toUpperCase() + first.slice(1) : first;
+  return words.join(" ");
+}
+
+/** "3m ago", "5h ago", "Oct 25" from an epoch in seconds. */
+export function ago(sec?: number): string {
+  if (!sec) return "";
+  const d = Date.now() / 1000 - sec;
+  if (d < 60) return "just now";
+  if (d < 3600) return `${Math.floor(d / 60)}m ago`;
+  if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
+  if (d < 7 * 86400) return `${Math.floor(d / 86400)}d ago`;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(sec * 1000));
+}
+
+/** Run titles repeat the agent ("Coach: How do I…"); the agent is shown separately, so drop the prefix. */
+export const runTitle = (r: any) => String(r.title || "").replace(new RegExp(`^${String(r.agent || "").replace(/[^\w]/g, ".")}\\s*:\\s*`, "i"), "");
+
+/** "Fix 1 held draft(s) that need a person" → "Fix 1 held draft that needs a person"; "4 student(s)" → "4 students". */
+export function tidyCount(text: string): string {
+  const m6 = /(\d+)/.exec(text);
+  if (!m6 || !text.includes("(s)")) return text;
+  const one = Number(m6[1]) === 1;
+  let out = text.replace(/(\w+)\(s\)/g, (_, w) => (one ? w : `${w}s`));
+  if (one) out = out.replace(/\b(that|who) need\b/g, "$1 needs");
+  return out;
 }
 
 type Tone = "neutral" | "good" | "bad" | "warn" | "brand" | "demo" | "info";
@@ -254,11 +293,12 @@ export function PageHeader({ title, subtitle, right, badge, eyebrow }: { title: 
 export function Stat({ label, value, hint, tone, demo, icon }: { label: string; value: React.ReactNode; hint?: React.ReactNode; tone?: "good" | "bad" | "warn"; demo?: boolean; icon?: React.ReactNode }) {
   return (
     <div className="card p-4">
-      <div className="flex items-center justify-between gap-2 text-[12.5px] font-medium text-muted">
-        <span className="flex min-w-0 items-center gap-1.5 leading-tight [&_svg]:size-3.5">{icon}{label}</span>
+      {/* fixed-height label row so values line up across a KPI row whether or not a DEMO badge is shown */}
+      <div className="flex h-5 items-center justify-between gap-2 text-[12.5px] font-medium text-muted">
+        <span className="flex min-w-0 items-center gap-1.5 truncate leading-tight [&_svg]:size-3.5">{icon}{label}</span>
         {demo && <DemoBadge />}
       </div>
-      <div className={cx("mt-2 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums", tone === "good" && "text-good", tone === "bad" && "text-bad", tone === "warn" && "text-warn")}>{value}</div>
+      <div className={cx("mt-2.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums", tone === "good" && "text-good", tone === "bad" && "text-bad", tone === "warn" && "text-warn")}>{value}</div>
       {hint && <div className="mt-2 truncate text-[12px] text-muted">{hint}</div>}
     </div>
   );
@@ -453,7 +493,7 @@ export function Tabs({ tabs, value, onChange }: { tabs: { key: string; label: Re
   );
 }
 
-export function Table({ cols, rows, empty = "Nothing here yet", onRow }: { cols: { key: string; label: string; render?: (r: any) => React.ReactNode; className?: string }[]; rows: any[]; empty?: string; onRow?: (r: any) => void }) {
+export function Table({ cols, rows, empty = "Nothing here yet", onRow, selected }: { cols: { key: string; label: string; render?: (r: any) => React.ReactNode; className?: string }[]; rows: any[]; empty?: string; onRow?: (r: any) => void; selected?: (r: any) => boolean }) {
   if (!rows.length) return <Empty title={empty} />;
   return (
     <div className="scroll-thin -mx-1 overflow-x-auto px-1">
@@ -466,10 +506,14 @@ export function Table({ cols, rows, empty = "Nothing here yet", onRow }: { cols:
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
+          {rows.map((r, i) => {
+            const on = selected?.(r) || false;
+            return (
             <tr
               key={r.id ?? i}
-              className={cx("group/row transition-colors [&:last-child>td]:border-b-0", onRow && "cursor-pointer hover:bg-hover focus-visible:bg-hover")}
+              aria-selected={selected ? on : undefined}
+              className={cx("group/row transition-colors [&:last-child>td]:border-b-0", onRow && "cursor-pointer hover:bg-hover focus-visible:bg-hover",
+                on && "bg-brand-soft hover:bg-brand-soft [&>td:first-child]:shadow-[inset_2px_0_0_var(--brand-solid)]")}
               onClick={() => onRow?.(r)}
               onKeyDown={onRow ? (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onRow(r)) : undefined}
               tabIndex={onRow ? 0 : undefined}
@@ -478,7 +522,8 @@ export function Table({ cols, rows, empty = "Nothing here yet", onRow }: { cols:
                 <td key={c.key} className={cx("border-b border-line-2 px-3 py-2.5 align-top first:pl-2", c.className)}>{c.render ? c.render(r) : String(r[c.key] ?? "")}</td>
               ))}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

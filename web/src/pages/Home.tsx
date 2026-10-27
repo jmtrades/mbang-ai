@@ -1,6 +1,6 @@
 import { m } from "motion/react";
 import { ArrowRight, ArrowUpRight, BookOpen, Inbox, MessageCircle, Rocket, ShieldCheck, Target, Users, Workflow, BadgeCheck, Bot, Command } from "lucide-react";
-import { Badge, Button, DemoBadge, ErrorBox, Kbd, Skeleton, cx, modKey, useApi, useApp } from "../components/ui";
+import { Badge, Button, DemoBadge, ErrorBox, Kbd, Skeleton, cx, modKey, tidyCount, useApi, useApp } from "../components/ui";
 
 const ICONS: Record<string, any> = { answers: BookOpen, drafts: Inbox, leads: Target, students: Users, runs: Workflow, blocked: ShieldCheck };
 const CAPTION: Record<string, string> = { answers: "Open the coach", drafts: "Review approvals", leads: "See the pipeline", students: "Open accountability", runs: "Inspect traces", blocked: "Read the audit log" };
@@ -39,6 +39,15 @@ const DEFAULT_STEPS: Record<string, Step[]> = {
     { key: "checkin", title: "Log your weekly check-in", why: "Two minutes. Your coach sees it and replies." },
     { key: "drills", title: "Practise an objection", why: "Role-play the objection you hear most." },
   ],
+};
+
+// The hero's one-line promise, in the reader's own terms (a student has no students; a setter's work is DMs).
+const LEAD: Record<string, string> = {
+  owner: "Your programme's AI. It's trained on your material, it speaks in your brand, and it does the work for you and your students. Nothing goes out without your approval.",
+  coach: "It watches every student's check-ins and activity, drafts the nudge, the review and the reply, and cites the lesson behind each one. You approve what goes out.",
+  setter: "It shortlists today's prospects, drafts openers in the programme's voice and scores every reply. Every DM waits for a person before it is sent.",
+  closer: "It preps every booked call, reviews your recordings line by line and drafts the follow-ups. Nothing is sent without a person.",
+  student: "Your programme's coach, on call. It answers from the course with the lesson it came from, reviews your work and sets today's mission toward your first client.",
 };
 
 const PRINCIPLES = [
@@ -100,10 +109,15 @@ export default function Home() {
   const briefSteps: Step[] = (brief.data?.items || [])
     .filter((it: any) => it.href && allowedHref(it.href))
     .slice(0, 4)
-    .map((it: any) => ({ key: String(it.rank), title: it.title, why: it.why, href: it.href }));
+    .map((it: any) => ({ key: String(it.rank), title: tidyCount(it.title), why: tidyCount(it.why || ""), href: it.href }));
   const roleSteps = (DEFAULT_STEPS[me.user.role] || DEFAULT_STEPS.student).filter((s) => has(s.key));
   const steps = briefSteps.length ? briefSteps : roleSteps;
-  const cards = (data?.cards || []).filter((c: any) => allowedHref(c.href) || c.key === "answers");
+  // The outcome counts are workspace-wide. Everyone but the owner only decides their own drafts, so their
+  // "waiting for you" card counts the same list their approval queue shows.
+  const mine = useApi<any>(me.user.role !== "owner" && has("queue") ? "/queue?status=open" : null);
+  const cards = (data?.cards || [])
+    .filter((c: any) => allowedHref(c.href) || c.key === "answers")
+    .map((c: any) => (c.key === "drafts" && mine.data ? { ...c, count: mine.data.items.length } : c));
 
   return (
     <div>
@@ -122,7 +136,7 @@ export default function Home() {
               <span className="bg-[linear-gradient(100deg,var(--brand-fg),color-mix(in_oklab,var(--brand-fg)_55%,var(--ink)))] bg-clip-text text-transparent">{brand}</span>
             </m.h1>
             <m.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE, delay: 0.08 }} className="t-lead mt-4 max-w-xl max-sm:text-[14.5px]">
-              Your programme's AI. It's trained on your material, it speaks in your brand, and it does the work for you and your students. Nothing goes out without your approval.
+              {LEAD[me.user.role] || LEAD.student}
             </m.p>
             <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE, delay: 0.12 }} className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
               {has("missions") && (
@@ -162,12 +176,12 @@ export default function Home() {
           )}
         </div>
         <ErrorBox error={error} retry={reload} />
-        {loading && (
+        {(loading || (data && mine.loading)) && (
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3" aria-busy="true" aria-label="Loading">
             {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-[128px] rounded-[12px]" />)}
           </div>
         )}
-        {data && (
+        {data && !mine.loading && (
           <div className={cx("grid grid-cols-2 gap-3", cards.length === 4 ? "lg:grid-cols-4" : cards.length <= 2 ? "lg:grid-cols-2" : "lg:grid-cols-3")} data-testid="outcome-cards">
             {cards.map((c: any, i: number) => {
               const Icon = ICONS[c.key] || ArrowRight;
