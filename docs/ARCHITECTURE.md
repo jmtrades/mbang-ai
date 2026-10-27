@@ -19,9 +19,13 @@ agents ──► runtime.Run (plan → steps → result, stored as it runs, poll
    │          ├─ guardrails.check(text, mode) — pure functions
    │          └─ critique / rubrics (SOP-tied rules)
    ▼
-queue.add → guardrails → pending | held | needs_human ──(human approves)──► deliver: mock transport
-                                                         │                  or "ready to send manually"
-                                                         └─ on_approve hooks (action gate, calendar…)
+queue.add → guardrails → pending | held | needs_human ──(human approves: atomic claim)──► sending
+                                                         │   ├─ scheduled (send_after) ── delivery.dispatch_due ──┐
+                                                         │   ├─ awaiting_manual_send ── "I sent it" ──────────────┤
+                                                         │   ├─ live sender (switch on) / mock (demo only) ───────┴─► sent
+                                                         │   └─ send_failed | cancelled (cancel_if, DNC, unsubscribed)
+                                                         ├─ on_approve hooks (action gate, calendar…)
+                                                         └─ on_sent hooks + item_sent (stage moves, caps, cadences)
 ```
 
 ## Modules

@@ -11,7 +11,7 @@ from . import brief as brief_mod
 from . import db, guardrails, queue, retrieval, runtime, tenancy, vault
 
 PROFILE_SECTIONS = {
-    "identity": ["name", "tagline", "owner_display"],
+    "identity": ["name", "tagline", "owner_display", "postal_address"],  # postal_address: footer of prospect emails
     "offer": ["name", "price", "outcome", "timeframe", "mechanism", "guarantee_policy"],
     "audience": ["who", "niche", "pain", "desire"],
     "proof": ["verified_results"],

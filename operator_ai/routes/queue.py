@@ -60,12 +60,15 @@ def approve(qid: int, ctx: Ctx = Depends(require("queue"))):
 
 class RejectBody(BaseModel):
     reason: str = Field("", max_length=500)
+    # why it was rejected (feeds the learning loop); omitted -> "other"
+    reason_code: str | None = Field(None, pattern="^(" + "|".join(queue.REJECT_CODES) + ")$")
 
 
 @router.post("/queue/{qid}/reject")
 def reject(qid: int, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
     try:
-        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"])
+        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"],
+                            reason_code=b.reason_code if b else None)
     except queue.QueueError as e:
         _qerr(e)
 

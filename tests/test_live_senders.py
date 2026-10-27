@@ -26,7 +26,10 @@ def _creds(t):
 def test_switch_off_means_mock_even_with_logins(tenant, world):
     _creds(tenant)
     it = queue.add(tenant, "channel_reply", "Here is the checklist.", channel="telegram", recipient_ref="4242")
-    assert queue.approve(tenant, it["id"], "owner(owner)")["delivered"] == "mock:telegram"
+    # Mock transports run only in the demo workspace (2026-10 delivery truth): with the switch off, a real
+    # workspace hands the message to a person instead of pretending it was delivered.
+    done = queue.approve(tenant, it["id"], "owner(owner)")
+    assert done["status"] == "awaiting_manual_send" and done["delivered"] is None
     assert world.sent == []
 
 
@@ -52,7 +55,7 @@ def test_telegram_slack_sms_live_after_approval(tenant, world):
         c.execute("INSERT INTO channel_links(channel,ext_id,opted_in,status,created) VALUES('sms','+1-555-0142',1,'opted_in',0)")
     sms = queue.edit(tenant, sms["id"], "See you at 3pm", "owner")
     assert queue.approve(tenant, sms["id"], "owner(owner)")["delivered"] == "live:sms:SMfake123"
-    assert "To=%2B1-555-0142" in world.sent[2][2]
+    assert "To=%2B15550142" in world.sent[2][2]  # numbers are normalised to E.164 before sending (was raw "+1-555-0142")
 
 
 def test_failed_live_send_leaves_item_open_and_is_not_retried(tenant, world):

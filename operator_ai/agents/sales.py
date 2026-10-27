@@ -2,17 +2,26 @@
 
 Transparent rule scoring (hot / warm / cold) with owner-editable weights, routing to setter,
 closer or nurture, a course-grounded setter script and pre-call brief, a reply whose first
-line follows the outreach money rule, value-only follow-ups, three proposed slots from the
-calendar, and the booking proposal + calendar invite (owner-only) + show-up ladder, all
-queued for approval. Plus the 500-lead burst through the durable job queue.
+line follows the outreach money rule, and an event-driven booking sequence:
+
+    process_lead    -> the reply is queued; value-only follow-ups run as a cadence that starts only
+                       once the reply is confirmed sent (delivery.register_cadence)
+    record_reply    -> reply_received; follow-ups stop; a positive reply gets a booking DM with FRESH
+                       free times (meta.slots_valid_until; an expired draft is redrafted, never sent stale)
+    pick_slot       -> the owner-only calendar invite for the time they picked
+    invite approved -> one calendar event + the show-up ladder, each reminder with meta.send_after and
+                       cancel_if ["booking_cancelled"], addressed to the lead's real handle or email
+
+Everything is queued for approval. Plus the 500-lead burst through the durable job queue.
 """
 from __future__ import annotations
 
 import random
+import re
 import secrets
 import time
 
-from .. import calendar, db, guardrails, jobs, queue, retrieval, runtime
+from .. import calendar, db, events, guardrails, jobs, queue, retrieval, runtime
 
 DEFAULT_WEIGHTS = {
     "monthly_revenue": {"<10k": 0, "10k-30k": 15, "30k-100k": 25, "100k+": 30},
@@ -24,6 +33,27 @@ DEFAULT_WEIGHTS = {
 TIERS = {"hot": 70, "warm": 40}
 ROUTES = {"hot": "closer", "warm": "setter", "cold": "nurture"}
 LADDER = [("24h", 24 * 3600), ("2h", 2 * 3600), ("10min", 600)]
+LADDER_BODY = {
+    "24h": "Looking forward to our call. One question to think about before we talk: what would ten more booked calls "
+           "a month change for you?",
+    "2h": "See you in two hours. Here's a short video worth a look before we talk: how the reminder ladder lifts show rates.",
+    "10min": "Starting in ten minutes. Quick tip: have your current numbers to hand so we can use the time well.",
+}
+SLOTS_VALID_FOR = 24 * 3600
+
+
+class NoSlots(Exception):
+    """The calendar has no free time to offer."""
+
+    def __init__(self, msg: str = "No free 45-minute times in the next two weeks (weekdays 09:00 to 17:00). Free up some "
+                                  "time in the calendar, or ask them which times suit them."):
+        super().__init__(msg)
+
+
+class BookingError(Exception):
+    def __init__(self, status: int, msg: str):
+        super().__init__(msg)
+        self.status = status
 
 
 def weights(tenant) -> dict:
@@ -108,10 +138,21 @@ def _get_lead(tenant, lead_id: int) -> dict:
 
 
 PLAN = ["Score lead (rules)", "Route", "Setter script (cited)", "Pre-call brief", "Reply draft (money rule)",
-        "Value-only follow-ups", "Propose 3 slots", "Queue booking, invite and show-up ladder"]
+        "Follow-up sequence (starts once the reply is sent)", "Booking waits for a positive reply"]
+
+
+def _contact(lead: dict) -> tuple[str | None, str]:
+    """(recipient, channel): the lead's handle by Instagram DM, else their email."""
+    if lead.get("handle"):
+        return lead["handle"], "instagram_dm"
+    if lead.get("email"):
+        return lead["email"], "email"
+    return None, "instagram_dm"
 
 
 def process_lead(tenant, lead_id: int, user: dict | None = None, full: bool = True) -> dict:
+    from .. import delivery
+
     actor = f"{user['username']}({user['role']})" if user else "system"
     lead = _get_lead(tenant, lead_id)
     demo = bool(lead.get("demo"))
@@ -126,52 +167,223 @@ def process_lead(tenant, lead_id: int, user: dict | None = None, full: bool = Tr
                           "Setter script (cited)")
         brief = run.step("precall_brief", {}, lambda: precall_brief(tenant, lead), "Pre-call brief")
         meta = {"prospect_facing": True, "lead_tier": sc["tier"], "lead_id": lead_id, "prior_contact": True}
-        rcpt = lead["handle"] or lead["email"]
+        rcpt, channel = _contact(lead)
         reply = reply_line(lead, sc["tier"]) + " Would a quick call this week be useful?"
         q_reply = run.step("reply", {"tier": sc["tier"]},
-                           lambda: queue.add(tenant, "setter_reply", reply, channel="instagram_dm", recipient_ref=rcpt,
+                           lambda: queue.add(tenant, "setter_reply", reply, channel=channel, recipient_ref=rcpt,
                                              title=f"Reply to {lead['name']}", meta=meta, run_id=run.id, actor=actor, demo=demo),
                            "Reply draft (money rule)")
         out = {"lead_id": lead_id, **sc, "script": script, "brief": brief, "queue_ids": [q_reply["id"]],
                "reply_status": q_reply["status"]}
-        fus = run.step("followups", {}, lambda: [
-            queue.add(tenant, "followup", t, channel="instagram_dm", recipient_ref=rcpt, title=f"Follow-up {i + 1} to {lead['name']}",
-                      meta={**meta, "step": i + 1}, run_id=run.id, actor=actor, demo=demo)["id"]
-            for i, t in enumerate(followups(lead))], "Value-only follow-ups")
-        out["queue_ids"] += fus
+        out["cadence_id"] = run.step(
+            "cadence", {"steps": 3},
+            lambda: delivery.register_cadence(tenant, ("lead", lead_id), q_reply["id"], channel, rcpt, template="lead",
+                                              lead_tier=sc["tier"], context={"followups": followups(lead)}, demo=demo),
+            "Follow-up sequence (starts once the reply is sent)")
         if sc["tier"] == "cold":
-            run.note("slots", {}, "Cold lead goes to nurture: no booking proposed", label="Propose 3 slots", status="skipped")
-            run.note("booking", {}, "skipped", label="Queue booking, invite and show-up ladder", status="skipped")
-            return out
-        slots = run.step("slots", {}, lambda: _slots(tenant), "Propose 3 slots")
-        out["slots"] = slots
-
-        def _queue_booking():
-            ids = []
-            times = ", ".join(s["label"] for s in slots)
-            ids.append(queue.add(tenant, "booking_dm", f"Here are three times that work: {times}. Which suits you best?",
-                                 channel="instagram_dm", recipient_ref=rcpt, title=f"Booking times for {lead['name']}",
-                                 meta={**meta, "slots": slots}, run_id=run.id, actor=actor, demo=demo)["id"])
-            s0 = slots[0]
-            ids.append(queue.add(tenant, "calendar_invite", f"Strategy call with {lead['name']} at {s0['label']}.",
-                                 channel="calendar", recipient_ref=lead["email"], title=f"Invite: {lead['name']}",
-                                 meta={"lead_id": lead_id, "slot": s0, "attendees": [lead["email"]], "owner_only": True},
-                                 run_id=run.id, actor=actor, demo=demo)["id"])
-            for label, before in LADDER:
-                body = {"24h": "Looking forward to tomorrow. One question to think about: what would ten more booked calls a month change for you?",
-                        "2h": "See you in two hours. Here's a short video worth a look before we talk: how the reminder ladder lifts show rates.",
-                        "10min": "Starting in ten minutes. Quick tip: have your current numbers to hand so we can use the time well."}[label]
-                ids.append(queue.add(tenant, "reminder", body, channel="instagram_dm", recipient_ref=rcpt, title=f"{label} reminder: {lead['name']}",
-                                     meta={"lead_id": lead_id, "send_at": s0["start"] - before, "ladder": label},
-                                     run_id=run.id, actor=actor, demo=demo)["id"])
-            return ids
-
-        out["queue_ids"] += run.step("booking", {"slot": slots[0] if slots else None}, _queue_booking,
-                                     "Queue booking, invite and show-up ladder")
+            run.note("booking", {}, "Cold lead goes to nurture: no booking proposed", label="Booking waits for a positive reply",
+                     status="skipped")
+            out["next"] = "Cold lead: value-only follow-ups, then nurture. No booking is proposed."
+        else:
+            run.note("booking", {}, "Times are offered only after a positive reply, so they are fresh when sent",
+                     label="Booking waits for a positive reply")
+            out["next"] = "When they reply, record it here: a positive reply drafts a booking message with fresh times."
         return out
 
     res = runtime.execute(tenant, "sales", f"Lead: {lead['name']}", PLAN, fn, actor)
     return {**res["result"], "run_id": res["run_id"]}
+
+
+# --------------------------------------------------------------------------- replies, times, picks
+_STOP = re.compile(r"\b(stop|unsubscribe|remove me|do not (contact|message) me|don'?t (contact|message) me)\b", re.I)
+_NEGATIVE = re.compile(r"\b(no thanks|no thank you|not interested|not right now|not now|not for (me|us)|no longer|"
+                       r"leave (me|us) alone|pass on this)\b", re.I)
+_POSITIVE = re.compile(r"\b(yes|yeah|yep|sure|keen|interested|sounds (good|great)|let'?s|love to|happy to|okay|ok|"
+                       r"book|works for me|when can|send (me )?(the )?times|go ahead)\b", re.I)
+CLASSES = ("positive", "negative", "question", "neutral", "stop")
+
+
+def classify_reply(text: str) -> str:
+    """Rules (AI off): stop > negative > positive > question > neutral."""
+    t = (text or "").strip()
+    if _STOP.search(t):
+        return "stop"
+    if _NEGATIVE.search(t):
+        return "negative"
+    if _POSITIVE.search(t):
+        return "positive"
+    if "?" in t:
+        return "question"
+    return "neutral"
+
+
+def _booking_body(slots: list[dict]) -> str:
+    times = ", ".join(s["label"] for s in slots)
+    lead_in = "Here are three times that work" if len(slots) == 3 else "Here are some times that work"
+    return f"Great to hear back. {lead_in}: {times}. Which suits you best?"
+
+
+def _valid_until(slots: list[dict], now: float | None = None) -> float:
+    now = now or time.time()
+    return min(now + SLOTS_VALID_FOR, slots[0]["start"] - 3600)
+
+
+def refresh_booking_draft(tenant, item: dict) -> tuple[str, dict]:
+    """Fresh times for a booking DM whose times expired (raises NoSlots)."""
+    slots = _slots(tenant)
+    if not slots:
+        raise NoSlots()
+    meta = {**item["meta"], "slots": slots, "slots_valid_until": _valid_until(slots)}
+    return _booking_body(slots), meta
+
+
+def _offer(tenant, lead: dict, run_id: int | None, actor: str) -> dict:
+    slots = _slots(tenant)
+    if not slots:
+        raise NoSlots()
+    rcpt, channel = _contact(lead)
+    meta = {"prospect_facing": True, "lead_tier": lead.get("tier") or "warm", "lead_id": lead["id"], "prior_contact": True,
+            "slots": slots, "slots_valid_until": _valid_until(slots)}
+    q = queue.add(tenant, "booking_dm", _booking_body(slots), channel=channel, recipient_ref=rcpt,
+                  title=f"Booking times for {lead['name']}", meta=meta, run_id=run_id, actor=actor, demo=bool(lead.get("demo")))
+    return {"booking_dm": q["id"], "status": q["status"], "slots": slots, "slots_valid_until": meta["slots_valid_until"]}
+
+
+def record_reply(tenant, lead_id: int, text: str, classification: str | None = None, user: dict | None = None) -> dict:
+    """A reply from the lead: follow-ups stop; a positive reply gets a booking DM with fresh times."""
+    from .. import delivery
+
+    lead = _get_lead(tenant, lead_id)
+    actor = f"{user['username']}({user['role']})" if user else "system"
+    if classification is not None and classification not in CLASSES:
+        raise BookingError(422, f"Unknown reply type. Use one of: {', '.join(CLASSES)}")
+
+    def fn(run: runtime.Run):
+        cls = classification or run.step("classify", {"text": text[:200]}, lambda: classify_reply(text),
+                                         "Classify the reply (rules, AI off)")
+        rcpt, channel = _contact(lead)
+        with tenant.db() as c:
+            c.execute("INSERT INTO channel_messages(channel,direction,ext_id,body,meta,created) VALUES(?,?,?,?,?,?)",
+                      (channel, "in", rcpt, (text or "")[:4000], db.jdump({"lead_id": lead_id, "recorded_by": actor}), db.now()))
+            c.execute("UPDATE leads SET stage='replied' WHERE id=? AND stage IN ('new','nurture')", (lead_id,))
+        events.emit(tenant, "reply_received", {"party_type": "lead", "party_id": lead_id, "owner_user_id": None,
+                                               "classification": cls})
+        out = {"lead_id": lead_id, "classification": cls, "mode": "rules", "label": "Classified by rules (AI off)",
+               "booking": None}
+        if cls == "stop":
+            delivery.set_dnc(tenant, ("lead", lead_id), actor, "asked to stop")
+            for a in (lead.get("email"), lead.get("handle")):
+                if a:
+                    delivery.suppress(tenant, a, None, "asked to stop", ("lead", lead_id))
+            out["next"] = "They asked not to be contacted: marked do-not-contact and nothing more will be sent."
+        elif cls == "positive":
+            try:
+                out["booking"] = run.step("offer", {}, lambda: _offer(tenant, lead, run.id, actor), "Offer fresh times")
+                out["next"] = "Approve the booking message. When they pick a time, record it to draft the invite."
+            except NoSlots as e:
+                out["booking"] = {"no_slots": True, "message": str(e)}
+                out["next"] = str(e)
+        else:
+            out["next"] = "Follow-ups stopped because they replied. Answer them yourself, or offer times when they're ready."
+        return out
+
+    res = runtime.execute(tenant, "sales", f"Reply from {lead['name']}",
+                          ["Record the reply", "Classify (rules)", "Stop follow-ups", "Offer fresh times"], fn, actor)
+    return {**res["result"], "run_id": res["run_id"]}
+
+
+def offer_times(tenant, lead_id: int, user: dict | None = None) -> dict:
+    """Draft a booking DM with fresh free times (NoSlots when the calendar is full)."""
+    lead = _get_lead(tenant, lead_id)
+    actor = f"{user['username']}({user['role']})" if user else "system"
+    if lead.get("do_not_contact"):
+        raise BookingError(409, "This lead is marked do-not-contact.")
+    res = runtime.execute(tenant, "sales", f"Offer times: {lead['name']}", ["Find free times", "Draft the booking message"],
+                          lambda run: _offer(tenant, lead, run.id, actor), actor)
+    return {**res["result"], "run_id": res["run_id"]}
+
+
+def latest_booking_dm(tenant, key: str, party_id: int) -> dict | None:
+    with tenant.db() as c:
+        r = c.execute(f"SELECT id FROM queue WHERE kind='booking_dm' AND json_extract(meta,'$.{key}')=? AND status NOT IN "
+                      "('rejected','cancelled') ORDER BY id DESC LIMIT 1", (party_id,)).fetchone()
+    return queue.get(tenant, r["id"], scrub=False) if r else None
+
+
+def choose_slot(tenant, bdm: dict | None, index: int | None = None, start: float | None = None) -> dict:
+    """The slot a lead picked from the latest booking DM, checked for expiry and that it is still free."""
+    if bdm is None:
+        raise BookingError(409, "No times have been offered yet. Offer times first.")
+    if bdm["status"] in queue.OPEN + ("sending",):
+        raise BookingError(409, "Approve the booking message first: they can only pick from times they were sent.")
+    slots = bdm["meta"].get("slots") or []
+    if not slots:
+        raise BookingError(409, "That message offered no times. Offer times first.")
+    if (queue._num(bdm["meta"].get("slots_valid_until")) or 0) < time.time():
+        raise BookingError(409, "Those times have expired. Offer fresh times first.")
+    if start is not None:
+        pick = next((s for s in slots if abs(float(s["start"]) - float(start)) < 1), None)
+    elif index is not None and 0 <= index < len(slots):
+        pick = slots[index]
+    else:
+        pick = None
+    if pick is None:
+        raise BookingError(422, f"Pick one of the {len(slots)} offered times.")
+    if calendar.busy(tenant, pick["start"], pick["end"]):
+        raise BookingError(409, "That time has just been taken. Offer fresh times.")
+    return pick
+
+
+def pick_slot(tenant, lead_id: int, index: int | None = None, start: float | None = None, user: dict | None = None) -> dict:
+    """The lead picked a time: queue the owner-only calendar invite for it."""
+    lead = _get_lead(tenant, lead_id)
+    actor = f"{user['username']}({user['role']})" if user else "system"
+    pick = choose_slot(tenant, latest_booking_dm(tenant, "lead_id", lead_id), index, start)
+
+    def fn(run: runtime.Run):
+        inv = queue.add(tenant, "calendar_invite", f"Strategy call with {lead['name']} at {pick['label']}.", channel="calendar",
+                        recipient_ref=lead["email"], title=f"Invite: {lead['name']}",
+                        meta={"lead_id": lead_id, "slot": pick, "attendees": [lead["email"]] if lead["email"] else [],
+                              "owner_only": True}, run_id=run.id, actor=actor, demo=bool(lead.get("demo")))
+        with tenant.db() as c:
+            c.execute("UPDATE leads SET stage='booking' WHERE id=?", (lead_id,))
+        run.note("invite", {"slot": pick["label"]}, {"queue_id": inv["id"]}, label="Queue the invite (owner approves)")
+        return {"invite": inv["id"], "status": inv["status"], "slot": pick}
+
+    res = runtime.execute(tenant, "sales", f"Time picked: {lead['name']}",
+                          ["Check the time is still free", "Queue the invite (owner approves)"], fn, actor)
+    return {**res["result"], "run_id": res["run_id"]}
+
+
+def queue_ladder(tenant, invite: dict, party: tuple[str, int], event_id: int | None, slot: dict) -> list[int]:
+    """Show-up reminders for an approved call: each waits for its time (send_after) and is cancelled if the
+    call is cancelled. Reminders whose time has passed are sent now unless a later one already covers it."""
+    from .. import delivery
+
+    row = delivery._party_row(tenant, party) or {}
+    rcpt, channel = _contact({"handle": row.get("handle"), "email": row.get("email")})
+    name = row.get("name") or "the lead"
+    tier = row.get("tier") or "warm"
+    key = delivery.PARTY_META[party[0]]
+    now = time.time()
+    start = float(slot["start"])
+    ids = []
+    for i, (label, before) in enumerate(LADDER):
+        at = start - before
+        if at <= now:
+            later = LADDER[i + 1][1] if i + 1 < len(LADDER) else 0
+            if start - now <= later + 900:
+                continue  # a later reminder covers it
+            at = now
+        meta = {key: party[1], "ladder": label, "send_after": at, "cancel_if": ["booking_cancelled"],
+                "calendar_event_id": event_id, "prospect_facing": True, "lead_tier": tier, "prior_contact": True,
+                "invite_queue_id": invite["id"]}
+        if channel == "email":
+            meta["subject"] = "Our call"
+        ids.append(queue.add(tenant, "reminder", LADDER_BODY[label], channel=channel, recipient_ref=rcpt,
+                             title=f"{label} reminder: {name}", meta=meta, run_id=invite.get("run_id"), actor="sales",
+                             demo=bool(invite.get("demo")))["id"])
+    return ids
 
 
 def _slots(tenant) -> list[dict]:
@@ -253,8 +465,40 @@ def rescue_desk(tenant, stalled_days: int = 5) -> list[dict]:
 
 @queue.on_approve("calendar_invite")
 def _invite_approved(tenant, item: dict, actor: str) -> None:
-    """An approved invite on the mock calendar becomes a local calendar event (no real invite)."""
+    """An approved invite: exactly one calendar event (a live Google invite already wrote its local mirror),
+    booking_made, and the show-up ladder for the lead it belongs to."""
     slot = item["meta"].get("slot")
-    if slot and item.get("delivered", "") != "live":
-        calendar.add_event(tenant, item["title"] or "Call", slot["start"], slot["end"], item["meta"].get("attendees", []),
-                           ext_id=f"local-q{item['id']}", demo=bool(item.get("demo")))
+    if not slot:
+        return
+    delivered = item.get("delivered") or ""
+    with tenant.db() as c:
+        if delivered.startswith("live:"):
+            r = c.execute("SELECT id FROM calendar_events WHERE ext_id=? ORDER BY id DESC LIMIT 1",
+                          (delivered.rsplit(":", 1)[1],)).fetchone()
+        else:
+            r = c.execute("SELECT id FROM calendar_events WHERE ext_id=?", (f"local-q{item['id']}",)).fetchone()
+    ev = r["id"] if r else calendar.add_event(tenant, item["title"] or "Call", slot["start"], slot["end"],
+                                              item["meta"].get("attendees", []), ext_id=f"local-q{item['id']}",
+                                              demo=bool(item.get("demo")))
+    meta = item["meta"]
+    party = (("chain_lead", int(meta["chain_lead_id"])) if meta.get("chain_lead_id") else
+             ("lead", int(meta["lead_id"])) if meta.get("lead_id") else None)
+    with tenant.db() as c:
+        c.execute("UPDATE calendar_events SET party_type=?, party_id=?, queue_id=? WHERE id=?",
+                  (party[0] if party else None, party[1] if party else None, item["id"], ev))
+        if party and party[0] == "lead":
+            c.execute("UPDATE leads SET stage='booked' WHERE id=?", (party[1],))
+        if party and party[0] == "chain_lead" and not delivered.startswith("live:"):
+            c.execute("UPDATE chain_bookings SET status='booked', event_id=? WHERE queue_id=?", (f"local-q{item['id']}", item["id"]))
+            c.execute("UPDATE chain_leads SET stage='booked' WHERE id=?", (party[1],))
+    with tenant.db() as c:
+        laddered = c.execute("SELECT 1 FROM queue WHERE kind='reminder' AND json_extract(meta,'$.invite_queue_id')=? LIMIT 1",
+                             (item["id"],)).fetchone()
+    if party and not laddered:
+        events.emit(tenant, "booking_made", {"party_type": party[0], "party_id": party[1], "starts_at": slot["start"],
+                                             "event_id": ev, "queue_id": item["id"]})
+        ids = queue_ladder(tenant, item, party, ev, slot)
+        if party[0] == "chain_lead":
+            from ..live import chain
+
+            chain._event(tenant, party[1], "ladder_queued", {"queue_ids": ids})

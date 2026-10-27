@@ -29,7 +29,12 @@ flag holds the item until it is edited clean; a `review` flag marks it "needs a 
 | "Re:" / "Fwd:" subject or "following up" on a first touch | `deceptive_subject` | block | allowed when `prior_contact` |
 | Banned names (and persona banned words) | `banned_name` | block | also scrubbed from every API response |
 | Never-invite list (Gmail canonicalised) | `never_invite` | block | checked on propose and again at send |
-| SMS / phone without opt-in | `not_opted_in` | block | |
+| SMS / phone without opt-in | `not_opted_in` | block | any number formatting; the latest START/STOP wins |
+| Contact marked do-not-contact | `do_not_contact` | block | prospects and leads; a scheduled send is cancelled instead |
+| Address on the suppression list (unsubscribed, asked to stop) | `unsubscribed` | block | emails, @handles, phone numbers |
+| Live channel on but no usable address | `no_address` | block | e.g. a Telegram nudge with no linked chat and no email |
+| Prospect email without an unsubscribe line | `missing_unsubscribe` | block | `delivery.guard_rules`; the footer is added automatically |
+| Prospect email without the business postal address | `missing_postal_address` | block | Business profile, Identity |
 
 ### Outreach money rule (prospect-facing only)
 
@@ -44,9 +49,14 @@ Client assets (VSL, webinar script, pages, that funnel's emails) may state the s
 
 ## Other enforced guardrails
 
-- **Approval for everything outgoing.** `queue.approve` re-runs the guardrails, then delivers to a mock transport
-  or marks the item "ready to send manually". The only live path is an approved calendar invite with the tenant's
-  live calendar switch on (`live/chain.deliver_calendar_invite`).
+- **Approval for everything outgoing, and delivery truth.** `queue.approve` claims the item atomically (one approval
+  ever wins), re-runs the guardrails, then: holds it as `scheduled` until `meta.send_after`; hands it to a person as
+  `awaiting_manual_send` (Instagram/LinkedIn DMs and phone always; any channel without a live sender in a real
+  workspace) until they confirm "I sent it"; or sends it through a live sender behind the server-only switch
+  (`sent` / `send_failed`). Mock transports run only in the demo workspace. The scheduled dispatcher re-runs the
+  guardrails and the never-invite check and evaluates `meta.cancel_if` before anything goes. Stage moves, caps and
+  stats count `sent`, never `approved`. Prospect email carries a postal-address footer, an unsubscribe link and
+  List-Unsubscribe headers; `/u/{token}` sets do-not-contact and suppresses the address.
 - **No impersonation.** Banned names are scrubbed (generated text, traces, citations, the UI via a response
   middleware) and block any queue item. A named persona needs recorded consent (Owner console → Personality).
 - **Demo labelled and separate.** Fictional records carry "(DEMO)" and `example.invalid`; `data/demo.db` is separate;

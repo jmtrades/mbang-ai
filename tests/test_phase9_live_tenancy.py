@@ -8,7 +8,7 @@ import time
 import httpx
 import pytest
 
-from operator_ai import config, index, jobs, queue, retrieval, settings, tenancy, uploads, vault
+from operator_ai import config, index, jobs, queue, retrieval, settings, skills, tenancy, uploads, vault
 from operator_ai.live import chain, gcal, meta, net
 from tests.conftest import login, owner_password
 from tests.fakes import FakeWorld
@@ -223,6 +223,8 @@ def test_chain_end_to_end_three_tenants(client, world):
     tenants = _make_tenants()
     for n, t in enumerate(tenants):
         _connect(t)
+        # these leads only gave an email, so replies go by email: prospect email needs the business postal address
+        skills.put_profile(t, {"identity": {"name": "Peak Growth (DEMO)", "postal_address": "1 Example Street, Testtown"}}, "t")
         lid = f"LEAD-{t.id}"
         world.leads[lid] = _lead_payload(f"Robin {n} (DEMO)", f"robin{n}@example.invalid", hot=True)
         raw = _webhook(lid)
@@ -241,12 +243,17 @@ def test_chain_end_to_end_three_tenants(client, world):
             assert cites == []  # empty KB: no course material leaks into a client tenant
         # the lead fetch used the tenant's own token + appsecret_proof
         assert any(m == "GET" and p == f"/v21.0/{lid}" for m, h, p in world.calls)
+        # Outreach cadence (2026-10 wave): only the first reply is queued (to the lead's real email, not a placeholder);
+        # the value follow-up is drafted by the cadence once that reply is confirmed sent (was 2 follow-ups up front).
         fus = queue.list_items(t, kind="followup")
-        assert len(fus) == 2 and all(f["status"] in ("pending", "needs_human") for f in fus)
+        assert len(fus) == 1 and all(f["status"] in ("pending", "needs_human") for f in fus)
+        assert fus[0]["channel"] == "email" and fus[0]["recipient_ref"] == f"robin{n}@example.invalid"
         queue.approve(t, fus[0]["id"], "owner(owner)")
         # recorded reply -> booking DM with real free slots from Google freeBusy
         b = chain.record_reply(t, lead["id"], "Yes, keen to chat")
-        assert len(b["slots"]) == 3
+        assert len(b["slots"]) == 3 and b["invite"] is None  # the invite waits until they pick a time
+        queue.approve(t, b["booking_dm"], "owner(owner)")  # they can only pick from times they were sent
+        b = chain.pick_slot(t, lead["id"], 0)
         inv = queue.get(t, b["invite"])
         assert inv["kind"] == "calendar_invite" and inv["meta"]["live"]
         with pytest.raises(queue.QueueError):
@@ -260,6 +267,11 @@ def test_chain_end_to_end_three_tenants(client, world):
         assert again["existing"] and len([e for e in world.events if e == eid]) == 1
         ladder = [i for i in queue.list_items(t, kind="reminder") if i["meta"].get("chain_lead_id") == lead["id"]]
         assert sorted(i["meta"]["ladder"] for i in ladder) == ["10min", "24h", "2h"]
+        # real address (was the placeholder 'lead-{id}'), timed, and cancelled with the booking
+        assert all(i["recipient_ref"] == f"robin{n}@example.invalid" and i["meta"]["send_after"] for i in ladder)
+        # exactly one calendar event for the live invite (the approval hook reuses the live mirror)
+        with t.db() as c:
+            assert c.execute("SELECT COUNT(*) FROM calendar_events WHERE title LIKE 'Invite:%'").fetchone()[0] == 1
         chain.record_outcome(t, lead["id"], "showed")
         # per-tenant report over HTTP (session-scoped)
         if t.id == "owner":
@@ -286,7 +298,10 @@ def test_invite_blocked_at_send_time(env, world):
     jobs.drain(t, timeout=30)
     with t.db() as c:
         lead_id = c.execute("SELECT id FROM chain_leads").fetchone()[0]
-    b = chain.record_reply(t, lead_id, "hi")
+    skills.put_profile(t, {"identity": {"postal_address": "1 Example Street, Testtown"}}, "t")  # email footer address
+    r = chain.record_reply(t, lead_id, "Yes please, happy to talk")  # positive reply -> times; the invite needs a pick
+    queue.approve(t, r["booking_dm"], "owner(owner)")
+    b = chain.pick_slot(t, lead_id, 0)
     t.set("blocked_attendees", ["blockedperson@googlemail.com"])  # added after the proposal
     with pytest.raises(queue.QueueError):
         queue.approve(t, b["invite"], "owner(owner)")
@@ -301,10 +316,14 @@ def test_switch_off_means_no_outbound_calls(env, world):
                                                 "can_invest": "yes", "timeline": "now"}}}]}]}).encode()
     chain.receive_webhook(t, raw, meta.sign(meta.app_secret(t), raw))
     jobs.drain(t, timeout=30)
-    b = chain.record_reply(t, 1, "hi")
+    r = chain.record_reply(t, 1, "Yes, sounds good")
+    queue.approve(t, r["booking_dm"], "owner(owner)")
+    b = chain.pick_slot(t, 1, 0)
     queue.approve(t, b["invite"], "owner(owner)")
     assert world.calls == []  # nothing left the building
-    assert queue.get(t, b["invite"])["delivered"] == "mock:calendar"
+    # real workspace with the switch off: local calendar only, the owner sends the invite (no mock in real workspaces)
+    inv = queue.get(t, b["invite"])
+    assert inv["status"] == "awaiting_manual_send" and inv["delivered"] is None
 
 
 def test_meta_ads_adapter_forces_paused(env, world):

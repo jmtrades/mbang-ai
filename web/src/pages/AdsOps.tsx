@@ -102,8 +102,8 @@ export default function AdsOps() {
           {hist.loading && <Loading />}
           {hist.data && <Table rows={hist.data.items} empty="No actions yet" cols={[
             { key: "id", label: "#" }, { key: "kind", label: "Kind" }, { key: "summary", label: "What" },
-            { key: "status", label: "Status", render: (a) => <Badge tone={a.status === "done" ? "good" : a.status === "failed" ? "bad" : a.status === "rolled_back" ? "warn" : "info"}>{a.status}</Badge> },
-            { key: "rb", label: "", render: (a) => me.user.role === "owner" && ["done", "failed"].includes(a.status) && !a.rollback_of ? <Button size="sm" onClick={() => act("rb" + a.id, () => post(`/actions/${a.id}/rollback`))} loading={busy === "rb" + a.id}><Undo2 className="size-3.5" /> Rollback</Button> : null },
+            { key: "status", label: "Status", render: (a) => <Badge tone={a.status === "done" ? "good" : a.status === "failed" || a.status === "failed_partial" ? "bad" : a.status === "rolled_back" ? "warn" : "info"}>{a.status === "failed_partial" ? "partly applied" : a.status}</Badge> },
+            { key: "rb", label: "", render: (a) => me.user.role === "owner" && ["done", "failed", "failed_partial"].includes(a.status) && !a.rollback_of ? <Button size="sm" onClick={() => act("rb" + a.id, () => post(`/actions/${a.id}/rollback`))} loading={busy === "rb" + a.id}><Undo2 className="size-3.5" /> Rollback</Button> : null },
           ]} />}
         </Card>
       )}

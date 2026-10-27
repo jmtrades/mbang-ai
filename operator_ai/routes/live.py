@@ -57,12 +57,14 @@ from pydantic import BaseModel, Field  # noqa: E402
 
 class ReplyBody(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
+    # a person's reading of the reply; omitted -> classified by rules
+    classification: str | None = Field(None, pattern="^(positive|negative|question|neutral|stop)$")
 
 
 @router.post("/chain/leads/{lead_id}/reply")
 def reply(lead_id: int, b: ReplyBody, ctx: Ctx = Depends(require("sales"))):
     try:
-        return chain.record_reply(ctx.tenant, lead_id, b.text)
+        return chain.record_reply(ctx.tenant, lead_id, b.text, b.classification)
     except KeyError:
         raise HTTPException(404, "Lead not found")
 

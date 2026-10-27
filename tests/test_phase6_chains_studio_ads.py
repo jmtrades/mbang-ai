@@ -119,8 +119,14 @@ def test_opener_cap_per_sender(demo_tenant):
 def test_opener_approve_goes_to_mock_instagram_and_tracks_stage(demo_tenant):
     r = ol.queue_openers(demo_tenant, sender="demo-setter", limit=1)
     done = queue.approve(demo_tenant, r["queued"][0], "setter", role="setter")
-    assert done["delivered"] == "mock:instagram"
+    # Instagram DMs are a manual channel everywhere (no API can send them): approval hands it to the setter and the
+    # stage moves only when they confirm the send (was delivered == "mock:instagram" and stage 'sent' on approval).
+    assert done["status"] == "awaiting_manual_send"
     pid = done["meta"]["prospect_id"]
+    with demo_tenant.db() as c:
+        assert c.execute("SELECT stage FROM outreach_practice_prospects WHERE id=?", (pid,)).fetchone()[0] == "queued"
+    done = queue.mark_sent(demo_tenant, done["id"], "setter", role="setter")
+    assert done["status"] == "sent" and done["delivered"] == "manual:instagram_dm"
     with demo_tenant.db() as c:
         assert c.execute("SELECT stage FROM outreach_practice_prospects WHERE id=?", (pid,)).fetchone()[0] == "sent"
     f = ol.queue_followups(demo_tenant)

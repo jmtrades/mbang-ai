@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 import { ApiError, get, post } from "../api";
-import { Badge, Button, Card, Citations, DemoBadge, ErrorBox, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, DemoBadge, ErrorBox, Input, Loading, PageHeader, Stat, Table, Tabs, TraceLink, isDemo, useApi, useApp } from "../components/ui";
 
 const TIER_TONE: Record<string, any> = { hot: "bad", warm: "warn", cold: "info" };
 
@@ -60,6 +60,66 @@ export function BurstPanel() {
   );
 }
 
+function ReplyPanel({ lead, onDone }: { lead: any; onDone: () => void }) {
+  const { go, toast } = useApp();
+  const [text, setText] = useState("");
+  const [booking, setBooking] = useState<any>(null);
+  const [next, setNext] = useState<string>("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<ApiError | null>(null);
+  const run = async (key: string, fn: () => Promise<any>, after: (r: any) => void) => {
+    setBusy(key);
+    setErr(null);
+    try {
+      after(await fn());
+      onDone();
+    } catch (e) {
+      setErr(e as ApiError);
+    } finally {
+      setBusy(null);
+    }
+  };
+  const record = (classification: string | null) =>
+    run(`reply-${classification || "auto"}`, () => post(`/leads/${lead.id}/reply`, { text: text.trim() || "(reply noted without its text)", classification }), (r) => {
+      setBooking(r.booking);
+      setNext(r.next || "");
+      toast(`Reply recorded (${r.classification})`, "good");
+    });
+  const offer = () => run("offer", () => post(`/leads/${lead.id}/offer-times`), (r) => { setBooking(r); setNext("Approve the booking message in the queue, then record the time they pick."); });
+  const pick = (i: number) =>
+    run(`pick-${i}`, () => post(`/leads/${lead.id}/pick-slot`, { index: i }), (r) => {
+      toast("Invite drafted — the owner approves it", "good");
+      go(`/queue?ids=${r.invite}`);
+    });
+  return (
+    <div className="space-y-2" data-testid="lead-reply">
+      <div className="text-xs font-semibold text-muted">When they reply</div>
+      <Input value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} placeholder="Paste what they said (optional)" aria-label="Their reply" />
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" tone="good" loading={busy === "reply-positive"} onClick={() => record("positive")}>Wants a call</Button>
+        <Button size="sm" loading={busy === "reply-negative"} onClick={() => record("negative")}>Not now</Button>
+        <Button size="sm" loading={busy === "reply-auto"} disabled={!text.trim()} title={text.trim() ? "" : "Paste their reply first"} onClick={() => record(null)}>Read it for me (rules)</Button>
+        <Button size="sm" tone="danger" loading={busy === "reply-stop"} onClick={() => record("stop")}>Asked us to stop</Button>
+        <Button size="sm" loading={busy === "offer"} onClick={offer}>Offer fresh times</Button>
+      </div>
+      <ErrorBox error={err} />
+      {next && <p className="text-sm text-muted">{next}</p>}
+      {booking?.no_slots && <p className="text-sm text-warn">{booking.message}</p>}
+      {booking?.slots?.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-xs text-muted">Times offered — once the booking message is approved and sent, record the one they pick:</div>
+          {booking.slots.map((s: any, i: number) => (
+            <div key={s.start} className="flex flex-wrap items-center gap-2 text-sm">
+              <span>{s.label}</span>
+              <Button size="sm" loading={busy === `pick-${i}`} onClick={() => pick(i)}>They picked this</Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LeadDetail({ lead, onDone }: { lead: any; onDone: () => void }) {
   const { go } = useApp();
   const [res, setRes] = useState<any>(null);
@@ -100,10 +160,11 @@ function LeadDetail({ lead, onDone }: { lead: any; onDone: () => void }) {
             <p className="text-sm">Goal: {res.brief.goal} · Numbers: {res.brief.current_numbers} · Timeline: {res.brief.timeline}</p>
             <Citations items={res.brief.citations} />
           </div>
-          {res.slots && <p className="text-sm">Proposed slots: {res.slots.map((s: any) => s.label).join(" · ")}</p>}
-          <Button size="sm" onClick={() => go(`/queue?ids=${res.queue_ids.join(",")}`)}>Review {res.queue_ids.length} drafts in the queue</Button>
+          {res.next && <p className="text-sm">{res.next}</p>}
+          <Button size="sm" onClick={() => go(`/queue?ids=${res.queue_ids.join(",")}`)}>Review {res.queue_ids.length === 1 ? "the reply" : `${res.queue_ids.length} drafts`} in the queue</Button>
         </div>
       )}
+      <div className="mt-4 border-t border-line pt-3"><ReplyPanel lead={lead} onDone={onDone} /></div>
     </Card>
   );
 }
@@ -129,7 +190,8 @@ function LiveChain() {
       {data && <Table rows={data.leads} empty="No chain leads yet. Signed Meta lead webhooks land here." cols={[
         { key: "leadgen_id", label: "Lead" }, { key: "tier", label: "Tier", render: (l) => <Badge tone={TIER_TONE[l.tier]}>{l.tier}</Badge> },
         { key: "stage", label: "Stage" }, { key: "citations", label: "Cited from", render: (l) => <Citations items={l.citations} /> },
-        { key: "x", label: "", render: (l) => l.stage === "qualified" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/reply`, { text: "Recorded reply" }), (r) => go(`/queue?ids=${r.booking_dm},${r.invite}`))}>Record reply</Button>
+        { key: "x", label: "", render: (l) => l.stage === "qualified" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/reply`, { text: "Replied: interested in a call (noted by the team)", classification: "positive" }), (r) => r.booking_dm ? go(`/queue?ids=${r.booking_dm}`) : setErr(new ApiError(409, r.message || "No free times to offer")))}>They want a call</Button>
+          : l.stage === "replied" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/pick-slot`, { index: 0 }), (r) => go(`/queue?ids=${r.invite}`))}>They picked the first time</Button>
           : l.stage === "booked" ? <Button size="sm" onClick={() => act(() => post(`/chain/leads/${l.id}/outcome`, { outcome: "showed" }))}>Mark showed</Button> : null },
       ]} />}
       {data && <pre className="prose-pre mt-3 rounded-lg bg-panel-2 p-2 text-xs">{JSON.stringify({ stages: data.report.leads_by_stage, inbox: data.report.inbox }, null, 1)}</pre>}
@@ -145,7 +207,7 @@ export default function Sales() {
   const [sel, setSel] = useState<any>(null);
   return (
     <div>
-      <PageHeader title="Leads & booking" subtitle="Transparent scoring, routing to setter, closer or nurture, cited scripts, three proposed slots and the show-up ladder — all queued for approval." />
+      <PageHeader title="Leads & booking" subtitle="Transparent scoring, routing to setter, closer or nurture, cited scripts, fresh booking times after a positive reply, and the show-up ladder — all queued for approval." />
       <Tabs value={tab} onChange={setTab} tabs={[{ key: "leads", label: "Leads" }, { key: "rescue", label: "Lead Rescue Desk" }, { key: "chain", label: "Live chain" }, ...(me.user.role === "owner" ? [{ key: "burst", label: "Burst" }] : [])]} />
       {tab === "leads" && (
         <>
