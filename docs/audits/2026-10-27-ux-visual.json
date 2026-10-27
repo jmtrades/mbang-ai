@@ -1,0 +1,190 @@
+{
+ "findings": [
+  {
+   "area": "Navigation / information architecture",
+   "severity": "critical",
+   "problem": "The owner sees 42 sidebar items in 10 groups. The 'Owner' group alone has 17 items. At 1440x900 the sidebar overflows, so the Owner and Settings groups, the user footer and Sign out sit below the fold: the footer is inside the same overflow-y-auto container as the links. Group names mix job-to-be-done ('Sales', 'Clients') with personas ('Coach', 'Students', 'Owner'). Breadcrumbs repeat the meaningless group ('Overview \u00b7 Day One'). No nav item shows a count (queue size, high-risk students). Linear, Vercel and Stripe all use 5-8 primary destinations with secondary tabs.",
+   "evidence": "web/src/pages/registry.tsx:14-59 (44 PageDefs, GROUPS line 14); operator_ai/auth.py:14-39 (owner = ALL_TABS minus checkin = 42); web/src/App.tsx:159 (nav is one overflow-y-auto column), App.tsx:184-191 (footer inside the scroller), App.tsx:206 (group breadcrumb); screens/desktop/owner-home.png and owner-command.png (sidebar cut off at 'AI departments', no footer visible)",
+   "recommendation": "Add `section`, `parent`, `order` and `ready` to PageDef. Render 7 primary destinations for the owner: Today, Inbox (approvals, with count badge), Coach, Pipeline (Leads / Prospects / Outreach / Calls / Drills as sub-tabs), Students (Accountability / Onboarding / Check-ins), Clients (Fulfilment / Diagnosis / Webinar / Ads), Create (Studio / AI departments). Add a Settings hub with left sub-nav: Workspace (Profile, Brand, Team, Setup), Connections (Integrations, Channels, Source sync, CRM, MCP, Minis), Knowledge (KB, Skills), Developer (Runs, Audit, Evals, Go-live). Render children as a <SubNav> tab row inside PageHeader. Keep old hash keys as redirects so links still work. Restructure the nav as flex-col with only the middle list scrolling, and pin the brand header and user footer. Drop the group prefix from the breadcrumb. Add count badges from a /nav-counts call (queue open, high-risk students, held drafts).",
+   "effort": "L"
+  },
+  {
+   "area": "Coach chat (core product surface)",
+   "severity": "critical",
+   "problem": "The chat that has to beat Jeremy AI and sound like Mbang falls well short of ChatGPT/Claude. (1) Answers render as plain pre-wrap text: no markdown, lists, headings or tables. (2) No streaming: the whole answer appears after one POST, with a 2-row skeleton and no Stop button. (3) No message actions: copy, regenerate, thumbs up/down, edit and resend. (4) The copy promises 'drop a screenshot', but there is no onDrop or onPaste handler anywhere, so drag-and-drop and Cmd+V of an image do nothing. (5) The chat is boxed at max-h-[62vh] under a 2-line page subtitle, and the thread rail is a Card hidden below lg. (6) Every answer carries plumbing: intent badge, 'covered: yes', 'follow-up, read in context', Rules/AI badge, label text, 'Trace #', receipt, note and 'N passage(s) not used'. (7) There is no creator identity: no avatar, and the assistant is labelled 'Coach'. (8) Example prompts are demo-specific and overflow on mobile.",
+   "evidence": "web/src/pages/Coach.tsx:178 (<p className=\"prose-pre\">{m.content}</p>); Coach.tsx:121 (await post(\"/chat\") with no stream); Coach.tsx:157 (subtitle says 'drop a screenshot'); grep onDrop|onPaste in web/src returns no hits; Coach.tsx:159 (rail hidden lg:block), Coach.tsx:169 (max-h-[62vh]); Coach.tsx:180-206 (metadata row); screens/desktop/student-coach-one-chat.png; screens/mobile/student-coach.png (chip '800 DMs, 40 replies\u2026' overflows the card, textarea squeezed to about 120px)",
+   "recommendation": "Rebuild Coach as a full-height layout. Add `layout: 'full'` to PageDef so Shell drops the main padding and PageHeader. Use a 260px collapsible thread rail with search, inline rename, archive and share in a hover '\u2026' menu (this absorbs the Threads page), plus a centred 720px message column. Add a /chat/stream SSE endpoint and render tokens progressively, preceded by a step line ('Searching course material\u2026 3 passages from Module 2') and a Stop button. Render markdown with react-markdown + remark-gfm (or marked + DOMPurify). Show [S1] markers as inline superscript pills with a hover-card preview, reusing the SourceModal fetch. Add hover actions on each message: Copy, Regenerate, thumbs up/down (POST /feedback, fed into evals), Edit & resend. Composer: one rounded container with an auto-growing textarea, and attach / mic / read-aloud in its bottom toolbar. Add a full-window drag overlay plus clipboard image paste. Shift+Enter for a newline, Cmd+Enter to send. Move intent, mode, trace, receipt and not-used passages into a collapsed 'Details' disclosure shown only to owner and coach. Show the creator's avatar and name on assistant messages (brand.owner_display plus an uploaded photo, gated by the existing persona_consent). Suggested prompts come from the tenant's KB topics and use whitespace-normal chips.",
+   "effort": "XL"
+  },
+  {
+   "area": "Home / overview",
+   "severity": "high",
+   "problem": "'Day One' is six vanity counters with no trend or time range ('Agent runs (traced)', 'Questions answered') plus three dashed cards of product marketing ('Grounded', 'Agentic but gated', 'Works without AI') inside the product. 'What should I do now?' is split across three pages: Day One, Command Centre and Morning brief. The student home is one counter card and nothing to do. A closer is told 'Drafts waiting for your approval' even though closers can approve only some kinds. Command Centre's 'Agent activity (7 days)' is one giant bar for a single agent.",
+   "evidence": "web/src/pages/Home.tsx:17-41 (cards + marketing grid at line 35); web/src/pages/MorningBrief.tsx; web/src/pages/CommandCentre.tsx:27-30 (vertical bar chart by agent); screens/desktop/student-home.png, closer-home.png, owner-command.png",
+   "recommendation": "Merge the three into one role-aware Today page (Stripe 'Today' / Linear 'My issues' pattern). Top: greeting and a ranked '3 things to do now' list from /brief, with inline actions (Approve 4 drafts, Call Soren, Pause Creative C). Then a KPI strip whose Stat has `delta` (vs last week) and `spark` props. Then an activity feed. For students: current mission and streak, next lesson, an inline 'Ask {creator}' composer that opens Coach, and a check-in-due banner. Delete the marketing cards. Move Command Centre charts to a secondary 'Insights' tab. Replace the per-agent bar chart with a per-day stacked area, and hide it when there are fewer than 2 series. Write card copy per role from a ROLE_COPY map.",
+   "effort": "L"
+  },
+  {
+   "area": "Unfinished screens shipped in nav",
+   "severity": "critical",
+   "problem": "Academy, Missions, Playbooks, Prospects, Setup and Team are placeholders that say 'Being built'. RBAC grants missions, academy, playbooks and prospects to every role, students included, so a student's nav will have 4 dead ends, and Missions sits second in Overview. This reads as unfinished and erodes trust right away.",
+   "evidence": "web/src/pages/Academy.tsx, Missions.tsx, Playbooks.tsx, Prospects.tsx, Setup.tsx, Team.tsx (all 10-line Empty 'Being built'); operator_ai/auth.py:31-38 (student/setter/closer/coach all include missions, academy, playbooks; prospects for setter/closer/student)",
+   "recommendation": "Add `ready: boolean` to PageDef (or a `features` list in /auth/session) and filter out non-ready pages in Shell's `allowed` memo and the command palette. Ship each page only when it has real content. Never show 'Being built' to students. Until Setup exists, show a first-run checklist card on Today instead (see the onboarding finding).",
+   "effort": "S"
+  },
+  {
+   "area": "Command palette, keyboard shortcuts, global search",
+   "severity": "high",
+   "problem": "There is no Cmd+K, no navigation shortcuts, no list navigation and no global search. The only keyboard handling in the whole app is Enter-to-send in chat and Escape in Modal. With 42 destinations and a triage-heavy workflow (approval queue), this is the single biggest gap against Linear, Vercel and Raycast-style power use. You cannot jump to a student, lead or thread by name.",
+   "evidence": "grep keydown|onKeyDown|metaKey in web/src finds only web/src/components/ui.tsx:221 (Modal Esc) and web/src/pages/Coach.tsx:221 (Enter)",
+   "recommendation": "Add components/CommandPalette.tsx, opened with Cmd/Ctrl+K. Index PAGES filtered by me.tabs, plus actions (New chat, Run interventions, Launch kit, Approve next held draft, Toggle theme, Sign out), plus entity results from a new GET /search?q= (students, leads, prospects, threads, KB files) with grouped sections and recent items. Add a useHotkeys hook (components/hotkeys.ts) that ignores events while focus is in an input. Bindings: G then T/I/C/P/S for navigation, '/' focuses page search, '?' opens a shortcut sheet, J/K move in lists, Enter opens, Esc closes, Cmd+Enter submits any form. Show the shortcut in tooltips and palette rows.",
+   "effort": "M"
+  },
+  {
+   "area": "Approval queue (Inbox)",
+   "severity": "high",
+   "problem": "The queue is a vertical stack of full cards, each with 4-6 colour badges, sometimes duplicated ('email' 'email' because kind and channel are equal). There is no bulk select, no keyboard triage and no split view. Approve reloads the whole list instead of removing the item optimistically. Reject has no confirm or undo. The count badges aren't clickable filters. The filter is a native select in the header. The guardrail match is shown below the body instead of highlighted inside it.",
+   "evidence": "web/src/pages/Queue.tsx:36-48 (badge row), 17-31 (act \u2192 onChange reload), 64-70 (approve/edit/reject), 89 (native Select filter), 93-97 (count badges); screens/desktop/owner-queue.png, screens/mobile/owner-queue.png",
+   "recommendation": "Make it a Linear-inbox split view. Left: a dense ListRow (kind icon, title, recipient, status dot, age). Right: the detail, with `flag.match` highlighted inline (<mark>) in the body, plus Edit in place. Segmented control: 'Needs fix (4) \u00b7 Needs a person (1) \u00b7 Ready (13) \u00b7 Done'. Keys: J/K navigate, A approve, E edit, R reject, X select, Shift+A approve the selection. Optimistic removal with a 5s Undo toast. Dedupe kind and channel, and show at most status + one qualifier badge. Show the open count on the Inbox nav item. On mobile, the list becomes swipe-to-approve/reject rows that open a bottom-sheet detail.",
+   "effort": "L"
+  },
+  {
+   "area": "Dark mode / theming",
+   "severity": "high",
+   "problem": "There is no dark mode. styles.css defines only light :root tokens with color-scheme: light. About 45 hard-coded colours bypass the tokens: bg-white \u00d710, text-white \u00d712, bg-red-50/amber-50/green-50, text-red-900, #8b96ff, skeleton #eeede8, scrollbar #d6d5cf. The Badge, ErrorBox and FlagList tones use raw Tailwind palette classes. ChatGPT, Claude, Linear and Vercel all ship system-aware dark themes.",
+   "evidence": "web/src/styles.css:4-22 (:root only), 56-63 (hard-coded skeleton/scrollbar); web/src/components/ui.tsx:104-113 (Badge tones), 147 (ErrorBox red-50), 438 (FlagList red/amber-50); web/src/App.tsx:94,166 (#8b96ff); grep count in this audit: bg-white 10, text-white 12",
+   "recommendation": "Add semantic tokens to :root and map them in @theme: --surface, --surface-2, --on-brand, --good-bg/fg, --warn-bg/fg, --bad-bg/fg, --info-bg/fg, --demo-bg/fg, --skeleton-a/b, --scrollbar. Add a [data-theme='dark'] block and an @media (prefers-color-scheme: dark) :root:not([data-theme='light']) block. Replace the hard-coded classes (mechanical codemod from the grep list) and rewrite the Badge tones as `bg-[var(--good-bg)] text-[var(--good-fg)]`. Add a System / Light / Dark toggle in a new user menu, persisted in localStorage. Update meta theme-color at runtime. Feed Recharts axis and grid colours from CSS vars.",
+   "effort": "M"
+  },
+  {
+   "area": "Mobile",
+   "severity": "high",
+   "problem": "At 390px the header drops the page title: the PITCH DEMO badge wraps to two lines and the AI pill wraps to two lines, squeezing the flex-1 title to zero. There is no bottom tab bar, and the hamburger drawer lists up to 42 links. No safe-area insets, despite viewport-fit=cover in a standalone PWA. Tables scroll sideways with key columns cut off (Leads: Tier cut, Stage hidden). The chat composer is about 120px wide next to 3 icon buttons, and an example chip overflows its card because Button forces whitespace-nowrap.",
+   "evidence": "screens/mobile/owner-home.png, owner-command.png, owner-sales.png, student-coach.png; web/src/App.tsx:206-211 (title truncate + badges); web/index.html (viewport-fit=cover) with no `safe-area` anywhere in web/src or public; web/src/components/ui.tsx:74 (Button whitespace-nowrap)",
+   "recommendation": "Mobile header: menu button, page title, and a single status dot (pill content moves into a popover). Add a bottom tab bar below md (Today, Inbox, Coach, Pipeline or Students by role, More) with pb-[env(safe-area-inset-bottom)], and pt-[env(safe-area-inset-top)] on the header. Give Table a `mobile=\"cards\"` mode that renders each row as a stacked label/value card below sm, with primary columns flagged per table. Give the chat composer full width with its tools inside. Give suggestion chips whitespace-normal text-left. Make Coach full-height with the composer fixed to the bottom of the viewport. Test at 360px.",
+   "effort": "M"
+  },
+  {
+   "area": "Copywriting / jargon",
+   "severity": "high",
+   "problem": "Engineering vocabulary leaks into user-facing screens: 'Owner password is written to a mode-600 file on the server' on sign-in; 'AES-256-GCM'; 'embeddings: hash-384'; raw enums NEEDS_LOGIN / REAL_OK / NEEDS_AI_BUDGET; 'mock transport'; 'durable job queue'; 'hit@5'; a 'Board computed in 1 ms' KPI card; 'Trace #13'; 'Rules' / 'Replayed AI' badges for students; snake_case placeholders (meta_app_id, sms_auth_token); server switches printed as `null` / `false` next to a CLI command; a green 'Sent: 0' badge in Studio when nothing sends. Reassurance is also overdone: some variant of 'Nothing sends / nothing goes out without your approval' appears on most pages. Locale is mixed: UK spelling ('programme', 'colour', 'Centre') with US dates (10/20/2026).",
+   "evidence": "web/src/App.tsx:112, 210; web/src/pages/Integrations.tsx:26, 36; web/src/components/ui.tsx:129-132 (StatusBadge prints raw enum); web/src/pages/Students.tsx:72; web/src/pages/Studio.tsx:77, 83; web/src/pages/SettingsPage.tsx:55-58; web/src/pages/Queue.tsx:87; screens/desktop/owner-integrations.png, owner-golive.png, owner-settings.png, owner-kb.png, student-checkin.png",
+   "recommendation": "Do one copy pass, backed by a glossary map in components/copy.ts. StatusBadge becomes 'Connected' / 'Needs sign-in' / 'Needs AI key'. Vault fields get human labels and help links from the backend (e.g. 'App secret'), shown as Field labels rather than placeholders. Remove latency and test-path stats from user screens. Hide AI-mode badges from students. Server switches show as read-only toggles with a plain sentence. Rename 'Sent' to 'Queued'. Subtitles at most 12 words, actions as verbs. Pick one locale (en-GB given the spelling) and format dates through Intl with the tenant locale. Say the approval promise once, in onboarding and a header tooltip.",
+   "effort": "M"
+  },
+  {
+   "area": "Demo and AI-status labelling noise",
+   "severity": "medium",
+   "problem": "DEMO labelling is everywhere: a purple DEMO pill on every table row and stat card (31 DemoBadge/isDemo uses), '(DEMO)' inside names, a PITCH DEMO header badge, '(DEMO) \u00b7 PITCH DEMO' in the footer, and 'Pitch demo workspace' on sign-in. On top of that, every page header for every role carries 'AI offline: saved AI runs replay (labelled)'. The result is a loud, untrustworthy look, and the real data is hard to scan.",
+   "evidence": "screens/desktop/owner-outreach.png (17 rows each with a DEMO pill), owner-sales.png, owner-students.png; web/src/App.tsx:207-211, 185; grep DemoBadge|isDemo in pages = 31",
+   "recommendation": "Use one workspace-level treatment: a 3px violet top stripe plus a single 'Demo workspace' chip with a tooltip in the header. Strip the '(DEMO)' suffix at render through a shared displayName() and remove per-row and per-stat badges (keep the data flag for exports). Move AI status to a small dot in the user menu, owner-only, with an actionable line ('AI is off \u2014 answers use saved responses. Add a key \u2192' linking to Integrations).",
+   "effort": "S"
+  },
+  {
+   "area": "Perceived speed",
+   "severity": "high",
+   "problem": "useApi has no cache, so every navigation shows a skeleton even though the API answers in about 10 ms (measured: /day-one 10 ms, /threads 7 ms). Each page is a separate lazy chunk behind a Suspense fallback, which causes a double flash on first visit. Nothing is prefetched. Mutations re-fetch whole lists (queue approve, thread rename). Chat waits for the full answer. Best-in-class apps feel instant through cache-first rendering and optimistic updates.",
+   "evidence": "web/src/components/ui.tsx:29-55 (useApi: setLoading(true) + fetch every mount); web/src/App.tsx:214 (Suspense fallback Loading rows=6); web/src/pages/registry.tsx:12 (lazy per page); web/src/pages/Queue.tsx:28 (onChange \u2192 reload); live timing via browser fetch in this audit",
+   "recommendation": "Give useApi a module-level stale-while-revalidate cache: return cached data synchronously, revalidate in the background, expose mutate(path, updater). Or adopt TanStack Query. Prefetch the page chunk and its primary GET on nav-link hover and focus (store the import fn next to the lazy component). Wrap hash changes in startTransition so the previous page stays visible while the chunk loads. Show skeletons only after a 150ms delay and shape them like the content (StatSkeleton, TableSkeleton). Apply optimistic updates in Queue, Threads and Settings. Stream chat (see the chat finding).",
+   "effort": "M"
+  },
+  {
+   "area": "Brand identity and creator persona",
+   "severity": "high",
+   "problem": "The product looks like a generic SaaS template: a lucide 'Bot' robot as the logo, the name 'Operator AI', a default periwinkle, no avatars anywhere. The backend already returns brand.logo, but the UI never uses it. For a product meant to 'sound exactly like Mbang', the creator's face, name and voice appear nowhere. The brand colour pickers in Settings are broken: input type=color inherits the text-input padding and renders as a thin line.",
+   "evidence": "web/src/App.tsx:94, 166 (Bot icon as logo); /t/demo/api/public returns \"logo\":\"\" but grep logo|avatar in web/src = none; web/src/pages/SettingsPage.tsx:42-43 (Input type=color); screens/desktop/owner-settings.png (colour fields render as lines)",
+   "recommendation": "Settings \u2192 Brand gets: logo upload (sidebar, sign-in, favicon, manifest icons), creator photo and display name, primary/accent colours as a swatch button + hex input with live preview, and a voice sample paragraph. Use the creator avatar on assistant messages and in the Coach header ('Mbang \u00b7 answers from your course'). Write empty-state and greeting lines in the creator's voice, gated by persona_consent. Replace the lucide Bot with the tenant logo, falling back to a monogram.",
+   "effort": "M"
+  },
+  {
+   "area": "Empty states and first-run onboarding",
+   "severity": "high",
+   "problem": "Empty is a generic dashed box with a CircleDot icon. Tool pages (Studio, Webinar, Diagnostic, Reviewer, Coaching) leave the right half of the screen as one sentence in a card. Evals shows four '\u2014' stat cards. A new owner gets no first-run flow (Setup is a stub), and a new student lands on one counter with no next step. Linear, Vercel and Notion all guide day one with a checklist and show previews of results.",
+   "evidence": "web/src/components/ui.tsx:160-169 (Empty); web/src/pages/Studio.tsx:89, Webinar.tsx, Diagnostic.tsx, Coaching.tsx:56; web/src/pages/Setup.tsx; screens/desktop/owner-studio.png, owner-webinar.png, owner-diagnostic.png, owner-evals.png, owner-review.png, student-home.png",
+   "recommendation": "(a) First-run checklist component on Today with persisted progress. Owner: Connect your course material \u2192 Set brand & voice \u2192 Invite team \u2192 Import students \u2192 Ask your first question. Student: Meet your coach \u2192 First check-in \u2192 First drill \u2192 First outreach. (b) Result panes render a ghost preview of the real output (e.g. a greyed score ring, three fix rows, citation chips) with a primary 'Try with sample' button. (c) Empty takes `variant` (first-use / no-results / all-done) with a context icon, one sentence and one action. Replace '\u2014' stats with 'Run your first eval' CTAs.",
+   "effort": "M"
+  },
+  {
+   "area": "Forms and briefs",
+   "severity": "medium",
+   "problem": "The same 10-field BriefForm is retyped in Studio and Webinar. Its placeholders ('Peak Physio', '3000', '90 days') look like filled values, but the real fallback is the business profile, so users can't tell what will be used. Bottleneck diagnosis has 14 empty numeric inputs with a tiny 'Sample' button. Nothing persists between visits, and no form submits with Cmd+Enter.",
+   "evidence": "web/src/components/BriefForm.tsx:3-14; web/src/pages/Studio.tsx:72-74 ('Blank fields use your business profile'); screens/desktop/owner-studio.png, owner-webinar.png, owner-diagnostic.png",
+   "recommendation": "Prefill from GET /profile and show each prefilled field as its value with a small 'from profile' tag. Collapse the brief into a summary bar ('Kinetic Physio \u00b7 clinic owners \u00b7 \u00a33,000 \u00b7 90 days \u2014 Edit'), expanded only on Edit. Persist the last brief per user. Diagnostic: add a 'Paste your numbers' free-text box that reuses the chat metrics parser, make 'Use sample' a visible secondary button, group inputs by funnel stage and show live conversion % between stages as the user types. Cmd+Enter submits everywhere.",
+   "effort": "M"
+  },
+  {
+   "area": "Numbers, money and data display",
+   "severity": "medium",
+   "problem": "For a product about making people money, money shows no currency ('\u2248 12,000 / month', '1240.5' spend, 'cost per lead 22.28'). Dates come from bare toLocaleDateString (US format in a UK-spelled app). KPIs have no deltas, time ranges or sparklines. Tables are full-width with huge gaps between columns, have no sorting or sticky headers, and nest px-2 cells inside p-4 cards.",
+   "evidence": "web/src/pages/Diagnostic.tsx:62, 77; web/src/pages/Coach.tsx:50, 63-65; web/src/pages/Clients.tsx:31, 38; web/src/pages/Checkin.tsx:46; web/src/components/ui.tsx:200-210 (Stat), 296-322 (Table); screens/desktop/owner-outreach.png, student-coach-one-chat.png",
+   "recommendation": "Create lib/format.ts with formatMoney(v, tenant.currency) via Intl.NumberFormat style:'currency', formatPct, formatCount (compact) and formatDate (relative 'in 2 days' with an absolute title). Add tenant.currency and locale to /auth/session. Extend Stat with `delta`, `period` and `spark`. Give Table sortable headers, a sticky thead, a `density` prop, `align:'right'` plus tabular-nums for numeric columns, max column widths and row hover states.",
+   "effort": "M"
+  },
+  {
+   "area": "Typography and type scale",
+   "severity": "medium",
+   "problem": "--font-sans names Inter but Inter is never loaded (no link or @font-face), so most machines render the system font and the screenshots won't match production. Sizes are ad hoc: text-[10px], text-[11px] \u00d712, text-[13px], [15px], [22px]. Nav group labels are 10px uppercase at white/40, which is hard to read. Every page opens with a 2-line explanatory subtitle that pushes content about 130px down.",
+   "evidence": "web/src/styles.css:42; web/index.html (no font link); grep of arbitrary sizes in web/src; web/src/App.tsx:173; web/src/components/ui.tsx:189-199 (PageHeader)",
+   "recommendation": "Self-host Inter Variable via @fontsource-variable/inter (or Geist) with font-feature-settings 'cv11','ss01' and tabular-nums on numbers. Define a type scale in @theme (12/16, 13/20, 14/22, 16/24, 20/28, 24/32, 32/40) and replace the arbitrary sizes. Nav group labels: 11px at white/55, or drop the labels and use spacing. Compact PageHeader: title, at most one line of subtitle, and actions on one row (64px). Move long explanations into an info popover.",
+   "effort": "S"
+  },
+  {
+   "area": "Component consistency and layout",
+   "severity": "medium",
+   "problem": "Too many badge colours at once ('Christmas tree' queue cards). The primary action changes colour (brand periwinkle vs green 'Approve'). PageHeader's right slot holds a select on some pages and buttons on others. Tab state lives in useState, so refresh or deep links lose the tab. Content width is unconstrained, so forms and prose stretch past 1100px. Studio's 7-column card picker truncates hints. Five places do 'paste something and get feedback': Coach chat, Work Reviewer, Coaching mode, Bottleneck diagnosis and the Ads Ops audit.",
+   "evidence": "web/src/pages/Students.tsx:35, Sales.tsx:142, KbAdmin.tsx:7, Webinar.tsx:60, AdsOps.tsx:10, Outreach.tsx:8 (tab in useState); web/src/components/ui.tsx:66 (good tone green buttons); web/src/pages/Studio.tsx:62 (xl:grid-cols-7); screens/desktop/owner-queue.png, owner-review.png vs student-coach-one-chat.png",
+   "recommendation": "Sync Tabs to `?tab=` via the existing useHash query. Add a Toolbar primitive (filters left, actions right) and use it everywhere. Rule: one primary per screen, in the brand colour; green only for status. Add PageDef.width 'reading' (max-w-3xl) or 'wide' (max-w-7xl). Turn the Studio line picker into a segmented control with icons. Make Coach the single paste-and-review entry with mode chips (Ask \u00b7 Review my work \u00b7 Diagnose numbers \u00b7 Audit ads). Reviewer and Coaching become deep links that open Coach with the mode preselected.",
+   "effort": "M"
+  },
+  {
+   "area": "Accessibility and interaction primitives",
+   "severity": "medium",
+   "problem": "Modal has no focus trap or focus restore, no body scroll lock and no aria-labelledby, and puts role=dialog on the overlay. Drawer ignores Escape. Nav links lack aria-current. Tabs lack arrow-key roving focus and aria-controls. The toast is a single slot whose setTimeout is never cleared, so a second toast gets dismissed early by the first toast's timer. There is no skip link. Sign-in inputs are labelled only by placeholder. Filters use native selects, which look different on every OS.",
+   "evidence": "web/src/components/ui.tsx:215-238 (Modal), 240-256 (Drawer), 277-293 (Tabs); web/src/App.tsx:141-148 (toast timer), 178-180 (nav <a> without aria-current), 106-107 (placeholder-only inputs)",
+   "recommendation": "Rebuild the ui.tsx primitives on Radix (Dialog, DropdownMenu, Tabs, Tooltip, Popover, Toast) or React Aria, keeping the current component API so pages don't change. Toasts become a queue with ids and per-toast timers, with action buttons for Undo. Add aria-current=\"page\", a 'Skip to content' link, and visible labels on sign-in. Replace filter selects with a DropdownMenu or a segmented control.",
+   "effort": "M"
+  },
+  {
+   "area": "Developer/QA surfaces in owner navigation",
+   "severity": "medium",
+   "problem": "Internal engineering artefacts are first-class owner nav items: a Go-live scorecard listing pytest paths, Runs & traces with JSON input/output, Audit log, Evals with hit@k, MCP token minting with a curl example, and Skills & workers. Business owners read this as complexity and unfinished work. Stripe and Vercel tuck this kind of thing under Settings \u2192 Developers.",
+   "evidence": "web/src/pages/registry.tsx:39-50; screens/desktop/owner-golive.png (tests/test_phase4_agents.py::\u2026 paths), owner-evals.png; web/src/pages/Mcp.tsx:21-22",
+   "recommendation": "Move Runs, Audit, Evals, Go-live, MCP and Skills under Settings \u2192 Developer, behind a 'Show developer tools' toggle in the user menu. Keep Trace links on agent output visible to owners only, in a 'Details' disclosure. Drop the Go-live scorecard from the tenant UI entirely (keep it as a CLI/CI report).",
+   "effort": "S"
+  },
+  {
+   "area": "Destructive actions and error handling",
+   "severity": "medium",
+   "problem": "Irreversible actions fire immediately: 'Reset demo to clean story' resets and reloads the page; MCP 'Revoke' has no confirm and no error handling; 'Reset practice account' in Ads Ops; Queue 'Reject' has no undo. Threads 'Share' and MCP revoke await promises with no catch, so failures are silent (unhandled rejections).",
+   "evidence": "web/src/pages/SettingsPage.tsx:62; web/src/pages/Mcp.tsx:39; web/src/pages/Threads.tsx:48; web/src/pages/Queue.tsx:69; screens/desktop/owner-ads.png",
+   "recommendation": "Add a ConfirmDialog primitive (title, consequence sentence, typed confirmation for workspace-level resets) for irreversible actions. Reversible ones (reject, archive) get a 5s Undo toast instead. Wrap all inline async handlers in a shared useAction(fn) hook that sets busy, catches errors and toasts the result.",
+   "effort": "S"
+  },
+  {
+   "area": "Sign-in",
+   "severity": "medium",
+   "problem": "The sign-in page is two equal-weight cards: the demo role buttons are as prominent as real sign-in, and the Pitch demo card still appears on non-demo tenants. Copy is about server file permissions. There is no 'Forgot password', no show/hide password, no visible labels, no value proposition, and a robot icon in place of the creator's brand.",
+   "evidence": "web/src/App.tsx:87-129 (SignIn), 112 (mode-600 copy), 114-124 (demo card always rendered); live screenshot of /t/demo/#/ at 800px in this audit",
+   "recommendation": "One centred card: tenant logo, 'Welcome back to {brand}', labelled Email/Username and Password with a show/hide toggle, 'Forgot password?' leading to an owner-approved reset or magic link, primary Sign in. Show demo access only when pub.is_demo, as a subtle 'Explore the demo as\u2026' row of links. Optional left panel with the creator's photo and one-line promise.",
+   "effort": "S"
+  },
+  {
+   "area": "Motion",
+   "severity": "low",
+   "problem": "`motion` is listed in package.json but imported nowhere. Modals, drawers and toasts appear and disappear with no transition. Approved or rejected queue items jump out, and new chat messages pop in. Polished products use short, purposeful motion to show cause and effect.",
+   "evidence": "web/package.json dependencies.motion ^14.6.0; grep 'from \"motion' in web/src = none; web/src/components/ui.tsx:224-256 (Modal/Drawer render null/instant)",
+   "recommendation": "Use motion's AnimatePresence. Modal: opacity + scale 0.98\u21921, 160ms ease-out. Drawer: x 24\u21920. Toast: y 8\u21920. Queue item exit: height collapse, 180ms. Chat messages: fade-up with a layout animation, plus a caret during streaming. Wrap everything in a useReducedMotion check and keep every duration \u2264200ms. If none of this ships, remove the dependency.",
+   "effort": "S"
+  }
+ ],
+ "top_priorities": [
+  "Cut the owner IA from 42 tabs and 10 groups to about 7 primary destinations plus a Settings hub with Developer tucked away. Hide the six 'Being built' stub pages from every role, and pin the user footer (registry.tsx, App.tsx:159-191, auth.py:14-39).",
+  "Rebuild the Coach chat to ChatGPT/Claude standard: full height, streaming with Stop, markdown, inline hover citations, Copy/Regenerate/thumbs/Edit, drag-drop and paste of images, the creator's avatar and voice, and diagnostics hidden from students (Coach.tsx). This is the surface that has to beat Jeremy AI.",
+  "Replace Day One, Command Centre and Morning brief with one role-aware Today page: a ranked 'do this now' list with inline actions, KPIs with deltas, and a first-run checklist for new owners and students.",
+  "Add a Cmd+K palette with global search over students, leads, threads and KB, plus G/J/K/A/E/R shortcuts, and turn the approval queue into a Linear-style inbox with keyboard triage, optimistic updates and Undo.",
+  "Do one copy and labelling pass: remove engineering jargon (mode-600, AES-256-GCM, NEEDS_LOGIN, ms timings, test paths), collapse the per-row DEMO badges and the AI-offline pill into one workspace indicator, and format money with currency through a shared format.ts.",
+  "Ship dark mode with semantic tokens (replacing about 45 hard-coded colours), load the Inter font that is declared but never loaded, define a real type scale, and fix the broken brand colour picker. Add logo and creator-photo upload so the app carries Mbang's identity instead of a robot icon.",
+  "Mobile shell: bottom tab bar, compact header that keeps the page title, safe-area insets, card-mode tables, and a full-width chat composer with wrapping suggestion chips.",
+  "Perceived speed: give useApi a stale-while-revalidate cache, prefetch on nav hover, use startTransition instead of the Suspense skeleton flash, and update optimistically on queue, thread and settings mutations."
+ ]
+}

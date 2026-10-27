@@ -7,6 +7,10 @@ MODULES = [
     "operator_ai.agents.sales", "operator_ai.agents.accountability", "operator_ai.actions", "operator_ai.webinar_chain",
     "operator_ai.studio", "operator_ai.outreach_loop", "operator_ai.departments", "operator_ai.skills",
     "operator_ai.live.chain", "operator_ai.channels", "operator_ai.crm",
+    # feature modules: importing each registers its queue hooks, event subscribers and job handlers
+    "operator_ai.missions", "operator_ai.prospects", "operator_ai.proposals", "operator_ai.academy",
+    "operator_ai.roleplay", "operator_ai.persona", "operator_ai.delivery", "operator_ai.inbound",
+    "operator_ai.escalations", "operator_ai.webinars", "operator_ai.client_ops", "operator_ai.playbooks",
 ]
 _loaded = False
 

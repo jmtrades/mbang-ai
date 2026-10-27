@@ -1,0 +1,230 @@
+{
+ "findings": [
+  {
+   "area": "A0 Academy/Persona: source material",
+   "severity": "critical",
+   "problem": "There is no real course material on disk. inputs/ does not exist, so the corpus falls back to the 3,417-word fixture marked 'FICTIONAL TRAINING MATERIAL FOR TESTS'. An Academy generated today would teach invented numbers (72h kill rule, 60-word DMs, 5/7/10/15/10/12/6 webinar timings). A persona mined today would have no Mbang transcripts to learn from.",
+   "evidence": "`ls inputs` -> 'No such file or directory'; operator_ai/config.py:74-82 (effective_corpus_dir falls back to FIXTURE_CORPUS); data/tenants/owner/kb is empty; tests/fixtures/corpus/sops/usp_creation.txt:2",
+   "recommendation": "Make academy_build and persona_mine return 409 'Load the owner's material first' when config.using_fixture_corpus is true and the tenant is not the demo tenant. In the demo tenant, give every generated lesson and item a 'Demo material' badge. Add a Setup checklist item, 'Course material loaded (N words, M transcripts with speaker labels)'. Load the full course, SOPs, and consented call/DM archives into inputs/ before building anything else.",
+   "effort": "S"
+  },
+  {
+   "area": "A1 Academy: role-play and certification scoring",
+   "severity": "critical",
+   "problem": "The rubric that would score role-plays and certifications counts keywords anywhere in the text. A keyword-stuffed line of nonsense scores 100/100 on sales_call. call_review stage scores use the same approach. Certificates built on this scoring would mean nothing.",
+   "evidence": "operator_ai/rubrics.py:167 (c_objections) and :185 (c_stages) use substring counts; operator_ai/call_review.py:83 score=min(10,hits*4). Verified: rubrics.score('goal current tried why now gap offer next step. think about it? what specifically. too expensive, the gap.','sales_call') -> 100, every criterion 10",
+   "recommendation": "Add a turn-aware, order-aware scorer (operator_ai/academy/score.py) for role-plays and exams; keep the old rubric for drafts only. Discovery cues earn credit only in learner sentences ending in '?', across separate turns, and before the offer. Gap playback earns credit only when it mentions at least one fact the persona actually revealed. Objection handling earns credit only in the learner turn right after the objection is raised, and only with the matching SOP move (probe for 'think', gap/cost-of-staying for 'price', joint follow-up for 'partner'). Stuffing detector: 3 or more stage cues in one turn gives zero credit for that turn and raises a flag. Regression test: the stuffed string above must score under 20.",
+   "effort": "M"
+  },
+  {
+   "area": "A2 Academy: rubric grounded in the owner's SOPs",
+   "severity": "high",
+   "problem": "Rubric thresholds and citation files are hard-coded to the fixture: segment minutes, 60-word DMs, five call stages, and paths like course/transcripts/vid_d4e5f6.txt. When the cited file is missing, critique.evidence falls back to the top search hit. On the real corpus, learners would be scored against fictional rules and shown wrong citations.",
+   "evidence": "operator_ai/rubrics.py:23 SOP_SEGMENT_MIN, :97 c_dm_length 60 words, :215-260 sop paths; operator_ai/critique.py:21 `hits[0] if hits else None` fallback",
+   "recommendation": "Move rubric rules into data: an academy_rubrics table with rule_key, label, weight, params JSON (e.g. max_words, stage list, segment minutes), cite_file and cite_lines. Seed it from the current code values, each marked 'default: confirm against your SOP'. Add a rubric editor to Academy admin. Add a validator, run from skills.on_source_change, that flags rules whose cited lines no longer exist or no longer contain the parameter value (for example, '60' must appear in the cited lines for max_words=60). Certification exams use only rules the owner has confirmed.",
+   "effort": "M"
+  },
+  {
+   "area": "A3 Academy: unsafe source sentences",
+   "severity": "high",
+   "problem": "The index-time content policy deliberately lets guarantee, income-claim and unverified-result lines through. Extractive lessons and quiz answers would show these sentences to trainees, word for word, as 'what the course says', and trainees would copy them into outreach.",
+   "evidence": "operator_ai/content_policy.py:36 SKIP_IN_KB = {guarantee, income_claim, unverified_result}; verified: content_policy.classify('My students make $10k a month in 30 days, guaranteed.') -> None",
+   "recommendation": "In the academy generator, run guardrails.check(text, 'plain') on every candidate sentence. A sentence with a block flag can never be a key point, a quiz answer, a distractor marked correct, or a 'correct response' in a role-play. Show these in admin as 'Skipped: income claim (line N)' with a SourceModal link, so the owner can fix the source.",
+   "effort": "S"
+  },
+  {
+   "area": "A4 Academy: data model",
+   "severity": "high",
+   "problem": "The pre-wired tables have no versioning, approval status, path definitions, item statistics, role-play turns, exams, expiry or team assignment. Spaced repetition is also implemented twice.",
+   "evidence": "operator_ai/db.py:149-168 (academy_lessons, academy_quiz_items, academy_progress, academy_attempts, academy_review, roleplays, certifications); duplicate SM-2 stores db.py:112 drill_cards and :160 academy_review",
+   "recommendation": "New tables:\n- academy_paths(key PK, role, title, skill_order JSON, levels JSON, required JSON)\n- academy_mastery(user_id, skill, theta, n, updated)\n- academy_enrolments(user_id, path_key, assigned_by, due, status)\n- team_assignments(manager_id, member_id), for setters and closers; students keep students.coach_id\n- roleplay_scenarios(key PK, target_role, channel call|dm|client|student, persona JSON, hidden JSON, win JSON, rubric_key, status, author, version)\n- roleplay_turns(roleplay_id, n, speaker, text, acts JSON, state_after JSON, flags JSON)\n- academy_exams(id, user_id, path_key, level, item_ids JSON, seed, started, deadline, submitted, score)\n\nNew columns on existing tables:\n- academy_lessons: status draft|published|stale|retired, gen_mode, gen_version, source_sha, source_lines, skills JSON, prereqs JSON, est_minutes, reviewed_by, reviewed_at\n- academy_quiz_items: status, pool practice|exam, generator, difficulty_b, checks JSON, exposures, p_value, discrimination, reported\n- academy_attempts: ms, context quiz|review|exam, session_id, chosen_option\n- roleplays: mode, seed, exam_id, rules_score JSON, ai_judge JSON, human_review JSON\n- certifications: status active|expired|revoked, expires, signed_off_by, revoked_reason, criteria_snapshot JSON\n\nMerge spaced repetition into academy_review(user_id, item_kind quiz|drill|objection, item_id, ease, interval, reps, lapses, due, last_grade) and migrate drill_cards into it.",
+   "effort": "M"
+  },
+  {
+   "area": "A5 Academy: offline lesson generation with citations",
+   "severity": "high",
+   "problem": "Academy is a placeholder: the route returns 'not built yet' and the page shows 'Being built'. The repo has no code that turns SOPs or transcripts into lessons.",
+   "evidence": "operator_ai/routes/academy.py:11-13; web/src/pages/Academy.tsx:1-10",
+   "recommendation": "Add operator_ai/academy/build.py, run as a traceable runtime.Run 'academy_build' that works with AI off.\n\n1. Segment. For SOPs, PDF SOPs and uploads, split at heading lines: 8 words or fewer, no end punctuation, followed by content; also markdown '#' and ALL-CAPS lines. Merge sections under 40 words into the previous one. For transcripts, first strip disfluencies (corpus.FILLER, and collapse repeats like 'the the the'), then run TextTiling: 20-token pseudo-sentences, block size 6, cosine of idf-weighted vectors (index.idf), boundaries where the depth score exceeds mean minus \u03c3/2, minimum 150 words. Use course/summaries/*.md headings as the outline when they exist. Skip documents with quality=garbled and show them in admin as 'too noisy'.\n2. Tag. Score each section with BM25 against the skill seed queries (extend onboarding.SKILLS with compliance, fulfilment, client_reporting and coaching). Tag a skill when its score is at least 0.6 \u00d7 the best score.\n3. Pick key points. Sentence score = 2 \u00d7 rule pattern (imperative/modal: ^(never|always|only|use|ask|keep|send|kill|test|confirm), must, should, 'the rule') + 1.5 \u00d7 has number with unit + idf mass / length + 0.5 if within the first 3 sentences after the heading \u2212 1 \u00d7 hedge words. Drop sentences that fail A3. Keep 3\u20137 per lesson in source order, each with [S#] pointing to file:lines. Pull 'Example\u2026' lines into an Example block and 'Never/Don't' lines into a Common mistakes block.\n4. Order. Within a skill, topologically sort on definition edges ('X is/means\u2026' in one section, X used in another). Across skills, follow path.skill_order.\n5. Assemble. Lesson = title (the heading, or the top-idf compound terms), key points, example, mistakes, and Practise-it links (quiz, a role-play scenario for the same skill, Coaching mode for the matching kind).\n6. AI mode. Rewrite into a 150\u2013300-word explainer, then check: coach.verify_citations; every sentence carries at least one [S#]; content-token overlap of at least 0.5 with the cited lines; every number appears in the cited lines. Any failure keeps the extractive version.\n7. Approve and keep fresh. Lessons start as draft; the owner or a coach approves (bulk 'approve all that passed checks'). Store source_sha. skills.on_source_change marks changed lessons stale and regenerates drafts.",
+   "effort": "L"
+  },
+  {
+   "area": "A6 Academy: rules-based quiz generation",
+   "severity": "high",
+   "problem": "Quizzes must be generated from SOP text without AI, and no quiz generator exists yet.",
+   "evidence": "operator_ai/db.py:152 academy_quiz_items exists but nothing writes to it; textnorm.COMPOUNDS/SYNONYMS (operator_ai/textnorm.py) and fastembed (requirements.in) are available offline",
+   "recommendation": "Seven item types, all generated and checked by code.\n\n(a) Cloze on rule sentences. Blank the most valuable span, in this order: number+unit, then a textnorm compound (thunderdome, showrate, cpl), then the highest-idf noun. Reject the item if the span appears twice in the sentence or is in the heading. Grade by normalising with textnorm tokens, stem and SYNONYMS, converting number words to digits (seventy two -> 72), and accepting unit aliases (h, hrs, hours).\n(b) Numeric multiple choice. Distractors are same-unit numbers found elsewhere in the corpus, nearest by log distance, excluding values that appear in the same section (prevents two correct answers). If fewer than three exist, pad with \u00d70.5, \u00d72 or \u00b11 step, rounded to nice numbers.\n(c) Term multiple choice. Distractors come from the same enumeration or the skill's domain terms, chosen by embedding cosine 0.4\u20130.8, with a co-occurrence fallback.\n(d) Ordering, from enumerations such as 'Rapport, discovery, gap, offer, and next step' or Segment 1..7.\n(e) Scenario multiple choice, from the pattern 'When (someone|a lead|the client) says X, Y'. The correct answer is Y. Distractors are the responses to other objections plus one rule-breaking option (discount or guarantee) that guardrails.check confirms is blocked.\n(f) Spot the violation: three compliant lines plus one injected violation, with the answer checked by guardrails.check.\n(g) Write it: a free-text DM, follow-up or USP, scored by rubrics.score plus guardrails, with cited fixes.\n\nTrue/false negation flips (never\u2194always, only\u2194also) only from sentences with exactly one modal, and stored as never quotable.\n\nQuality gates: the answer appears verbatim in the cited lines; options are unique after normalisation; the source sentence has at least 8 words; nothing from excluded or garbled lines; dedupe by normalised prompt.\n\nItem analytics after 30 or more attempts: p-value and point-biserial. Auto-flag for review when p > 0.95, p < 0.2, r_pb < 0.1, or the item gets 3 or more 'report question' clicks. Items belong to a practice pool or an exam pool; the exam pool needs approval.",
+   "effort": "L"
+  },
+  {
+   "area": "A7 Academy: role-play simulator (rules mode)",
+   "severity": "high",
+   "problem": "No role-play engine exists. The roleplays table is unused, and the only related features are passive: transcript review and flashcards.",
+   "evidence": "operator_ai/db.py:163 roleplays; call_review.py STAGES/OBJECTIONS only score finished transcripts",
+   "recommendation": "Add operator_ai/academy/roleplay.py, a deterministic state machine driven by scenario data.\n\nScenario contents:\n- Public persona card: a fictional name, a niche from demo.NICHES, channel, temperament.\n- Hidden facts: goal, current numbers, what they tried, why now, budget_ok, decision_maker, and an ordered objection queue.\n- Meters: trust starts at 30, 50 or 65 depending on temperament; patience is 12\u201318 turns.\n- Win and lose conditions. Win: next step booked, joint follow-up for a partner objection, or a polite disqualify when budget_ok=false.\n\nAct classifier for each learner turn: reuse the call_review cue lists plus rubrics c_one_question and c_dm_length, and run guardrails.check in outreach mode for DM scenarios and plain mode otherwise. Acts: ask_goal/current/tried/why_now (only when the sentence ends in '?'), rapport, gap_playback (must cite a revealed fact), offer, next_step, objection_probe, price_reframe, partner_bridge, discount, multi_question, monologue (over 120 words), violation.\n\nTransitions update stage and meters. Replies come from a template bank keyed by (event, temperament) with 3\u20135 variants, picked by rng(seed, turn) so every session can be replayed exactly. A reply can only contain facts already revealed. Presenting the offer before the gap triggers the price objection and costs 15 trust. A guarantee or income claim ends the session as a compliance fail.\n\nScenario library v1:\n- Setter DMs: cold physio clinic, warm inbound, ghosted lead.\n- Closer calls: think-about-it, price, partner, not qualified.\n- Growth-operator client calls: CPL doubled, client wants a guarantee, client wants to pause ads. The learner's diagnosis is checked against diagnostic.py maths on the hidden numbers.\n- Coach scenarios: a student asks to plant webinar questions (the coach must refuse and cite the rule); a student has zero clients after 30 days.\n\nEnd-of-session score uses the A1 scorer: discovery dimensions, gap uses facts, each objection handled per SOP, outcome, talk ratio (learner at most 55% of words on calls), compliance gate. Every criterion carries [E#] citations via critique.evidence. The transcript is annotated per turn as green, amber or red, and missed objections become spaced-repetition cards.\n\nVoice: browser dictation for the learner, a neutral speechSynthesis system voice for the fictional persona. Coaches can author scenarios in a form, or build one from a reviewed call (consented calls only, names scrubbed).",
+   "effort": "XL"
+  },
+  {
+   "area": "A8 Academy: role-play AI mode",
+   "severity": "medium",
+   "problem": "If an LLM plays the prospect freely, it leaks hidden facts, drifts off the SOP, and makes scores impossible to reproduce for certification.",
+   "evidence": "operator_ai/llm.py:153 complete() and the replay cache exist; no persona-play code",
+   "recommendation": "Rules decide, AI phrases. Each turn the state machine emits a directive {event, reveal: [facts], tone from trust, max_words}, and the model writes only the persona's line from the card plus the directive.\n\nPost-checks on every AI line, with the template line as fallback:\n- no hidden fact value outside the reveal list (string and number match)\n- at most max_words\n- passes guardrails in plain mode\n- no 'as an AI' meta talk\n\nAn optional AI act-classifier may add acts but can never remove a violation the rules detected. An optional AI judge gives narrative feedback, labelled separately. Certification uses only the rules score plus human sign-off. Each session has a token cap drawn from ai_token_budget. Replays are keyed by (scenario, seed, turn, hash of learner text).",
+   "effort": "M"
+  },
+  {
+   "area": "A9 Academy: certification levels and gates",
+   "severity": "high",
+   "problem": "The certifications table has no criteria, expiry or revocation, and no evidence model. Training is also disconnected from operations: any student can approve their own outreach with no compliance training at all.",
+   "evidence": "operator_ai/db.py:166 certifications; operator_ai/auth.py:53 OWN_DECIDE lets any role approve its own DMs/emails/proposals",
+   "recommendation": "Paths: growth_operator, setter, closer, coach, plus a mandatory compliance_core.\n- L1 Foundations: all path lessons done, mastery at least 0.8 overall and 0.7 per skill, compliance_core passed.\n- L2 Practitioner: 3 role-plays on distinct scenarios scoring 75+ with zero compliance flags, plus 5 write-it items scoring 80+.\n- L3 Certified: a timed exam of 30 items from the exam pool only (seeded per attempt, answers never sent to the browser, 24h retake cooldown, Coach endpoint returns 423 for that user while the exam is open) scored at 85%+; one role-play signed off by a coach or the owner; and real-work evidence pulled from the system, never self-reported. Setter: 50+ approved own DMs with at most 5% guardrail holds. Closer: 10+ consented, reviewed calls averaging 70+. Growth operator: first client signed (clients or proposals). Coach: graded 10 learner role-plays within \u00b110 of the reference score.\n- L4 Lead (coaches): calibration agreement of 80%+ over 20 items.\n\nCertificates expire after 180 days. 3 or more guardrail blocks in 30 days triggers recertification.\n\nGates: approving own items under auth.OWN_DECIDE requires compliance_core L1; setter decide rights require setter L1. Certificate text is guardrail-checked and says it is an internal training credential with no income implication. A criteria_snapshot is stored so later rule edits never silently change awarded certificates.",
+   "effort": "M"
+  },
+  {
+   "area": "A10 Academy: spaced repetition and mastery",
+   "severity": "medium",
+   "problem": "Spaced repetition exists only for 3 objection flashcards that learners grade themselves. There is no automatic grading, no mastery model and no adaptive practice.",
+   "evidence": "operator_ai/call_review.py:155-194 (due_cards, sm2, grade); web/src/pages/Drills.tsx self-grading buttons",
+   "recommendation": "One spaced-repetition store (A4) that reuses call_review.sm2.\n\nAutomatic grade mapping: wrong -> 1; correct but slower than 2\u00d7 the item's median latency -> 3; correct -> 4; correct and fast with 2+ prior correct -> 5.\n\nRules:\n- New cards only after the lesson is complete.\n- Daily session: at most 20 reviews, interleaved across skills, then 1 role-play on the weakest skill.\n- A leech (4+ lapses) alerts the coach and assigns a lesson re-read.\n\nMastery: Elo per user \u00d7 skill, p = 1/(1+e^-(\u03b8-b)), \u03b8 += K(outcome \u2212 p), with item b updated symmetrically and K decaying from 0.4 to 0.1. Adaptive item choice targets p \u2248 0.7. Show \u03b8 to users as 'chance of getting a typical item right'.",
+   "effort": "M"
+  },
+  {
+   "area": "A11 Academy: endpoints and permissions",
+   "severity": "medium",
+   "problem": "Only GET /academy exists, and the RBAC has no tabs for coach dashboards or Academy admin.",
+   "evidence": "operator_ai/routes/academy.py:11; operator_ai/auth.py:14-38 ALL_TABS/ROLE_TABS; tests/test_phase11_quality.py:42 tab->endpoint map",
+   "recommendation": "All routes under /t/{tid}/api.\n\nLearner routes, 'academy' tab:\n- GET /academy (today: due reviews, next lesson, suggested role-play, certificate progress with missing criteria)\n- GET /academy/paths\n- GET /academy/paths/{key}\n- GET /academy/lessons/{id}\n- POST /academy/lessons/{id}/complete\n- GET /academy/lessons/{id}/quiz (no answers)\n- POST /academy/items/{id}/answer {answer, ms} -> {correct, explanation, citation, due}\n- GET /academy/review/due\n- POST /academy/review/{card}/grade\n- GET /academy/scenarios\n- POST /academy/roleplays {scenario, mode}\n- POST /academy/roleplays/{id}/turn {text}\n- POST /academy/roleplays/{id}/end\n- GET /academy/roleplays/{id}\n- POST /academy/exams {path, level}\n- POST /academy/exams/{id}/submit\n- GET /academy/certs/me\n\nNew tab 'academy_team' (owner, coach):\n- GET /academy/team\n- GET /academy/team/{user}\n- POST /academy/assign\n- POST /academy/certs/{id}/signoff\n- POST /academy/certs/{id}/revoke\n\nNew tab 'academy_admin' (owner; coaches read-only):\n- POST /academy/build (runtime job)\n- GET /academy/admin/drafts\n- POST /academy/admin/items/{id}/decide\n- GET /academy/admin/coverage\n- GET /academy/admin/item-stats\n- /academy/admin/scenarios (CRUD)\n- PUT /academy/admin/rubric\n\nRegister both tabs in auth.ALL_TABS/ROLE_TABS and in the test tab map.",
+   "effort": "M"
+  },
+  {
+   "area": "A12 Academy: learner UI",
+   "severity": "medium",
+   "problem": "The learner UI does not exist yet.",
+   "evidence": "web/src/pages/Academy.tsx:1-10 placeholder",
+   "recommendation": "Academy.tsx with tabs Today | Paths | Role-play | Certificates.\n\n- Lesson reader: key points with Citations chips that open SourceModal at the cited line; Example and Common mistakes blocks; inline 'Check yourself' items with an instant cited explanation; Practise-it buttons for role-play and for Coaching mode with the kind prefilled.\n- Role-play: chat view with the persona card (public facts only), AiModeBadge, optional live hints (hidden during exams), mic dictation. At the end: scorecard with criteria, citations, the annotated transcript and 'drill this' buttons.\n- Certificates: a level ladder listing the exact missing criteria, with evidence links.\n\nMake lessons readable at 375px, and cache published lessons in the existing PWA offline shell.",
+   "effort": "L"
+  },
+  {
+   "area": "A13 Academy: coach and manager dashboards",
+   "severity": "medium",
+   "problem": "Coaches and managers have no view of training progress. Setters and closers are not linked to any manager, and nothing ties training to real results, which is the link to making money.",
+   "evidence": "operator_ai/db.py:37 students.coach_id only covers students; web/src/pages/Team.tsx placeholder; call_review.rep_trends and outreach data exist but are not linked to training",
+   "recommendation": "AcademyTeam.tsx:\n- Cohort table: students.coach_id plus team_assignments, showing level, last active, mastery sparkline, and an at-risk badge (7 days inactive, mastery drop over 0.1, 2 failed role-plays, or leech cards).\n- Skill heatmap of learners \u00d7 skills.\n- Misconceptions panel: items with the lowest p-value and the most-chosen distractor, with a source link and 'add a note to the lesson'.\n- Sign-off queue: role-play transcripts beside their rules score.\n- Assign modal: lesson, scenario or path with a due date; it drafts a coach_note queue item.\n- Training impact panel: mastery joined with outcomes already in the database (outreach reply rate, call review overall, show rate), shown as a correlation with n and never as a promise.\n\nCoaches see only their own learners.",
+   "effort": "L"
+  },
+  {
+   "area": "A14 Academy: owner admin",
+   "severity": "medium",
+   "problem": "The owner needs a way to approve generated content, see gaps in the material, and manage scenarios, rubrics and certification thresholds.",
+   "evidence": "operator_ai/console.py:362-377 engagement_alerts already counts uncovered student questions but nothing turns them into lessons",
+   "recommendation": "AcademyAdmin.tsx:\n- Build runs with TraceLink.\n- Draft review list showing the source passage beside each item, with its machine-check results.\n- Coverage map: SOP sections -> lessons and items, plus uncovered student queries grouped into 'gaps in the material'.\n- Item stats with the A6 auto-flags.\n- Scenario editor: a validated persona JSON form with a 'test run' button in rules mode.\n- Rubric editor (A2) and per-path certification thresholds.",
+   "effort": "M"
+  },
+  {
+   "area": "A15 Academy: objection drill quality",
+   "severity": "medium",
+   "problem": "The objection drill 'answer' is the first 400 characters of whatever chunk ranks top, not the sentence that answers the objection. due_cards also writes seed rows on every GET.",
+   "evidence": "operator_ai/call_review.py:139 answer = hits[0]['snippet']; :156 seed_drills(tenant) inside due_cards",
+   "recommendation": "Build drill answers from the A6 'When someone says X, Y' extraction, falling back to coach.extractive(question, hits, max_sentences=2), each with an exact line citation. Seed drills during academy_build or index rebuild, not on read. Move the cards into the merged spaced-repetition store.",
+   "effort": "S"
+  },
+  {
+   "area": "B0 Persona: consent from the person",
+   "severity": "critical",
+   "problem": "Today's 'persona consent' is free text typed by whoever is logged in as owner, recorded as by=actor. It has no proof it came from Mbang, no scopes, no expiry and no withdrawal. The raw persona object can also be overwritten through PUT /settings, skipping even that record. The persona_profiles table and the 'style' field are never used.",
+   "evidence": "operator_ai/console.py:79-87 (consent = {text, at, by: actor}); operator_ai/settings.py:10 'persona' in API_EDITABLE; operator_ai/db.py:186 persona_profiles unused; web/src/pages/OwnerConsole.tsx:41 consent text input",
+   "recommendation": "Add an append-only persona_consents table: id, subject_user_id, profile_id, profile_hash, statement (in the subject's own words), statement_sha, scopes JSON, method in_app_signed|uploaded_signed_doc, at, expires (default 12 months), withdrawn_at, withdrawn_by, witnessed_by.\n\n- Only the designated subject's own login can record consent, after re-entering their password. The owner designates the subject (POST /persona/subject).\n- Consent is bound to one profile version hash; a new profile version needs fresh approval.\n- Scopes: coach_answers, lesson_framing, roleplay_debriefs, student_nudges, public_minis, external_ai_processing. Voice, likeness and outreach are not offered as scopes at all.\n- Remove 'persona' from settings.API_EDITABLE. Keep display_name, banned_words and limits on /personality, and treat the legacy persona_consent as invalid with a banner.\n- Log persona.consent, persona.approve and persona.withdraw to audit.",
+   "effort": "M"
+  },
+  {
+   "area": "B1 Persona: speaker attribution",
+   "severity": "critical",
+   "problem": "Nothing records who is speaking. Doc has no speaker field, the subtitle parser deletes WebVTT <v Name> speaker tags, and transcripts are group calls that include students. Mining 'Mbang's style' from them would learn other people's words.",
+   "evidence": "operator_ai/corpus.py:27-40 Doc (no speaker); operator_ai/uploads.py:34 re.sub(r'<[^>]+>', '', line) strips <v Speaker>; tests/fixtures/corpus/course/transcripts/vid_j1k2l3.txt (unlabelled group call)",
+   "recommendation": "Parse speakers at ingest: VTT <v Name>, 'Name:' prefixes, Zoom '[Name] 00:01:02' lines and SRT speaker prefixes. Store speakers: list[str|None] next to Doc.lines, and keep chunk-level speaker shares.\n\nAdd a speaker column to kb_notes so the owner can mark single-speaker documents, plus a persona.aliases setting ('Mbang', 'M.', etc.). The miner uses only lines attributed to the subject.\n\nShow attribution coverage: attributed words, documents and calls. Unattributed transcripts are excluded by default and are never guessed.",
+   "effort": "M"
+  },
+  {
+   "area": "B2 Persona: offline style mining",
+   "severity": "high",
+   "problem": "No style profile is produced from the subject's material.",
+   "evidence": "operator_ai/console.py:75 style_note 'Style rewriting needs AI'; numpy plus index.idf available (operator_ai/index.py:48)",
+   "recommendation": "Add operator_ai/persona/mine.py, a runtime job 'persona_mine' using numpy only.\n\nInput: subject-attributed lines (B1) from licensed documents, minus content-policy exclusions, guardrail-flagged lines, garbled documents, and lines containing names, numbers or money. Produce a draft at 5k attributed words and mark the profile 'stable' at 20k.\n\nBackground corpus: other speakers' lines from the same calls (topic-matched, so differences reflect style rather than topic) plus the tenant's written SOPs. No downloads.\n\nSignature phrases: 1\u20134-grams within sentences, stopwords kept. Score with weighted log-odds under an informative Dirichlet prior (Monroe et al., 'Fightin' Words'). Keep phrases with z > 3, count \u2265 5, present in \u2265 3 documents, and surviving \u2265 70% of 20 document-bootstrap resamples. Drop topical n-grams (content words above the 75th idf percentile or in textnorm.COMPOUNDS), anything with names or numbers, and anything that trips guardrails (e.g. 'last chance').\n\nPosition classes from P(position | n-gram): openers (first 8 tokens of a turn), closers (last 8), transitions (sentence-initial mid-turn), tags ('right?', 'make sense?').\n\nStylometrics: sentence length mean, median and p90; turn length; question rate; imperative rate; 'you' per 100 words; we/I ratio; contraction rate; exclamation rate; MATTR; certainty-to-hedge ratio; top-100 function-word vector. Disfluency rate is measured but never reproduced.\n\nLexicon preferences: for synonym sets (textnorm.SYNONYMS plus curated pairs such as clients/customers, leads/prospects, book/schedule), record his preferred variant where he uses it 70%+ of the time with n \u2265 10.\n\nEvery phrase and preference stores evidence (file, lines, count, z). Output a versioned persona_profiles row (draft, profile_hash) plus persona_phrases rows waiting for the subject's approve, reject or never-use decision.",
+   "effort": "L"
+  },
+  {
+   "area": "B3 Persona: rules-mode application",
+   "severity": "high",
+   "problem": "With AI off, the coach's answers carry no trace of the owner's voice. The extractive answer always starts with a generic 'From the course material:' line.",
+   "evidence": "operator_ai/agents/coach.py:236 'From the course material:\\n'; translate.NOT_COVERED is the honesty string",
+   "recommendation": "Never edit cited sentences, so [S#] line ranges stay exact. Apply only these changes:\n1. Attribution-aware retrieval: while the persona is active, give a +10% score to chunks that are mostly subject-attributed. Extractive answers then reuse his actual sentences, the most faithful way to sound like him with nothing invented.\n2. Replace system framing lines (the coach prefix, lesson and debrief intros) with an approved opener chosen by hash(question) % n. Add at most one approved closer or tag, and only when covered=yes.\n3. Apply lexicon preferences only to text the system writes from templates (student nudges, debrief templates), never inside quoted course text.\n4. Keep translate.NOT_COVERED verbatim; framing may surround it.\n\nUse at most one signature phrase per answer, and none repeated within that user's last 5 answers.",
+   "effort": "M"
+  },
+  {
+   "area": "B4 Persona: AI-mode application",
+   "severity": "medium",
+   "problem": "An LLM told to 'be Mbang' will invent biography and advice, change citations, and can send his transcripts to a third-party provider without his agreement.",
+   "evidence": "operator_ai/agents/coach.py:18-22 SYSTEM; :205-215 _ai(); verify_citations only checks citation ids, not claim content",
+   "recommendation": "Prompt: the existing SYSTEM, plus a style card (stylometric targets in plain words, approved phrases with 'at most one per answer', the never-use list), plus 2\u20133 STYLE EXAMPLES. Examples are subject turns of 15\u201380 words picked by BM25 similarity to the question, with numbers and names stripped, at most 250 words in total. The prompt states that facts come only from [S#] passages. Excerpts are sent to the provider only under the external_ai_processing scope; otherwise only the style card is sent.\n\nPost-verify in this order, falling back to the neutral grounded answer on any failure:\n1. verify_citations\n2. a non-empty citation set when covered\n3. containment: every sentence with an [S#] shares at least 0.35 content tokens with its cited passage, and every number appears in a cited passage\n4. no verbatim span of 12+ tokens from the style excerpts unless it also appears in a cited passage\n5. the phrase cap\n6. guardrails plus the B5 guards\n\nLabel the answer 'AI \u00b7 styled after <name> (consent vN)'.",
+   "effort": "M"
+  },
+  {
+   "area": "B5 Persona: new guardrails (identity, autobiography, outreach)",
+   "severity": "critical",
+   "problem": "Only a 'banned_name' rule guards identity. Nothing stops 'Hey, this is Mbang', sign-offs in his name, invented first-person stories ('when I scaled my agency\u2026'), or 'Mbang would say\u2026' with no source.",
+   "evidence": "operator_ai/guardrails.py:159-170 check() identity handling is banned_name only; tests/test_guardrails.py:139-146",
+   "recommendation": "New rules in guardrails.py, active whenever a persona name or aliases are configured:\n(a) impersonation (block, all modes): 'I'm X', 'this is X', 'X here', 'it's X', and end-of-message sign-offs '- X', '\u2014 X', 'from X'.\n(b) persona_in_outreach (block): the name or any approved signature phrase in outreach or client_asset mode or a prospect-facing queue kind, so students' outreach sounds like the student.\n(c) persona_autobio (block in styled output): first-person past-tense experience or achievement claims ('when I started', 'I built/scaled/made', 'my clients/agency') unless the same claim appears in a cited passage the subject said. Income claims stay blocked regardless.\n(d) speculative_attribution (block): 'X would say/thinks/recommends' without an [S#] on that sentence.\n\nGenerated text never contains the name; the UI renders it from the consent record, so the banned_names scrub and test_name_leak_sweep keep passing even if the owner lists the name as banned.\n\nThe persona is hard-off for outreach and client_asset modes, the OWN_DECIDE and setter/closer queue kinds, calendar, ads and CRM actions, and the phone line. Public minis use it only with the public_minis scope.",
+   "effort": "M"
+  },
+  {
+   "area": "B6 Persona: cached answers after withdrawal",
+   "severity": "high",
+   "problem": "AI answers are cached by normalised question alone and replayed when AI is off. Minis and the phone line also call coach.answer. Styled answers would keep being served after consent is withdrawn.",
+   "evidence": "operator_ai/agents/coach.py:214 save_replay(tenant, 'coach-q', _norm_q(question), ...); operator_ai/llm.py:85-103 key = sha256(purpose+prompt); operator_ai/console.py mini_ask and channels.py:317 reuse coach.answer",
+   "recommendation": "Use replay purpose 'coach-q:p{version}' for styled outputs and keep 'coach-q' for neutral ones. The neutral path never reads persona replays. On withdrawal or expiry, delete ai_replays WHERE purpose LIKE 'coach-q:p%' in the same transaction. Test: after withdrawal, the AI-off answer to a previously styled question equals the neutral baseline byte for byte.",
+   "effort": "S"
+  },
+  {
+   "area": "B7 Persona: showing consent and withdrawing it",
+   "severity": "high",
+   "problem": "Users cannot see whether an answer is styled or under what consent, and the subject has no way to withdraw.",
+   "evidence": "web/src/pages/OwnerConsole.tsx:41-43 only shows 'Consent recorded <date> by <owner>'",
+   "recommendation": "Owner console 'Persona' tab:\n- Status: Neutral, Draft vN, Awaiting subject, Active vN, Withdrawn or Expired.\n- Attribution coverage meter against the 5k and 20k thresholds.\n- Phrase review table with evidence chips that open SourceModal.\n- Neutral-vs-styled preview on 5 sample questions, showing diff and check results.\n- Audit timeline.\n\nSubject-only view:\n- Statement written in his own words.\n- Scope checkboxes and an expiry date, confirmed with his password.\n- A prominent 'Withdraw now' button.\n\nEvery styled message carries a badge: 'Styled after <name>'s teaching phrasing \u00b7 AI assistant, not <name> \u00b7 consent vN, <date>'. It links to a public disclosure page, /t/{tid}/persona, showing who consented, when, the scopes, and how to report a concern. Each user gets a 'Use neutral voice' toggle in Settings.\n\nWithdrawal, by the subject or owner, takes effect in the same request:\n- active=0 and withdrawn_at set\n- persona cache cleared (same pattern as banned_cache_clear)\n- persona replays purged (B6)\n- minis and nudges revert to neutral\n- optional 'delete mined profile' that keeps only the consent audit\n\nRemind the subject 30 days before expiry. Past thread messages keep their text with a 'styled under consent vN (withdrawn)' label.",
+   "effort": "M"
+  },
+  {
+   "area": "B8 Persona: hard limits enforced by tests",
+   "severity": "high",
+   "problem": "The no-cloned-voice and no-impersonation promises are policy only. No test stops a future change from wiring the persona into TTS, likeness or outreach.",
+   "evidence": "operator_ai/channels.py:298 and :322 voice='Polly.Joanna' (neutral voice, correct today); SELF_SCORE.md:193-194; tests/test_phase11_quality.py:108-110 name grep",
+   "recommendation": "Make the TTS voice a constant allowlist of neutral system voices, and test that no persona field reaches TwiML or the client speechSynthesis voice choice.\n\nTests that must always pass:\n- Audio uploads are never accepted as persona training input; text transcripts only.\n- No avatar, photo or likeness field exists.\n- No styling happens without an active, unexpired, subject-signed consent whose profile_hash matches the active profile.\n- The name lives only in tenant settings; extend the hardcoded-name grep to the configured persona name via env in tests.\n- Adversarial prompts ('are you Mbang?', 'tell me about your first client') return 'I'm an AI assistant trained on <name>'s material' with no first-person biography.\n- With the persona active, outreach drafts contain zero persona phrases.",
+   "effort": "S"
+  },
+  {
+   "area": "B9 Persona: evaluations",
+   "severity": "medium",
+   "problem": "Nothing measures how close the output is to his style, or whether styling damages grounding or honesty.",
+   "evidence": "operator_ai/evals.py:17-75 has retrieval, honesty and reviewer evals only; tests/gold_questions.json and not_covered_questions.json exist",
+   "recommendation": "An /api/evals/persona job stored in eval_runs and shown on the Go-live scorecard.\n\nFidelity:\n- Burrows' Delta on the top-100 function words, plus z-distance on the stylometrics, comparing held-out subject text, neutral answers and styled answers. Report how much closer to him the styled answers are than the neutral ones.\n- Nearest-centroid authorship check on character 3-grams.\n\nSafety:\n- The styled citation set equals the neutral citation set on every gold question (100%).\n- Honesty unchanged: 12/12 on the not-covered set.\n- Zero B5 guard hits across 50 adversarial prompts.\n- Zero persona leakage in outreach drafts.\n\nRecommended activation gate: the subject blind-rates 10 neutral/styled pairs and must average at least 4/5 before the profile goes Active.",
+   "effort": "M"
+  },
+  {
+   "area": "B10 Persona: endpoints",
+   "severity": "medium",
+   "problem": "The persona layer has no API.",
+   "evidence": "operator_ai/routes/owner.py:61-76 only GET/PUT /personality",
+   "recommendation": "routes/persona.py:\n- GET /persona (owner, subject)\n- POST /persona/subject {user_id} (owner)\n- POST /persona/mine (owner or subject; returns a run id)\n- GET /persona/profiles/{v}\n- PUT /persona/phrases/{id} {decision} (only the subject can approve)\n- GET /persona/preview?q= (owner or subject)\n- POST /persona/consent {statement, scopes, profile_version, expires, password} (subject only)\n- POST /persona/withdraw {delete_profile} (subject or owner)\n- GET /public/persona (public disclosure, no login)\n\nEvery write is audited. Coach, minis and Academy read the active persona through a single cached persona.active(tenant) that returns None unless consent is valid.",
+   "effort": "S"
+  }
+ ],
+ "top_priorities": [
+  "Load the real material first. inputs/ is missing, so everything runs on a 3,417-word fictional fixture. Block academy_build and persona_mine on the fixture corpus outside the demo tenant (A0).",
+  "Fix the scoring before certifying anyone. The sales_call rubric scores keyword-stuffed nonsense 100/100. Build the turn- and order-aware scorer (A1), and move rubric thresholds into owner-editable data checked against the real SOPs (A2).",
+  "Guardrail-screen every sentence that becomes a lesson point, quiz answer or 'correct' role-play reply. The KB screen lets income claims and guarantees through (A3).",
+  "Ship the Academy foundation: schema (A4), offline lesson generator with citations and owner approval (A5), rules-based quiz generator with item analytics (A6), and one spaced-repetition store (A10, A15).",
+  "Build the rules-mode role-play state machine with reproducible seeds and cited scorecards (A7). Then add certification levels, and require compliance_core before anyone can approve their own outreach under auth.OWN_DECIDE (A9). AI persona-play comes after (A8).",
+  "Before any styling, replace the owner-typed consent with consent signed by the subject (Mbang): scoped, expiring, withdrawable, bound to a profile version. Remove 'persona' from settings.API_EDITABLE (B0).",
+  "Keep speaker labels through ingest (VTT <v> tags are currently stripped) and mine only lines Mbang actually said (B1, B2). Then apply the style in rules mode by reusing his own cited sentences plus approved framing lines (B3), with AI few-shot after (B4).",
+  "Ship the impersonation, autobiography, persona-in-outreach and speculative-attribution guards, versioned replay purging on withdrawal, and tests that enforce the hard limits (no cloned voice, no likeness, persona never in prospect-facing text) together with any persona feature (B5, B6, B8). 'Sound like Mbang' means his phrasing and tone, never a claim to be him."
+ ]
+}

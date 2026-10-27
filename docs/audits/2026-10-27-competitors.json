@@ -1,0 +1,962 @@
+{
+ "products": [
+  {
+   "name": "Jeremy AI",
+   "category": "AI clone of a creator (mentor for agency, ads, funnels and sales)",
+   "url": "https://jeremyhaynesai.com",
+   "pricing": "$1,000/month or $10,000/year via Whop checkout. The application page quotes the same price. A variant page in the same site bundle shows $300/month or $2,000/year. Team seats conflict: one block says 'unlimited seats under one subscription', while the FAQ says to contact a CSM for per-user pricing with volume discounts. The Aug 28, 2026 walkthrough says 'by application'.",
+   "channels": [
+    "Web portal",
+    "Telegram DM and Telegram groups (team mode)",
+    "SMS",
+    "Real phone number with a low-latency cloned voice",
+    "Video call (said to exist at launch, per the Aug 19, 2026 post)",
+    "MCP connector (testimonials mention a 'Jeremy MCP' plugged into agent harnesses)",
+    "Slack and live sales calls (deployments described in the Aug 19, 2026 post)"
+   ],
+   "features": [
+    "Training data claimed: 11,400+ hours of recorded calls (1:1, group, agency war rooms), 85,000+ DMs and emails, 400+ SOPs and docs, 1,200+ Meta/Google ad-account teardowns",
+    "Daily training updates, said to be about one day behind the real person, through a Google Drive folder that syncs daily",
+    "Users paste numbers, funnel or Ads Manager screenshots, scripts or ad copy; answers claimed in under 2 seconds",
+    "Remembers past conversations, business context and numbers",
+    "Diagnoses funnels, ads and sales flow against targets; models ROAS, CAC, AOV and cash-collected scenarios",
+    "Writes ad hooks, emails, VSLs, short-form scripts, offer reframes, setter scripts, credibility emails, show-up stacks (48-72h with clips, SMS, retargeting), follow-ups and collections policies in the creator's voice",
+    "Named in-house frameworks for funnel-message diagnosis and hook writing",
+    "Knowledge areas: campaign playbooks (webinar, VSL, lead gen, retargeting), funnel blueprints, media-buying structures and scaling protocols (Meta, YouTube, TikTok), offer architecture, automation recipes (CRM pipelines, speed-to-lead SMS), sales enablement (objection libraries, one-call-close outlines), creative systems, analytics troubleshooting trees, sales recruiting",
+    "Scoped instances: a webinar-attendee version trained only on webinar content, a client's 3-day-challenge version, and sales-page hosting with email-code access, message or talk-time caps, and IP blocking against VPN rotation",
+    "Onboarding: a CSM call plus a 90-day email sequence of prompt ideas; a user review wall with moderation",
+    "Agent-skill markdown files given away as email-gated lead magnets that feed the sales page (38 public skills on jeremyhaynes.com/skills)"
+   ],
+   "standout": [
+    "Depth and freshness of private data: 10+ years of calls, DMs and audits, synced daily",
+    "Phone voice clone. The creator says the phone demo got the strongest reaction of anything in the launch.",
+    "Telegram group team mode: setters, media buyers and VAs all ask the same brain",
+    "Scoped, capped instances used as funnel and retention assets",
+    "Commercial traction (self-reported): 400K+ messages in 12 months, 129K+ on launch day, users in 100+ countries, $60K+/month revenue, and a '27K MRR in 7 days' chapter title"
+   ],
+   "weaknesses": [
+    "Self-reported limits as of Aug 19, 2026: no file uploads, a character limit on long scripts, and no agentic function (it advised but could not build slides or landing pages, or touch CRMs). Some advanced users churned. It is being rebuilt on Utari.",
+    "No visible source citations or 'not covered' behaviour. Answers cannot be checked against the source material.",
+    "No published approval flow, guardrails, audit log or rollback for anything it does",
+    "No student-training layer: no role-play, certification, curriculum progress or accountability tracking",
+    "Single creator. White-label instances for students or clients are only a plan.",
+    "Marketing leans on 'go get richer' calls to action, ROI math ('one win covers the year') and screenshot testimonials with results. That is regulatory exposure under FTC income-claim and testimonial rules.",
+    "Pricing and seat messaging are inconsistent ($1,000 vs $300 pages; unlimited seats vs per-user pricing)",
+    "AI disclosure on the cloned-voice phone line is not documented",
+    "Every metric is self-reported and none is independently verified"
+   ],
+   "source_dates": [
+    "Research note: the WebSearch quota was exhausted on the first query, so every fact here comes from direct fetches of primary pages on 2026-10-27",
+    "jeremyhaynesai.com landing page and JS bundle (\u00a9 2026; read 2026-10-27)",
+    "jeremyhaynes.com/okf/posts/how-i-launched-an-ai-clone-what-worked-and-what-i-changed.md (published Aug 19, 2026)",
+    "jeremyhaynes.com/okf/posts/the-best-agentic-ai-tool-for-marketing-sales-utari-walkthrough.md (published Aug 28, 2026)",
+    "jeremyhaynes.com/skills (repository last synced Mar 30, 2026; read 2026-10-27)",
+    "jeremyhaynes.com/okf/posts/how-one-business-built-an-ai-setter-system-with-zero-employees.md (published Aug 21, 2026)"
+   ]
+  },
+  {
+   "name": "Utari Eternal (platform behind Jeremy AI)",
+   "category": "Agentic AI-clone platform, done-with-you build and hosting",
+   "url": "https://www.utari.ai",
+   "pricing": "$25,000/year, by application only (per the Aug 28, 2026 walkthrough). Covers build, hosting, training, agentic capabilities, voice cloning and integrations. The earlier self-serve Utari ($20-$200/month plus a free tier) was shut down and subscriptions were cancelled.",
+   "channels": [
+    "Web",
+    "Phone (cloned voice)",
+    "SMS",
+    "Embedded in the creator's products",
+    "Sold as a standalone offer",
+    "Telegram and Slack (as used for Jeremy AI)"
+   ],
+   "features": [
+    "Agentic engine: agents work toward goals instead of only answering",
+    "Workers: agents with a defined role, e.g. sales-call auditor, CRM compliance monitor, ad-account analyst",
+    "Per-worker scoped knowledge base (each worker sees only what its job needs)",
+    "Triggers: events start agents automatically, e.g. a new call transcript landing in a Google Drive folder",
+    "Integrations: CRMs, Slack, Gmail, Stripe, ad platforms, YouTube, calendars, dashboards; claims 'thousands of native connections' and any tool with an API",
+    "Claims the clone runs ad accounts, edits CRMs and builds reports",
+    "Credit-based processing that reads full inputs rather than summaries; no character limits; any file type",
+    "Real-time auto-translation into many languages in the clone's voice",
+    "Training sources: calls, courses, DMs, voice notes, YouTube, tweets, SOPs",
+    "Their team models skills, clones the voice, runs QA and refines with the client",
+    "Deployed 24/7 to answer, execute, upsell and support"
+   ],
+   "standout": [
+    "Action-taking clone, not just Q&A",
+    "Multilingual cloned voice",
+    "Trigger-based workers with scoped knowledge"
+   ],
+   "weaknesses": [
+    "Application-only, small founding cohort, $25k/year",
+    "No public documentation on approval gates, audit, rollback or guardrails for its actions",
+    "No sales role-play, certification or student-progress features",
+    "Outcome claims are self-reported ($60K+/month, $700K+/year stream, 400K+ messages)",
+    "Product churn: the self-serve product was retired and the walkthrough rewritten in 2026"
+   ],
+   "source_dates": [
+    "utari.ai homepage ('v1.0 Founding Cohort', \u00a9 Utari Eternal; read 2026-10-27)",
+    "jeremyhaynes.com Utari walkthrough post (published Aug 28, 2026)"
+   ]
+  },
+  {
+   "name": "Delphi",
+   "category": "Creator and expert AI clone ('Digital Mind') platform",
+   "url": "https://www.delphi.co (delphi.ai redirects here)",
+   "pricing": "Scaler $5k/year: up to 10 integrations, Pro voice calls, 12M training words, Actions plus developer platform, Slack, product recommendations. Scaler + API $10k/year: API, SSO, 60-day onboarding, 20M words, unlimited integrations. Immortal: custom price, adds text and WhatsApp, custom applications, unlimited words, 'advanced mind architecture'.",
+   "channels": [
+    "Web link (delphi.ai/you)",
+    "Voice calls (Pro voice)",
+    "Slack",
+    "Text/SMS and WhatsApp (Immortal plan)",
+    "Community platforms such as Mighty (guide dated Dec 10, 2025)",
+    "REST API v4, TypeScript SDK, CLI, webhooks, hosted Actions; streaming voice endpoint (PCM)"
+   ],
+   "features": [
+    "Ingests website, Substack, podcasts, YouTube and file uploads; Interview Mode builds a mind from Q&A (Nov 12, 2025)",
+    "Answers in the creator's voice with suggested follow-ups; claims all answers are grounded in the creator's expertise and that the creator owns the data",
+    "Actions (Mar 4, 2025): triggers on messages, topics, opportunities or tool signals. Can draft replies, follow up with qualified leads, recommend products, schedule demos, build post-call action plans, tag users by pain point or progress, and sync data to external tools. Runs autonomously or asks for confirmation first.",
+    "Insights and Broadcast (2025)",
+    "Access Groups (Aug 19, 2025): different versions of the mind for different audiences",
+    "Audience store and tags via API; usage tracking",
+    "A 'find perspectives' discovery marketplace of public minds",
+    "Series A of $16M led by Sequoia (Jun 24, 2025)"
+   ],
+   "standout": [
+    "Mature developer platform (API, webhooks, hosted Actions)",
+    "Access Groups for tiered audiences",
+    "Confirm-before-act option on Actions"
+   ],
+   "weaknesses": [
+    "Generic. Nothing built for growth-operator, agency or ads workflows.",
+    "No role-play, certification or student pipeline tracking",
+    "No outbound prospecting or deliverability tooling",
+    "Docs say there is no public MCP server",
+    "Grounding is claimed, but the pages reviewed show no answer-level citations",
+    "API only from $10k/year; WhatsApp and SMS only on custom pricing"
+   ],
+   "source_dates": [
+    "delphi.co homepage and /pricing (\u00a9 2026; read 2026-10-27)",
+    "help.delphi.co (latest product update Sep 16, 2026)",
+    "docs.delphi.ai API page (undated; read 2026-10-27)",
+    "delphi.co/blog: Actions Mar 4, 2025; Access Groups Aug 19, 2025; Interview Mode Nov 12, 2025; community integration Dec 10, 2025; Series A Jun 24, 2025"
+   ]
+  },
+  {
+   "name": "Coachvox AI",
+   "category": "AI coach clone for coaches and consultants",
+   "url": "https://www.coachvox.ai",
+   "pricing": "One plan, $83/month billed annually. 14-day trial with card required. Monthly price not shown.",
+   "channels": [
+    "Responsive and popup web embeds (any HTML page or community)",
+    "Custom share page",
+    "Zapier to CRM or email tools",
+    "LinkedIn integration",
+    "Claude connection (train from inside Claude)"
+   ],
+   "features": [
+    "Trains on uploaded docx/pdf/txt, pasted text and web content",
+    "Coaching or advising chat in the coach's style; unlimited chats",
+    "Fine-tuning mode and lead-generation mode with lead notifications",
+    "Content generators for LinkedIn posts, blog posts and short-form social posts",
+    "Chat stats and audience-challenge insights; client transcripts",
+    "Paid access, coupons and trial periods; option to add a second AI",
+    "Claims replies in 50+ languages",
+    "States content trains only the user's own AI, is not shared, and stays the user's property"
+   ],
+   "standout": [
+    "Cheap and fast to set up",
+    "Official business partner of the International Coaching Federation"
+   ],
+   "weaknesses": [
+    "Q&A and lead-gen only. No agentic actions, phone voice, or role-play.",
+    "Set-up claims are inconsistent (10 minutes vs under an hour)",
+    "No published hallucination controls or citations"
+   ],
+   "source_dates": [
+    "coachvox.ai homepage (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "BuddyPro",
+   "category": "AI twin for coaches, sold to clients as a subscription",
+   "url": "https://www.buddypro.ai",
+   "pricing": "Flat yearly platform fee (amount not shown). AI usage about $300 per end-user per year, billed on actual use. Creators charge subscribers roughly $797-$3,497/year. Self-serve licence or done-for-you tiers. 21-day refund guarantee.",
+   "channels": [
+    "Telegram (primary)",
+    "White-label native iOS and Android app under the creator's brand",
+    "Voice (claims 60% of users use voice daily)",
+    "API"
+   ],
+   "features": [
+    "Ingests courses, books, frameworks and recorded sessions through Google Drive",
+    "Builds 'hundreds of specialized knowledge roles' from the creator's content",
+    "Long-term memory of each client; tracks client progress",
+    "Proactive follow-ups and accountability check-ins days or weeks later",
+    "Stripe subscriptions, trials and trial-to-paid conversion",
+    "Platform handles model upgrades and security patches"
+   ],
+   "standout": [
+    "Proactive accountability messaging",
+    "Branded mobile app",
+    "Built-in monetisation of the AI itself"
+   ],
+   "weaknesses": [
+    "B2C coaching focus. No business-tool actions, outreach or CRM.",
+    "Inconsistent stats (36% trial-to-paid in the FAQ vs a 1-30% range in the calculator)",
+    "Big unverified claims ($6M+ recurring revenue, 1,616% average ROI, 6.9M questions answered)",
+    "No citations or role-play"
+   ],
+   "source_dates": [
+    "buddypro.ai homepage (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Personify (name ambiguous)",
+   "category": "Not a verified creator-clone competitor",
+   "url": "https://www.personifyai.app",
+   "pricing": "personifyai.app: Educator Free $0; Educator Plus $10/month; yearly billing saves 20%",
+   "channels": [
+    "Web app",
+    "Canvas LMS integration"
+   ],
+   "features": [
+    "Academic integrity analysis of how students write (typing patterns, time, history)",
+    "Rubric-aligned AI feedback for instructors",
+    "Assignment-specific AI assistants with educator-set limits on student AI use"
+   ],
+   "standout": [
+    "Educator-controlled guardrails on student AI use"
+   ],
+   "weaknesses": [
+    "Not a creator or coach clone. personify.ai redirected to a domain-for-sale page on 2026-10-27, so no creator-clone 'Personify' product could be verified.",
+    "Irrelevant to growth-operator workflows"
+   ],
+   "source_dates": [
+    "personifyai.app (\u00a9 2026; read 2026-10-27)",
+    "personify.ai (parked; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Tavus",
+   "category": "Real-time conversational video AI ('PALs' / AI humans)",
+   "url": "https://www.tavus.io",
+   "pricing": "Not listed; free start offered",
+   "channels": [
+    "Real-time video",
+    "Joins Zoom, Google Meet and Microsoft Teams as an on-camera participant"
+   ],
+   "features": [
+    "Video agents that can look like a person; renders new identities from a single image (Phoenix-4.5)",
+    "Multimodal perception of voice, video and screen (Raven-1)",
+    "Memory across conversations; answers from uploaded documents",
+    "Presentation mode, browser use, bring-your-own LLM; Griffin video-to-video model in preview"
+   ],
+   "standout": [
+    "Live video presence inside meetings, usable for role-play or a video version of the owner"
+   ],
+   "weaknesses": [
+    "Homepage does not address consent for likeness cloning",
+    "Infrastructure, not a coaching or growth-ops product"
+   ],
+   "source_dates": [
+    "tavus.io homepage (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Hyperbound",
+   "category": "AI sales role-play and real-call coaching",
+   "url": "https://www.hyperbound.ai",
+   "pricing": "Per user, not published. Free tier: 45 prebuilt role-plays and example scorecards. Practice and Perform are enterprise licences with volume and multi-year discounts.",
+   "channels": [
+    "Web app",
+    "Integrations: Salesforce, HubSpot, Slack, Zoom, Gong, Microsoft Teams"
+   ],
+   "features": [
+    "Practice: role-plays with AI buyers built around your sales process and ICPs, industry objections, AI scorecards tied to your methodology, instant feedback; Agentic Enablement (private preview)",
+    "Perform: records and scores real calls, finds coaching gaps, deal coaching, CRM and conversation intelligence; Live Call Coaching (private preview)",
+    "Kota Activate: connects calls, role-plays, emails, CRM and Slack to suggest next actions; Deal Strategist (preview)",
+    "Use cases: pre-call prep, onboarding and certification, hiring, QA",
+    "25+ languages; SSO, SIEM; SOC 2 Type II, ISO 27001; GDPR and HIPAA support",
+    "First bot in under 10 minutes; full personas and modules in about 2 weeks"
+   ],
+   "standout": [
+    "Combines practice role-play with scoring of real calls",
+    "Named in Gartner's 2026 market overview of B2B sales AI role-play"
+   ],
+   "weaknesses": [
+    "Built for enterprise B2B SaaS teams, not coaching programmes",
+    "Doesn't know a programme's curriculum unless configured; no outreach execution",
+    "No public pricing"
+   ],
+   "source_dates": [
+    "hyperbound.ai homepage and /pricing (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Second Nature",
+   "category": "AI sales role-play with video avatars",
+   "url": "https://secondnature.ai",
+   "pricing": "Not published (demo or contact sales); free role-plays to try",
+   "channels": [
+    "Web on any device",
+    "LMS via SCORM/LTI",
+    "CRMs, SAML SSO, conferencing tools"
+   ],
+   "features": [
+    "Role-plays for discovery, cold calls, objection handling, needs assessment, demos and complaints",
+    "Build-your-own role-plays (a customer says about 15 minutes)",
+    "Video avatar role-plays and multi-persona meetings (labelled NEW)",
+    "Real-time scoring and feedback, e.g. flags pitching a solution too early",
+    "Deal Coach for live deal risks and next steps",
+    "Gamified certification; manager analytics; 30+ languages"
+   ],
+   "standout": [
+    "Video avatars and gamified certification with LMS integration"
+   ],
+   "weaknesses": [
+    "Enterprise focus; no published pricing",
+    "Analysis of recorded real calls is not explicit on the homepage",
+    "Vendor outcome stats unverified (e.g. 46% more deals, 34% faster ramp)"
+   ],
+   "source_dates": [
+    "secondnature.ai homepage (\u00a9 2026; G2 Fall 2026 badge; media dated 2026/07-09; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "GoHighLevel AI Employee",
+   "category": "Agency CRM with AI agents (voice, chat, content, workflows)",
+   "url": "https://www.gohighlevel.com/ai",
+   "pricing": "AI Employee add-on: Growth $50/month or Unlimited $97/month per sub-account, plus usage charges. Base plans: Starter $97/month, Unlimited $297/month, Agency Pro $497/month (SaaS mode and rebilling with markup); Enterprise custom.",
+   "channels": [
+    "Phone (Voice AI inbound and outbound)",
+    "SMS",
+    "Facebook",
+    "Instagram",
+    "WhatsApp",
+    "Live chat",
+    "Email",
+    "Google reviews"
+   ],
+   "features": [
+    "Voice AI: answers calls, qualifies, books during the call, outbound follow-ups and reminders, knowledge base, working hours, multi-language, prompt optimizer, web-call testing, call logs and analytics",
+    "Conversation AI across chat channels; AI Sales Agent turns leads into booked appointments",
+    "AI Scheduler (reminders, no-show reduction)",
+    "Reviews AI (auto-replies, sentiment)",
+    "Content AI (posts, emails, pages in brand voice)",
+    "AI Marketer (campaigns, auto follow-up)",
+    "Funnel and website builder from a text prompt",
+    "Workflow AI builds and audits automations from plain language",
+    "Agent Studio drag-and-drop builder for custom multi-step agents",
+    "Ask AI: help and smart suggestions"
+   ],
+   "standout": [
+    "Default operating stack for many growth-operator agencies; SaaS mode lets operators resell",
+    "Cheap unlimited AI per sub-account"
+   ],
+   "weaknesses": [
+    "No knowledge of a coaching programme's curriculum; no training, role-play or certification",
+    "Approval and suggestion modes not documented on the pages reviewed",
+    "Compliance (TCPA consent, AI disclosure) is left to the user",
+    "Generic copy quality; no grounding or citations"
+   ],
+   "source_dates": [
+    "gohighlevel.com/ai and /pricing (\u00a9 2026; read 2026-10-27)",
+    "HighLevel help: Overview of Voice AI Agents (last updated Sep 17, 2026)"
+   ]
+  },
+  {
+   "name": "Clay",
+   "category": "GTM data enrichment and AI research agent",
+   "url": "https://www.clay.com",
+   "pricing": "Free $0 (500 actions, 100 data credits per month). Launch from $167-185/month. Growth from $446-495/month (the page contradicts itself). Enterprise custom. Token-heavy models such as GPT-5.1 and Claude 4.6 Sonnet are billed at cost.",
+   "channels": [
+    "Web tables",
+    "Native email sequencer and integrations",
+    "CRM sync (Growth+)",
+    "Ad audiences",
+    "HTTP API and webhooks"
+   ],
+   "features": [
+    "Claygent web-research agent; custom data points and custom agents",
+    "Multi-provider waterfall enrichment; bring your own API keys",
+    "Signals: job changes, company news, social listening, web intent, webhooks",
+    "Audiences; CRM auto-sync; data-warehouse sync",
+    "SSO, RBAC and SCIM on Enterprise"
+   ],
+   "standout": [
+    "Best-in-class waterfall enrichment and research agent"
+   ],
+   "weaknesses": [
+    "Inconsistent published pricing; credit model is complex",
+    "A power tool that needs GTM-engineering skill (reviewer's judgement); no coaching or curriculum layer"
+   ],
+   "source_dates": [
+    "clay.com/pricing (undated; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Instantly",
+   "category": "Cold email platform with AI agents and lead database",
+   "url": "https://instantly.ai",
+   "pricing": "Bundles: Starter $94/month, Scale $194/month, Agency $555/month (10% off yearly). Outreach-only: Growth $47, Hypergrowth $97, Light Speed $358. Credit add-ons from $47. VIP done-for-you setup on custom pricing.",
+   "channels": [
+    "Email (unlimited mailboxes and warm-up)",
+    "Unibox for replies",
+    "Export to CRMs"
+   ],
+   "features": [
+    "AI Sales Agent (Starter+) and AI Reply Agent (Scale+)",
+    "AI Email Writer and Web Researcher agents; access to 5 LLMs or your own key",
+    "450M+ B2B lead database with 13 filters; waterfall enrichment (5+ providers)",
+    "Unlimited warm-up; advanced deliverability; SISR dedicated server/IP system; private deliverability network on Enterprise",
+    "FAQ says campaigns run 'completely on autopilot' once set up"
+   ],
+   "standout": [
+    "Deliverability infrastructure and an AI reply agent at low cost"
+   ],
+   "weaknesses": [
+    "No documented human-approval mode; autopilot by design",
+    "No knowledge of a programme's frameworks; no training layer",
+    "Plan naming is contradictory on the pricing page"
+   ],
+   "source_dates": [
+    "instantly.ai/pricing (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Smartlead",
+   "category": "Cold email infrastructure for agencies",
+   "url": "https://www.smartlead.ai",
+   "pricing": "Base $39, Pro $94, Unlimited Smart $174, Unlimited Prime $379 per month (17% off annual). White-label client workspace $29/month each. SmartDelivery $49-599/month. SmartServers $39/server/month. Mailboxes about $4.20-9 each.",
+   "channels": [
+    "Email (unlimited mailboxes)",
+    "API and webhooks"
+   ],
+   "features": [
+    "AI warm-ups and warm-up pool",
+    "White-label agency client portal and workspaces",
+    "SmartDelivery inbox-placement tooling; dedicated servers",
+    "Managed outbound service (SmartServices) with AI-personalised, A/B-tested copy"
+   ],
+   "standout": [
+    "Agency multi-client white-label at low cost"
+   ],
+   "weaknesses": [
+    "Pricing page doesn't show AI agents, reply categorisation or multichannel",
+    "No curriculum or training layer"
+   ],
+   "source_dates": [
+    "smartlead.ai/pricing (undated; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Apollo.io",
+   "category": "B2B data, sequencing and AI agents",
+   "url": "https://www.apollo.io",
+   "pricing": "Free, Basic, Professional and Custom tiers; prices not shown on the page. Credits are pooled per team and do not roll over. All seats must be on the same plan.",
+   "channels": [
+    "Email sequences",
+    "Parallel dialer and call recording",
+    "Website-visitor identification",
+    "Apollo MCP"
+   ],
+   "features": [
+    "AI agents that run in the background; AI-researched data",
+    "Deliverability tooling and warm-up (uses credits)",
+    "Conversation intelligence and call recording (Professional)",
+    "The Apollo MCP connector visible in this environment exposes agent tools for finding prospects, bulk enrichment, drafting sequence copy, planning a GTM campaign, optimising sequences, fixing email deliverability, analysing performance and summarising calls, plus a sequence approval endpoint (observed 2026-10-27)"
+   ],
+   "standout": [
+    "Large data set plus agent tools callable over MCP"
+   ],
+   "weaknesses": [
+    "Opaque pricing on the page",
+    "Generic B2B framing; no coaching or curriculum layer"
+   ],
+   "source_dates": [
+    "apollo.io/pricing (ApolloNext 2026; \u00a9 2026; read 2026-10-27)",
+    "Apollo MCP tool list in this session (2026-10-27)"
+   ]
+  },
+  {
+   "name": "11x",
+   "category": "AI SDR digital workers",
+   "url": "https://www.11x.ai",
+   "pricing": "Not published (demo only)",
+   "channels": [
+    "Email",
+    "Social",
+    "Voice/phone",
+    "Chat",
+    "SMS",
+    "WhatsApp",
+    "Human dialer"
+   ],
+   "features": [
+    "Alice: outbound, nurture, reactivation, website-visitor retargeting, closed-lost, event flows",
+    "Julian: speed-to-lead voice, inbound qualification, meeting scheduling, onboarding",
+    "Account and prospect research, live web search, lead database, visitor de-anonymisation",
+    "Sequences, smart replies, multilingual outreach, lead routing, meeting booking, deliverability management",
+    "Integrations: HubSpot, Salesforce, Pipedrive, Gmail, Outlook, Google Calendar, Slack, LinkedIn; public API"
+   ],
+   "standout": [
+    "Truly multichannel AI SDR including voice"
+   ],
+   "weaknesses": [
+    "No human-approval step documented",
+    "Enterprise pricing; no training layer; claims vendor-reported"
+   ],
+   "source_dates": [
+    "11x.ai homepage (\u00a9 2026; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Artisan (Ava)",
+   "category": "AI BDR",
+   "url": "https://www.artisan.co",
+   "pricing": "Credit-based tiers that scale with lead volume, mailboxes and dialer seats; no figures in the source",
+   "channels": [
+    "Email from your own domains under reps' names",
+    "Dialer",
+    "Calendar booking"
+   ],
+   "features": [
+    "250M+ verified contacts; enrichment; intent signals",
+    "Personalised outreach, reply handling, meeting booking, re-engaging stale or closed-lost CRM pipeline",
+    "Human-in-the-loop controls: approvals, locked tone and CTAs, escalation rules",
+    "SSO/SAML and audit logs on Enterprise"
+   ],
+   "standout": [
+    "Explicit approval and locked-tone controls"
+   ],
+   "weaknesses": [
+    "LinkedIn not mentioned; no programme knowledge or training"
+   ],
+   "source_dates": [
+    "artisan.co homepage and /llms-full.txt (undated; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Skool",
+   "category": "Community and course platform",
+   "url": "https://www.skool.com",
+   "pricing": "Hobby $9/month (10% transaction fee); Pro $99/month (2.9% fee); 2 months free on yearly billing",
+   "channels": [
+    "Web and mobile community",
+    "Live calls",
+    "Facebook/Instagram and Google/YouTube ads to the about page"
+   ],
+   "features": [
+    "Unlimited members, courses, videos and live calls; custom URL; affiliates",
+    "Growth Boost: discovery network plus 'AI generated ads' that Skool creates and runs on Facebook/Instagram for your group; partnership ads and custom ads unlocked by level (Skool says the average community gets 30% of its members with it on)",
+    "Auto DM new members",
+    "Video transcripts"
+   ],
+   "standout": [
+    "Distribution: discovery plus AI-generated ads for member acquisition"
+   ],
+   "weaknesses": [
+    "No AI tutor or AI clone on the pages reviewed",
+    "No agentic execution or role-play"
+   ],
+   "source_dates": [
+    "skool.com/pricing and its embedded UI strings (read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Kajabi (Expert Agents, Cofounder, MCP, Backstage)",
+   "category": "All-in-one creator platform with AI agents",
+   "url": "https://www.kajabi.com/ai",
+   "pricing": "Expert Agents included in every plan (Basic, Growth, Pro). Structured data shows a $143-$499/month range (unverified). Backstage extra seats $49/month. 50% off for 6 months (limited-time promo).",
+   "channels": [
+    "Chat on sales pages (Sales Agent)",
+    "Chat inside courses (Teaching Assistant)",
+    "Universal Inbox",
+    "Kajabi MCP (run Kajabi from any AI tool)",
+    "Branded mobile app, email"
+   ],
+   "features": [
+    "Sales Agent answers pre-purchase questions from the creator's own offer pages and points to the relevant section",
+    "Teaching Assistant answers stuck students with a timestamped clip from the exact moment in the course",
+    "Universal Inbox: read every chat, take over, hand back to the agent",
+    "Agents say they are AI and refer to the coach by name rather than posing as them",
+    "Cofounder: AI business partner that plans and drafts a launch (product, offer, sales page, email sequence)",
+    "Backstage: private 1:1 client portals with assignments, chat, recorded sessions, transcribed voice memos and AI session summaries",
+    "Amplify: market to an in-platform expert network (claims 551M contacts)"
+   ],
+   "standout": [
+    "Timestamped video citations bundled free",
+    "Clean human-takeover inbox and honest AI identity"
+   ],
+   "weaknesses": [
+    "No outbound execution, prospecting or growth-operator workflows",
+    "No voice or phone clone, no role-play",
+    "AI in Backstage is limited to summaries and transcription"
+   ],
+   "source_dates": [
+    "kajabi.com/ai, /product/expert-agents, /product/backstage (spring 2026 promo; read 2026-10-27)"
+   ]
+  },
+  {
+   "name": "Circle AI",
+   "category": "Community platform with an agentic AI partner",
+   "url": "https://circle.so/ai",
+   "pricing": "Not shown on the AI page",
+   "channels": [
+    "Circle web and branded apps",
+    "Email notifications"
+   ],
+   "features": [
+    "50+ skills, e.g. space scaffolder, community restructurer, member inviter, role manager, billing support (refunds, failed payments), notifications, coupons, course builder (drip, completion tracking), post creator and scheduler, Stripe paywall setup, gamification, content moderator with approval queues, business-model advisor, content calendar, workflow builder from natural language, data explorer (natural-language questions about community data), launch planner, analytics",
+    "Roles framed as community manager, content director, growth marketer, strategist and analyst",
+    "Projects with shared memory and team hand-off",
+    "Claims 20,000+ communities analysed and 300+ best practices"
+   ],
+   "standout": [
+    "Broad admin-action skill set inside the platform"
+   ],
+   "weaknesses": [
+    "Generic community ops; not trained on the owner's programme",
+    "No outreach, sales role-play or voice"
+   ],
+   "source_dates": [
+    "circle.so/ai (read 2026-10-27)"
+   ]
+  }
+ ],
+ "must_have_features": [
+  {
+   "feature": "Consented brain that ingests everything continuously: calls (Zoom/Meet/Loom), DMs and email threads, SOPs, ad-account teardowns and course videos are ingested daily, transcribed with speaker labels, PII-redacted, deduplicated, owner-approved and versioned. A visible freshness stamp should target 24 hours or less behind the owner.",
+   "why": "The brain is the moat; the competing creator says so himself (Aug 19, 2026). Jeremy AI claims 11,400+ call hours, 85,000+ DMs, 400+ SOPs and 1,200+ audits, synced daily. Operator AI is only as deep as inputs/ and has never run on a real archive. Call and DM archives contain third parties' personal data, so we need per-source consent and notice records and redaction. Without them, the biggest data advantage becomes a legal liability.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Utari Eternal",
+    "BuddyPro",
+    "Delphi"
+   ]
+  },
+  {
+   "feature": "Measurable persona fidelity: answers that read like Mbang. Build a style layer from his real written and spoken answers (phrasing, directness, recurring analogies) on top of cited retrieval. Run a standing blind test where team members and students who know him pick the real answer vs the AI answer, publish the score, and target near-chance. Regress-test on every model or prompt change.",
+   "why": "'Sounds exactly like Mbang' is the user's explicit bar. Jeremy AI markets 'the exact phrasing' and says people who know the creator find the answers indistinguishable, but publishes no measurement. A published fidelity score beats an anecdote, and it catches drift when models change. Citations must survive the style rewrite.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI (claimed, unmeasured)",
+    "Coachvox (claimed)",
+    "BuddyPro (claimed)",
+    "Delphi (claimed)"
+   ]
+  },
+  {
+   "feature": "Consented voice clone on a real phone number and in-app: Mbang records and verifies his own voice, can revoke it at any time, and turns run at sub-second latency. The line discloses that it is AI at the start of every call. Outbound AI-voice calls go only to people who gave prior express consent. A video-call mode is optional.",
+   "why": "The creator reports that the phone demo drew the strongest response of his whole launch (Aug 19, 2026). Operator AI currently refuses to clone, so it loses parity on the most-loved feature; the fix is consent, not refusal. ElevenLabs Professional Voice Cloning lets you clone only your own voice and requires verification. FCC Declaratory Ruling 24-17 (released Feb 8, 2024) treats AI-generated voices as 'artificial' under the TCPA, which requires prior express consent. EU AI Act Art. 50 (applies from Aug 2, 2026) requires disclosure of AI interaction and labelling of synthetic audio.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Utari Eternal",
+    "Delphi (Pro voice)",
+    "BuddyPro",
+    "GoHighLevel Voice AI",
+    "11x"
+   ]
+  },
+  {
+   "feature": "Every channel people already use: web/PWA, Telegram (DM plus group team mode), WhatsApp, SMS, Slack, phone, email, an embeddable widget for course and community pages, and an MCP server plus Claude/ChatGPT connectors. One memory and permission model across all of them.",
+   "why": "Jeremy AI runs on Telegram, web, SMS, phone, groups and MCP, and power users already plug its MCP into their own agent harnesses. Kajabi ships an MCP. Apollo exposes agent tools over MCP. Delphi has no public MCP, which is an opening. Operator AI's senders are built but off. A channel that is switched off doesn't count.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Delphi",
+    "BuddyPro",
+    "Kajabi",
+    "Coachvox",
+    "GoHighLevel"
+   ]
+  },
+  {
+   "feature": "Persistent per-user business memory: each student's and each client's offer, niche, price, numbers, past decisions and prior answers. An editable 'what I know about you' panel, scoped per workspace, exportable and deletable.",
+   "why": "Jeremy AI, BuddyPro, Utari and Circle AI all sell memory as the reason advice gets better over time. Advice that ignores last week's numbers is generic, and memory without user control is a privacy problem.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "BuddyPro",
+    "Utari Eternal",
+    "Circle AI"
+   ]
+  },
+  {
+   "feature": "No input limits and full multimodal intake: full call recordings and transcripts, long scripts, Ads Manager screenshots and CSV exports, funnel URLs, decks and PDFs are read in full, not truncated, with the cost shown to the owner.",
+   "why": "The competing creator lists missing file uploads and a character limit among the reasons advanced users churned (Aug 19, 2026). Utari now sells 'no limits, any file type'. This is now the minimum, not an advantage.",
+   "priority": "must",
+   "who_has_it": [
+    "Utari Eternal",
+    "Jeremy AI (after rebuild)"
+   ]
+  },
+  {
+   "feature": "Approval-gated agents that act inside the real tools, live and not mocked. Targets: GoHighLevel first, then HubSpot; Meta and Google Ads (read, plus paused drafts with budget caps and rollback); Google/Outlook calendars; Stripe; Gmail/Outlook; Slack; Google Slides/Docs; page builders. Each action shows a diff preview with approve, edit or reject, has a configurable autonomy level per action type, can be undone, and is written to the audit log.",
+   "why": "Answering without acting was the key limitation the competing creator named, and why he rebuilt on an agentic platform. Utari claims its clone runs ad accounts and edits CRMs, but documents no approvals or rollback. Delphi Actions offers confirm-before-act. Artisan offers approvals and locked tone. Operator AI's approval queue is its strongest differentiator, but every live switch is off and nothing has been sent for real. 'Fully real, no demo' means switching connectors on per tenant with these controls.",
+   "priority": "must",
+   "who_has_it": [
+    "Utari Eternal",
+    "Delphi Actions",
+    "Artisan",
+    "Circle AI",
+    "GoHighLevel AI Employee",
+    "Kajabi Cofounder/MCP"
+   ]
+  },
+  {
+   "feature": "Event-triggered workers with scoped knowledge. Examples: a new call transcript triggers a rubric audit and a drill assignment; a new lead is qualified and a reply drafted; a spend or CPL anomaly triggers a diagnosis; a student silent for 7 days gets a nudge and coach escalation; a failed payment triggers a dunning draft. Each worker sees only the knowledge and tools its job needs.",
+   "why": "Utari's core engine is workers plus triggers plus per-worker knowledge scoping. Delphi Actions fire on messages, topics and tool signals. The value comes from work that starts without someone having to ask.",
+   "priority": "must",
+   "who_has_it": [
+    "Utari Eternal",
+    "Delphi",
+    "GoHighLevel Workflow AI",
+    "Instantly"
+   ]
+  },
+  {
+   "feature": "Deliverables, not advice: build and stage ready-to-ship assets in the destination tool. That covers the webinar registration page, slide deck, a 48-72h show-up reminder stack, email and SMS sequences, VSL script, ad hooks and creative variants, setter and closer scripts, proposals and client reports. Each is traced to the frameworks it used and checked by the guardrails before approval.",
+   "why": "Jeremy AI writes these as text. Its planned rebuild adds slides, landing pages and sequences. Kajabi Cofounder drafts product, offer, sales page and emails. GoHighLevel builds funnels from a prompt. To beat them, assets must land in the user's real tools already wired up, not as text to copy and paste.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI (text, rebuild planned)",
+    "Kajabi Cofounder",
+    "GoHighLevel Funnel/Content AI",
+    "Circle AI"
+   ]
+  },
+  {
+   "feature": "Webinar funnel operating system: plan, then assets, ads, registrations, show-up, live, replay, follow-up, calls and cash. Live metrics at every stage (cost per registration, show rate, booked-call rate, close rate, cash collected) feed a diagnostic that names the stage to fix next and drafts the fix.",
+   "why": "The user explicitly wants best-in-class webinar ads and operations. Jeremy AI sells show-up stacks, webinar playbooks and cash-collected modelling as advice. Nobody runs the whole chain with stage-level numbers from connected sources.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI (advice only)",
+    "GoHighLevel (tools without the programme playbook)"
+   ]
+  },
+  {
+   "feature": "Sales role-play gym for students and team: voice (and optionally video) role-plays with AI prospects built from the programme's real objection library and each student's actual target niche. Scorecards follow the programme's own call framework, feedback is line by line, difficulty climbs a ladder, and there are leaderboards. A certification gate must be passed before a student may send real outreach or take live calls.",
+   "why": "Hyperbound and Second Nature show that role-play plus scorecards plus certification is a category buyers pay for. None of the creator clones (Jeremy AI, Delphi, Coachvox, BuddyPro) trains people this way. Certification gating is also a safety control: untrained students don't get to email real prospects.",
+   "priority": "must",
+   "who_has_it": [
+    "Hyperbound",
+    "Second Nature"
+   ]
+  },
+  {
+   "feature": "Real call review and live call copilot: score recorded discovery and sales calls against the programme rubric, turn mistakes into assigned drills, and track improvement. An optional in-call assist suggests objection answers and next questions, with recording-consent capture where required.",
+   "why": "Hyperbound Perform scores real calls and is previewing live coaching. Second Nature has Deal Coach. Utari's example worker audits sales calls. Jeremy AI was shown during live sales calls. Closing the practice-to-real-call loop is how training turns into revenue.",
+   "priority": "should",
+   "who_has_it": [
+    "Hyperbound",
+    "Second Nature",
+    "Utari Eternal",
+    "Jeremy AI"
+   ]
+  },
+  {
+   "feature": "'First client' mission engine for growth operators: a staged, evidence-checked path from niche and offer, through ICP list, outreach, replies, booked calls, proposal, signed client and onboarding, to the first results report. Each step cites its SOP and sets daily targets. Blockers auto-flag to a coach, and the owner sees exactly where every student is stuck.",
+   "why": "No competitor owns this end to end. Clones advise, SDR tools send, communities host, role-play tools train. This is the wedge that makes Operator AI the layer that replaces much of a growth-operator support team, and it gives the owner a retention and outcomes story without income promises.",
+   "priority": "must",
+   "who_has_it": []
+  },
+  {
+   "feature": "Prospecting and enrichment through integrations, not a home-built database: Apollo, Clay and Instantly data via the student's own keys or MCP, waterfall email verification, and signal-based lists (hiring, active ads, funding, site visitors). Dedupe and claim prospects across the whole cohort so two students never pitch the same business.",
+   "why": "Apollo, Clay (Claygent plus waterfalls), Instantly (450M+ leads) and Artisan (250M+ contacts) already own data. Rebuilding it is waste. Cross-student dedupe is a programme-level need none of them solves, and it protects both prospects and the programme's reputation.",
+   "priority": "must",
+   "who_has_it": [
+    "Apollo.io",
+    "Clay",
+    "Instantly",
+    "Artisan",
+    "11x"
+   ]
+  },
+  {
+   "feature": "Compliant outreach on the student's behalf, held to each platform's rules:\n- Email goes from the student's own authenticated domains and mailboxes (SPF/DKIM/DMARC, warm-up), with the spam rate monitored and kept under the 0.3% threshold, one-click unsubscribe on marketing mail, a shared suppression list, and volume caps.\n- Instagram and Facebook replies are sent only inside Meta's messaging window, with an automated-chat disclosure.\n- LinkedIn and other platforms that ban automation get a drafted message the student sends with one tap.\n- AI-voice outbound calls go only to people with prior express consent.",
+   "why": "'Doing outreach on their behalf' is where these products can do the most damage:\n- Gmail sender rules (in force since Feb 1, 2024) require authentication, a spam rate below 0.3% and one-click unsubscribe for bulk mail.\n- Meta's Messenger policy limits standard messaging to a 24h window and requires bot disclosure where the law demands it.\n- LinkedIn's 'Prohibited software and extensions' page bans automation tools.\n- FCC 24-17 (Feb 8, 2024) covers AI voices.\n\nInstantly advertises that campaigns run completely on autopilot, and 11x documents no approval step. Being compliant by construction is a real advantage, not overhead.",
+   "priority": "must",
+   "who_has_it": [
+    "Instantly",
+    "Smartlead",
+    "Artisan",
+    "11x",
+    "GoHighLevel"
+   ]
+  },
+  {
+   "feature": "Reply handling and booking: classify every reply (interested, objection, not now, unsubscribe, wrong person). Draft the response in the student's voice using programme-approved objection answers, offer calendar times, book the call, and send confirmations and show-up reminders. Humans approve every reply until that student's measured draft accuracy passes a set threshold, then autonomy rises per category.",
+   "why": "Instantly's AI Reply Agent, GoHighLevel's AI Sales Agent and Voice AI booking, 11x and Delphi's demo-scheduling Action all compete here. Speed to lead decides who gets the meeting. Earned, measured autonomy beats either always-manual or always-autopilot.",
+   "priority": "must",
+   "who_has_it": [
+    "Instantly",
+    "GoHighLevel",
+    "11x",
+    "Artisan",
+    "Delphi"
+   ]
+  },
+  {
+   "feature": "Verified outcome ledger: each student's and client's funnel numbers (sent, replies, booked, shows, closes, cash collected) are pulled from connected systems (CRM, Stripe, calendar, ad accounts), never self-reported. Cohort analytics show which SOPs, assets and behaviours correlate with results. An evidence pack can be exported to back any claim.",
+   "why": "Every competitor's proof is unverified: BuddyPro claims 1,616% average ROI, Jeremy AI shows screenshot testimonials, and 11x and Second Nature publish vendor stats. FTC 'Operation AI Comply' (Sep 25, 2024) sued schemes that promised AI-powered income (Ascend Ecom, Ecommerce Empire Builders, FBA Machine) and said there is no AI exemption. Verified outcomes are the only defensible way to show the system makes people money.",
+   "priority": "must",
+   "who_has_it": []
+  },
+  {
+   "feature": "Claims and testimonial guard on everything the AI writes for the owner, team and students. It blocks unsubstantiated income or result claims, fake or AI-written testimonials, fake scarcity and undisclosed AI personas. Any results claim must link to an evidence record from the outcome ledger and carry a typical-results disclosure. Testimonials need a stored consent record.",
+   "why": "The FTC's final rule on fake reviews and testimonials (announced Aug 14, 2024) bans AI-generated testimonials and testimonials from people who don't exist. Jeremy AI's marketing ('go get richer', 'one win covers the year') shows how normal this risk is in the niche. Operator AI already has income-claim and fake-proof guards. Extending them to require linked evidence turns a filter into a moat.",
+   "priority": "must",
+   "who_has_it": [
+    "Kajabi (AI identity disclosure only)",
+    "Artisan (locked tone/CTAs)"
+   ]
+  },
+  {
+   "feature": "Timestamped video citations: every answer drawn from a course video or call jumps to the exact second, plays the clip, and keeps document file-and-line citations. When the material doesn't cover the question, it says 'not covered'.",
+   "why": "Kajabi now bundles a Teaching Assistant that answers with timestamped course clips in every plan. Cited Q&A over course content is now commodity, so file-and-line citations alone are no longer a differentiator. Jeremy AI and Delphi show no answer-level citations, so pairing precise video citations with honest 'not covered' answers still wins.",
+   "priority": "must",
+   "who_has_it": [
+    "Kajabi Expert Agents"
+   ]
+  },
+  {
+   "feature": "Scoped instances and access groups as sales and delivery assets: one-click limited versions such as a webinar-attendee bot trained only on webinar content, a challenge bot, a prospect-facing sales assistant, and separate student and inner-circle tiers. Each has message or time caps, email-code access, abuse controls, an expiry date and an upgrade path, while the full course knowledge base stays private.",
+   "why": "Jeremy AI used time-limited webinar and 3-day-challenge instances with message caps, email-code access and VPN blocking as funnel and retention tools (Aug 19, 2026). Delphi shipped Access Groups (Aug 19, 2025). Kajabi's Sales Agent answers buyers on the sales page. This turns the AI into the owner's top-of-funnel asset.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Delphi",
+    "Kajabi"
+   ]
+  },
+  {
+   "feature": "Owner monetisation and white-label: the owner can sell the AI itself (subscription, trials, coupons, usage tiers, seats via Stripe or Whop). Students can deploy white-label sub-instances for their own clients, with revenue share, usage metering and licence locks that keep the course knowledge base private.",
+   "why": "Jeremy AI is sold standalone at $1,000/month, with $60K+/month claimed. BuddyPro, Coachvox and Delphi sell AI subscriptions with trials and coupons. Utari plans white-label instances for students and clients. Smartlead charges $29/month per white-label client workspace, and GoHighLevel's SaaS mode lets agencies resell. Operator AI is already multi-tenant but has no billing or resale layer.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "BuddyPro",
+    "Coachvox",
+    "Delphi",
+    "Smartlead",
+    "GoHighLevel",
+    "Utari Eternal (planned)"
+   ]
+  },
+  {
+   "feature": "Proactive accountability driven by real activity: check-ins over Telegram, WhatsApp or SMS fire on pipeline signals (no outreach sent, reply backlog, missed drills, no calls booked) rather than on a calendar. Quiet hours, opt-out and escalation to a human coach are built in.",
+   "why": "BuddyPro's main hook is proactive check-ins on Telegram. Delphi Actions follow up at milestones. Nudges tied to actual pipeline data beat generic reminders, and they are how students reach a first client.",
+   "priority": "must",
+   "who_has_it": [
+    "BuddyPro",
+    "Delphi",
+    "Circle AI"
+   ]
+  },
+  {
+   "feature": "Universal inbox with human takeover and handback across all channels. The AI identifies itself as AI and names the owner or coach rather than impersonating them by default; persona voice is used only where Mbang has consented and disclosure is in place.",
+   "why": "Kajabi's Universal Inbox (read any chat, take over, hand back) and its honest AI identity set the bar. GoHighLevel and Instantly (Unibox) centralise replies. EU AI Act Art. 50 requires AI-interaction disclosure from Aug 2, 2026, and Meta's policy requires bot disclosure where the law demands it.",
+   "priority": "must",
+   "who_has_it": [
+    "Kajabi",
+    "GoHighLevel",
+    "Instantly"
+   ]
+  },
+  {
+   "feature": "Ad-account audits from live connections: read-only Meta and Google Ads with the owner's audit rules encoded. It catches issues such as an objective silently changed during duplication, a pixel optimising for unqualified leads, or spend not delivering. Fixes are staged as paused drafts with budget caps, approval and one-click rollback.",
+   "why": "Jeremy AI's testimonials centre on exactly these catches, and it claims 1,200+ audits of training data. Utari claims its clone runs ad accounts. Operator AI audits CSV exports and has a real Meta client built but switched off. Live read access is required for parity, and paused-only writes make it safer than both.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Utari Eternal"
+   ]
+  },
+  {
+   "feature": "Speed and reliability targets, published and monitored: first text token in about 1 second or less, typical full answer within 2-3 seconds, voice turn latency under about 800ms, and 99.9% uptime. Graceful, labelled fallback when the model provider is down.",
+   "why": "Jeremy AI markets answers in under 2 seconds. Slow answers kill daily habit, and habit drives retention of the AI subscription.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI (claimed)"
+   ]
+  },
+  {
+   "feature": "Team mode with RBAC: cheap or unlimited seats, group-chat mode, and role workspaces (setter, closer, coach, media buyer, VA, student, client) with per-role tools and data permissions. Shared projects carry memory and hand-offs.",
+   "why": "Jeremy AI sells Telegram group access so the whole team works from one playbook. Circle AI has shared projects with memory. Hyperbound and Second Nature give managers team analytics. Operator AI's 5-role RBAC is ahead, but it has to work inside the group chats people actually use.",
+   "priority": "must",
+   "who_has_it": [
+    "Jeremy AI",
+    "Circle AI",
+    "Hyperbound",
+    "Second Nature"
+   ]
+  },
+  {
+   "feature": "Security and data rights: a signed DPA, no training of third-party models on owner data, per-tenant encryption, SSO, full export and deletion, consent records for every archive used in training, and a SOC 2 roadmap.",
+   "why": "Hyperbound is SOC 2 Type II and ISO 27001. Utari publishes a DPA. Coachvox and BuddyPro promise no training on customer content. Delphi says the creator owns the data. Programme owners are uploading their entire IP plus clients' personal data, so this is table stakes.",
+   "priority": "must",
+   "who_has_it": [
+    "Hyperbound",
+    "Utari Eternal",
+    "Coachvox",
+    "BuddyPro",
+    "Delphi"
+   ]
+  },
+  {
+   "feature": "Multilingual text and voice: answer in the user's language, translate cited passages, and speak in the owner's consented voice across languages, with disclosure.",
+   "why": "Utari advertises auto-translation and users in 100+ countries. Coachvox claims 50+ languages, Hyperbound 25+ and Second Nature 30+. Delphi features a teacher's mind available 'in any language' (Mar 18, 2026). Operator AI detects only FR/ES/PT today.",
+   "priority": "should",
+   "who_has_it": [
+    "Utari Eternal",
+    "Coachvox",
+    "Hyperbound",
+    "Second Nature",
+    "Delphi"
+   ]
+  },
+  {
+   "feature": "Lead-magnet and distribution kit for the owner: export approved frameworks as downloadable agent-skill files and a public MCP/connector, plus email-gated 'ask the AI' demo pages that feed the sales funnel and the scoped-instance upsell. Licence terms are applied to everything exported.",
+   "why": "The competing creator turned 38 public agent-skill files into an email-gated lead magnet that led to the AI's sales page (skills synced Mar 30, 2026; funnel described Aug 19, 2026). Kajabi ships an MCP. Distribution decides adoption.",
+   "priority": "should",
+   "who_has_it": [
+    "Jeremy AI / jeremyhaynes.com skills",
+    "Kajabi MCP"
+   ]
+  },
+  {
+   "feature": "Community-platform presence: a bot or embed inside Skool, Circle, Kajabi, Mighty and Telegram groups, with membership and progress synced so access follows the student's tier.",
+   "why": "Coaching programmes live in these communities. Delphi published a community-integration guide (Dec 10, 2025), Coachvox embeds anywhere, Kajabi and Circle have native AI, and Skool auto-DMs new members. Making students go to a separate app costs adoption.",
+   "priority": "should",
+   "who_has_it": [
+    "Delphi",
+    "Coachvox",
+    "Kajabi",
+    "Circle AI",
+    "Skool (auto-DM only)"
+   ]
+  },
+  {
+   "feature": "Owner intelligence console: what students ask (content gaps that suggest new modules), unanswered or 'not covered' rates, grounding and fidelity eval scores, AI cost per user, and revenue by AI tier.",
+   "why": "Delphi Insights, Coachvox audience insights and Circle's Data Explorer show buyers expect this. Operator AI's eval and Command Centre pages are a strong base. Exposing gaps and fidelity drift is how the owner keeps the brain improving.",
+   "priority": "should",
+   "who_has_it": [
+    "Delphi",
+    "Coachvox",
+    "Circle AI"
+   ]
+  },
+  {
+   "feature": "Consented video avatar of the owner for role-plays and Q&A, optionally joining Zoom or Meet as a participant, with an on-screen AI label.",
+   "why": "Tavus agents join Zoom, Meet and Teams on camera. Second Nature sells avatar role-plays. Jeremy AI reportedly had a video call at launch. It is a strong demo but not core to producing results.",
+   "priority": "could",
+   "who_has_it": [
+    "Tavus",
+    "Second Nature",
+    "Jeremy AI"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,184 @@
+{
+ "findings": [
+  {
+   "area": "Goal-driven autonomy / mission engine",
+   "severity": "critical",
+   "problem": "There is no goal-driven layer. Every agent is a one-shot function that a person has to click. runtime.Run only records a trace: its 'plan' is a fixed list of labels, not a planner. Nothing takes a goal like 'win my first client', breaks it into steps across agents, waits for approvals or replies, comes back later, or checks progress. The missions tables exist in the schema, but no code reads or writes them, and the route and page are placeholders.",
+   "evidence": "operator_ai/routes/missions.py:11-13 returns {\"status\": \"not built yet\"}; web/src/pages/Missions.tsx shows 'Being built'; operator_ai/db.py:169-176 (missions, mission_steps, mission_events) have no readers or writers; operator_ai/runtime.py:41-50 (plan: list[str] is labels only); operator_ai/scheduler.py:6 tick() only runs skill workers and the Drive sync",
+   "recommendation": "Build an operator_ai/missions/ package on the existing tables. (1) registry.py: a typed StepType(key, run(tenant, mission, params)->StepResult, wait_for in {none, approval, event, time}, success(metrics), needs_cert) that wraps existing functions: prospecting.source/research, studio.run_line, webinar_chain.run_chain, outreach openers/followups, sales.process_lead, proposals.build, client onboarding, fulfilment.fulfil, ads_ops.diagnose/propose_changes, diagnostic.diagnose, academy gates. (2) templates.py: deterministic DAG templates, so it works with AI off: first_client = intake, then USP/offer lesson and quiz gate, offer doc (approval), profile/bio assets (approval), source 100 prospects, research and fit-score the top 50, DM-setting certification gate, a daily opener block (cap, approval, confirmed manual send) repeating until won, a time-gated follow-up cadence, reply handling (event), booking (fresh slots, invite, ladder), pre-call brief plus roleplay drill, call review, proposal, proposal follow-ups, and on a win the client_onboarding mission; checkpoints on day 7, 14 and 30. Also launch_webinar, fix_bottleneck, client_onboarding, client_weekly_ops and student_90_day. (3) engine.py: tick(tenant) promotes steps whose deps are done and due <= now and runs them via a jobs handler 'mission.step' with idempotency key mission:{id}:step:{sid}:try:{n}. Step statuses: pending, ready, running, waiting_approval, waiting_event, waiting_time, done, failed, skipped, blocked_human. Every transition is written to mission_events and recomputes missions.next_check. Wire it into scheduler.tick, @queue.on_approve('*') and a new on_reject hook. Endpoints: POST /missions {goal, template?, context}; GET /missions; GET /missions/{id}; POST /missions/{id}/pause, resume and cancel; POST /missions/{id}/steps/{sid}/retry, skip and mark-done; POST /missions/{id}/replan (returns a diff the owner confirms); GET /missions/{id}/events. UI: a goal intake wizard, a step timeline/DAG with statuses, a 'Your next actions' list (approve X, send Y by hand, take call Z), KPI-vs-plan bars and an event log. Outbound steps are always forced to wait_for=approval.",
+   "effort": "XL"
+  },
+  {
+   "area": "Prospect sourcing and research",
+   "severity": "critical",
+   "problem": "Nothing finds, researches or scores real prospects, so the system cannot 'find and win the first client'. The outreach loop only works on DEMO practice prospects with demo=True hard-coded. The real prospects table, which already has research, fit_score, lawful_basis and do_not_contact columns, is never used.",
+   "evidence": "operator_ai/routes/prospects.py:11-13 stub; web/src/pages/Prospects.tsx 'Being built'; operator_ai/db.py:177-182 prospects table has no readers or writers; operator_ai/outreach_loop.py:71 and :128 hard-code demo=True and read only outreach_practice_prospects (outreach_loop.py:57)",
+   "recommendation": "Add operator_ai/prospecting.py and adapters/prospect_sources.py with these sources: CsvImport (lawful_basis is required per row), ManualAdd, WebsiteResearch (net.request with a domain allowlist, honours robots.txt; extracts offer, price signals, booking link, pixel present, webinar/VSL present), and MetaAdLibrary (vault token; active ads count as a buying signal). Optional Apollo or Apify adapters sit behind vault keys. Store research as JSON {facts:[{claim, source_url, quote, fetched_at}]}. Fit score uses transparent, owner-editable weights like sales.score: niche match, runs ads, offer price band, audience size band, posting recency, no-agency signal. The opener personaliser may only cite stored facts, enforced by a new guardrail code unverified_personalisation that blocks openers referencing anything not in research.facts. do_not_contact and the never-invite list are checked in queue._check. Endpoints: POST /prospects/import, POST /prospects, POST /prospects/{id}/research, GET /prospects?list=&stage=&min_fit=, POST /prospects/{id}/stage, POST /prospects/{id}/dnc, POST /prospects/bulk/draft-openers. Rows are scoped by owner_user_id so each growth operator has their own list. UI: a table with a fit-score breakdown, a research drawer with source links, and bulk 'draft openers' that respects caps.",
+   "effort": "L"
+  },
+  {
+   "area": "Inbound reply handling",
+   "severity": "high",
+   "problem": "Replies are never linked back to the prospect or lead conversation. Every inbound Telegram, SMS or email is answered by the student Coach from the course knowledge base. A prospect who replies 'how much?' gets a drafted course-material extract, which offers licence-locked content to a stranger; only the human approver stands in the way. Reply-driven stage changes happen only through manual 'record reply' buttons.",
+   "evidence": "operator_ai/channels.py:33-45 _answer_draft calls coach.answer for every message; operator_ai/channels.py:195-207 inbound_email runs coach.answer for any sender and queues email_reply; operator_ai/outreach_loop.py:95 record_reply is manual and practice-only; operator_ai/live/chain.py record_reply is manual",
+   "recommendation": "Add operator_ai/inbound.py route(channel, ext_id, body). It matches the sender to prospects, leads, clients or students using canonical email, handle or phone via a contact_points table. For prospects and leads, classify_reply uses keyword rules first, with an optional AI tiebreak that may only fill a fixed enum: positive, question, price_ask, objection_not_now, objection_cost, objection_partner, not_interested, unsubscribe, out_of_office, legal_complaint. It then updates the stage. unsubscribe/STOP sets do_not_contact and adds the sender to the blocked list. It drafts the next message from the setter playbook (owner_user_id set, so the growth operator approves their own) and emits a mission event reply_received to wake the waiting step. A speed-to-lead SLA escalates if a positive reply has no approved response within 60 minutes. Students and members keep Coach Q&A. Unknown senders go to a triage list, never a KB answer. Add a conversations(id, party_type, party_id, channel, ext_id, state, last_in, last_out) table and a conversation_id on channel_messages. For Instagram, add a 'paste their reply' quick-capture box, because cold DMs have no API inbox.",
+   "effort": "L"
+  },
+  {
+   "area": "Scheduled follow-through (send_at)",
+   "severity": "high",
+   "problem": "Reminder timing is stored but never enforced. When an owner approves a '24h before' or '10 min before' reminder, it is delivered immediately. Nothing cancels a reminder if the call is rescheduled, cancelled or already happened.",
+   "evidence": "operator_ai/agents/sales.py:165 and operator_ai/live/chain.py:186 set meta.send_at; operator_ai/queue.py:234-271 deliver() never reads send_at; operator_ai/queue.py:194-216 approve() delivers synchronously",
+   "recommendation": "Add send_after REAL and cancel_if TEXT (a JSON list of predicates) to queue, plus a new status 'scheduled'. Approving an item whose send_after is in the future sets it to scheduled. A new queue.dispatch_due(tenant), called from scheduler.tick, re-runs guardrails and the never-invite check, evaluates the cancel_if predicates (lead_replied_since, booking_cancelled, prospect_dnc, stage_beyond:<stage>) and then delivers or marks the item cancelled with a reason. The UI shows 'Approved, sends Tue 14:00' with Cancel and 'Send now' buttons. Tests: an approved 24h reminder is not delivered until due, and a reminder for a cancelled booking is never delivered.",
+   "effort": "M"
+  },
+  {
+   "area": "Sales sequencing",
+   "severity": "high",
+   "problem": "process_lead queues the whole funnel at once before the lead has said anything: reply, two follow-ups, a booking DM with three slots, a calendar invite and three show-up reminders. An approver clearing the queue would send booking times and 'see you in two hours' for a call that was never booked. The proposed slots go stale while the items wait.",
+   "evidence": "operator_ai/agents/sales.py:114-171 (process_lead queues reply, followups and then _queue_booking for every warm/hot lead in one run)",
+   "recommendation": "Turn it into a mission sub-sequence with event and time waits. Queue the reply. Wait for reply_received, or 2 days, then follow-up 1. Wait 2 more days, then follow-up 2. Wait 3 more days, then move to nurture. On a positive reply, compute fresh slots at draft time and queue the booking DM with meta.slots_valid_until (an expired draft is regenerated). When the lead picks a slot (inbound classification or a manual button), queue the invite. When the invite is approved, create the reminder ladder with send_after and cancel_if=[booking_cancelled]. Keep quick_lead for the burst path only.",
+   "effort": "M"
+  },
+  {
+   "area": "Outreach cadence",
+   "severity": "high",
+   "problem": "Follow-ups are not gated by time and do not check whether the previous touch was actually sent. Two calls to queue_followups in the same minute queue follow-up 1 and follow-up 2 back to back. The daily cap counts queued drafts, including rejected ones, instead of confirmed sends.",
+   "evidence": "operator_ai/outreach_loop.py:115-137 (queue_followups has no time-since-last-touch check); operator_ai/outreach_loop.py:42-45 (sent_today counts outreach_loops rows by created time, regardless of approval or rejection)",
+   "recommendation": "Add cadences(id, prospect_id, step, due_at, status, queue_id, created) generated from a tenant-editable playbook (day 0 opener; day 2, 4 and 7 value follow-ups; then monthly nurture). A cadence starts only when the opener is confirmed sent. The scheduler drafts each step at due_at only if there has been no inbound since the last outbound and the prospect is not DNC. The per-sender cap counts confirmed sends per local day.",
+   "effort": "M"
+  },
+  {
+   "area": "Delivery truth: approved vs sent",
+   "severity": "high",
+   "problem": "Approval is treated as 'sent', which corrupts every funnel metric: reply rates, the opener lab's Wilson intervals, the setter league and goal tracking. Instagram DMs have no live sender, yet approving one on a real tenant records it as delivered on 'mock:instagram' and moves the prospect to 'sent'. Cold DMs on Instagram cannot be sent through any API, so a human must send them; the system never asks whether they did.",
+   "evidence": "operator_ai/queue.py:264-269 (mock delivery for instagram_dm in any tenant); operator_ai/outreach_loop.py:84-90 (_opener_approved sets stage='sent' on approval)",
+   "recommendation": "Add a delivery state machine to queue: approved goes to awaiting_manual_send for manual channels (IG DM, LinkedIn, phone), then to sent when the operator clicks 'I sent it' (optionally pasting a permalink), or to send_failed or cancelled. Mock transports only in demo tenants. Stage moves, caps and stats are keyed on sent, not approved. Add a 'Copy message + open profile' button and a daily 'to send' list in the mission's next actions. Live channels (email, SMS) go straight to sent or send_failed from the provider result.",
+   "effort": "M"
+  },
+  {
+   "area": "Niche-specific copy hard-coded",
+   "severity": "high",
+   "problem": "Templates hard-code the clinic demo niche and ignore the brief or client data. A growth operator targeting coaches, agencies or e-commerce gets copy about diaries, patients and the 'referral-first system'. Fulfilment ad hooks hard-code the outcome, pain and mechanism whatever the client is. Outreach follow-ups pitch the 'reminder ladder', which is internal coaching content, not value for a prospect.",
+   "evidence": "operator_ai/studio.py:24 'Saw your post about filling the diary'; operator_ai/agents/fulfilment.py:48-49 hard-codes outcome '20 new bookings a month', pain 'discounting', mechanism 'referral-first system'; operator_ai/agents/fulfilment.py:104 hard-codes the VSL mechanism; operator_ai/agents/sales.py:72 'clinics like yours'; operator_ai/outreach_loop.py FOLLOWUPS",
+   "recommendation": "Route every template through brief.build() or a per-client brief: add brief JSON (audience, outcome, mechanism, pain, timeframe, proof) to clients. Move the template text into tenant-editable playbooks (routes/playbooks.py is a stub) so the owner's SOP wording is used. Add a regression test that renders all outreach, studio, fulfilment and webinar outputs for five niche fixtures and asserts no foreign-niche nouns ('clinic', 'diary', 'patients' outside the clinic fixture).",
+   "effort": "M"
+  },
+  {
+   "area": "Compliance: allowed revenue figure in outreach",
+   "severity": "high",
+   "problem": "The guardrails whitelist 'Let me make [Brand] $50k-$100k a month' for warm and hot leads, and the AI rewrite prompt is told this is allowed. That is a revenue representation to a prospect, which conflicts with the stated hard rule 'no income claims'. Regulators expect earnings representations, including business-to-business ones, to be substantiated. The rule is a deliberate SOP decision, but nothing ties it to evidence.",
+   "evidence": "operator_ai/guardrails.py:114 _ALLOWED_RANGE; operator_ai/guardrails.py:272-273 range_line; operator_ai/agents/sales.py:61-67 reply_line uses it for warm/hot leads; operator_ai/studio.py:31; operator_ai/critique.py _rewrite_prompt; docs/GUARDRAILS.md:34-37",
+   "recommendation": "Gate the line behind substantiation. Add a claims_substantiation(id, claim_key, text, evidence_files, typicality_note, reviewed_by, reviewed_at, expires) table. range_line is allowed only when an unexpired record for 'outreach_range' exists. Otherwise guardrails block the range in every tier and sales.reply_line falls back to no_figure_line. Every approved item containing the range is audit-logged with the substantiation id. The default for new tenants is no substantiation, so no figure is used.",
+   "effort": "S"
+  },
+  {
+   "area": "Proposal / deal generation",
+   "severity": "high",
+   "problem": "Nothing turns a discovery call into a proposal, tracks it, records acceptance or collects payment. The proposals table and the 'proposal' approval kind exist, but nothing creates a proposal.",
+   "evidence": "operator_ai/db.py:183-185 proposals table unused; operator_ai/auth.py:53 OWN_DECIDE includes 'proposal' but no module creates one; the call_review.py output is not connected to any deal step",
+   "recommendation": "Add operator_ai/proposals.py. build(prospect_id, call_notes|transcript) combines prospect research.facts, the call review, diagnostic.analyse on the prospect's own numbers and the fulfilment money_model scenarios (labelled assumptions). It produces sections: their problem in their words, the bottleneck and its cost, a 30/60/90 plan, deliverables, 2-3 pricing options (retainer / retainer plus performance / paid pilot), terms and an explicit no-guarantee line, all checked in client_asset guardrail mode. Render HTML at a tokenised public page /p/{token} that tracks views and offers accept (typed name, checkbox, timestamp, hashed IP). The send is queued as kind 'proposal' for approval. On acceptance, optionally create a Stripe Payment Link (vault key, owner approval). console.payment_webhook then emits client_won, which starts the client_onboarding mission. Add a proposal follow-up cadence (days 2, 5 and 10, with cancel_if accepted). Endpoints: POST /proposals, GET /proposals/{id}, PUT /proposals/{id}, POST /proposals/{id}/send, GET /p/{token}, POST /p/{token}/accept. UI: a section editor plus a pricing table.",
+   "effort": "L"
+  },
+  {
+   "area": "Client onboarding after a win and recurring fulfilment",
+   "severity": "high",
+   "problem": "After a deal is won there is no onboarding and no ongoing delivery loop. The clients table has no status, start date, contract, access or brief. fulfil() is a one-shot run on a static metrics JSON. onboarding.onboard() onboards students, not a growth operator's clients. Weekly client reports are never scheduled.",
+   "evidence": "operator_ai/db.py:50-52 clients schema (id, student_id, name, niche, offer, price, metrics, demo, created); operator_ai/agents/fulfilment.py:63-127 is one-shot; operator_ai/agents/onboarding.py:66 is students only",
+   "recommendation": "Add columns to clients: status, start_date, retainer, brief JSON, kpi_targets JSON, access JSON. Add client_metrics(client_id, period_start, metrics JSON, source) and client_tasks. A client_onboarding mission (triggered by client_won) sends a public intake link (offer, audience, proof with permission, assets) and runs an access checklist: Meta Business Manager partner access, pixel/CAPI, CRM, calendar, domain; each item is verified through an API where the live switch is on, otherwise ticked by hand. Then a kickoff invite (approval) and fulfilment.fulfil with the real brief. A recurring client_weekly_ops mission runs on Mondays: pull metrics (Ads CSV, Meta read API behind the switch, or a manual form), diagnostic.analyse, ads_ops.propose_changes (approval-gated), a weekly report email (queued), a monthly review and churn-risk signals (falling KPIs, missed calls) leading to escalation. UI: a Clients page showing onboarding progress and a KPI trend.",
+   "effort": "L"
+  },
+  {
+   "area": "Webinar execution",
+   "severity": "high",
+   "problem": "The webinar chain stops at drafts. The event date is free text. Registration and thank-you pages are previews marked 'Not published'. Show-up and replay emails are single text blobs that are never scheduled against the event time. There is no registrant or attendance tracking, and the sales hand-off is one generic DM rather than one per attendee.",
+   "evidence": "operator_ai/brief.py:12 default date 'next Thursday 7pm'; operator_ai/webinar_chain.py:59 'Preview only. Not published.'; operator_ai/webinar_chain.py showup_sequence and replay_sequence are joined strings; operator_ai/webinar_chain.py sales_handoff is a single DM",
+   "recommendation": "Add webinars(id, chain_id, slug, starts_at, tz, join_url, status) and webinar_registrants(webinar_id, name, email, source, consent, registered_at, attended, minutes_watched, stayed_past_offer). Serve the approved registration page at /w/{slug}; the form needs a consent checkbox. Approve each show-up/replay template once and fan it out per registrant as scheduled items with send_after relative to starts_at and cancel_if=[unsubscribed]. Import attendance from a Zoom CSV or enter it by hand. After the event, attendees who stayed past the offer get setter DM drafts, non-attendees get the replay sequence, and registration-to-show and show-to-booked rates feed diagnostic and the mission metrics.",
+   "effort": "L"
+  },
+  {
+   "area": "Self-correction / learning loop",
+   "severity": "medium",
+   "problem": "Nothing feeds back. Rejections take no reason code and fire no hooks. Edits made before approval are discarded as signal. The opener lab computes Wilson intervals, but nothing uses them to choose the next opener. Missions have no rules that change course when metrics underperform.",
+   "evidence": "operator_ai/queue.py:219-230 reject() has a free-text reason and no hooks; operator_ai/queue.py:276-290 only on_approve exists; operator_ai/outreach_loop.py:146-157 opener_lab is display-only; operator_ai/critique.py loop has no memory",
+   "recommendation": "Add an on_reject hook and required reason codes (tone, wrong_fact, too_long, off_brand, compliance, timing, wrong_person). Add draft_feedback(kind, template_key, persona, reason, edit_diff, created), recording the diff on approve-with-edits. Add variant_stats(variant_key, niche, channel, sent, replied, booked) and pick variants by Thompson sampling, with a minimum-sample guard and Wilson intervals already in place. Add an evaluator in missions/evaluator.py with rules-first replans: reply rate < 4% after 80 confirmed sends means switch opener move, re-run research on the top 20 prospects and notify; show rate < 50% means insert reminder-ladder and confirmation steps; zero calls booked by day 14 means escalate to a coach with a diagnostic. AI may suggest wording only.",
+   "effort": "M"
+  },
+  {
+   "area": "Escalation, SLAs and crash recovery",
+   "severity": "medium",
+   "problem": "There are no SLA timers for unanswered positive replies, held items or stuck steps. Escalation exists only as a support-ticket regex and student risk tasks. Background runs live in an in-memory thread pool, so a restart leaves them 'running' forever; the job queue has orphan recovery, but runs do not.",
+   "evidence": "operator_ai/runtime.py:130-145 launch() uses ThreadPoolExecutor with no recovery; operator_ai/jobs.py requeue_orphans covers jobs only; operator_ai/departments.py ESCALATE regex; operator_ai/agents/accountability.py:170-183 coach_tasks",
+   "recommendation": "Add escalations(id, mission_id, kind, severity, detail, assignee_user_id, status, due, created, resolved). Rules: positive reply over 60 minutes without an approved response; held item over 24 hours; step failed 3 times; mission KPI below 50% of plan at a checkpoint; legal, refund or complaint keywords; a DNC request. Notify in the app and optionally on the operator's own linked Telegram (internal, never prospect-facing). On startup, mark runs still 'running' with created older than 10 minutes as 'interrupted', and re-enqueue mission steps idempotently through jobs.",
+   "effort": "M"
+  },
+  {
+   "area": "Goal intake and measurable outcomes",
+   "severity": "medium",
+   "problem": "The chat has no 'goal' intent, so 'get me my first client' falls through to course Q&A. The command centre counts activity (runs, queue items), not outcomes. goal_calculator stands alone and never becomes a plan with targets.",
+   "evidence": "operator_ai/agents/router.py:67-80 classify() has question, metrics, asset and ads_csv only; operator_ai/reports.py:31-51 command_centre reports runs_today and queue counts; operator_ai/outreach_loop.py:184 goal_calculator is unused by any plan",
+   "recommendation": "Add router intent 'goal' (patterns such as first client, get clients, launch a webinar, fill my calendar). It creates a draft mission and asks for missing fields one at a time: niche, offer, price, hours per day, channels, current numbers. Add mission_targets derived from goal_calculator with SOP benchmark rates (prospects/day, confirmed openers/day, replies, conversations, calls booked/showed, proposals, wins) and a daily mission_metrics(mission_id, day, metrics JSON) snapshot. Add an outcome dashboard: leading versus lagging indicators, plan versus actual and time-to-first-client. Revenue is shown only as the user's own recorded figures, labelled, never projected as a promise.",
+   "effort": "M"
+  },
+  {
+   "area": "AI planning layer (optional)",
+   "severity": "medium",
+   "problem": "The AI is only used for single-shot text completion: no tool use, no structured planning, no typed outputs beyond JSON parsing. The departments builder lists triggers such as 'Every new inbound DM' as text that is never wired, and its agents run on preset DEMO inputs.",
+   "evidence": "operator_ai/llm.py:111-150 sends one system and one user message with no tools; operator_ai/departments.py:309-316 run_agent loads DEMO preset dms/tickets/ad_stats; operator_ai/departments.py DEPARTMENTS trigger strings",
+   "recommendation": "Add missions/ai_planner.py. Given the goal, context and step registry schema, the model returns a step list through Anthropic tool use or a JSON schema. The list is validated against the registry: unknown step types or parameters are rejected, every outbound step is forced to wait_for=approval, token budget is capped. It is diffed against the rules template and shown for the owner to accept, and the rules template stays the default when AI is off. Use the same pattern (AI fills enums and fields, rules validate) for reply classification and research summaries. Wire department agents to real events (inbound.route triggers dm_setter, a new ticket triggers support_agent, Monday ads metrics trigger ad_performance_analyst) instead of DEMO presets.",
+   "effort": "L"
+  },
+  {
+   "area": "Live recipient addressing",
+   "severity": "medium",
+   "problem": "Some approved items cannot be delivered when live senders are on. Student nudges go to Telegram addressed to the student's first name, so every live approval fails with a 502. Chain reminders are addressed to 'lead-{id}'.",
+   "evidence": "operator_ai/agents/accountability.py:161 (channel='telegram', recipient_ref=s['name']); operator_ai/queue.py:248 sends recipient_ref.split(' ')[0]; operator_ai/live/chain.py:184 (recipient_ref=f'lead-{lead_id}')",
+   "recommendation": "Add contact_points(party_type, party_id, channel, address, verified, opted_in) and resolve recipients through it. Nudges use the student's linked Telegram chat id from channel_links, or fall back to email. In queue._check, add a held flag 'no_address' when the channel has a live sender but recipient_ref is not a valid address for that channel.",
+   "effort": "S"
+  },
+  {
+   "area": "Persona voice ('sound like Mbang') with consent",
+   "severity": "medium",
+   "problem": "The consent plumbing exists, but there is no persona model. persona_profiles is unused, style is a 500-character free-text note, and drafts never take on the coach's style. 'Sound exactly like Mbang' is not delivered, and when it is built it must stay consent-bound and disclosed.",
+   "evidence": "operator_ai/db.py:186-187 persona_profiles unused; operator_ai/console.py:71-96 personality/style_note 'Style rewriting needs AI'",
+   "recommendation": "Add operator_ai/persona.py. A persona_profiles row holds consent {signed_by, scope: [written_style, voice], channels, expires, revocable}. It is built only from a consented corpus (DMs, emails, transcripts uploaded with provenance). A rules style card covers sentence length, greeting and sign-off, signature phrases, words used and avoided, emoji and question rate. Few-shot exemplars come from that corpus. The AI rewrite is constrained to style only, then guardrails re-run, and the draft is labelled 'in <persona> style'. Public bots disclose 'AI assistant for <name>'. No voice cloning unless the consent scope includes voice. Revoking disables the persona immediately and is audit-logged. Fidelity eval: held-out real messages versus generated ones, blind-rated by the owner.",
+   "effort": "M"
+  },
+  {
+   "area": "Training tied to doing (academy gates)",
+   "severity": "medium",
+   "problem": "Training is not tied to the work. The academy tables exist but the API is a stub. Onboarding creates coach tasks only. Nothing requires a student to be competent before real prospects are contacted, and failure signals never assign a lesson or drill.",
+   "evidence": "operator_ai/routes/academy.py:11-13 stub; operator_ai/db.py:149-168 academy_lessons/quiz/progress/roleplays/certifications unused; operator_ai/agents/onboarding.py:105-116 only inserts coach_tasks",
+   "recommendation": "Add mission gate steps. Before the first real outreach block, require certification dm_setting:L1 (quiz at least 80% plus a roleplay scored at least 70 by the existing reviewer rubric). Before discovery calls, require sales_call:L1. Evaluator signals attach just-in-time lessons and drills (low reply rate: opener lesson plus a drill card). accountability.risk reads mission metrics where they exist instead of self-reported check-ins only.",
+   "effort": "M"
+  },
+  {
+   "area": "Cold email compliance for outreach on the operator's behalf",
+   "severity": "medium",
+   "problem": "The live SMTP sender sends bare messages: no List-Unsubscribe header, no unsubscribe footer, no physical address, no per-mailbox ramp or daily cap, and no bounce or complaint handling. That is not enough for approval-gated cold email sent from an operator's mailbox.",
+   "evidence": "operator_ai/live/senders.py:63-77 builds an EmailMessage with From/To/Subject only; operator_ai/queue.py _check has no footer or unsubscribe check",
+   "recommendation": "For prospect-facing email: add a List-Unsubscribe header and a one-click unsubscribe link (/u/{token}, which sets DNC), plus a footer with the business address from the profile. Guardrail block 'missing_unsubscribe' when prospect_facing and channel is email. Add a per-mailbox daily cap and warm-up ramp, bounce and complaint ingestion through inbound.route leading to DNC, and an SPF/DKIM/DMARC check in setup. Prefer the operator's own mailbox (Gmail/Microsoft OAuth) over shared SMTP.",
+   "effort": "M"
+  },
+  {
+   "area": "Skill workers",
+   "severity": "low",
+   "problem": "Workers run one skill with fixed inputs on a schedule and produce a single generic draft whatever the data says. Weekly triggers ignore the day of the week.",
+   "evidence": "operator_ai/skills.py:158-167 run_worker uses stored inputs; operator_ai/skills.py:170-179 _due has no weekday",
+   "recommendation": "Turn workers into recurring mission templates with a data selector ('for each at-risk student', 'for each client with new metrics', 'for each prospect due a follow-up') and a weekday field, so they draft per entity from current state. Fold them into the mission engine's scheduler.",
+   "effort": "S"
+  }
+ ],
+ "top_priorities": [
+  "Build the mission engine on the existing missions, mission_steps and mission_events tables: typed step registry, a deterministic first_client template, a scheduler tick, and queue approve/reject hooks as wake-ups. Without it nothing is goal-driven.",
+  "Ship a real prospects module: CSV/manual import with lawful_basis, website and Meta Ad Library research stored with source URLs, a transparent fit score, DNC, and openers that may only cite researched facts. This replaces outreach that only works on demo practice prospects.",
+  "Separate 'approved' from 'sent': manual-send confirmation for Instagram DMs, mock delivery only in demo tenants. Enforce send_after and cancel_if through a scheduled dispatcher, and replace ad-hoc follow-ups with a time-gated cadences table.",
+  "Add an inbound reply router that matches replies to prospects and leads, classifies them (rules first), turns unsubscribes into DNC, drafts the next setter message, and wakes the mission with a 60-minute speed-to-lead escalation. Stop answering unknown senders from the course knowledge base.",
+  "Make sales.process_lead event-driven instead of queuing the reply, follow-ups, booking DM, invite and reminder ladder all at once.",
+  "Build proposals (research, call review, diagnostic and money model leading to an approval-gated proposal, tokenised accept page and optional payment link), then client_won, a client_onboarding mission and a recurring client_weekly_ops loop.",
+  "Remove the hard-coded clinic copy from the studio, fulfilment, sales and outreach templates. Gate the '$50k-$100k a month' line behind a substantiation record so the default is no figure, in line with 'no income claims'.",
+  "Add self-correction and escalation: reject reason codes and edit diffs, variant stats with Thompson sampling, evaluator replans on reply, show and booking thresholds, an escalations table, and recovery for runs interrupted by a restart.",
+  "Make webinars real: event and registrant tables, a hosted registration page with consent, per-registrant scheduled show-up and replay sends, attendance import, and setter hand-offs per attendee.",
+  "Add a consented persona style layer that is labelled and revocable, plus academy certification gates before real outreach and real calls, so training and doing share one set of mission metrics."
+ ]
+}

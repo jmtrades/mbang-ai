@@ -191,11 +191,33 @@ CREATE TABLE IF NOT EXISTS invites (
 CREATE TABLE IF NOT EXISTS app_events (
   id INTEGER PRIMARY KEY, name TEXT, payload TEXT, created REAL);
 CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
+-- [academy] tables
+-- [roleplay] tables
+-- [missions] tables
+-- [prospects] tables
+-- [delivery] tables
+-- [inbound] tables
+-- [client_ops] tables
+-- [webinars] tables
+-- [persona] tables
+-- [team] tables
+-- [playbooks] tables
 """
 
 # Columns added to existing tables after first release. CREATE TABLE IF NOT EXISTS never alters a table that
 # already exists, so each new column is listed here and added on open when missing: (table, column, declaration).
 COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
+    # [academy]
+    # [roleplay]
+    # [missions]
+    # [prospects]
+    # [delivery]
+    # [inbound]
+    # [client_ops]
+    # [webinars]
+    # [persona]
+    # [team]
+    # [playbooks]
 ]
 
 REGISTRY_SCHEMA = """
