@@ -194,6 +194,14 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [academy] tables
 -- [roleplay] tables
 -- [missions] tables
+CREATE TABLE IF NOT EXISTS mission_metrics (
+  id INTEGER PRIMARY KEY, mission_id INTEGER, day TEXT, metrics TEXT, created REAL, UNIQUE(mission_id, day));
+CREATE TABLE IF NOT EXISTS mission_replans (
+  id INTEGER PRIMARY KEY, mission_id INTEGER, source TEXT, rule TEXT, diff TEXT, status TEXT, created REAL,
+  decided_by TEXT, decided_at REAL);
+CREATE INDEX IF NOT EXISTS mission_steps_m ON mission_steps(mission_id, ord);
+CREATE INDEX IF NOT EXISTS mission_events_m ON mission_events(mission_id, id);
+CREATE INDEX IF NOT EXISTS missions_user ON missions(user_id, status);
 -- [prospects] tables
 -- [delivery] tables
 -- [inbound] tables
@@ -212,6 +220,16 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [academy]
     # [roleplay]
     # [missions]
+    ("missions", "parent_id", "INTEGER"),
+    ("missions", "title", "TEXT"),
+    ("missions", "demo", "INTEGER DEFAULT 0"),
+    ("missions", "plan_source", "TEXT"),
+    ("mission_steps", "skey", "TEXT"),
+    ("mission_steps", "wait", "TEXT"),
+    ("mission_steps", "attempts", "INTEGER DEFAULT 0"),
+    ("mission_steps", "fails", "INTEGER DEFAULT 0"),
+    ("mission_steps", "cycles", "INTEGER DEFAULT 0"),
+    ("mission_steps", "message", "TEXT"),
     # [prospects]
     # [delivery]
     # [inbound]
