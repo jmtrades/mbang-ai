@@ -141,9 +141,15 @@ function MarkDoneModal({ target, onClose, onDone }: { target: { mission_id: numb
             <Input type="datetime-local" value={callAt} onChange={(e) => setCallAt(e.target.value)} />
           </Field>
         )}
-        <Field label="Note (optional)">
-          <TextArea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
-        </Field>
+        {target.type === "take_call" && chosen === "showed" ? (
+          <Field label="What they said on the call (optional)" hint="Write it in their words. The proposal's 'where you are now' section is written from this.">
+            <TextArea rows={4} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. We get about 30 enquiries a month but only book 3 calls." />
+          </Field>
+        ) : (
+          <Field label="Note (optional)">
+            <TextArea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          </Field>
+        )}
         <p className="text-xs text-muted">This records what happened. It never sends anything.</p>
         <ErrorBox error={err} />
         <div className="flex flex-wrap justify-end gap-2">
@@ -204,7 +210,7 @@ function NextActions({ items, onChanged, compact }: { items: any[]; onChanged: (
           </li>
         ))}
       </ul>
-      <MarkDoneModal target={mark && { mission_id: mark.mission_id, step_id: mark.step_id, step: mark.step, outcomes: mark.outcomes, title: mark.title }} onClose={() => setMark(null)} onDone={onChanged} />
+      <MarkDoneModal target={mark && { mission_id: mark.mission_id, step_id: mark.step_id, step: mark.step, outcomes: mark.outcomes, type: mark.type, title: mark.title }} onClose={() => setMark(null)} onDone={onChanged} />
     </>
   );
 }

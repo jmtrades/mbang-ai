@@ -332,8 +332,10 @@ def pump(tenant, mid: int | None = None, max_jobs: int = 60) -> int:
 def _job(tenant, payload: dict) -> dict:
     mid, sid, n = int(payload["mission_id"]), int(payload["step_id"]), int(payload.get("try") or 0)
     with tenant.db() as c:
+        # 'running' with this same attempt: the server stopped mid-step and the job was re-queued on start (the job
+        # claim is atomic, so nobody else is running it): run the step again rather than leave it stuck
         r = db.row(c.execute("UPDATE mission_steps SET status='running', updated=? WHERE id=? AND mission_id=? AND "
-                             "status='ready' AND attempts=? RETURNING *", (clock(), sid, mid, n)).fetchone())
+                             "status IN ('ready','running') AND attempts=? RETURNING *", (clock(), sid, mid, n)).fetchone())
     if r is None:
         return {"skipped": "stale"}
     m = get(tenant, mid, steps=False)
@@ -396,6 +398,11 @@ def _apply(tenant, m: dict, step: dict, res: StepResult, run_id: int | None) -> 
     if t and t.outbound and status in ("done", "skipped") and q_states(tenant, qids)["open"]:
         status = "waiting_approval"  # outbound work never finishes while one of its drafts still waits for a decision
     output = {**step["output"], **(res.output or {})}
+    # when the step entered its current state (a recheck that finds nothing new keeps the date): how long it has
+    # waited on a person, for the stalled-mission escalation
+    output["_since"] = step["output"].get("_since") if step["output"].get("_st") == status and step["output"].get("_since") \
+        else now
+    output["_st"] = status
     wait = res.wait or {}
     due = res.due
     if due is None and wait.get("recheck") and status in WAITING:
@@ -487,11 +494,39 @@ def sync(tenant, mid: int, now: float | None = None) -> int:
     return n
 
 
+STUCK = 10 * 60  # a step still 'ready' or 'running' this long after its job ended was interrupted
+
+
+def recover_steps(tenant, now: float | None = None) -> int:
+    """Steps left 'ready' or 'running' whose job is gone (it failed outside the step, or a restart lost it) start
+    again, so a mission never waits forever on work nobody is doing."""
+    now = now or clock()
+    with tenant.db() as c:
+        rows = db.rows(c.execute(
+            "SELECT s.* FROM mission_steps s JOIN missions m ON m.id=s.mission_id WHERE m.status='active' AND "
+            "s.status IN ('ready','running') AND COALESCE(s.updated,0)<? AND NOT EXISTS (SELECT 1 FROM jobs j WHERE "
+            "j.key='mission:'||s.mission_id||':step:'||s.id||':try:'||COALESCE(s.attempts,0) AND "
+            "j.status IN ('queued','running')) LIMIT 200", (now - STUCK,)))
+    n = 0
+    for r in rows:
+        with tenant.db() as c:
+            ok = c.execute("UPDATE mission_steps SET status='pending', updated=? WHERE id=? AND status=?",
+                           (now, r["id"], r["status"])).rowcount
+        if ok:
+            n += _enqueue(tenant, r["mission_id"], {**_parse_step(r), "status": "pending"},
+                          "picked up again after an interruption")
+    return n
+
+
 def tick(tenant, now: float | None = None) -> int:
     """Per-tenant tick (scheduler.TENANT_TICKS): advance due missions, measure daily, suggest re-plans."""
     from . import evaluator
 
     now = now or clock()
+    try:
+        recover_steps(tenant, now)
+    except Exception:  # noqa: BLE001 - recovery must not stop the tick
+        log.exception("mission step recovery failed")
     with tenant.db() as c:
         mids = [r["id"] for r in c.execute("SELECT id FROM missions WHERE status='active' AND (next_check IS NULL OR "
                                            "next_check<=?) ORDER BY next_check LIMIT 200", (now,))]
@@ -612,7 +647,12 @@ def _ev_stage(tenant, name, p):
             add_event(tenant, mid, "booked", {"party_type": "prospect", "party_id": pid, "starts_at": None},
                       key=f"prospect:{pid}")
         elif stage == "won":
-            mark_won(tenant, mid, client_id=None, source="prospect stage")
+            # the prospects feature writes the new client on the prospect before it announces the stage (client_won
+            # follows): read it now, so onboarding starts with the client instead of without one
+            with tenant.db() as c:
+                r = c.execute("SELECT client_id FROM prospects WHERE id=?", (pid,)).fetchone() if pid else None
+            cid = r["client_id"] if r and isinstance(r["client_id"], int) else None
+            mark_won(tenant, mid, client_id=cid, source="prospect stage", prospect_id=pid)
             continue
         elif stage in ("lost", "dnc"):
             add_event(tenant, mid, "lost" if stage == "lost" else "dnc", {"party_type": "prospect", "party_id": pid},
@@ -648,7 +688,7 @@ def _ev_won(tenant, name, p):
                                         "owner_user_id": p.get("owner_user_id")}) if p.get("prospect_id") \
         else _active_for_user(tenant, p.get("owner_user_id"), templates.OUTREACH_TEMPLATES)
     for mid in mids:
-        mark_won(tenant, mid, client_id=p.get("client_id"), source="client won")
+        mark_won(tenant, mid, client_id=p.get("client_id"), source="client won", prospect_id=p.get("prospect_id"))
     for mid in _active_for_user(tenant, p.get("owner_user_id"), ("client_onboarding", "client_weekly_ops")):
         m = get(tenant, mid, steps=False)
         if m and not (m["context"].get("answers") or {}).get("client_id") and p.get("client_id"):
@@ -669,7 +709,8 @@ def _ev_cert(tenant, name, p):
 WIN_GOAL_TEMPLATES = ("first_client",)  # missions whose goal IS a won client; others just count the win
 
 
-def mark_won(tenant, mid: int, client_id: int | None = None, value: float | None = None, source: str = "", by: str = "") -> None:
+def mark_won(tenant, mid: int, client_id: int | None = None, value: float | None = None, source: str = "", by: str = "",
+             prospect_id: int | None = None) -> None:
     now = clock()
     m = get(tenant, mid, steps=False)
     if m is None:
@@ -684,6 +725,8 @@ def mark_won(tenant, mid: int, client_id: int | None = None, value: float | None
             _patch_context(tenant, mid, {"client_id": client_id})
         return
     patch = {"won": True, "won_at": now, "client_id": client_id or m["context"].get("client_id")}
+    if isinstance(prospect_id, int) and not isinstance(prospect_id, bool):
+        patch["won_prospect_id"] = prospect_id
     if value is not None:
         patch["recorded_revenue"] = value
     _patch_context(tenant, mid, patch)
@@ -831,6 +874,11 @@ def mark_done(tenant, mid: int, sid: int, actor: str, outcome: str | None = None
     if key == "take_call":
         booked = events_of(tenant, mid, "booked")
         party = {k: booked[-1]["detail"].get(k) for k in ("party_type", "party_id")} if booked else {}
+        if outcome == "showed" and (note.strip() or numbers):
+            # what they said on the call and the numbers they gave: the proposal is written from these, in their words
+            nums = clean_numbers(numbers)
+            _patch_context(tenant, mid, {"call_notes": note.strip()[:2000], "numbers": nums,
+                                         "call_party": party.get("party_id")})
         add_event(tenant, mid, {"showed": "showed", "no_show": "no_show", "rescheduled": "rescheduled"}[outcome],
                   {**detail, **party})
         wake(tenant, mid, sid=sid, reason=f"call {outcome}")
@@ -914,6 +962,7 @@ def next_actions(tenant, user: dict, mission_ids: list[int] | None = None) -> li
             if s["status"] == "blocked_human":
                 kind = "answer" if s["agent"] == "intake" else "call" if s["agent"] == "take_call" else "do"
                 out.append({**base, "kind": kind, "step_id": s["id"], "title": s["message"], "step": s["title"],
+                            "type": s["agent"],
                             "cta": "Answer" if kind == "answer" else (t.human_action if t and t.human_action else "Open"),
                             "href": s["output"].get("href"), "outcomes": list(t.outcomes) if t else []})
             elif s["status"] == "failed":
@@ -993,7 +1042,7 @@ def detail(tenant, m: dict, user: dict) -> dict:
             "can_act": mine, "ai": ai_planner.availability(tenant)}
 
 
-_HIDE = {"block_qids", "qids"}
+_HIDE = {"block_qids", "qids", "_since", "_st"}
 
 
 def _public_output(o: dict) -> dict:

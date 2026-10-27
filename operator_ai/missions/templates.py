@@ -94,6 +94,11 @@ ALL_Q: dict[str, Q] = {q.key: q for q in [NICHE, OFFER, PRICE, HOURS, CHANNELS, 
 
 
 # --------------------------------------------------------------------------- templates
+WARM_TASK = ("Message 20 people who already know you (past colleagues, clients, groups you're in) from your own account, "
+             "alongside the cold openers. Say who you help and what the first 30 days include, and ask for interest or one "
+             "introduction, for example: \"Quick one: I've started helping {niche} with {offer} and I'm taking on my first "
+             "clients. Do you know anyone who'd want that, or is it something you'd want yourself? No pressure either "
+             "way.\" No promised results. Mark done when they're sent.")
 _OUTREACH_CORE = [
     S("prospects", "prospect_list", "Build your prospect list", ["intake"], min=30),
     S("research", "research_fit", "Research and fit-score the best 50", ["prospects"], top=50),
@@ -129,6 +134,9 @@ _add(Template(
        label="the offer and USP lesson and quiz"),
      S("offer_doc", "offer_doc", "Write your offer document", ["offer_lesson"]),
      S("profile", "profile_assets", "Profile and bio", ["offer_doc"]),
+     # the first-client playbook: people who already know you reply far more often than strangers, so the first
+     # client usually comes from them, with the capped cold outreach running alongside
+     S("warm", "human_task", "Ask your warm network first", ["offer_doc"], task=WARM_TASK, href="#/prospects"),
      *_OUTREACH_CORE,
      S("dm_cert", "cert_gate", "DM-setting certification", ["offer_lesson"], path_key="setter", level="L1",
        label="the DM-setting certification"),
@@ -180,7 +188,7 @@ _add(Template(
     [S("intake", "intake", "Answer the planning questions"),
      S("chain", "webinar_chain", "Draft the webinar assets", ["intake"]),
      S("schedule", "webinar_schedule", "Schedule the webinar", ["chain"]),
-     S("promote", "studio_line", "Draft the promotion ads", ["chain"], line="ads"),
+     S("promote", "studio_line", "Draft the promotion ads", ["chain"], line="ads", purpose="webinar"),
      S("event", "wait_until", "Webinar day", ["schedule"], at_key="event_date", label="the webinar"),
      S("after", "human_task", "After the event", ["event"],
        task="After the event: import attendance, send the replay and hand engaged attendees to sales.",
@@ -459,4 +467,7 @@ def targets_for(tenant, template: str, answers: dict) -> dict:
     t["summary"] = (f"At the programme's benchmark rates, {goal_txt} takes about {openers:,} openers, which lead to about "
                     f"{replies:,} replies and {booked:,} booked calls. At {per_day} openers a day that's about "
                     f"{working_days:,} working days. This is a model, not a promise.")
+    if template == "first_client":  # the cold-only maths, said plainly, and where the first client usually comes from
+        t["summary"] += (" That's cold outreach alone: people who already know you reply far more often, so the plan "
+                         "starts with your warm network alongside it.")
     return t

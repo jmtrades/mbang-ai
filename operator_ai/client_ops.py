@@ -773,8 +773,13 @@ def report_body(cl: dict, b: dict, latest: dict, prev: dict, targets: dict, anal
         rows.append(f"- {METRIC_KEYS[k]}: {_fmt(k, latest[k])}" + (f" (target {_fmt(k, t)})" if t is not None else "") + delta)
     bn = analysis.get("bottleneck")
     insight = (f"The stage to fix first is {bn['label'].lower()}." if bn else
-               "No stage is below its benchmark with enough data to call it; next week we keep volume up.")
-    acts = actions_done[:3] or ["Reviewed this week's numbers"]
+               "No stage is below its benchmark with enough data to call it; next week we keep volume up." if rows else
+               "Nothing to judge yet: there are no numbers for this week.")
+    # never claim a review of numbers that don't exist (often the first report, right after the win)
+    acts = actions_done[:3] or (["Reviewed this week's numbers"] if rows else
+                                ["Set up the weekly report; the numbers start appearing here once they're recorded"])
+    nxt = _next_step(bn) if rows else ("Get this week's numbers in (the ad account connection, an Ads Manager export or a "
+                                       "quick reply with leads, calls booked and sales) so the next report can show them.")
     window = ("Ad results use your ad account's attribution setting (Meta's default is 7-day click, 1-day view)."
               if source in ("meta", "ads_csv") else "")
     src = {"meta": "the Meta Ads read connection", "ads_csv": "your Ads Manager export", "manual": "the numbers entered by hand",
@@ -784,7 +789,7 @@ def report_body(cl: dict, b: dict, latest: dict, prev: dict, targets: dict, anal
              ai_line or f"Here's your week, measured against the goal of {b['outcome']}.",
              "", "This week's numbers" + (" (DEMO)" if demo else "") + f", from {src}:", *(rows or ["- No numbers recorded this week yet"]),
              window, "", "What we did:", *[f"- {a}" for a in acts], "", "What we learned:", f"- {insight}", "",
-             "Next week:", f"- {_next_step(bn)}", "", "Reply with any questions. Numbers are what was measured, not a forecast."]
+             "Next week:", f"- {nxt}", "", "Reply with any questions. Numbers are what was measured, not a forecast."]
     return "\n".join(l for l in lines if l is not None).replace("\n\n\n", "\n\n")
 
 
@@ -928,6 +933,17 @@ def due(cl: dict, now: float | None = None) -> bool:
     return (cl.get("last_report_at") or 0) < _today_start(now)
 
 
+def week_report(tenant, client_id: int, now: float | None = None) -> int | None:
+    """This week's weekly report for a client (drafted, approved or sent; not rejected), if there is one. The loop here
+    and a weekly-report mission both ask first, so a client gets one weekly report a week, not two."""
+    with tenant.db() as c:
+        r = c.execute("SELECT id FROM queue WHERE kind='client_report' AND json_extract(meta,'$.client_id')=? AND "
+                      "json_extract(meta,'$.report')='weekly' AND json_extract(meta,'$.period_start')=? AND "
+                      "status NOT IN ('rejected','cancelled') ORDER BY id DESC LIMIT 1",
+                      (client_id, _week_start(now))).fetchone()
+    return r[0] if r else None
+
+
 def tick(tenant, now: float | None = None) -> dict:
     """Per-tenant tick (scheduler.TENANT_TICKS): runs the weekly loop for every client due today."""
     now = now or time.time()
@@ -936,7 +952,7 @@ def tick(tenant, now: float | None = None) -> dict:
             "SELECT * FROM clients WHERE status IN ('onboarding','active')"))]
     ran, failed = [], []
     for cl in rows:
-        if not due(cl, now):
+        if not due(cl, now) or week_report(tenant, cl["id"], now):
             continue
         try:
             ran.append(weekly_ops(tenant, cl["id"], now=now)["run_id"])

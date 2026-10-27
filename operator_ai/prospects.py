@@ -1558,7 +1558,10 @@ def _clean_body(text: str | None) -> str:
 
 
 def draft_openers_bulk(tenant, user: dict, channel: str = "instagram_dm", ids: list[int] | None = None,
-                       list_name: str | None = None, limit: int = 20, seed: int | None = None) -> dict:
+                       list_name: str | None = None, limit: int = 20, seed: int | None = None,
+                       move: str | None = None) -> dict:
+    """`move` is a preferred opener style (a mission's confirmed plan change): used for every prospect it fits,
+    the chooser picks for the rest."""
     if channel not in CHANNELS:
         raise ProspectError(422, "Choose Instagram DM or email")
     actor = _actor(user)
@@ -1580,6 +1583,7 @@ def draft_openers_bulk(tenant, user: dict, channel: str = "instagram_dm", ids: l
             rows = [_decode(dict(r)) for r in c.execute(sql, args)]
         run.note("pick", {"channel": channel, "limit": limit}, {"candidates": len(rows)}, label="Pick prospects by fit")
         queued, skipped = [], []
+        in_batch: dict[str, int] = {}  # styles already drafted in this batch: a block never sends one text five times
         for p in rows:
             if len(queued) >= limit:
                 break
@@ -1596,7 +1600,12 @@ def draft_openers_bulk(tenant, user: dict, channel: str = "instagram_dm", ids: l
                 skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": "Daily cap reached"})
                 continue
             variants = [v for v in opener_variants(tenant, p, channel) if v["available"]]
-            pick = choose_move(tenant, p["owner_user_id"], [v["move"] for v in variants], CHANNELS[channel], rng)
+            if move and any(x["move"] == move for x in variants):
+                pick = {"move": move}
+            else:
+                pick = choose_move(tenant, p["owner_user_id"], [v["move"] for v in variants], CHANNELS[channel], rng,
+                                   in_flight=in_batch)
+            in_batch[pick["move"]] = in_batch.get(pick["move"], 0) + 1
             v = next(x for x in variants if x["move"] == pick["move"])
             item = _queue_touch(tenant, p, channel, "opener", v["text"], f"{MOVE_LABELS[v['move']]} opener to {p['name']}",
                                 actor, run.id, move=v["move"],
@@ -1683,15 +1692,18 @@ def move_stats(tenant, owner_id: int | None = None, family: str | None = None) -
     return out
 
 
-def choose_move(tenant, owner_id: int, available: list[str], family: str = "dm", rng: random.Random | None = None) -> dict:
-    """Explore until every available style has the minimum number of sends, then Thompson sampling on reply rate."""
+def choose_move(tenant, owner_id: int, available: list[str], family: str = "dm", rng: random.Random | None = None,
+                in_flight: dict | None = None) -> dict:
+    """Explore until every available style has the minimum number of sends, then Thompson sampling on reply rate.
+    `in_flight` counts styles already drafted but not sent yet (a batch being drafted): exploring spreads over them
+    instead of giving every prospect in a block the same message."""
     if not available:
         return {"move": None, "how": "none", "why": "No opener style is available for this prospect yet"}
     stats = {s["move"]: s for s in move_stats(tenant, owner_id, family)}
     need = min_sample(tenant)
     thin = [m for m in available if stats[m]["sent"] < need]
     if thin:
-        pick = min(thin, key=lambda m: (stats[m]["sent"], MOVES.index(m)))
+        pick = min(thin, key=lambda m: (stats[m]["sent"] + (in_flight or {}).get(m, 0), MOVES.index(m)))
         return {"move": pick, "how": "explore",
                 "why": f"Still learning: each style needs {need} sends before the picker favours the best one"}
     rng = rng or random.Random()
