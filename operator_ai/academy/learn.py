@@ -8,6 +8,9 @@ from .. import config, db, guardrails, llm
 from . import certify, common, quiz, srs, team
 
 
+MASTERY_REPEAT_S = 20 * 3600
+
+
 def _names(tenant) -> list[str]:
     return guardrails.tenant_banned_names(tenant)
 
@@ -101,12 +104,22 @@ def answer(tenant, user: dict, item_id: int, given, ms: int | None = None, conte
     with tenant.db() as c:
         prior = c.execute("SELECT COUNT(*) FROM academy_attempts WHERE user_id=? AND quiz_item_id=? AND correct=1",
                           (user["id"], item_id)).fetchone()[0]
+        last = c.execute("SELECT MAX(created) FROM academy_attempts WHERE user_id=? AND quiz_item_id=? AND "
+                         "COALESCE(context,'quiz')!='exam'", (user["id"], item_id)).fetchone()[0]
         c.execute("INSERT INTO academy_attempts(user_id,quiz_item_id,answer,correct,created,ms,context,session_id,chosen_option,score) "
                   "VALUES(?,?,?,?,?,?,?,?,?,?)",
                   (user["id"], item_id, db.jdump(given)[:4000], 1 if g["correct"] else 0, db.now(), ms, context,
                    (session_id or "")[:80] or None, g["chosen_option"], g["score"]))
     outcome = g["score"] / 100.0 if it["kind"] == "write" else (1.0 if g["correct"] else 0.0)
-    mast = srs.update_mastery(tenant, user["id"], it["skill"], item_id, outcome)
+    # Mastery moves once per question per day: the answer is shown after the first try, so answering the same
+    # question again straight away measures nothing (and would let anyone pump their way to a certificate).
+    if last is None or time.time() - float(last) >= MASTERY_REPEAT_S:
+        mast = {**srs.update_mastery(tenant, user["id"], it["skill"], item_id, outcome), "counted": True}
+    else:
+        cur = srs.mastery(tenant, user["id"]).get(it["skill"] or "general")
+        mast = {"skill": it["skill"], "theta": cur["theta"] if cur else 0.0, "chance": cur["chance"] if cur else 0.5,
+                "n": cur["n"] if cur else 0, "counted": False,
+                "note": "You already answered this one today, so it doesn't change your skill score until tomorrow."}
     review = None
     if it["kind"] != "write":
         card = srs.card_for(tenant, user["id"], "quiz", item_id)

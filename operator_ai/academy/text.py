@@ -242,14 +242,25 @@ def answer_tokens(text: str) -> set[str]:
     return toks
 
 
+MAX_EXTRA_TOKENS = 3
+
+
 def same_answer(given: str, expected: str, accept: list[str] | None = None) -> bool:
     """Free-text answer match: identical numbers (unit may be omitted), or the expected key tokens all present
-    (synonyms count)."""
+    (synonyms count).
+
+    A shotgun answer never matches: one that lists several different numbers ("1 2 3 ... 400 hours"), runs far
+    longer than the answer, or pads the right term with a pile of other words (pasting the whole lesson)."""
     cands = [expected] + list(accept or [])
     g = norm_cmp(words_to_digits(given))
     if not g:
         return False
+    longest = max((len(str(c or "").split()) for c in cands), default=1)
+    if len(g.split()) > max(8, 3 * longest):
+        return False
     gq = find_quantities(words_to_digits(given))
+    if len({q["value"] for q in gq}) > 1:
+        return False
     for exp in cands:
         eq = find_quantities(words_to_digits(exp))
         if eq:
@@ -273,6 +284,7 @@ def same_answer(given: str, expected: str, accept: list[str] | None = None) -> b
                 continue
             ok = False
             break
-        if ok:
+        extra = [x for x in gt if x not in et and not any(x in syn.get(t, []) or t in syn.get(x, []) for t in et)]
+        if ok and len(extra) <= MAX_EXTRA_TOKENS:
             return True
     return False

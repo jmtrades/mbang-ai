@@ -294,15 +294,22 @@ def drill_cards(tenant, user_id: int) -> list[dict]:
                        (o or {}).get("reps", 0), (o or {}).get("due") or now, (o or {}).get("last_grade")))
         cards = {r["item_id"]: dict(r) for r in c.execute(
             "SELECT * FROM academy_review WHERE user_id=? AND item_kind='drill'", (user_id,))}
+    from .certify import exam_open
+
+    closed = exam_open(tenant, user_id)  # closed-book while a certification exam is open
     out = []
     for d in drills:
         card = cards.get(d["id"])
         if card is None:
             continue
-        out.append({"card_id": card["id"], "drill_id": d["id"], "objection": d["objection"], "answer": d["answer"],
-                    "citation": db.jload(d["citation"], None), "due": card["due"], "is_due": card["due"] <= now,
-                    "interval_days": card["interval"], "reps": card["reps"]})
+        out.append({"card_id": card["id"], "drill_id": d["id"], "objection": d["objection"],
+                    "answer": EXAM_PAUSED if closed else d["answer"],
+                    "citation": None if closed else db.jload(d["citation"], None), "due": card["due"],
+                    "is_due": card["due"] <= now, "interval_days": card["interval"], "reps": card["reps"]})
     return sorted(out, key=lambda x: x["due"])
+
+
+EXAM_PAUSED = "Course answers are paused while your certification exam is open. Submit the exam first."
 
 
 def grade_drill(tenant, user_id: int, card_id: int, g: int) -> dict:

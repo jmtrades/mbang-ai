@@ -188,7 +188,7 @@ export function QuestionCard({ item, context = "quiz", onAnswered, sessionId, ex
             {item.kind === "write" ? `Score ${Math.round(res.score)} / 100${res.correct ? " — passes" : " — not yet"}` : res.correct ? "Right" : "Not quite"}
           </p>
           {!res.correct && res.answer && item.kind !== "write" && (
-            <p>The course answer: <b>{Array.isArray(res.answer) ? res.answer.join(" → ") : res.answer}</b></p>
+            <p>{item.kind === "spot" ? "The line that breaks the rules: " : "The course answer: "}<b>{Array.isArray(res.answer) ? res.answer.join(" → ") : res.answer}</b></p>
           )}
           {res.explanation && <p className="break-words text-muted">{res.explanation}</p>}
           {res.citation && <Citations items={[res.citation]} />}
@@ -205,7 +205,8 @@ export function QuestionCard({ item, context = "quiz", onAnswered, sessionId, ex
           {res.feedback?.citations?.length > 0 && <Citations items={res.feedback.citations} />}
           {res.feedback && <FlagList flags={res.feedback.flags} />}
           <p className="text-xs text-muted">
-            {res.mastery && <>Chance on a typical {item.skill_label || "question"} question now: {pct(res.mastery.chance)}. </>}
+            {res.mastery && res.mastery.counted !== false && <>Chance on a typical {item.skill_label || "question"} question now: {pct(res.mastery.chance)}. </>}
+            {res.mastery?.counted === false && res.mastery.note && <>{res.mastery.note} </>}
             {res.review && <>Next review in {res.review.interval_days} day{res.review.interval_days === 1 ? "" : "s"}. </>}
             {res.awarded?.length > 0 && <b className="text-good">New certificate earned. </b>}
           </p>

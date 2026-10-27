@@ -78,10 +78,19 @@ def _rng(key: str) -> random.Random:
     return random.Random(int(common.sha(key, 12), 16))
 
 
-def _pool(norm_key: str, kind: str) -> str:
+def source_key(cite: dict | None, fallback: str = "") -> str:
+    """The source line(s) a question is built from. Every question from one line shares a pool and an exam
+    draws at most one question per line, so no practice question (whose answer is shown after one try) and
+    no other exam question ever hands out an exam answer."""
+    if cite and cite.get("file"):
+        return f"{cite['file']}|{cite.get('lines') or ''}"
+    return fallback
+
+
+def _pool(src_key: str, kind: str) -> str:
     if kind == "write":
         return "practice"
-    return "exam" if int(norm_key[:8], 16) % 10 < 4 else "practice"
+    return "exam" if int(common.sha("pool|" + src_key, 8), 16) % 10 < 4 else "practice"
 
 
 def _cite(L: dict, cite_id: str) -> dict | None:
@@ -95,7 +104,7 @@ def _item(kind: str, prompt: str, answer, *, L: dict, cite: dict | None, explana
     nk = common.sha(kind + "|" + T.norm_cmp(prompt) + "|" + T.norm_cmp(str(answer)), 24)
     return {"kind": kind, "prompt": prompt, "answer": answer, "options": options, "accept": accept or [],
             "explanation": explanation, "citation": cite, "skill": skill or L["skill"], "norm_key": nk,
-            "pool": _pool(nk, kind), "generator": generator or f"rules:{kind}:v1", "difficulty_b": START_B[kind],
+            "pool": _pool(source_key(cite, nk), kind), "generator": generator or f"rules:{kind}:v1", "difficulty_b": START_B[kind],
             "checks": checks or {}, "quotable": quotable}
 
 
@@ -465,8 +474,9 @@ def generate(tenant, idx, secs, lessons: list[dict], objections: list[dict]) -> 
             if it["checks"].get("answer_in_source") is False:
                 continue
             # A3: a right answer is never text the guardrails would block ("following up" out of context)
-            if it["kind"] not in ("spot", "write", "tf") and guardrails.blocked(guardrails.check(
-                    " ".join(it["answer"]) if isinstance(it["answer"], list) else str(it["answer"]), "plain")):
+            ans = " ".join(it["answer"]) if isinstance(it["answer"], list) else str(it["answer"])
+            if it["kind"] not in ("spot", "write", "tf") and guardrails.blocked(
+                    guardrails.check_for(tenant, ans, {}) if tenant is not None else guardrails.check(ans, "plain")):
                 continue
             seen.add(it["norm_key"])
             kept.append(it)
@@ -482,6 +492,14 @@ def generate(tenant, idx, secs, lessons: list[dict], objections: list[dict]) -> 
                         mixed.append(by_kind[k].pop(0))
             kept = mixed
         out[L["key"]] = kept
+    # Questions that always stay in practice (write-it) show their cited line once answered: every question
+    # on that line stays in practice too, so the exam pool never shares a line with a practice question.
+    practice_only = {source_key(it["citation"], it["norm_key"]) for items in out.values() for it in items
+                     if it["kind"] == "write"}
+    for items in out.values():
+        for it in items:
+            if it["pool"] == "exam" and source_key(it["citation"], it["norm_key"]) in practice_only:
+                it["pool"] = "practice"
     return out
 
 

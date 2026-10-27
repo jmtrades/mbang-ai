@@ -437,7 +437,14 @@ def order_lessons(lessons: list[dict]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- 5. assemble
-def assemble(sec: Section, kps: list[Candidate], examples: list[Candidate], mistakes: list[Candidate]) -> dict:
+def _blocked(tenant, text: str) -> list[dict] | None:
+    """Block flags for a sentence (the tenant's banned names, words and feature rules when we know the tenant)."""
+    flags = guardrails.check_for(tenant, text, {}) if tenant is not None else guardrails.check(text, "plain")
+    return [f for f in flags if f["severity"] == "block"] or None
+
+
+def assemble(sec: Section, kps: list[Candidate], examples: list[Candidate], mistakes: list[Candidate],
+             tenant=None, skipped: list[dict] | None = None) -> dict:
     cites: list[dict] = []
     by_line: dict[int, str] = {}
 
@@ -455,7 +462,13 @@ def assemble(sec: Section, kps: list[Candidate], examples: list[Candidate], mist
     if not ex and sec.example_lines:
         for n, t in sec.example_lines[:2]:
             for s in T.sentences(t)[:1]:
-                if guardrails.blocked(guardrails.check(s, "plain")):
+                bad = _blocked(tenant, s)
+                if bad:
+                    if skipped is not None:
+                        code = bad[0]["code"]
+                        label = content_policy.TACTIC_NAMES.get(code, code.replace("_", " "))
+                        skipped.append({"file": sec.file, "line": n, "code": code, "text": s[:300],
+                                        "label": f"Skipped: {label} (line {n})"})
                     continue
                 ex.append({"text": s, "cite": cite(Candidate(s, n, 0, 0)), "line": n})
     mk = [{"text": c.text, "cite": cite(c), "line": c.line} for c in mistakes]
@@ -475,7 +488,7 @@ AI_SYSTEM = ("You write short training lessons for a coaching programme. Use ONL
 _CITE = re.compile(r"\[(S\d+)\]")
 
 
-def check_explainer(text: str, lesson: dict) -> tuple[bool, list[str]]:
+def check_explainer(text: str, lesson: dict, tenant=None) -> tuple[bool, list[str]]:
     from ..agents import coach
 
     allowed = {c["id"] for c in lesson["citations"]}
@@ -502,7 +515,7 @@ def check_explainer(text: str, lesson: dict) -> tuple[bool, list[str]]:
             if not any(abs(x["value"] - q["value"]) < 1e-9 for x in T.find_quantities(T.words_to_digits(cited))):
                 problems.append("a number is not in the cited line")
                 break
-    if guardrails.blocked(guardrails.check(_CITE.sub("", clean), "plain")):
+    if _blocked(tenant, _CITE.sub("", clean)):
         problems.append("guardrails")
     return (not problems), problems
 
@@ -517,7 +530,7 @@ def ai_explainer(tenant, lesson: dict, run) -> None:
     except llm.AIUnavailable as e:
         lesson["checks"]["ai"] = f"not used: {e.reason}"
         return
-    ok, problems = check_explainer(out["text"], lesson)
+    ok, problems = check_explainer(out["text"], lesson, tenant)
     if ok:
         lesson["body"] = out["text"].strip()
         lesson["gen_mode"] = out.get("mode", "live")
@@ -533,7 +546,7 @@ OBJECTION = re.compile(
     r"(?P<verb>says?|tells? you|asks?|needs? to|wants? to)\s+(?P<x>[^,]{3,80}),\s*(?P<y>.+)$", re.I)
 
 
-def extract_objections(sections: list[Section], skipped: list[dict] | None = None) -> list[dict]:
+def extract_objections(sections: list[Section], skipped: list[dict] | None = None, tenant=None) -> list[dict]:
     """'When someone says X, Y' -> {objection: X, answer: Y (+ the next sentence on that line), file, line}."""
     out, seen = [], set()
     for sec in sections:
@@ -556,7 +569,7 @@ def extract_objections(sections: list[Section], skipped: list[dict] | None = Non
                 answer = y if len(sents) <= i + 1 else f"{y} {sents[i + 1]}"
                 if len(y.split()) < 3:
                     continue
-                if guardrails.blocked(guardrails.check(answer, "plain")):
+                if _blocked(tenant, answer):
                     if skipped is not None:
                         skipped.append({"file": sec.file, "line": n, "code": "objection_answer",
                                         "text": answer[:300], "label": f"Skipped: unsafe objection answer (line {n})"})
@@ -574,17 +587,21 @@ _obj_cache: dict[str, list[dict]] = {}
 
 
 def objections_for(tenant) -> list[dict]:
-    """Objection pairs from the tenant's material (cached per index), used by call_review.make_drill."""
+    """Objection pairs from the tenant's material (cached per index), used by call_review.make_drill. Never from
+    the fictional fixture material outside the demo (A0)."""
+    if not common.material_state(tenant)["ok"]:
+        return []
     try:
         idx = index.for_tenant(tenant)
     except Exception:  # noqa: BLE001
         return []
-    if idx.key in _obj_cache:
-        return _obj_cache[idx.key]
+    ck = f"{getattr(tenant, 'id', '')}|{idx.key}"  # per tenant: banned names and rules differ
+    if ck in _obj_cache:
+        return _obj_cache[ck]
     secs = all_sections(idx)
     tag_skills(secs, idx.idf)
-    res = extract_objections(secs)
-    _obj_cache[idx.key] = res
+    res = extract_objections(secs, None, tenant)
+    _obj_cache[ck] = res
     return res
 
 
@@ -721,7 +738,7 @@ def _build(tenant, run: runtime.Run, build_id: int, state: dict) -> dict:
             if len(kps) < 2:
                 thin.append({"file": sec.file, "title": sec.title, "label": "Too little to teach from"})
                 continue
-            lessons.append(assemble(sec, kps, ex, mk))
+            lessons.append(assemble(sec, kps, ex, mk, tenant, skipped))
         return lessons
 
     lessons = run.step("key_points", {"sections": len(secs)}, _points, "Pick key points (guardrail-screened)")
@@ -738,7 +755,7 @@ def _build(tenant, run: runtime.Run, build_id: int, state: dict) -> dict:
         return {"lessons": len(lessons), "mode": run.ai_mode}
 
     run.step("write", {}, _write, "Write lessons (rules; AI optional)")
-    objections = extract_objections(secs, skipped)
+    objections = extract_objections(secs, skipped, tenant)
     items = run.step("quiz", {"lessons": len(lessons)}, lambda: quiz.generate(tenant, idx, secs, lessons, objections),
                      "Generate quiz items")
     drills_new = run.step("drills", {"pairs": len(objections)}, lambda: upsert_drills(tenant, objections),

@@ -215,7 +215,7 @@ export function TodayTab({ data, reload, openLesson, setTab }: { data: any; relo
     <div className="space-y-4" data-testid="academy-today">
       {data.exam_open && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          You have a certification exam open. The Student Coach is paused until you submit it.{" "}
+          You have a certification exam open. The Student Coach, lessons and practice answers are paused until you submit it.{" "}
           <button className="font-semibold underline" onClick={() => setTab("certs")}>Go to the exam</button>
         </div>
       )}
@@ -227,7 +227,7 @@ export function TodayTab({ data, reload, openLesson, setTab }: { data: any; relo
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Today's reviews" subtitle="Short recall questions that come back just before you'd forget them.">
           {data.reviews_due > 0 ? (
-            <Button tone="primary" onClick={() => setReviewing(true)}><Repeat className="size-4" /> Start {data.session.review_count} reviews</Button>
+            <Button tone="primary" onClick={() => setReviewing(true)} disabled={data.exam_open}><Repeat className="size-4" /> Start {data.session.review_count} reviews</Button>
           ) : (
             <p className="text-sm text-muted">Nothing due. Finish a lesson and its questions start coming back from tomorrow.</p>
           )}
@@ -243,7 +243,8 @@ export function TodayTab({ data, reload, openLesson, setTab }: { data: any; relo
             <div className="space-y-2">
               <p className="break-words font-medium">{data.next_lesson.title}</p>
               <p className="text-xs text-muted">{data.next_lesson.path_title} · {data.next_lesson.skill_label} · about {data.next_lesson.est_minutes} min</p>
-              <Button tone="primary" onClick={() => openLesson(data.next_lesson.id)}><BookOpen className="size-4" /> Read it</Button>
+              <Button tone="primary" onClick={() => openLesson(data.next_lesson.id)} disabled={data.exam_open}><BookOpen className="size-4" /> Read it</Button>
+              {data.exam_open && <p className="text-xs text-muted">Lessons and reviews open again once you submit your exam.</p>}
             </div>
           ) : (
             <p className="text-sm text-muted">You've finished every published lesson in your paths. Practise to keep them fresh.</p>
@@ -469,7 +470,7 @@ function ExamView({ exam, onDone }: { exam: any; onDone: () => void }) {
         <span className="text-muted">{answeredN} of {exam.items.length} answered</span>
         <Button tone="primary" size="sm" onClick={submit} loading={busy}>Submit the exam</Button>
       </div>
-      <p className="text-xs text-muted">Answers are checked only when you submit. The Student Coach is paused until then.</p>
+      <p className="text-xs text-muted">Answers are checked only when you submit. The Student Coach, lessons and practice answers are paused until then.</p>
       {exam.items.map((it: PublicItem, i: number) => (
         <div key={it.id}>
           <p className="mb-1 text-xs font-semibold text-muted">Question {i + 1}</p>
@@ -484,7 +485,7 @@ function ExamView({ exam, onDone }: { exam: any; onDone: () => void }) {
 
 const LEVEL_TONE: Record<string, any> = { active: "good", expired: "warn", revoked: "bad", ready: "info", in_progress: "neutral" };
 
-export function CertificatesTab({ setTab }: { setTab: (t: string) => void }) {
+export function CertificatesTab({ setTab, examOpen = false }: { setTab: (t: string) => void; examOpen?: boolean }) {
   const { toast } = useApp();
   const { data, error, loading, reload } = useApi<any>("/academy/certs/me");
   const [exam, setExam] = useState<any>(null);
@@ -550,7 +551,7 @@ export function CertificatesTab({ setTab }: { setTab: (t: string) => void }) {
                           {c.detail && <span className="block text-xs text-muted">{c.detail}</span>}
                         </span>
                         {!c.met && c.key === "exam" && !lv.missing.some((m: any) => m.key === "previous") && (
-                          <Button size="sm" tone="primary" loading={busy === lad.path} onClick={() => startExam(lad.path)}>Start the timed exam</Button>
+                          <Button size="sm" tone="primary" loading={busy === lad.path} onClick={() => startExam(lad.path)}>{examOpen ? "Back to your open exam" : "Start the timed exam"}</Button>
                         )}
                         {!c.met && c.link && LINK[c.link] && c.key !== "exam" && (
                           <Button size="sm" tone="ghost" onClick={() => setTab(LINK[c.link])}>Go</Button>

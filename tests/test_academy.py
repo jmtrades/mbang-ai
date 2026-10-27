@@ -630,10 +630,10 @@ def test_drill_bank_seeded_at_build_not_on_read(client):
     d = tenancy.get("demo")
     cards = client.get("/t/demo/api/academy/drills").json()["cards"]
     think = next(c for c in cards if c["objection"] == "I need to think about it")
-    assert think["answer"].startswith("Ask what specifically") and think["citation"]["lines"] == "8-8"
+    assert "answer" not in think  # recall first: the list never carries the answer
     assert call_review.make_drill(d, "I need to ask my partner", "partner", "test")["answer"].endswith("both of them together.")
     a = client.get(f"/t/demo/api/academy/drills/{think['card_id']}/answer").json()
-    assert a["answer"] == think["answer"]
+    assert a["answer"].startswith("Ask what specifically") and a["citation"]["lines"] == "8-8"
     g = client.post(f"/t/demo/api/academy/review/{think['card_id']}/grade", json={"grade": 5}).json()
     assert g["interval_days"] == 1.0 and g["reps"] == 1
     assert client.get("/t/demo/api/drills").json()["cards"][0]["card_id"] in {c["card_id"] for c in cards}  # one store

@@ -82,7 +82,7 @@ export default function Academy({ query }: { query?: URLSearchParams }) {
                 <RolePlayPanel />
               </div>
             )}
-            {tab === "certs" && <CertificatesTab setTab={switchTab} />}
+            {tab === "certs" && <CertificatesTab setTab={switchTab} examOpen={!!data.exam_open} />}
             {tab === "team" && staff && <TeamTab />}
             {tab === "admin" && role === "owner" && <AdminTab />}
           </>

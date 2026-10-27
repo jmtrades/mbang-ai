@@ -3,9 +3,9 @@ learner routes for everyone, team routes for the owner and coaches (coaches only
 admin routes for the owner (coaches may read)."""
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Annotated, Literal, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from ..academy import admin, build, certify, common, learn, srs, team
@@ -13,6 +13,8 @@ from ..deps import Ctx, require
 
 router = APIRouter()
 TAB = require("academy")
+MAX_ID = 2**63 - 1  # SQLite's largest integer: a bigger id is malformed input (422), never a crash
+Id = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _staff(ctx: Ctx) -> None:
@@ -25,6 +27,13 @@ def _owner(ctx: Ctx) -> None:
         raise HTTPException(403, "Only the owner can change the Academy")
 
 
+def _closed_book(ctx: Ctx) -> None:
+    """While a certification exam is open the Academy is closed-book, like the paused coach: no lessons, no
+    practice answers and no drill answers, because every one of them shows the lines the exam asks about."""
+    if certify.exam_open(ctx.tenant, ctx.user["id"]):
+        raise HTTPException(423, "Lessons and practice are paused while your certification exam is open. Submit the exam first.")
+
+
 def _call(fn, *a, **kw):
     try:
         return fn(*a, **kw)
@@ -34,6 +43,8 @@ def _call(fn, *a, **kw):
         raise HTTPException(404, "Not found")
     except ValueError as e:
         raise HTTPException(422, str(e))
+    except OverflowError:
+        raise HTTPException(422, "That number is too large")
 
 
 # --------------------------------------------------------------------------- learner
@@ -55,17 +66,19 @@ def path(key: str, ctx: Ctx = Depends(TAB)):
 
 
 @router.get("/academy/lessons/{lesson_id}")
-def lesson(lesson_id: int, ctx: Ctx = Depends(TAB)):
+def lesson(lesson_id: Id, ctx: Ctx = Depends(TAB)):
+    _closed_book(ctx)
     return _call(learn.lesson_view, ctx.tenant, ctx.user, lesson_id)
 
 
 @router.post("/academy/lessons/{lesson_id}/complete")
-def complete(lesson_id: int, ctx: Ctx = Depends(TAB)):
+def complete(lesson_id: Id, ctx: Ctx = Depends(TAB)):
     return _call(learn.complete_lesson, ctx.tenant, ctx.user, lesson_id)
 
 
 @router.get("/academy/lessons/{lesson_id}/quiz")
-def lesson_quiz(lesson_id: int, ctx: Ctx = Depends(TAB)):
+def lesson_quiz(lesson_id: Id, ctx: Ctx = Depends(TAB)):
+    _closed_book(ctx)
     view = _call(learn.lesson_view, ctx.tenant, ctx.user, lesson_id)
     return {"lesson_id": lesson_id, "items": view["checks"] + view["write_tasks"]}
 
@@ -78,7 +91,8 @@ class AnswerBody(BaseModel):
 
 
 @router.post("/academy/items/{item_id}/answer")
-def answer(item_id: int, b: AnswerBody, ctx: Ctx = Depends(TAB)):
+def answer(item_id: Id, b: AnswerBody, ctx: Ctx = Depends(TAB)):
+    _closed_book(ctx)
     if isinstance(b.answer, str) and len(b.answer) > 4000:
         raise HTTPException(422, "Answer is too long")
     if isinstance(b.answer, list) and (len(b.answer) > 20 or any(len(x) > 300 for x in b.answer)):
@@ -91,7 +105,7 @@ class ReportBody(BaseModel):
 
 
 @router.post("/academy/items/{item_id}/report")
-def report(item_id: int, b: ReportBody, ctx: Ctx = Depends(TAB)):
+def report(item_id: Id, b: ReportBody, ctx: Ctx = Depends(TAB)):
     return _call(learn.report_item, ctx.tenant, ctx.user, item_id, b.reason)
 
 
@@ -106,18 +120,22 @@ class GradeBody(BaseModel):
 
 
 @router.post("/academy/review/{card_id}/grade")
-def review_grade(card_id: int, b: GradeBody, ctx: Ctx = Depends(TAB)):
+def review_grade(card_id: Id, b: GradeBody, ctx: Ctx = Depends(TAB)):
     """Self-grading is only for objection drills (free recall, then the course answer); questions grade themselves."""
     return _call(srs.grade_drill, ctx.tenant, ctx.user["id"], card_id, b.grade)
 
 
 @router.get("/academy/drills")
 def drills(ctx: Ctx = Depends(TAB)):
-    return {"cards": srs.drill_cards(ctx.tenant, ctx.user["id"])}
+    # the list never carries the answers: recall first, then reveal one card (GET /academy/drills/{id}/answer)
+    cards = [{k: v for k, v in c.items() if k not in ("answer", "citation")}
+             for c in srs.drill_cards(ctx.tenant, ctx.user["id"])]
+    return {"cards": cards}
 
 
 @router.get("/academy/drills/{card_id}/answer")
-def drill_answer(card_id: int, ctx: Ctx = Depends(TAB)):
+def drill_answer(card_id: Id, ctx: Ctx = Depends(TAB)):
+    _closed_book(ctx)
     for c in srs.drill_cards(ctx.tenant, ctx.user["id"]):
         if c["card_id"] == card_id:
             return {"card_id": card_id, "objection": c["objection"], "answer": c["answer"], "citation": c["citation"]}
@@ -154,16 +172,19 @@ def exam_start(b: ExamBody, ctx: Ctx = Depends(TAB)):
 
 
 @router.get("/academy/exams/{exam_id}")
-def exam_get(exam_id: int, ctx: Ctx = Depends(TAB)):
+def exam_get(exam_id: Id, ctx: Ctx = Depends(TAB)):
     return _call(certify.get_exam, ctx.tenant, ctx.user, exam_id)
 
 
+ExamAnswer = Union[Annotated[str, Field(max_length=4000)], Annotated[list[Annotated[str, Field(max_length=300)]], Field(max_length=20)]]
+
+
 class SubmitBody(BaseModel):
-    answers: dict[str, Union[str, list[str]]] = Field(default_factory=dict)
+    answers: dict[Annotated[str, Field(max_length=20)], ExamAnswer] = Field(default_factory=dict)
 
 
 @router.post("/academy/exams/{exam_id}/submit")
-def exam_submit(exam_id: int, b: SubmitBody, ctx: Ctx = Depends(TAB)):
+def exam_submit(exam_id: Id, b: SubmitBody, ctx: Ctx = Depends(TAB)):
     if len(b.answers) > 200:
         raise HTTPException(422, "Too many answers")
     return _call(certify.submit_exam, ctx.tenant, ctx.user, exam_id, b.answers)
@@ -191,6 +212,7 @@ def team_view(ctx: Ctx = Depends(TAB)):
 @router.get("/academy/team/misconceptions")
 def team_misconceptions(ctx: Ctx = Depends(TAB)):
     _staff(ctx)
+    _closed_book(ctx)
     return {"items": team.misconceptions(ctx.tenant, ctx.user)}
 
 
@@ -206,8 +228,32 @@ def team_impact(ctx: Ctx = Depends(TAB)):
     return team.impact(ctx.tenant, ctx.user)
 
 
+class ManagerBody(BaseModel):
+    manager_id: int = Field(ge=1, le=MAX_ID)
+    member_id: int = Field(ge=1, le=MAX_ID)
+
+
+@router.get("/academy/team/managers")
+def team_managers(ctx: Ctx = Depends(TAB)):
+    _owner(ctx)
+    return team.managers(ctx.tenant)
+
+
+@router.post("/academy/team/managers")
+def link_manager(b: ManagerBody, ctx: Ctx = Depends(TAB)):
+    """Owner: a coach manages this setter, closer, student or coach (team_assignments)."""
+    _owner(ctx)
+    return _call(team.link_manager, ctx.tenant, b.manager_id, b.member_id, ctx.actor)
+
+
+@router.delete("/academy/team/managers/{manager_id}/{member_id}")
+def unlink_manager(manager_id: Id, member_id: Id, ctx: Ctx = Depends(TAB)):
+    _owner(ctx)
+    return _call(team.unlink_manager, ctx.tenant, manager_id, member_id, ctx.actor)
+
+
 @router.get("/academy/team/{user_id}")
-def team_member(user_id: int, ctx: Ctx = Depends(TAB)):
+def team_member(user_id: Id, ctx: Ctx = Depends(TAB)):
     _staff(ctx)
     return _call(team.learner_detail, ctx.tenant, ctx.user, user_id)
 
@@ -218,13 +264,13 @@ class SignoffBody(BaseModel):
 
 
 @router.post("/academy/team/roleplays/{roleplay_id}/signoff")
-def roleplay_signoff(roleplay_id: int, b: SignoffBody, ctx: Ctx = Depends(TAB)):
+def roleplay_signoff(roleplay_id: Id, b: SignoffBody, ctx: Ctx = Depends(TAB)):
     _staff(ctx)
     return _call(team.signoff_roleplay, ctx.tenant, roleplay_id, ctx.user, b.score, b.note, ctx.actor)
 
 
 class AssignBody(BaseModel):
-    user_id: int = Field(ge=1)
+    user_id: int = Field(ge=1, le=MAX_ID)
     kind: Literal["lesson", "scenario", "path"]
     ref: str = Field(min_length=1, max_length=120)
     due_days: int | None = Field(None, ge=1, le=120)
@@ -234,13 +280,13 @@ class AssignBody(BaseModel):
 @router.post("/academy/assign")
 def assign(b: AssignBody, ctx: Ctx = Depends(TAB)):
     _staff(ctx)
-    if b.kind == "lesson" and not b.ref.isdigit():
+    if b.kind == "lesson" and not (b.ref.isascii() and b.ref.isdigit() and len(b.ref) <= 18):
         raise HTTPException(422, "A lesson is assigned by its id")
     return _call(team.assign, ctx.tenant, ctx.user, b.user_id, b.kind, b.ref, b.due_days, b.note, ctx.actor)
 
 
 @router.post("/academy/certs/{cert_id}/signoff")
-def cert_signoff(cert_id: int, ctx: Ctx = Depends(TAB)):
+def cert_signoff(cert_id: Id, ctx: Ctx = Depends(TAB)):
     _staff(ctx)
     return _call(certify.signoff_cert, ctx.tenant, cert_id, ctx.user, ctx.actor)
 
@@ -250,7 +296,7 @@ class RevokeBody(BaseModel):
 
 
 @router.post("/academy/certs/{cert_id}/revoke")
-def cert_revoke(cert_id: int, b: RevokeBody, ctx: Ctx = Depends(TAB)):
+def cert_revoke(cert_id: Id, b: RevokeBody, ctx: Ctx = Depends(TAB)):
     _staff(ctx)
     return _call(certify.revoke_cert, ctx.tenant, cert_id, ctx.user, b.reason, ctx.actor)
 
@@ -272,7 +318,8 @@ def admin_builds(ctx: Ctx = Depends(TAB)):
 @router.get("/academy/admin/drafts")
 def admin_drafts(status: Literal["draft", "published", "stale", "rejected", "retired"] = "draft", ctx: Ctx = Depends(TAB)):
     _staff(ctx)
-    return admin.drafts(ctx.tenant, status)
+    _closed_book(ctx)  # a coach sitting their own exam can't read the lessons here either
+    return admin.drafts(ctx.tenant, status, owner=ctx.role == "owner")
 
 
 class DecideBody(BaseModel):
@@ -280,7 +327,7 @@ class DecideBody(BaseModel):
 
 
 @router.post("/academy/admin/lessons/{lesson_id}/decide")
-def decide_lesson(lesson_id: int, b: DecideBody, ctx: Ctx = Depends(TAB)):
+def decide_lesson(lesson_id: Id, b: DecideBody, ctx: Ctx = Depends(TAB)):
     _owner(ctx)
     return _call(build.decide_lesson, ctx.tenant, lesson_id, b.decision, ctx.actor)
 
@@ -290,7 +337,7 @@ class ItemDecideBody(BaseModel):
 
 
 @router.post("/academy/admin/items/{item_id}/decide")
-def decide_item(item_id: int, b: ItemDecideBody, ctx: Ctx = Depends(TAB)):
+def decide_item(item_id: Id, b: ItemDecideBody, ctx: Ctx = Depends(TAB)):
     _owner(ctx)
     return _call(build.decide_item, ctx.tenant, item_id, b.decision, ctx.actor)
 
@@ -314,7 +361,7 @@ def check_sources(ctx: Ctx = Depends(TAB)):
 @router.get("/academy/admin/coverage")
 def admin_coverage(ctx: Ctx = Depends(TAB)):
     _staff(ctx)
-    return admin.coverage(ctx.tenant)
+    return admin.coverage(ctx.tenant, ctx.user)
 
 
 @router.get("/academy/admin/item-stats")
@@ -330,13 +377,20 @@ def admin_settings(ctx: Ctx = Depends(TAB)):
 
 
 class SettingsBody(BaseModel):
-    require_cert_for_own_outreach: bool
+    require_cert_for_own_outreach: bool | None = None
+    require_setter_cert_for_decisions: bool | None = None
 
 
 @router.put("/academy/admin/settings")
 def put_admin_settings(b: SettingsBody, ctx: Ctx = Depends(TAB)):
     _owner(ctx)
-    return admin.set_setting(ctx.tenant, b.require_cert_for_own_outreach, ctx.actor)
+    changes = {k: v for k, v in b.model_dump().items() if v is not None}
+    if not changes:
+        raise HTTPException(422, "Nothing to change")
+    out: dict = {}
+    for k, v in changes.items():
+        out.update(admin.set_setting(ctx.tenant, v, ctx.actor, k))
+    return out
 
 
 class ThresholdsBody(BaseModel):

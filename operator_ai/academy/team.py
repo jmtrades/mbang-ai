@@ -106,6 +106,9 @@ def misconceptions(tenant, viewer: dict, limit: int = 8) -> list[dict]:
     """Questions your learners miss most, with the most-chosen wrong answer."""
     ids = common.learner_ids(tenant, viewer)
     stats = quiz.item_stats(tenant)
+    if viewer["role"] != "owner":
+        # exam questions stay out of a coach's view: their answers and cited lines are the exam's answer key
+        stats = [s for s in stats if s["pool"] != "exam"]
     if ids is not None:
         # recompute on this coach's learners only
         allowed = set(ids)
@@ -153,10 +156,15 @@ def signoff_queue(tenant, viewer: dict) -> list[dict]:
         if sc.get("signoff"):
             continue
         tr = db.jload(r["transcript"], []) or []
+        # Blind grading: the rules score (and the per-criterion points that add up to it) is revealed only after
+        # the grader gives their own score. Showing it first would make "agrees within 10 points" (the coach's
+        # L3/L4 calibration evidence) a matter of copying a number.
+        crit = [{"key": c.get("key"), "label": c.get("label")} for c in (sc.get("criteria") or []) if isinstance(c, dict)]
         out.append({"id": r["id"], "user_id": r["user_id"], "name": r["display"], "scenario": r["scenario_key"],
-                    "total": sc.get("total"), "compliance_flags": sc.get("compliance_flags", 0),
-                    "criteria": sc.get("criteria", []), "mode": sc.get("mode"), "updated": r["updated"],
-                    "transcript": tr[-40:] if isinstance(tr, list) else str(tr)[:4000]})
+                    "compliance_flags": sc.get("compliance_flags", 0), "criteria": crit, "mode": sc.get("mode"),
+                    "updated": r["updated"], "has_rules_score": sc.get("total") is not None,
+                    "transcript": [{k: t.get(k) for k in ("speaker", "role", "text", "content") if k in t}
+                                   for t in tr[-40:] if isinstance(t, dict)] if isinstance(tr, list) else str(tr)[:4000]})
     return out[:50]
 
 
@@ -190,6 +198,14 @@ def assign(tenant, viewer: dict, user_id: int, kind: str, ref: str, due_days: in
     learner = common.user_row(tenant, user_id)
     if learner is None or not learner["active"] or user_id == viewer["id"] or not common.can_see(tenant, viewer, user_id):
         raise KeyError(user_id)
+    free_text = " ".join(x for x in (note.strip(), ref.strip() if kind == "scenario" else "") if x)
+    if free_text:
+        # the note shows in the learner's Today tab straight away, so it passes the guardrails here, not only
+        # in the approval queue (a held coach_note must not reach the learner another way)
+        flags = guardrails.check_for(tenant, free_text, {})
+        if guardrails.blocked(flags):
+            raise common.Refused("The note breaks a rule: " + "; ".join(f["message"] for f in flags if f["severity"] == "block"),
+                                 422)
     due = time.time() + due_days * common.DAY if due_days else None
     label = ref
     if kind == "lesson":
@@ -245,29 +261,53 @@ def _pearson(xs: list[float], ys: list[float]) -> float | None:
     return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / (sx * sy)
 
 
+MIN_SENT_FOR_RATE = 5
+
+
+def _outreach_counts(tenant) -> tuple[dict[int, int], dict[int, int]]:
+    """Real sends (item_sent) and prospect or lead replies (reply_received) per owner_user_id, from the event log."""
+    sent: dict[int, int] = {}
+    replies: dict[int, int] = {}
+    with tenant.db() as c:
+        for r in c.execute("SELECT name, payload FROM app_events WHERE name IN ('item_sent','reply_received')"):
+            p = db.jload(r["payload"], {}) or {}
+            uid = p.get("owner_user_id") if isinstance(p, dict) else None
+            if not isinstance(uid, int):
+                continue
+            if r["name"] == "item_sent":
+                sent[uid] = sent.get(uid, 0) + 1
+            elif p.get("party_type") in ("prospect", "lead"):
+                replies[uid] = replies.get(uid, 0) + 1
+    return sent, replies
+
+
 def impact(tenant, viewer: dict) -> dict:
     """Mastery next to outcomes already in the database. A correlation with its n; never a promise."""
     rows = []
+    sent, replies = _outreach_counts(tenant)
     for u in _learners(tenant, viewer):
         m = srs.mastery(tenant, u["id"])
         if not m:
             continue
         mast = sum(v["chance"] for v in m.values()) / len(m)
         out = {"id": u["id"], "mastery": mast}
+        if sent.get(u["id"], 0) >= MIN_SENT_FOR_RATE:
+            out["reply_rate"] = min(1.0, replies.get(u["id"], 0) / sent[u["id"]])
         with tenant.db() as c:
             if u.get("student_id"):
                 r = c.execute("SELECT SUM(calls_booked) b, SUM(calls_showed) s FROM checkins WHERE student_id=?",
                               (u["student_id"],)).fetchone()
                 if r and r["b"]:
                     out["show_rate"] = (r["s"] or 0) / r["b"]
-            names = (u["username"], u["display"] or "")
+            names = (u["username"], u["display"] or u["username"])  # never match calls with an empty rep
             revs = [float((db.jload(x["review"], {}) or {}).get("overall") or 0) for x in c.execute(
                 "SELECT review FROM calls WHERE status='reviewed' AND rep IN (?,?)", names)]
             if revs:
                 out["call_review"] = sum(revs) / len(revs)
         rows.append(out)
     metrics = []
-    for key, label in (("show_rate", "Show rate on booked calls"), ("call_review", "Call review score")):
+    for key, label in (("reply_rate", "Reply rate on their own outreach"), ("show_rate", "Show rate on booked calls"),
+                       ("call_review", "Call review score")):
         pts = [(r["mastery"], r[key]) for r in rows if key in r]
         r = _pearson([p[0] for p in pts], [p[1] for p in pts])
         metrics.append({"key": key, "label": label, "n": len(pts), "r": None if r is None else round(r, 2),
@@ -291,3 +331,50 @@ def learner_detail(tenant, viewer: dict, user_id: int) -> dict:
     return {"user": {"id": u["id"], "name": u["display"] or u["username"], "role": u["role"]},
             "mastery": list(srs.mastery(tenant, user_id).values()), "ladders": ladders, "recent": recent,
             "assignments": assignments_for(tenant, user_id)}
+
+
+# --------------------------------------------------------------------------- managers (team_assignments)
+MANAGER_ROLES = ("coach",)
+MEMBER_ROLES = ("setter", "closer", "student", "coach")
+
+
+def managers(tenant) -> dict:
+    """Who manages whom: setters and closers have no students.coach_id, so the owner links them to a coach
+    here (team_assignments). The coach then sees their training in the Team tab, and only theirs."""
+    with tenant.db() as c:
+        links = db.rows(c.execute(
+            "SELECT t.manager_id, t.member_id, t.created, m.display manager_name, u.display member_name, u.role member_role "
+            "FROM team_assignments t JOIN users m ON m.id=t.manager_id JOIN users u ON u.id=t.member_id "
+            "WHERE m.active=1 AND u.active=1 ORDER BY m.display, u.display"))
+        people = db.rows(c.execute("SELECT id, display, username, role FROM users WHERE active=1 AND role!='owner' "
+                                   "ORDER BY role, display"))
+    return {"links": links,
+            "managers": [{"id": p["id"], "name": p["display"] or p["username"]} for p in people if p["role"] in MANAGER_ROLES],
+            "members": [{"id": p["id"], "name": p["display"] or p["username"], "role": p["role"]} for p in people
+                        if p["role"] in MEMBER_ROLES]}
+
+
+def link_manager(tenant, manager_id: int, member_id: int, actor: str) -> dict:
+    mgr, mem = common.user_row(tenant, manager_id), common.user_row(tenant, member_id)
+    if mgr is None or mem is None or not mgr["active"] or not mem["active"]:
+        raise KeyError(member_id)
+    if manager_id == member_id:
+        raise common.Refused("Someone can't manage themselves.", 422)
+    if mgr["role"] not in MANAGER_ROLES:
+        raise common.Refused("Only a coach can manage people's training.", 422)
+    if mem["role"] not in MEMBER_ROLES:
+        raise common.Refused("The owner already sees everyone; pick a coach, setter, closer or student.", 422)
+    with tenant.db() as c:
+        c.execute("INSERT OR IGNORE INTO team_assignments(manager_id,member_id,created) VALUES(?,?,?)",
+                  (manager_id, member_id, db.now()))
+    audit.log(tenant, actor, "settings", {"academy_manager": manager_id, "member": member_id, "linked": True})
+    return {"manager_id": manager_id, "member_id": member_id, "linked": True}
+
+
+def unlink_manager(tenant, manager_id: int, member_id: int, actor: str) -> dict:
+    with tenant.db() as c:
+        n = c.execute("DELETE FROM team_assignments WHERE manager_id=? AND member_id=?", (manager_id, member_id)).rowcount
+    if not n:
+        raise KeyError(member_id)
+    audit.log(tenant, actor, "settings", {"academy_manager": manager_id, "member": member_id, "linked": False})
+    return {"manager_id": manager_id, "member_id": member_id, "linked": False}

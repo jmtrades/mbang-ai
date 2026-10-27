@@ -18,7 +18,7 @@ from __future__ import annotations
 import random
 import time
 
-from .. import audit, auth, db, events, guardrails, queue
+from .. import audit, auth, db, events, guardrails, queue, textnorm
 from . import common, quiz, srs
 
 DM_KINDS = ("dm", "dm_opener", "prospect_dm", "followup", "booking_dm", "setter_reply")
@@ -194,6 +194,24 @@ def _graded_by(tenant, grader: dict) -> list[dict]:
     return out
 
 
+SAME_ANSWER_JACCARD = 0.6
+
+
+def distinct_answers(texts: list) -> int:
+    """How many genuinely different write-it answers there are: an answer whose words overlap an already
+    counted one by 60% or more (Jaccard) is the same answer again, so a case change, an emoji or one swapped
+    word never turns one good draft into five."""
+    kept: list[set[str]] = []
+    for t in texts:
+        toks = set(textnorm.tokens(t if isinstance(t, str) else str(t or ""), keep_stop=True))
+        if not toks:
+            continue
+        if any(len(toks & k) / len(toks | k) >= SAME_ANSWER_JACCARD for k in kept):
+            continue
+        kept.append(toks)
+    return len(kept)
+
+
 def _crit(key: str, label: str, met: bool, have, need, detail: str = "", link: str | None = None) -> dict:
     if need == "yes":
         progress = "done" if have == "yes" else "not yet"
@@ -253,7 +271,7 @@ def criteria(tenant, user: dict, path_key: str, level: str) -> list[dict]:
             rows = c.execute("SELECT a.answer FROM academy_attempts a JOIN academy_quiz_items i ON i.id=a.quiz_item_id "
                              "WHERE a.user_id=? AND i.kind='write' AND a.score>=? AND a.created>?",
                              (uid, th["write_score"], since)).fetchall()
-        n = len({common.sha((r["answer"] or "").strip().lower()) for r in rows})
+        n = distinct_answers([db.jload(r["answer"], r["answer"]) for r in rows])
         out.append(_crit("write_items", f"{th['write_items']} write-it answers scoring {th['write_score']}+", n >= th["write_items"],
                          n, th["write_items"], "", "practice"))
     elif level == "L3":
@@ -306,12 +324,12 @@ def _real_work(tenant, user: dict, path_key: str, th: dict, since: float) -> dic
     if path_key == "closer":
         from .. import call_review
 
-        names = {user["username"], user.get("display") or ""}
+        names = {n.strip() for n in (user["username"], user.get("display") or "") if n and n.strip()}
         with tenant.db() as c:
             rows = c.execute("SELECT id, rep, review, created FROM calls WHERE status='reviewed' AND created>?", (since,)).fetchall()
         scores = []
         for r in rows:
-            if r["rep"] not in names:
+            if (r["rep"] or "").strip() not in names:
                 continue
             try:
                 if not call_review.consent_status(tenant, r["id"])["complete"]:
@@ -486,11 +504,41 @@ def exam_open(tenant, user_id: int) -> bool:
 
 
 def exam_pool(tenant, path: dict) -> list[int]:
+    return [i for g in exam_groups(tenant, path) for i in g]
+
+
+def exam_groups(tenant, path: dict) -> list[list[int]]:
+    """Approved exam questions for a path, grouped by the source line they test. An exam takes at most one
+    question per group, so two questions never give each other away."""
     with tenant.db() as c:
-        return [r["id"] for r in c.execute(
-            "SELECT i.id FROM academy_quiz_items i JOIN academy_lessons l ON l.id=i.lesson_id WHERE i.pool='exam' AND "
-            "i.status='published' AND l.status='published' AND i.kind!='write' AND i.skill IN (%s) ORDER BY i.id" %
-            ",".join("?" * len(path["skills"])), path["skills"])]
+        rows = c.execute(
+            "SELECT i.id, i.citation, i.norm_key FROM academy_quiz_items i JOIN academy_lessons l ON l.id=i.lesson_id "
+            "WHERE i.pool='exam' AND i.status='published' AND l.status='published' AND i.kind!='write' AND i.skill IN (%s) "
+            "ORDER BY i.id" % ",".join("?" * len(path["skills"])), path["skills"]).fetchall()
+    groups: dict[str, list[int]] = {}
+    for r in rows:
+        key = quiz.source_key(db.jload(r["citation"], None), r["norm_key"] or str(r["id"]))
+        groups.setdefault(key, []).append(r["id"])
+    return list(groups.values())
+
+
+EXAM_GRACE_S = 60
+
+
+def close_expired_exams(tenant, user_id: int) -> int:
+    """An exam left open past its deadline (plus a minute's grace) is a failed attempt: score 0, status 'expired',
+    submitted at the deadline. Without this, opening an exam, reading every question and walking away would
+    hand out a fresh sample with no retake cooldown."""
+    now = time.time()
+    with tenant.db() as c:
+        rows = c.execute("SELECT id, deadline FROM academy_exams WHERE user_id=? AND submitted IS NULL AND deadline<?",
+                         (user_id, now - EXAM_GRACE_S)).fetchall()
+        for r in rows:
+            c.execute("UPDATE academy_exams SET submitted=?, score=0, status='expired', answers=? WHERE id=? AND submitted IS NULL",
+                      (r["deadline"], db.jdump({"answered": 0, "expired": True}), r["id"]))
+    for r in rows:
+        audit.log(tenant, "system", "run", {"academy_exam": r["id"], "status": "expired"})
+    return len(rows)
 
 
 def start_exam(tenant, user: dict, path_key: str, level: str = "L3") -> dict:
@@ -499,9 +547,10 @@ def start_exam(tenant, user: dict, path_key: str, level: str = "L3") -> dict:
         raise common.Refused("Only the L3 certificate has a timed exam.", 422)
     th = path["thresholds"]["L3"]
     uid = user["id"]
+    close_expired_exams(tenant, uid)
     with tenant.db() as c:
         open_ = c.execute("SELECT id FROM academy_exams WHERE user_id=? AND submitted IS NULL AND deadline>? ORDER BY id DESC",
-                          (uid, time.time())).fetchone()
+                          (uid, time.time() - EXAM_GRACE_S)).fetchone()
     if open_:
         return get_exam(tenant, user, open_["id"])
     if not is_certified(tenant, uid, path_key, "L2"):
@@ -514,13 +563,14 @@ def start_exam(tenant, user: dict, path_key: str, level: str = "L3") -> dict:
         if wait_until > time.time():
             hrs = max(1, round((wait_until - time.time()) / 3600))
             raise common.Refused(f"You can retake this exam in about {hrs} hours.", 429)
-    pool = exam_pool(tenant, path)
+    groups = exam_groups(tenant, path)
     need = int(th["exam_items"])
-    if len(pool) < need:
-        raise common.Refused(f"The exam needs {need} approved exam questions for this path; there are {len(pool)}. "
-                             "Ask the owner to approve more in Academy admin.")
+    if len(groups) < need:
+        raise common.Refused(f"The exam needs {need} approved exam questions on different lines of the material for this "
+                             f"path; there are {len(groups)}. Ask the owner to approve more in Academy admin.")
     seed = random.SystemRandom().randrange(1, 2**31)
-    ids = random.Random(seed).sample(pool, need)
+    rng = random.Random(seed)
+    ids = [rng.choice(g) for g in rng.sample(groups, need)]
     now = time.time()
     with tenant.db() as c:
         eid = c.execute("INSERT INTO academy_exams(user_id,path_key,level,item_ids,seed,started,deadline,status) "
@@ -531,6 +581,7 @@ def start_exam(tenant, user: dict, path_key: str, level: str = "L3") -> dict:
 
 
 def get_exam(tenant, user: dict, exam_id: int) -> dict:
+    close_expired_exams(tenant, user["id"])
     with tenant.db() as c:
         r = c.execute("SELECT * FROM academy_exams WHERE id=?", (exam_id,)).fetchone()
     if r is None or r["user_id"] != user["id"]:
@@ -554,11 +605,13 @@ def submit_exam(tenant, user: dict, exam_id: int, answers: dict) -> dict:
     if r is None or r["user_id"] != user["id"]:
         raise KeyError(exam_id)
     if r["submitted"] is not None:
+        if r["status"] == "expired":
+            raise common.Refused("Time ran out on this exam before it was submitted, so it counts as a failed attempt.")
         raise common.Refused("This exam is already submitted.")
     path = common.path_def(tenant, r["path_key"])
     th = path["thresholds"]["L3"]
     ids = db.jload(r["item_ids"], [])
-    late = time.time() > (r["deadline"] or 0) + 60
+    late = time.time() > (r["deadline"] or 0) + EXAM_GRACE_S
     right = 0
     now = db.now()
     with tenant.db() as c:
@@ -590,14 +643,23 @@ def submit_exam(tenant, user: dict, exam_id: int, answers: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- the approval gate
-def approval_gate(tenant, user_id: int, kind: str, meta: dict | None = None, role: str | None = None) -> str | None:
-    """None when approval may go ahead, else the reason it may not. Only active when the owner turned on
-    require_cert_for_own_outreach: then a non-owner approving prospect-facing own-decide items (DMs, emails,
-    proposals, booking messages ...) needs the Compliance core certificate."""
+def _setting(tenant, key: str) -> bool:
     try:
-        if not bool(tenant.get("require_cert_for_own_outreach", False)):
-            return None
+        return bool(tenant.get(key, False))
     except Exception:  # noqa: BLE001
+        return False
+
+
+def approval_gate(tenant, user_id: int, kind: str, meta: dict | None = None, role: str | None = None) -> str | None:
+    """None when approval may go ahead, else the reason it may not. Two owner switches, both off by default:
+
+    require_cert_for_own_outreach      a non-owner approving prospect-facing own-decide items (DMs, emails,
+                                       proposals, booking messages ...) needs the Compliance core certificate.
+    require_setter_cert_for_decisions  a setter using their setter decide rights on someone else's items
+                                       (the team's DMs, follow-ups, reminders) needs Setter L1 (A9)."""
+    own_switch = _setting(tenant, "require_cert_for_own_outreach")
+    setter_switch = _setting(tenant, "require_setter_cert_for_decisions")
+    if not own_switch and not setter_switch:
         return None
     if role is None:
         u = common.user_row(tenant, user_id)
@@ -605,6 +667,13 @@ def approval_gate(tenant, user_id: int, kind: str, meta: dict | None = None, rol
     if role == "owner":
         return None
     meta = meta or {}
+    own = meta.get("owner_user_id") == user_id
+    if setter_switch and role == "setter" and not own and kind in auth.ROLE_DECIDE.get("setter", set()):
+        if not is_certified(tenant, user_id, "setter", "L1"):
+            return ("The owner requires the Setter L1 certificate before you approve the team's messages. "
+                    "Finish it in the Academy (Certificates tab).")
+    if not own_switch:
+        return None
     if kind not in auth.OWN_DECIDE:
         return None
     if kind not in PROSPECT_OWN_KINDS and not meta.get("prospect_facing"):

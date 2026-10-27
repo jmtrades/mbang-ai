@@ -9,6 +9,8 @@ from .. import audit, db, guardrails, index, textnorm
 from . import common, quiz
 
 SETTING = "require_cert_for_own_outreach"
+SETTER_SETTING = "require_setter_cert_for_decisions"   # A9: setter decide rights need Setter L1 (off by default)
+SETTINGS = (SETTING, SETTER_SETTING)
 
 
 def builds(tenant, limit: int = 10) -> list[dict]:
@@ -35,7 +37,9 @@ def _source_lines(tenant, file: str, a: int, b: int) -> list[dict]:
     return [{"n": n, "text": guardrails.scrub(doc.lines[n - 1], names)} for n in range(lo, hi + 1) if doc.lines[n - 1].strip()]
 
 
-def drafts(tenant, status: str = "draft") -> dict:
+def drafts(tenant, status: str = "draft", owner: bool = True) -> dict:
+    """Lessons in one status with their questions. Exam-pool answers are only for the owner: coaches may
+    read the drafts, and a coach (or anyone they pass it to) must never hold the answer key to an exam."""
     common.ensure_extras(tenant)
     names = guardrails.tenant_banned_names(tenant)
     with tenant.db() as c:
@@ -52,8 +56,8 @@ def drafts(tenant, status: str = "draft") -> dict:
         items_by.setdefault(it["lesson_id"], []).append({
             "id": it["id"], "kind": it["kind"], "kind_label": quiz.KIND_LABEL.get(it["kind"], it["kind"]),
             "prompt": guardrails.scrub(it["prompt"], names), "options": it["options"],
-            "answer": it["answer"] if it["kind"] != "write" else None, "pool": it["pool"], "status": it["status"],
-            "checks": it["checks"]})
+            "answer": it["answer"] if it["kind"] != "write" and (owner or it["pool"] != "exam") else None,
+            "pool": it["pool"], "status": it["status"], "checks": it["checks"]})
     out = []
     for L in lessons:
         a, _, b = (L["source_lines"] or "1-1").partition("-")
@@ -78,15 +82,25 @@ def drafts(tenant, status: str = "draft") -> dict:
             "not_used": not_used}
 
 
-def coverage(tenant) -> dict:
-    """Material sections -> lessons and questions, plus student questions the material did not cover, grouped."""
+def coverage(tenant, viewer: dict | None = None) -> dict:
+    """Material sections -> lessons and questions, plus student questions the material did not cover, grouped.
+    The owner sees every uncovered question; a coach only their own learners' (people's questions to the coach
+    are theirs, not every coach's)."""
     names = guardrails.tenant_banned_names(tenant)
+    ids = None if viewer is None else common.learner_ids(tenant, viewer)
     with tenant.db() as c:
         les = db.rows(c.execute("SELECT l.source_file, l.status, COUNT(i.id) n FROM academy_lessons l LEFT JOIN "
                                 "academy_quiz_items i ON i.lesson_id=l.id AND i.status IN ('published','draft') "
                                 "WHERE l.status IN ('published','draft','stale') GROUP BY l.id"))
-        qs = [r["question"] for r in c.execute("SELECT question FROM queries WHERE covered IN ('no','partly') "
-                                               "ORDER BY id DESC LIMIT 500")]
+        if ids is None:
+            qs = [r["question"] for r in c.execute("SELECT question FROM queries WHERE covered IN ('no','partly') "
+                                                   "ORDER BY id DESC LIMIT 500")]
+        elif ids:
+            qs = [r["question"] for r in c.execute(
+                "SELECT question FROM queries WHERE covered IN ('no','partly') AND user_id IN (%s) ORDER BY id DESC LIMIT 500"
+                % ",".join("?" * len(ids)), ids)]
+        else:
+            qs = []
     by_file: dict[str, dict] = {}
     for r in les:
         f = by_file.setdefault(r["source_file"], {"file": r["source_file"], "lessons": 0, "published": 0, "questions": 0})
@@ -127,16 +141,18 @@ def stats(tenant) -> dict:
 
 
 def settings_view(tenant) -> dict:
-    return {SETTING: bool(tenant.get(SETTING, False)),
+    return {SETTING: bool(tenant.get(SETTING, False)), SETTER_SETTING: bool(tenant.get(SETTER_SETTING, False)),
             "paths": [{"key": k, "title": p["title"], "levels": p["levels"],
                        "thresholds": {lv: v for lv, v in common.path_def(tenant, k)["thresholds"].items() if lv in p["levels"]}}
                       for k, p in common.PATHS.items()]}
 
 
-def set_setting(tenant, value: bool, actor: str) -> dict:
-    tenant.set(SETTING, bool(value))
-    audit.log(tenant, actor, "settings", {"key": SETTING, "value": bool(value)})
-    return {SETTING: bool(value)}
+def set_setting(tenant, value: bool, actor: str, key: str = SETTING) -> dict:
+    if key not in SETTINGS:
+        raise ValueError(f"Unknown setting {key}")
+    tenant.set(key, bool(value))
+    audit.log(tenant, actor, "settings", {"key": key, "value": bool(value)})
+    return {key: bool(value)}
 
 
 _BOUNDS = {"mastery_overall": (0.5, 1.0), "mastery_skill": (0.3, 1.0), "roleplays": (1, 20), "roleplay_score": (50, 100),

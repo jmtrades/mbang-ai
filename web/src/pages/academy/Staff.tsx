@@ -3,7 +3,7 @@
 // actions are hidden from coaches; the server checks every one of them again.
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Hammer, ShieldCheck } from "lucide-react";
-import { ApiError, post, put } from "../../api";
+import { ApiError, del, post, put } from "../../api";
 import { Badge, Button, Card, Citations, DemoBadge, Drawer, Empty, ErrorBox, Field, Input, Loading, Select, Stat, Table, Tabs, TextArea, TraceLink, cx, useApi, useApp } from "../../components/ui";
 import { Bar, pct } from "./Learn";
 
@@ -135,15 +135,22 @@ function LearnerDrawer({ userId, onClose }: { userId: number | null; onClose: ()
 
 // ---------------------------------------------------------------- sign-off queue
 function SignoffRow({ r, onDone }: { r: any; onDone: () => void }) {
-  const [score, setScore] = useState(String(Math.round(r.total ?? 0)));
+  const { toast } = useApp();
+  const [score, setScore] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<ApiError | null>(null);
+  const n = Number(score);
+  const valid = score.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100;
   const sign = async () => {
     setBusy(true);
     setErr(null);
     try {
-      await post(`/academy/team/roleplays/${r.id}/signoff`, { score: Number(score), note });
+      const res = await post(`/academy/team/roleplays/${r.id}/signoff`, { score: n, note });
+      toast(res.rules_score === null || res.rules_score === undefined
+        ? "Signed off."
+        : `Signed off. The rules score was ${Math.round(res.rules_score)}: ${res.agreement ? "you agree within 10 points" : "more than 10 points apart"}.`,
+        res.agreement === false ? "info" : "good");
       onDone();
     } catch (e) {
       setErr(e as ApiError);
@@ -156,25 +163,94 @@ function SignoffRow({ r, onDone }: { r: any; onDone: () => void }) {
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <b>{r.name}</b>
         <Badge>{String(r.scenario || "Role-play").replace(/_/g, " ")}</Badge>
-        <Badge tone={(r.total ?? 0) >= 75 && !r.compliance_flags ? "good" : "warn"}>Rules score {r.total ?? "–"}</Badge>
         {r.compliance_flags > 0 && <Badge tone="bad">{r.compliance_flags} compliance flag{r.compliance_flags > 1 ? "s" : ""}</Badge>}
       </div>
+      {Array.isArray(r.criteria) && r.criteria.length > 0 && (
+        <p className="mt-1 break-words text-xs text-muted">Scored on: {r.criteria.map((c: any) => c.label).filter(Boolean).join(", ")}</p>
+      )}
       {Array.isArray(r.transcript) && r.transcript.length > 0 && (
         <div className="scroll-thin mt-2 max-h-48 space-y-1 overflow-auto rounded bg-panel-2 p-2 text-xs">
           {r.transcript.map((t: any, i: number) => <p key={i} className="break-words"><b>{t.speaker || t.role || "?"}:</b> {t.text || t.content || ""}</p>)}
         </div>
       )}
       <div className="mt-2 flex flex-wrap items-end gap-2">
-        <Field label="Your score (0-100)"><Input type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} className="w-24" /></Field>
+        <Field label="Your score (0-100)"><Input type="number" min={0} max={100} value={score} placeholder="0-100" onChange={(e) => setScore(e.target.value)} className="w-24" /></Field>
         <Field label="Note"><Input value={note} onChange={(e) => setNote(e.target.value)} className="w-56 max-w-full" /></Field>
-        <Button tone="primary" onClick={sign} loading={busy}>Sign off</Button>
+        <Button tone="primary" onClick={sign} loading={busy} disabled={!valid}>Sign off</Button>
       </div>
       <ErrorBox error={err} />
     </li>
   );
 }
 
+// ---------------------------------------------------------------- managers (owner): which coach looks after whom
+function Managers() {
+  const { toast } = useApp();
+  const { data, error, loading, reload } = useApi<any>("/academy/team/managers");
+  const [manager, setManager] = useState("");
+  const [member, setMember] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<ApiError | null>(null);
+  const run = async (key: string, fn: () => Promise<any>, msg: string) => {
+    setBusy(key);
+    setErr(null);
+    try {
+      await fn();
+      toast(msg, "good");
+      reload();
+    } catch (e) {
+      setErr(e as ApiError);
+    } finally {
+      setBusy(null);
+    }
+  };
+  const link = () => run("link", () => post("/academy/team/managers", { manager_id: Number(manager), member_id: Number(member) }),
+    "Linked. That coach now sees this person's training.");
+  const unlink = (l: any) => run(`u${l.manager_id}-${l.member_id}`, () => del(`/academy/team/managers/${l.manager_id}/${l.member_id}`),
+    "Unlinked.");
+  const clean = (n?: string | null) => (n || "").replace(" (DEMO)", "");
+  return (
+    <Card title="Who coaches whom" subtitle="Students follow their coach automatically. Link setters, closers (or other coaches) to a coach here so that coach can see and support their training.">
+      {loading && <Loading rows={3} />}
+      <ErrorBox error={error} retry={reload} />
+      <ErrorBox error={err} />
+      {data && (
+        <div className="space-y-3">
+          {data.managers.length === 0 ? (
+            <p className="text-sm text-muted">There are no coach accounts in this workspace yet. Once a coach has an account, link people to them here.</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+              <Field label="Coach">
+                <Select value={manager} onChange={(e) => setManager(e.target.value)}
+                  options={[{ value: "", label: "Pick a coach" }, ...data.managers.map((m: any) => ({ value: String(m.id), label: clean(m.name) }))]} />
+              </Field>
+              <Field label="Looks after">
+                <Select value={member} onChange={(e) => setMember(e.target.value)}
+                  options={[{ value: "", label: "Pick a person" }, ...data.members.filter((m: any) => String(m.id) !== manager)
+                    .map((m: any) => ({ value: String(m.id), label: `${clean(m.name)} (${m.role})` }))]} />
+              </Field>
+              <Button tone="primary" onClick={link} loading={busy === "link"} disabled={!manager || !member}>Link</Button>
+            </div>
+          )}
+          {data.links.length === 0 ? <Empty title="No links yet" hint="Without a link, only you see a setter's or closer's training." /> : (
+            <ul className="divide-y divide-line rounded-lg border border-line">
+              {data.links.map((l: any) => (
+                <li key={`${l.manager_id}-${l.member_id}`} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <span className="min-w-0 break-words"><b>{clean(l.manager_name)}</b> looks after {clean(l.member_name)} <span className="text-xs capitalize text-muted">({l.member_role})</span></span>
+                  <Button size="sm" tone="ghost" onClick={() => unlink(l)} loading={busy === `u${l.manager_id}-${l.member_id}`}>Unlink</Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function TeamTab() {
+  const { me } = useApp();
+  const isOwner = me.user.role === "owner";
   const [sub, setSub] = useState("people");
   const { data, error, loading, reload } = useApi<any>("/academy/team");
   const mis = useApi<any>(sub === "misconceptions" ? "/academy/team/misconceptions" : null, [sub]);
@@ -192,7 +268,8 @@ export function TeamTab() {
           <Stat label="Average mastery" value={pct(data.people.filter((p: any) => p.mastery !== null).reduce((a: number, p: any, _: number, arr: any[]) => a + p.mastery / arr.length, 0) || null)} />
         </div>
       )}
-      <Tabs value={sub} onChange={setSub} tabs={[{ key: "people", label: "People" }, { key: "heatmap", label: "Skill heatmap" }, { key: "misconceptions", label: "Misconceptions" }, { key: "signoffs", label: "Role-play sign-off" }, { key: "impact", label: "Training impact" }]} />
+      <Tabs value={sub} onChange={setSub} tabs={[{ key: "people", label: "People" }, { key: "heatmap", label: "Skill heatmap" }, { key: "misconceptions", label: "Misconceptions" }, { key: "signoffs", label: "Role-play sign-off" }, { key: "impact", label: "Training impact" }, ...(isOwner ? [{ key: "managers", label: "Coaches" }] : [])]} />
+      {sub === "managers" && isOwner && <Managers />}
       {loading && <Loading rows={5} />}
       <ErrorBox error={error} retry={reload} />
       {sub === "people" && data && (
@@ -235,7 +312,7 @@ export function TeamTab() {
               {mis.data.items.map((m: any) => (
                 <li key={m.id} className="rounded-lg border border-line p-3 text-sm">
                   <p className="break-words font-medium">{m.prompt}</p>
-                  <p className="mt-1 text-xs text-muted">{Math.round((m.p_value || 0) * 100)}% right over {m.attempts} answers{m.top_wrong ? ` · most common wrong answer: “${m.top_wrong}”` : ""}{m.answer && !Array.isArray(m.answer) ? ` · course answer: “${m.answer}”` : ""}</p>
+                  <p className="mt-1 text-xs text-muted">{Math.round((m.p_value || 0) * 100)}% right over {m.attempts} answers{m.top_wrong ? ` · most common wrong answer: “${m.top_wrong}”` : ""}{m.answer && !Array.isArray(m.answer) ? (m.kind === "spot" ? ` · the rule-breaking line: “${m.answer}”` : ` · course answer: “${m.answer}”`) : ""}</p>
                   {m.citation && <Citations items={[m.citation]} />}
                 </li>
               ))}
@@ -244,7 +321,7 @@ export function TeamTab() {
         </Card>
       )}
       {sub === "signoffs" && (
-        <Card title="Role-plays waiting for a sign-off" subtitle="Your score sits next to the rules score. Agreeing within 10 points counts towards your own coach certificate.">
+        <Card title="Role-plays waiting for a sign-off" subtitle="Read the transcript and give your own score first; the rules score is shown once you sign off. Agreeing within 10 points counts towards your own coach certificate.">
           {sign.loading && <Loading rows={4} />}
           <ErrorBox error={sign.error} retry={sign.reload} />
           {sign.data && (sign.data.items.length === 0 ? <Empty title="Nothing to sign off" hint="Finished role-plays from your learners appear here." /> : (
@@ -493,7 +570,7 @@ export function AdminTab() {
               {owner && status === "draft" && (
                 <div className="mb-3 flex flex-wrap gap-2">
                   <Button tone="good" onClick={() => publishAll(false)} loading={busy === "all"} disabled={!drafts.data.lessons.length}>Publish every draft that passed its checks</Button>
-                  <Button onClick={() => publishAll(true)} loading={busy === "all_exam"}>Also approve exam questions ({drafts.data.exam_items_awaiting_approval} waiting)</Button>
+                  <Button onClick={() => publishAll(true)} loading={busy === "all_exam"} disabled={!drafts.data.lessons.length && !drafts.data.exam_items_awaiting_approval}>Also approve exam questions ({drafts.data.exam_items_awaiting_approval} waiting)</Button>
                 </div>
               )}
               {drafts.data.stale.length > 0 && status === "draft" && <p className="mb-2 text-xs text-amber-800">{drafts.data.stale.length} published lessons have changed sources; their updated drafts are below.</p>}
@@ -584,6 +661,16 @@ export function AdminTab() {
                 <Badge tone={sets.data.require_cert_for_own_outreach ? "good" : "neutral"}><ShieldCheck className="size-3" /> {sets.data.require_cert_for_own_outreach ? "On" : "Off"}</Badge>
                 {owner && <Button onClick={() => call("setting", async () => { await put("/academy/admin/settings", { require_cert_for_own_outreach: !sets.data.require_cert_for_own_outreach }); sets.reload(); })} loading={busy === "setting"}>
                   {sets.data.require_cert_for_own_outreach ? "Turn off" : "Turn on"}
+                </Button>}
+              </div>
+            )}
+          </Card>
+          <Card title="Setters need their certificate to approve the team's messages" subtitle="When on, a setter must hold Setter L1 before approving DMs, follow-ups and reminders drafted for other people. Their own items follow the switch above.">
+            {sets.data && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge tone={sets.data.require_setter_cert_for_decisions ? "good" : "neutral"}><ShieldCheck className="size-3" /> {sets.data.require_setter_cert_for_decisions ? "On" : "Off"}</Badge>
+                {owner && <Button onClick={() => call("setter_setting", async () => { await put("/academy/admin/settings", { require_setter_cert_for_decisions: !sets.data.require_setter_cert_for_decisions }); sets.reload(); })} loading={busy === "setter_setting"}>
+                  {sets.data.require_setter_cert_for_decisions ? "Turn off" : "Turn on"}
                 </Button>}
               </div>
             )}
