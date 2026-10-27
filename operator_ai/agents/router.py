@@ -232,6 +232,7 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
     tid = thread_id or threads.create(tenant, user["id"], shown if intent == "question" else f"{intent}: {shown}")
     threads.add_message(tenant, tid, "user", shown, {"intent": intent, "filename": filename})
     threads.add_message(tenant, tid, "assistant", reply, meta)
+    meta["remembered"] = __import__("operator_ai.memory", fromlist=["hint"]).hint(tenant, user, intent)  # [memory] not stored
     return {"intent": intent, "thread_id": tid, "answer": reply, "meta": meta, "payload": payload}
 
 

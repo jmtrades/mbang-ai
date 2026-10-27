@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ApiError, put } from "../api";
 import { Button, Card, ErrorBox, Field, Input, Loading, PageHeader, useApi, useApp } from "../components/ui";
 import { PersonaSubject } from "./persona/PersonaSubject";
+import MemoryPanel from "../components/MemoryPanel";
 
 export default function Profile() {
   const { toast } = useApp();
@@ -43,6 +44,9 @@ export default function Profile() {
           ))}
         </div>
       )}
+      <div className="mt-6">
+        <MemoryPanel />
+      </div>
     </div>
   );
 }

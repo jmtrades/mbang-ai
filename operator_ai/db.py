@@ -353,6 +353,9 @@ CREATE TABLE IF NOT EXISTS persona_uses (
   id INTEGER PRIMARY KEY, user_id INTEGER, version INTEGER, phrase TEXT, created REAL);
 CREATE INDEX IF NOT EXISTS persona_uses_user ON persona_uses(user_id, id);
 -- [team] tables
+CREATE TABLE IF NOT EXISTS team_assignments (manager_id INTEGER, member_id INTEGER, PRIMARY KEY(manager_id, member_id));
+CREATE TABLE IF NOT EXISTS team_reset_requests (id INTEGER PRIMARY KEY, user_id INTEGER, created REAL, handled REAL);
+CREATE TABLE IF NOT EXISTS setup_progress (user_id INTEGER, item TEXT, done REAL, PRIMARY KEY(user_id, item));
 -- [playbooks] tables
 -- [claims] tables
 CREATE TABLE IF NOT EXISTS claims_substantiation (
@@ -361,6 +364,10 @@ CREATE TABLE IF NOT EXISTS claims_substantiation (
   expired_at REAL, expired_by TEXT, expire_reason TEXT, demo INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS claims_substantiation_key ON claims_substantiation(claim_key, status);
 -- [memory] tables
+CREATE TABLE IF NOT EXISTS user_memory (
+  id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, kind TEXT NOT NULL, label TEXT, value TEXT, source TEXT,
+  demo INTEGER DEFAULT 0, created REAL, updated REAL);
+CREATE INDEX IF NOT EXISTS user_memory_user ON user_memory(user_id, kind);
 """
 
 # Columns added to existing tables after first release. CREATE TABLE IF NOT EXISTS never alters a table that
@@ -466,6 +473,16 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("persona_profiles", "demo", "INTEGER DEFAULT 0"),
     ("kb_notes", "speaker", "TEXT"),
     # [team]
+    ("invites", "kind", "TEXT DEFAULT 'invite'"),
+    ("invites", "display", "TEXT"),
+    ("invites", "user_id", "INTEGER"),
+    ("invites", "coach_id", "INTEGER"),
+    ("invites", "student_id", "INTEGER"),
+    ("invites", "queue_id", "INTEGER"),
+    ("invites", "revoked", "REAL"),
+    ("invites", "demo", "INTEGER DEFAULT 0"),
+    ("users", "email", "TEXT"),
+    ("users", "deleted", "REAL"),
     # [playbooks]
     # [claims]
 ]

@@ -1,6 +1,7 @@
 import { m } from "motion/react";
 import { ArrowRight, ArrowUpRight, BookOpen, Inbox, MessageCircle, Rocket, ShieldCheck, Target, Users, Workflow, BadgeCheck, Bot, Command } from "lucide-react";
 import { Badge, Button, DemoBadge, ErrorBox, Kbd, Skeleton, cx, modKey, tidyCount, useApi, useApp } from "../components/ui";
+import FirstRun from "../components/FirstRun";
 
 const ICONS: Record<string, any> = { answers: BookOpen, drafts: Inbox, leads: Target, students: Users, runs: Workflow, blocked: ShieldCheck };
 const CAPTION: Record<string, string> = { answers: "Open the coach", drafts: "Review approvals", leads: "See the pipeline", students: "Open accountability", runs: "Inspect traces", blocked: "Read the audit log" };
@@ -161,6 +162,9 @@ export default function Home() {
           </m.div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------ first-run checklist (hides itself when done) */}
+      <div className="mt-6 empty:hidden"><FirstRun /></div>
 
       {/* ------------------------------------------------------------ outcomes */}
       <section className="mt-10" aria-labelledby="outcomes-title">

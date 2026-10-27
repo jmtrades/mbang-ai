@@ -9,6 +9,7 @@ import { AppCtx, Avatar, Badge, Button, Citation, ErrorBox, IconButton, Input, K
 import { CommandPalette, type Command } from "./components/CommandPalette";
 import { PAGES, PAGE_BY_KEY, groupOf, navFor, tabbarFor } from "./pages/registry";
 import { setThemePref, toggleTheme, useTheme } from "./theme";
+import Join from "./components/Join";
 
 class PageBoundary extends React.Component<{ children: React.ReactNode; page: string }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -604,6 +605,7 @@ export default function App() {
         {state === "loading" && <Boot />}
         {state === "error" && <div className="mx-auto max-w-xl p-8"><ErrorBox error={err} retry={load} /></div>}
         {state === "signin" && <SignIn onDone={load} />}
+        {location.hash.startsWith("#/join") && <Join onDone={load} />}
         {state === "ready" && me && <Shell me={me} reloadMe={load} />}
       </LazyMotion>
     </MotionConfig>

@@ -838,6 +838,8 @@ NO_SESSION_OK = {
     "/c/{tid}/{token}", "/w/{tid}/{slug}", "/w/{tid}/{slug}/register", "/w/{tid}/{slug}/unsubscribe",
     # persona: the public disclosure page (who the assistant is, and that it is not the person)
     "/t/{tid}/persona", "/t/{tid}/api/public/persona",
+    # team: the one-time invite / reset link (token in the POST body, throttled) and the generic forgot-password
+    "/t/{tid}/api/join/check", "/t/{tid}/api/join/accept", "/t/{tid}/api/join/forgot",
 }
 
 
