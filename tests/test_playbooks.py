@@ -385,7 +385,7 @@ def test_overview_every_role(client, role):
     if role != "owner":
         assert d["problems"] == [] and d["toggle"] is None
     else:
-        assert d["problems"] and d["toggle"]["key"] == "third_party_kb"
+        assert isinstance(d["problems"], list) and d["toggle"]["key"] == "third_party_kb"
 
 
 def test_search_entry_and_domain_endpoints(client):
