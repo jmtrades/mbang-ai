@@ -834,6 +834,8 @@ NO_SESSION_OK = {
     "/u/{token}",
     # prospects: the public proposal page and its accept button (live only after approval; throttled; noindex)
     "/t/{tid}/p/{token}", "/t/{tid}/p/{token}/accept",
+    # client ops: the client intake form, and the webinar registration page, sign-up and unsubscribe
+    "/c/{tid}/{token}", "/w/{tid}/{slug}", "/w/{tid}/{slug}/register", "/w/{tid}/{slug}/unsubscribe",
 }
 
 

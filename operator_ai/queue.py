@@ -613,7 +613,7 @@ def dispatch(tenant, qid: int, actor: str = "scheduler", *, force: bool = False,
                  status_reason="Guardrails flagged it after approval. Edit it and approve it again.")
             audit.log(tenant, actor, "guardrail.block", {"id": qid, "at": "dispatch", "codes": sorted(codes)})
             return get(tenant, qid)
-        reason = delivery.cancel_reason(tenant, item)
+        reason = delivery.cancel_reason(tenant, item, now)
         if reason:
             _set(tenant, qid, status="cancelled", status_reason=reason)
             audit.log(tenant, actor, "queue.cancel", {"id": qid, "reason": reason, "at": "dispatch"})

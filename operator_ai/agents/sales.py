@@ -93,15 +93,18 @@ def reply_line(lead: dict, tier: str, tenant=None) -> str:
     record for it (claims.py); everyone else, and every tenant without a record, gets the no-figure line."""
     brand = _brand_of(lead)
     if tier in ("hot", "warm"):
-        return guardrails.range_line(brand, "our booking system", tenant)
-    return guardrails.no_figure_line(brand, "our booking system")
+        return guardrails.range_line(brand, "our growth system", tenant)
+    return guardrails.no_figure_line(brand, "our growth system")
 
 
 def followups(lead: dict) -> list[str]:
-    goal = (lead.get("answers") or {}).get("goal", "more booked calls")
+    """Value-only follow-ups written from the lead's own answers (their niche and goal), never another niche's words."""
+    a = lead.get("answers") or {}
+    goal = a.get("goal") or "more qualified enquiries"
+    who = a.get("niche") or "businesses like yours"
     return [
-        f"Here's a 2-minute video on how clinics like yours get {goal} without discounting. Want me to send it?",
-        "Quick tip from our booking module: confirm every call within five minutes. What does your confirmation look like today?",
+        f"Here's a 2-minute video on how {who} get {goal}. Want me to send it?",
+        f"One idea that often helps with {goal}: reply to every new enquiry within five minutes. How quickly do replies go out today?",
     ]
 
 

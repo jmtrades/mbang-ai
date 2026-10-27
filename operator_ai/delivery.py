@@ -712,11 +712,19 @@ def stage_beyond(tenant, party: tuple[str, int], stage: str) -> bool:
     return cur in order and order.index(cur) > order.index(stage)
 
 
-def cancel_reason(tenant, item: dict) -> str | None:
-    """Why an approved, due item must not go out now (None = send it)."""
+def cancel_reason(tenant, item: dict, now: float | None = None) -> str | None:
+    """Why an approved, due item must not go out now (None = send it). meta.send_before is a hard deadline: a
+    time-bound message (e.g. a webinar's "starts in an hour") whose moment passed while it waited (the server was
+    down) is cancelled, never sent late."""
     meta = item["meta"]
     party = party_of(meta)
     since = float(item.get("created") or 0)
+    try:
+        before = float(meta.get("send_before")) if meta.get("send_before") is not None else None
+    except (TypeError, ValueError):
+        before = None
+    if before is not None and (now or db.now()) > before:
+        return "Its moment passed before it could go out, so it was not sent late."
     if party and is_dnc(tenant, party):
         return "This contact is marked do-not-contact, so it was not sent."
     preds = meta.get("cancel_if") or []

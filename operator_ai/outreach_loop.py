@@ -15,16 +15,25 @@ from . import db, guardrails, queue, runtime
 
 STAGES = ["new", "sent", "replied", "quality_conversation", "link_sent", "booked", "showed", "closed"]
 DAILY_CAP = 5
+# Opener and follow-up wording is filled from the prospect's niche and the workspace brief (brief.build), so a
+# fitness coach never hears about diaries and a clinic never hears about e-commerce orders.
 MOVES = {
-    "compliment": "Loved your post about {niche_topic}. How's it been landing with new clients?",
-    "question": "Quick question: what's the main thing holding new bookings back for you right now?",
-    "resource": "I put together a one-page checklist for {niche} on filling the diary without discounting. Want it?",
-    "mutual": "Saw we're both in the {niche} owners group. What's working best for you on bookings at the moment?",
+    "compliment": "Loved your recent post. How's it been landing with new clients?",
+    "question": "Quick question: what's the main thing holding back {outcome} for you right now?",
+    "resource": "I put together a one-page checklist for {niche} on getting {outcome} without {pain}. Want it?",
+    "mutual": "Saw we're both in the {niche} community. What's working best for you on {outcome} at the moment?",
 }
 FOLLOWUPS = [
-    "Here's a 2-minute video on the reminder ladder that lifts show rates. Want me to send it?",
-    "One quick tip: confirm every booking within five minutes. What does your confirmation look like today?",
+    "Here's a 2-minute video on how {niche} get {outcome} without {pain}. Want me to send it?",
+    "One quick tip: reply to every new enquiry within five minutes. How quickly do replies go out today?",
 ]
+
+
+def _fill(tenant, template: str, niche: str | None) -> str:
+    from . import brief as brief_mod
+
+    b = brief_mod.build(tenant, {})["brief"]
+    return template.format(niche=niche or b["niche"], outcome=b["outcome"], pain=b["pain"], mechanism=b["mechanism"])
 
 
 def cap(tenant) -> int:
@@ -66,7 +75,7 @@ def queue_openers(tenant, sender: str | None = None, limit: int = 10, user: dict
             if sent_today(tenant, s) >= cap(tenant):
                 deferred.append({"prospect_id": p["id"], "sender": s, "reason": f"daily cap of {cap(tenant)} reached"})
                 continue
-            body = MOVES[p["opener_move"]].format(niche=p["niche"], niche_topic=f"{p['niche']} referrals")
+            body = _fill(tenant, MOVES[p["opener_move"]], p["niche"])
             item = queue.add(tenant, "dm_opener", body, channel="instagram_dm", recipient_ref=p["handle"],
                              title=f"Opener ({p['opener_move']}) to {p['name']}",
                              meta={"prospect_facing": True, "lead_tier": p["tier"] or "cold", "prospect_id": p["id"],
@@ -126,7 +135,8 @@ def queue_followups(tenant, user: dict | None = None) -> dict:
         step_n = next((i for i in range(len(FOLLOWUPS)) if (p["id"], f"followup{i + 1}") not in done), None)
         if step_n is None:
             continue
-        item = queue.add(tenant, "followup", FOLLOWUPS[step_n], channel="instagram_dm", recipient_ref=p["handle"],
+        item = queue.add(tenant, "followup", _fill(tenant, FOLLOWUPS[step_n], p["niche"]), channel="instagram_dm",
+                         recipient_ref=p["handle"],
                          title=f"Follow-up {step_n + 1} to {p['name']}",
                          meta={"prospect_facing": True, "lead_tier": p["tier"] or "cold", "prospect_id": p["id"],
                                "prior_contact": True, "practice": True}, actor=actor, demo=True)

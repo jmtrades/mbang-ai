@@ -299,7 +299,32 @@ CREATE TABLE IF NOT EXISTS escalations (
 CREATE INDEX IF NOT EXISTS escalations_status ON escalations(status, created);
 CREATE INDEX IF NOT EXISTS escalations_ref ON escalations(kind, ref);
 -- [client_ops] tables
+CREATE TABLE IF NOT EXISTS client_metrics (
+  id INTEGER PRIMARY KEY, client_id INTEGER, period_start REAL, metrics TEXT, source TEXT, note TEXT, created REAL,
+  demo INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS client_metrics_client ON client_metrics(client_id, period_start);
+CREATE TABLE IF NOT EXISTS client_tasks (
+  id INTEGER PRIMARY KEY, client_id INTEGER, key TEXT, kind TEXT, title TEXT, detail TEXT, status TEXT, verified_by TEXT,
+  due REAL, done_at REAL, done_by TEXT, created REAL, demo INTEGER DEFAULT 0, UNIQUE(client_id, key));
 -- [webinars] tables
+CREATE TABLE IF NOT EXISTS webinars (
+  id INTEGER PRIMARY KEY, chain_id TEXT, slug TEXT UNIQUE, title TEXT, starts_at REAL, tz TEXT, join_url TEXT,
+  replay_url TEXT, status TEXT, duration_min INTEGER DEFAULT 60, offer_at_min INTEGER DEFAULT 35, client_id INTEGER,
+  owner_user_id INTEGER, page TEXT, page_qid INTEGER, visits INTEGER DEFAULT 0, post_event_at REAL, demo INTEGER DEFAULT 0,
+  created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS webinar_registrants (
+  id INTEGER PRIMARY KEY, webinar_id INTEGER, name TEXT, email TEXT, source TEXT, consent INTEGER DEFAULT 0,
+  registered_at REAL, attended INTEGER DEFAULT 0, minutes_watched REAL DEFAULT 0, stayed_past_offer INTEGER DEFAULT 0,
+  booked INTEGER DEFAULT 0, unsubscribed INTEGER DEFAULT 0, token TEXT, post_done INTEGER DEFAULT 0, demo INTEGER DEFAULT 0,
+  UNIQUE(webinar_id, email));
+CREATE INDEX IF NOT EXISTS webinar_registrants_w ON webinar_registrants(webinar_id);
+CREATE TABLE IF NOT EXISTS webinar_templates (
+  id INTEGER PRIMARY KEY, webinar_id INTEGER, key TEXT, phase TEXT, body TEXT, queue_id INTEGER, status TEXT,
+  approved_by TEXT, approved_at REAL, created REAL, UNIQUE(webinar_id, key));
+CREATE TABLE IF NOT EXISTS webinar_sends (
+  id INTEGER PRIMARY KEY, webinar_id INTEGER, registrant_id INTEGER, template_key TEXT, queue_id INTEGER, created REAL,
+  due_at REAL, UNIQUE(webinar_id, registrant_id, template_key));
+CREATE INDEX IF NOT EXISTS webinar_sends_q ON webinar_sends(queue_id);
 -- [persona] tables
 -- [team] tables
 -- [playbooks] tables
@@ -389,7 +414,24 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("channel_messages", "conversation_id", "INTEGER"),
     ("leads", "do_not_contact", "INTEGER DEFAULT 0"),
     # [client_ops]
+    ("clients", "status", "TEXT"),
+    ("clients", "start_date", "REAL"),
+    ("clients", "retainer", "REAL"),
+    ("clients", "brief", "TEXT"),
+    ("clients", "kpi_targets", "TEXT"),
+    ("clients", "access", "TEXT"),
+    ("clients", "owner_user_id", "INTEGER"),
+    ("clients", "email", "TEXT"),
+    ("clients", "contact_name", "TEXT"),
+    ("clients", "report_weekday", "INTEGER DEFAULT 0"),
+    ("clients", "intake_token", "TEXT"),
+    ("clients", "intake_at", "REAL"),
+    ("clients", "last_report_at", "REAL"),
+    ("clients", "last_review_at", "REAL"),
+    ("clients", "risk", "TEXT"),
+    ("clients", "prospect_id", "INTEGER"),
     # [webinars]
+    ("webinar_sends", "due_at", "REAL"),
     # [persona]
     # [team]
     # [playbooks]

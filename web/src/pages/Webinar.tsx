@@ -3,6 +3,7 @@ import { Presentation, RefreshCw } from "lucide-react";
 import { ApiError, get, post } from "../api";
 import { Badge, Button, Card, Citations, Empty, ErrorBox, Field, Loading, PageHeader, Tabs, TextArea, TraceLink, useApi, useApp } from "../components/ui";
 import { BriefForm } from "../components/BriefForm";
+import Events from "./webinar/Events";
 
 function ChainView({ chainId, onRerun }: { chainId: string; onRerun: (r: any) => void }) {
   const { go } = useApp();
@@ -57,7 +58,7 @@ function ChainView({ chainId, onRerun }: { chainId: string; onRerun: (r: any) =>
 }
 
 export default function Webinar() {
-  const [tab, setTab] = useState("chain");
+  const [tab, setTab] = useState("events");
   const chains = useApi<any>("/webinar/chains");
   const [b, setB] = useState<Record<string, string>>({});
   const [chainId, setChainId] = useState<string | null>(null);
@@ -95,8 +96,9 @@ export default function Webinar() {
   };
   return (
     <div>
-      <PageHeader title="Webinar chain" subtitle="One run: offer → title & hooks → 7-segment script → registration and thank-you pages → show-up and replay sequences → run-of-show → chat prompts → hand-off to sales. Each output is its own queue item." />
-      <Tabs value={tab} onChange={setTab} tabs={[{ key: "chain", label: "Execution chain" }, { key: "rehearsal", label: "Rehearsal scorer" }]} />
+      <PageHeader title="Webinars" subtitle="Run real events: a registration page, reminder and replay emails approved once and sent to each registrant on time, attendance, and follow-ups for the people who stayed. The chain drafts the content." />
+      <Tabs value={tab} onChange={setTab} tabs={[{ key: "events", label: "Events" }, { key: "chain", label: "Content chain" }, { key: "rehearsal", label: "Rehearsal scorer" }]} />
+      {tab === "events" && <Events />}
       <ErrorBox error={err} />
       {tab === "chain" && (
         <div className="grid gap-4 xl:grid-cols-[420px_1fr]">

@@ -1,23 +1,27 @@
 """Client fulfilment: money model (3 scenarios, labelled assumptions), bottleneck from the
 client's metrics against SOP thresholds, a cited launch plan, ad hooks (reviewed; regenerated
 once if they score under 60), a VSL outline and a client report. Everything queued and
-guardrail-checked."""
+guardrail-checked. All copy comes from the client's own brief (brief.for_client): its record plus
+its intake answers, never another niche's wording."""
 from __future__ import annotations
 
+from .. import brief as brief_mod
 from .. import db, diagnostic, guardrails, queue, retrieval, rubrics, runtime
 
+# Hooks are built only from the client's brief, so a fitness coach never gets copy about patients and a
+# clinic never gets copy about e-commerce orders.
 HOOK_TEMPLATES = [
-    "Your front desk is losing {niche_short} patients every week.",
-    "Stop discounting to fill your diary.",
-    "{outcome} without {pain}.",
-    "The one number every {niche_short} owner should check on Monday.",
-    "Why {niche} struggle to {goal_verb} (and the fix).",
+    "{Outcome} without {pain}.",
+    "Stop relying on {pain}.",
+    "For {audience}: {outcome} in {timeframe}.",
+    "Why most {niche} struggle to get {outcome} (and the fix).",
+    "The {mechanism}, explained in one minute.",
 ]
 HOOK_RETRY = [
-    "{outcome} in {timeframe}.",
-    "Three questions to ask before you spend another dollar on ads.",
-    "What {niche_short} owners get wrong about referrals.",
-    "A simple way to fill {niche_short} diaries.",
+    "{Outcome} in {timeframe}.",
+    "Three questions to ask before you put more time into {pain}.",
+    "What most {niche} get wrong about {outcome}.",
+    "A simpler way for {audience} to get {outcome}.",
     "The {mechanism} in 60 seconds.",
 ]
 
@@ -42,11 +46,12 @@ def money_model(price: float, metrics: dict) -> dict:
                        "Every figure is a model, not a promise (DEMO numbers in the demo workspace)."]}
 
 
-def _hooks(client: dict, templates: list[str]) -> list[str]:
-    niche = client.get("niche") or "clinics"
-    short = niche.split()[0].rstrip("s")
-    ctx = {"niche": niche, "niche_short": short, "outcome": "20 new bookings a month", "pain": "discounting",
-           "goal_verb": "fill their diary", "timeframe": "90 days", "mechanism": "referral-first system"}
+def _hooks(b: dict, templates: list[str]) -> list[str]:
+    """Fill hook templates from a brief (the client's brief, or any dict with brief keys)."""
+    out = str(b.get("outcome") or brief_mod.DEFAULTS["outcome"])
+    ctx = {k: str(b.get(k) or brief_mod.DEFAULTS[k]) for k in ("niche", "audience", "pain", "timeframe", "mechanism",
+                                                                 "offer", "business")}
+    ctx.update(outcome=out, Outcome=out[:1].upper() + out[1:])
     return [t.format(**ctx) for t in templates]
 
 
@@ -56,29 +61,47 @@ def review_hooks(tenant, hooks: list[str]) -> list[dict]:
                          if k in ("score", "detected")}} for h in hooks]
 
 
+def vsl_outline(b: dict, price: float, proof: dict | None = None) -> list[str]:
+    lines = ["Hook: name the outcome in one line", f"The big mistake most {b['niche']} make: relying on {b['pain']}",
+             f"The new mechanism: {b['mechanism']}"]
+    if proof and proof.get("permission") and (proof.get("text") or "").strip():
+        lines.append("Proof (the client gave permission to use this): " + proof["text"].strip()[:160])
+    else:
+        lines.append("Proof: only verified results with permission (none on file yet)")
+    lines += [f"The offer: {b['offer']}; what's included, who it's for and not for",
+              f"Price: {price:,.0f} (client asset)", "One call to action"]
+    return lines
+
+
 PLAN = ["Load client", "Money model (3 scenarios)", "Bottleneck vs SOP", "Launch plan (cited)", "Ad hooks (reviewed)",
         "VSL outline", "Client report", "Queue everything"]
 
 
-def fulfil(tenant, client_id: int, user: dict | None = None) -> dict:
+def fulfil(tenant, client_id: int, user: dict | None = None, metrics: dict | None = None) -> dict:
+    """One fulfilment run for a client, written from the client's brief. `metrics` overrides the client's
+    stored numbers (the weekly ops loop passes the latest period)."""
     actor = f"{user['username']}({user['role']})" if user else "system"
     with tenant.db() as c:
         cl = db.row(c.execute("SELECT * FROM clients WHERE id=?", (client_id,)).fetchone())
     if cl is None:
         raise KeyError(client_id)
-    cl["metrics"] = db.jload(cl["metrics"], {})
+    cl["metrics"] = metrics if metrics is not None else db.jload(cl["metrics"], {})
     demo = bool(cl["demo"])
+    built = brief_mod.for_client(cl)
+    b = built["brief"]
+    price = float(cl["price"] or b["price"] or 3000)
+    owner_uid = cl.get("owner_user_id")
 
     def fn(run: runtime.Run):
-        run.note("client", {"id": client_id}, {"name": cl["name"], "niche": cl["niche"]}, label="Load client")
-        mm = run.step("money_model", {"price": cl["price"]}, lambda: money_model(float(cl["price"] or 3000), cl["metrics"]),
-                      "Money model (3 scenarios)")
-        an = run.step("bottleneck", {}, lambda: diagnostic.analyse({**cl["metrics"], "offer_price": cl["price"]}),
+        run.note("client", {"id": client_id}, {"name": cl["name"], "niche": b["niche"], "brief_missing": built["missing"]},
+                 label="Load client")
+        mm = run.step("money_model", {"price": price}, lambda: money_model(price, cl["metrics"]), "Money model (3 scenarios)")
+        an = run.step("bottleneck", {}, lambda: diagnostic.analyse({**cl["metrics"], "offer_price": price}),
                       "Bottleneck vs SOP")
 
         def _plan():
             steps = [("Week 1", "Run a Thunder Dome creative test (3-5 creatives, equal budgets, 72 hours)", "Thunder Dome rules creatives"),
-                     ("Week 2", "Turn on the 24h / 2h / 10 min reminder ladder", "reminders twenty-four hours two hours ten minutes"),
+                     ("Week 2", "Set up call reminders at 24 hours, 2 hours and 10 minutes", "reminders twenty-four hours two hours ten minutes"),
                      ("Week 3", "Outline the seven-segment webinar", "seven segment webinar"),
                      ("Week 4", "Launch and review the weekly funnel numbers", "track every stage bottleneck fix that stage first")]
             out = []
@@ -90,20 +113,16 @@ def fulfil(tenant, client_id: int, user: dict | None = None) -> dict:
         plan = run.step("launch_plan", {}, _plan, "Launch plan (cited)")
 
         def _hooks_step():
-            reviewed = review_hooks(tenant, _hooks(cl, HOOK_TEMPLATES))
+            reviewed = review_hooks(tenant, _hooks(b, HOOK_TEMPLATES))
             regenerated = False
             if any(h["score"] < 60 for h in reviewed):
                 regenerated = True
-                retry = review_hooks(tenant, _hooks(cl, HOOK_RETRY))
+                retry = review_hooks(tenant, _hooks(b, HOOK_RETRY))
                 reviewed = [r2 if r1["score"] < 60 and r2["score"] > r1["score"] else r1 for r1, r2 in zip(reviewed, retry)]
             return {"hooks": reviewed, "regenerated_once": regenerated}
 
         hooks = run.step("ad_hooks", {}, _hooks_step, "Ad hooks (reviewed)")
-        vsl = run.step("vsl", {}, lambda: [
-            "Hook: name the outcome in one line", "The big mistake most " + (cl["niche"] or "owners") + " make",
-            "The new mechanism: referral-first system", "Proof: only verified results with permission",
-            "The offer: what's included, who it's for and not for", f"Price: {cl['price']:,.0f} (client asset)",
-            "One call to action"], "VSL outline")
+        vsl = run.step("vsl", {}, lambda: vsl_outline(b, price, built.get("proof")), "VSL outline")
         bn = an["bottleneck"]
         report = (f"Client report: {cl['name']}\nBottleneck: {bn['label'] if bn else 'none'}"
                   + (f" ({bn['value']:.0%} vs {bn['benchmark']:.0%})" if bn and bn['kind'] == 'rate' else "")
@@ -111,10 +130,13 @@ def fulfil(tenant, client_id: int, user: dict | None = None) -> dict:
                   + "\nNext 4 weeks: " + "; ".join(p["step"] for p in plan))
 
         def _queue():
-            meta = {"client_asset": True, "client_id": client_id}
+            meta = {"client_asset": True, "client_id": client_id, "fulfilment": True}
+            if owner_uid:
+                meta["owner_user_id"] = owner_uid
+            rcpt = cl.get("email") or f"client:{client_id}"
             ids = [
-                queue.add(tenant, "client_report", report, channel="email", title=f"Client report: {cl['name']}", meta=meta,
-                          run_id=run.id, actor=actor, demo=demo)["id"],
+                queue.add(tenant, "client_report", report, channel="email", recipient_ref=rcpt,
+                          title=f"Client report: {cl['name']}", meta=meta, run_id=run.id, actor=actor, demo=demo)["id"],
                 queue.add(tenant, "ad_hooks", "\n".join(h["hook"] for h in hooks["hooks"]), channel="manual",
                           title=f"Ad hooks: {cl['name']}", meta=meta, run_id=run.id, actor=actor, demo=demo)["id"],
                 queue.add(tenant, "vsl_outline", "\n".join(vsl), channel="manual", title=f"VSL outline: {cl['name']}", meta=meta,
@@ -127,7 +149,8 @@ def fulfil(tenant, client_id: int, user: dict | None = None) -> dict:
         qids = run.step("queue", {}, _queue, "Queue everything")
         run.note("report", {}, report, label="Client report")
         return {"client": {"id": client_id, "name": cl["name"]}, "money_model": mm, "analysis": an, "launch_plan": plan,
-                "hooks": hooks, "vsl_outline": vsl, "report": report, "queue_ids": qids}
+                "hooks": hooks, "vsl_outline": vsl, "report": report, "queue_ids": qids, "brief": b,
+                "brief_missing": built["missing"]}
 
     out = runtime.execute(tenant, "fulfilment", f"Fulfil {cl['name']}", PLAN, fn, actor)
     return {**out["result"], "run_id": out["run_id"]}

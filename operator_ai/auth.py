@@ -35,7 +35,8 @@ ROLE_TABS: dict[str, set[str]] = {
     "closer": {"home", "missions", "academy", "playbooks", "coach", "threads", "sales", "prospects", "calls", "drills",
                "queue", "projects", "settings"},
     "student": {"home", "missions", "academy", "playbooks", "coach", "threads", "review", "coaching", "prospects", "checkin",
-                "drills", "queue", "projects", "settings"},
+                "drills", "queue", "projects", "settings",
+                "clients"},  # a student's own clients only (routes/clients.py scopes every row by owner_user_id)
 }
 
 # Queue kinds a non-owner role may approve or reject. Everything else is owner-only
