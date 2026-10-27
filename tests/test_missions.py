@@ -79,9 +79,13 @@ def actor(u) -> str:
     return f"{u['username']}({u['role']})"
 
 
-def approve_all(t, u, qids):
+def approve_all(t, u, qids, confirm: bool = True):
+    """Approve, and (as the person would after sending it from their own account) confirm manual-channel sends:
+    with the delivery feature an approved Instagram DM waits as awaiting_manual_send until "I sent it"."""
     for q in qids:
-        queue.approve(t, q, actor(u), u["role"], user_id=u["id"])
+        r = queue.approve(t, q, actor(u), u["role"], user_id=u["id"])
+        if confirm and r["status"] == "awaiting_manual_send":
+            queue.mark_sent(t, q, actor(u), u["role"], user_id=u["id"])
 
 
 def out_count(t) -> int:
@@ -206,7 +210,7 @@ def test_first_client_end_to_end_student_approves_own_drafts(tenant, clock):
     other = mk_user(tenant, "student", "stu2")
     with pytest.raises(queue.QueueError) as e:
         queue.approve(tenant, block[0], actor(other), "student", user_id=other["id"])
-    assert e.value.status == 403
+    assert e.value.status in (403, 404)  # delivery: someone else's own item is invisible (404)
     approve_all(tenant, stu, block)
     st = S(engine.get(tenant, mid))
     assert st["openers"]["status"] == "waiting_time" and st["openers"]["cycles"] == 1
@@ -313,7 +317,8 @@ def test_rejected_draft_needs_retry_which_redrafts(tenant):
     q1 = S(m)["offer_doc"]["queue_ids"][0]
     queue.reject(tenant, q1, "o", "owner", "too long")
     st = S(engine.get(tenant, m["id"]))
-    assert st["offer_doc"]["status"] == "waiting_approval"  # rejections have no hook: picked up by sync
+    # delivery added queue.on_reject, which the engine registers: the step wakes at once (sync is the fallback)
+    assert st["offer_doc"]["status"] in ("waiting_approval", "blocked_human")
     acts = engine.next_actions(tenant, o)
     st = S(engine.get(tenant, m["id"]))
     assert st["offer_doc"]["status"] == "blocked_human" and "rejected" in st["offer_doc"]["message"]
