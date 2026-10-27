@@ -146,14 +146,15 @@ function Item({ it, onChange }: { it: any; onChange: () => void }) {
       {it.status === "awaiting_manual_send" && <p className="mt-2 text-sm">Approved — waiting for you to send it. {it.status_reason}</p>}
       {it.status === "sent" && (
         <p className="mt-2 text-xs text-muted">
-          Sent {when(it.sent_at)} · {deliveredLabel(it.delivered)}
+          Sent {when(it.sent_at)} · {deliveredLabel(it.delivered)}{it.status_reason ? ` · ${it.status_reason}` : ""}
           {it.meta?.permalink && <> · <a className="text-brand underline" href={it.meta.permalink} target="_blank" rel="noreferrer">View sent message</a></>}
         </p>
       )}
       {it.status === "send_failed" && <p className="mt-2 text-sm text-bad">Couldn't send: {it.status_reason || "the provider refused it"}</p>}
       {it.status === "cancelled" && <p className="mt-2 text-sm text-muted">Cancelled: {it.status_reason || "by a person"}</p>}
       {it.status === "rejected" && <p className="mt-2 text-xs text-muted">Rejected{it.reject_code ? ` — ${REASON_LABEL[it.reject_code] || "other reason"}` : ""}{it.status_reason ? `: ${it.status_reason}` : ""}{it.decided_by ? ` · by ${it.decided_by}` : ""}</p>}
-      {it.status === "approved" && it.delivered && <p className="mt-2 text-xs text-muted">{deliveredLabel(it.delivered)} · approved by {it.decided_by}</p>}
+      {it.status === "approved" && it.delivered && <p className="mt-2 text-xs text-muted">{deliveredLabel(it.delivered)} · approved by {it.decided_by}{it.status_reason ? ` · ${it.status_reason}` : ""}</p>}
+      {it.status === "sending" && <p className="mt-2 text-xs text-muted">Being sent right now. If it stays like this, it turns into a failed send you can check and retry.</p>}
       {open && it.status_reason && <p className="mt-2 text-xs text-muted">{it.status_reason}</p>}
       <ErrorBox error={err} />
 
@@ -358,7 +359,7 @@ function SendingSettings() {
             </Card>
           )}
           {!data.public_url_set && (
-            <p className="text-xs text-muted">Unsubscribe links point at this computer until the server's public web address is set. Live emails to prospects wait until it is (ask whoever runs the server).</p>
+            <p className="text-xs text-muted">Emails to prospects can't be approved until the server's public web address is set, so every unsubscribe link works (ask whoever runs the server).</p>
           )}
           {s && (
             <Card title="Limits" subtitle="Caps count messages that really went out, per local day." actions={<Button size="sm" loading={busy === "run"} onClick={runNow}><RotateCw className="size-3.5" /> Check due items now</Button>}>

@@ -5,7 +5,8 @@ approved (after edits) and again right before a scheduled item goes out.
 Delivery truth (what the status means):
 
     pending | held | needs_human      open: waiting for a person (held = guardrails block it)
-        --approve-->  sending          claimed atomically; only one approval can ever win
+        --approve-->  sending          claimed atomically; only one approval can ever win (a send interrupted by a
+                                       crash becomes send_failed after 15 minutes, never retried by itself)
             scheduled                  approved, meta.send_after is in the future; the dispatcher sends it
             awaiting_manual_send       approved on a channel the app cannot send on (Instagram/LinkedIn DMs,
                                        phone, or any channel without a live sender in a real workspace):
@@ -249,6 +250,32 @@ def get(tenant, qid: int, scrub: bool = True) -> dict | None:
     return r
 
 
+def _scope_sql(kinds: set[str] | None, own_user_id: int | None) -> tuple[str, list] | None:
+    """WHERE fragment for what a non-owner may see: kinds their role decides plus their own OWN_DECIDE items,
+    never an item another person owns (meta.owner_user_id). None = nothing visible."""
+    if kinds is None:
+        return "", []
+    own = (f"(json_extract(meta,'$.owner_user_id')=? AND kind IN ({','.join('?' * len(auth.OWN_DECIDE))}))"
+           if own_user_id is not None else None)
+    if not kinds and own is None:
+        return None
+    parts, pargs = [], []
+    if kinds:
+        parts.append(f"kind IN ({','.join('?' * len(kinds))})")
+        pargs += sorted(kinds)
+    if own:
+        parts.append(own)
+        pargs += [own_user_id, *sorted(auth.OWN_DECIDE)]
+    q = " AND (" + " OR ".join(parts) + ")"
+    # a draft someone wrote for their OWN prospect/client is theirs: other staff never see it by role
+    if own_user_id is not None:
+        q += " AND (json_extract(meta,'$.owner_user_id') IS NULL OR json_extract(meta,'$.owner_user_id')=?)"
+        pargs.append(own_user_id)
+    else:
+        q += " AND json_extract(meta,'$.owner_user_id') IS NULL"
+    return q, pargs
+
+
 def list_items(tenant, status: str | None = None, kind: str | None = None, run_id: int | None = None,
                chain_id: str | None = None, ids: list[int] | None = None, kinds: set[str] | None = None,
                limit: int = 200, tag: str | None = None, own_user_id: int | None = None) -> list[dict]:
@@ -276,20 +303,11 @@ def list_items(tenant, status: str | None = None, kind: str | None = None, run_i
     if ids:
         q += f" AND id IN ({','.join('?' * len(ids))})"
         args += ids
-    if kinds is not None:
-        own = (f"(json_extract(meta,'$.owner_user_id')=? AND kind IN ({','.join('?' * len(auth.OWN_DECIDE))}))"
-               if own_user_id is not None else None)
-        if not kinds and own is None:
-            return []
-        parts, pargs = [], []
-        if kinds:
-            parts.append(f"kind IN ({','.join('?' * len(kinds))})")
-            pargs += sorted(kinds)
-        if own:
-            parts.append(own)
-            pargs += [own_user_id, *sorted(auth.OWN_DECIDE)]
-        q += " AND (" + " OR ".join(parts) + ")"
-        args += pargs
+    scope = _scope_sql(kinds, own_user_id)
+    if scope is None:
+        return []
+    q += scope[0]
+    args += scope[1]
     q += " ORDER BY id DESC LIMIT ?"
     args.append(limit)
     names = guardrails.tenant_banned_names(tenant)
@@ -298,8 +316,28 @@ def list_items(tenant, status: str | None = None, kind: str | None = None, run_i
     return [_decorate(tenant, r, names) for r in out]
 
 
+def _foreign(role: str, item: dict, user_id: int | None) -> bool:
+    """An item another person drafted for their own prospect/client: only they (and the owner) may see it."""
+    owner = (item.get("meta") or {}).get("owner_user_id")
+    return role != "owner" and owner is not None and owner != user_id
+
+
 def _may(role: str, item: dict, user_id: int | None) -> bool:
+    if _foreign(role, item, user_id):
+        return False
     return auth.can_decide(role, item["kind"], item["meta"].get("owner_user_id"), user_id)
+
+
+def visible(role: str, item: dict | None, user_id: int | None) -> bool:
+    """Whether this user may see this item at all (the same rule list_items applies)."""
+    if item is None:
+        return False
+    if role == "owner":
+        return True
+    if _foreign(role, item, user_id):
+        return False
+    own = item["meta"].get("owner_user_id") == user_id and item["kind"] in auth.OWN_DECIDE
+    return own or item["kind"] in (decidable_kinds(role) or set())
 
 
 # --------------------------------------------------------------------------- atomic state changes
@@ -307,8 +345,29 @@ def _claim(tenant, qid: int, from_statuses: tuple[str, ...] | list[str], to: str
     """Move an item from one of from_statuses to `to` in a single UPDATE. Exactly one caller wins."""
     marks = ",".join("?" * len(from_statuses))
     with tenant.db() as c:
-        n = c.execute(f"UPDATE queue SET status=? WHERE id=? AND status IN ({marks})", (to, qid, *from_statuses)).rowcount
+        n = c.execute(f"UPDATE queue SET status=?, claimed_at=? WHERE id=? AND status IN ({marks})",
+                      (to, db.now(), qid, *from_statuses)).rowcount
     return n == 1
+
+
+STUCK_AFTER = 15 * 60  # a send that is still 'sending' after this long was interrupted (the server stopped mid-send)
+
+
+def recover_stuck(tenant, now: float | None = None) -> list[int]:
+    """Items left in 'sending' by a crash mid-send become send_failed with a warning, so a person checks
+    whether it went out before trying again (never retried automatically: a duplicate is worse than a miss)."""
+    now = now or db.now()
+    with tenant.db() as c:
+        ids = [r["id"] for r in c.execute("SELECT id FROM queue WHERE status='sending' AND claimed_at IS NOT NULL "
+                                          "AND claimed_at < ?", (now - STUCK_AFTER,))]
+    out = []
+    for qid in ids:
+        if _set(tenant, qid, only_if="sending", status="send_failed",
+                status_reason="Sending was interrupted, so it may or may not have gone out. Check before you try again, "
+                              "or cancel it."):
+            audit.log(tenant, "scheduler", "queue.send_failed", {"id": qid, "at": "recover_stuck"})
+            out.append(qid)
+    return out
 
 
 def _set(tenant, qid: int, only_if: str | None = None, **fields) -> bool:
@@ -342,7 +401,7 @@ def _already(item: dict) -> QueueError:
 
 def _lookup(tenant, qid: int, role: str, user_id: int | None, verb: str) -> dict:
     item = get(tenant, qid, scrub=False)
-    if item is None:
+    if item is None or _foreign(role, item, user_id):
         raise QueueError(404, "Not found")
     if not _may(role, item, user_id):
         raise QueueError(403, f"Your role can't {verb} this kind of item")
@@ -352,7 +411,7 @@ def _lookup(tenant, qid: int, role: str, user_id: int | None, verb: str) -> dict
 def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patch: dict | None = None,
          user_id: int | None = None) -> dict:
     item = get(tenant, qid, scrub=False)
-    if item is None:
+    if item is None or _foreign(role, item, user_id):
         raise QueueError(404, "Not found")
     if item["status"] not in OPEN:
         raise _already(item)
@@ -422,6 +481,19 @@ def approve(tenant, qid: int, actor: str, role: str = "owner", user_id: int | No
         _set(tenant, qid, status="send_failed", status_reason=str(e)[:500])
         audit.log(tenant, actor, "queue.send_failed", {"id": qid, "kind": item["kind"], "at": "approve"})
         raise QueueError(e.status, str(e))
+    except Exception as e:  # noqa: BLE001 - see below
+        from .redact import redact
+
+        log.warning("on_approve hook failed for queue item %s: %s", qid, redact(f"{type(e).__name__}: {e}")[:300])
+        why = redact(f"Approved, but a follow-on step failed ({type(e).__name__}). It has been logged.")
+        if status == "approved" and (item["channel"] or "manual") in ("ads", "crm"):
+            # the hook IS the effect (an ad change, a CRM move): it did not happen
+            _set(tenant, qid, status="send_failed", status_reason=why[:500])
+            audit.log(tenant, actor, "queue.send_failed", {"id": qid, "kind": item["kind"], "at": "approve"})
+            raise QueueError(502, why)
+        # the message itself was sent / scheduled / handed to a person: a follow-on error must not undo that
+        _set(tenant, qid, status_reason=why[:500])
+        audit.log(tenant, actor, "queue.hook_failed", {"id": qid, "kind": item["kind"], "at": "approve"})
     if status == "sent":
         _after_sent(tenant, get(tenant, qid, scrub=False), actor)
     return get(tenant, qid)
@@ -552,8 +624,15 @@ def dispatch(tenant, qid: int, actor: str = "scheduler", *, force: bool = False,
             return get(tenant, qid)
         try:
             out = _route(tenant, item, actor)
-        except QueueError as e:
-            _set(tenant, qid, status="send_failed", status_reason=str(e)[:500])
+        except Exception as e:  # noqa: BLE001 - never left 'sending' or retried blindly: a person decides
+            if isinstance(e, QueueError):
+                why = str(e)
+            else:
+                from .redact import redact
+
+                log.warning("dispatch failed for queue item %s: %s", qid, redact(f"{type(e).__name__}: {e}")[:300])
+                why = redact(f"Sending failed ({type(e).__name__}); nothing was marked sent. Try again or cancel it.")
+            _set(tenant, qid, status="send_failed", status_reason=why[:500])
             audit.log(tenant, actor, "queue.send_failed", {"id": qid, "kind": item["kind"], "at": "dispatch"})
             return get(tenant, qid)
     except BaseException:
@@ -581,8 +660,19 @@ def _route(tenant, item: dict, actor: str) -> dict:
     meta = item["meta"]
     if ch == "calendar" and meta.get("live") and tenant.get("live_calendar_enabled", False):
         from .live import chain
+        from .redact import redact
 
-        return {"status": "sent", "delivered": chain.deliver_calendar_invite(tenant, item)}
+        try:
+            return {"status": "sent", "delivered": chain.deliver_calendar_invite(tenant, item)}
+        except Exception as e:  # noqa: BLE001 - nothing is marked sent; the reason is redacted
+            log.warning("live calendar invite failed for queue item %s: %s", item["id"], redact(type(e).__name__))
+            raise QueueError(502, redact(f"The calendar invite could not be created ({type(e).__name__}); nothing was "
+                                         "sent. Check the Google calendar connection and try again."))
+    if (ch == "email" and not tenant.is_demo and delivery._is_prospect_email(item)
+            and delivery._is_local(delivery.public_base())):
+        # live OR copied by hand, the unsubscribe link in a prospect email must work for the person who gets it
+        raise QueueError(409, "Prospect emails need the server's public web address so the unsubscribe link works. "
+                              "Ask whoever runs the server to set OPERATOR_PUBLIC_URL.")
     if ch in INTERNAL_CHANNELS:
         return {"status": "approved", "delivered": "action" if ch in ("ads", "crm") else "ready to send manually"}
     if ch in MANUAL_CHANNELS:
@@ -714,9 +804,14 @@ def _after_sent(tenant, item: dict, actor: str) -> None:
                                       "delivered": item.get("delivered")})
 
 
-def counts(tenant) -> dict:
+def counts(tenant, kinds: set[str] | None = None, own_user_id: int | None = None) -> dict:
+    """Items per status, over exactly what this person may see (kinds=None: everything, for the owner)."""
+    scope = _scope_sql(kinds, own_user_id)
+    if scope is None:
+        return {}
     with tenant.db() as c:
-        return {r["status"]: r["n"] for r in c.execute("SELECT status, COUNT(*) n FROM queue GROUP BY status")}
+        return {r["status"]: r["n"] for r in c.execute(f"SELECT status, COUNT(*) n FROM queue WHERE 1=1{scope[0]} "
+                                                       "GROUP BY status", scope[1])}
 
 
 def decidable_kinds(role: str) -> set[str] | None:

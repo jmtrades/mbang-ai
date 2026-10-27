@@ -568,12 +568,28 @@ def test_live_prospect_email_needs_a_public_address(tenant, smtp, monkeypatch):
     assert queue.get(tenant, it["id"])["status"] == "pending"
 
 
-def test_manual_prospect_email_copy_text_has_the_link(tenant):
+def test_manual_prospect_email_copy_text_has_the_link(tenant, monkeypatch):
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")
     _address(tenant)
     it = queue.add(tenant, "prospect_email", "Quick idea. Worth a look?", channel="email", recipient_ref="pat.example@example.invalid",
                    meta={"prospect_facing": True, "lead_tier": "cold"})
     r = queue.approve(tenant, it["id"], "o")
-    assert r["status"] == "awaiting_manual_send" and "/u/" in r["send_text"] and "{unsubscribe_link}" not in r["send_text"]
+    assert r["status"] == "awaiting_manual_send" and "{unsubscribe_link}" not in r["send_text"]
+    assert "https://operator.example.invalid/u/" in r["send_text"]
+
+
+def test_manual_prospect_email_never_carries_a_localhost_link(tenant, monkeypatch):
+    # review fix: the copy-and-send path used to hand a person an unsubscribe link pointing at 127.0.0.1
+    monkeypatch.delenv("OPERATOR_PUBLIC_URL", raising=False)
+    _address(tenant)
+    it = queue.add(tenant, "prospect_email", "Quick idea. Worth a look?", channel="email", recipient_ref="pat.example@example.invalid",
+                   meta={"prospect_facing": True, "lead_tier": "cold"})
+    with pytest.raises(queue.QueueError) as ei:
+        queue.approve(tenant, it["id"], "o")
+    assert ei.value.status == 409 and "OPERATOR_PUBLIC_URL" in str(ei.value)
+    assert queue.get(tenant, it["id"])["status"] == "pending"
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM unsubscribe_tokens").fetchone()[0] == 0
 
 
 def test_mailbox_daily_cap_and_warmup(tenant, smtp):
@@ -997,3 +1013,334 @@ def test_everything_runs_with_ai_off(tenant):
     assert r["queue_ids"] and r["cadence_id"]
     rep = sales.record_reply(tenant, lid, "Yes please")
     assert rep["mode"] == "rules" and rep["booking"]["booking_dm"]
+
+
+# ---------------------------------------------------------------- review fixes (hostile review, 2026-10-27)
+def _chain_lead(t, fields: dict, leadgen_id: str = "lg-review") -> int:
+    with t.db() as c:
+        return c.execute("INSERT INTO chain_leads(leadgen_id,data,tier,score,citations,stage,created) VALUES(?,?,?,?,?,?,?)",
+                         (leadgen_id, db.jdump({"fields": fields}), "warm", 50, "[]", "qualified", db.now())).lastrowid
+
+
+def test_staff_never_see_or_decide_a_students_own_followups(client):
+    # a cadence follow-up for a student's own prospect is kind 'followup', which setters/closers decide by role:
+    # it must stay the student's (and the owner's), not leak to every setter
+    demo_login(client, "setter")
+    t = tenancy.get("demo")
+    with t.db() as c:
+        student = c.execute("SELECT id FROM users WHERE role='student' ORDER BY id LIMIT 1").fetchone()[0]
+    theirs = queue.add(t, "followup", "Here's the checklist I mentioned.", channel="instagram_dm", recipient_ref="@pat_demo",
+                       meta={"prospect_facing": True, "lead_tier": "cold", "prior_contact": True, "owner_user_id": student})
+    business = queue.add(t, "followup", "Here's the checklist I mentioned.", channel="instagram_dm", recipient_ref="@lee_demo",
+                         meta={"prospect_facing": True, "lead_tier": "cold", "prior_contact": True})
+    ids = [i["id"] for i in client.get("/t/demo/api/queue").json()["items"]]
+    assert theirs["id"] not in ids and business["id"] in ids  # role access to business follow-ups is unchanged
+    assert client.get(f"/t/demo/api/queue/{theirs['id']}").status_code == 404
+    for verb in ("approve", "reject", "sent", "cancel", "send-now"):
+        assert client.post(f"/t/demo/api/queue/{theirs['id']}/{verb}").status_code == 404, verb
+    assert client.put(f"/t/demo/api/queue/{theirs['id']}", json={"body": "edited by someone else"}).status_code == 404
+    assert queue.get(t, theirs["id"])["status"] == "pending"
+    # the student still decides their own; the owner sees everything
+    assert queue.approve(t, theirs["id"], "student(student)", role="student", user_id=student)["status"] == "awaiting_manual_send"
+    assert queue.visible("owner", queue.get(t, theirs["id"]), None)
+
+
+def test_queue_counts_cover_only_what_the_viewer_may_see(client):
+    demo_login(client, "student")
+    me = client.get("/t/demo/api/me").json()["user"]["id"]
+    t = tenancy.get("demo")
+    queue.add(t, "prospect_dm", "Quick question about your clinic?", channel="instagram_dm",
+              meta={"prospect_facing": True, "lead_tier": "cold", "owner_user_id": me})
+    r = client.get("/t/demo/api/queue").json()
+    assert sum(r["counts"].values()) == len(r["items"]) >= 1  # no business-wide totals for a student
+    assert sum(queue.counts(t).values()) > sum(r["counts"].values())  # the owner's view is the whole workspace
+
+
+def test_only_the_owner_can_record_sms_opt_in(client):
+    demo_login(client, "student")
+    me = client.get("/t/demo/api/me").json()["user"]["id"]
+    t = tenancy.get("demo")
+    pid = _prospect(t, owner_user_id=me)
+    body = {"party_type": "prospect", "party_id": pid, "channel": "sms", "address": "+1 555 0142 000", "opted_in": True}
+    assert client.post("/t/demo/api/delivery/contacts", json=body).status_code == 403
+    sms = queue.add(t, "prospect_dm", "Quick question?", channel="sms", recipient_ref="+15550142000",
+                    meta={"prospect_facing": True, "lead_tier": "cold", "owner_user_id": me, "prospect_id": pid})
+    assert sms["status"] == "held" and any(f["code"] == "not_opted_in" for f in sms["flags"])
+    assert client.post("/t/demo/api/delivery/contacts", json={**body, "opted_in": False}).status_code == 200
+    demo_login(client, "owner")
+    assert client.post("/t/demo/api/delivery/contacts", json=body).json()["opted_in"] == 1
+    consent = [a for a in client.get("/t/demo/api/audit", params={"kind": "consent"}).json()["items"]
+               if "opted_in" in json.dumps(a)]
+    assert consent  # recorded, with who did it
+
+
+def test_a_crashing_follow_on_hook_never_turns_a_real_send_into_an_error(demo_tenant):
+    @queue.on_approve("review_probe")
+    def _boom(t, item, actor):
+        raise RuntimeError("follow-on step broke")
+
+    try:
+        it = queue.add(demo_tenant, "review_probe", "Here is the replay link.", channel="email", recipient_ref="a@example.invalid")
+        r = queue.approve(demo_tenant, it["id"], "owner(owner)")
+        assert r["status"] == "sent" and "follow-on step failed" in r["status_reason"]
+        assert [e for e in _events(demo_tenant, "item_sent") if e["queue_id"] == it["id"]]  # on_sent still fired
+    finally:
+        queue._HOOKS.pop("review_probe", None)
+
+
+def test_live_calendar_failure_is_a_clean_502_and_the_invite_stays_open(tenant):
+    tenant.set("live_calendar_enabled", True)  # switch on, but no Google login in the vault
+    start = db.now() + 3 * DAY
+    it = queue.add(tenant, "calendar_invite", "Strategy call", channel="calendar", recipient_ref="x@example.invalid",
+                   meta={"slot": {"start": start, "end": start + 2700, "label": "Thu"}, "live": True,
+                         "attendees": ["x@example.invalid"]})
+    with pytest.raises(queue.QueueError) as ei:
+        queue.approve(tenant, it["id"], "owner(owner)")
+    assert ei.value.status == 502 and "nothing was sent" in str(ei.value)
+    assert queue.get(tenant, it["id"])["status"] == "pending"
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM calendar_events").fetchone()[0] == 0
+
+
+def test_one_broken_due_item_does_not_hold_up_the_others(demo_tenant, monkeypatch):
+    a = queue.add(demo_tenant, "reminder", "First reminder.", channel="email", recipient_ref="a@example.invalid",
+                  meta={"send_after": db.now() + 3600})
+    b = queue.add(demo_tenant, "reminder", "Second reminder.", channel="email", recipient_ref="b@example.invalid",
+                  meta={"send_after": db.now() + 7200})
+    queue.approve(demo_tenant, a["id"], "o")
+    queue.approve(demo_tenant, b["id"], "o")
+    real_route, real_reason = queue._route, delivery.cancel_reason
+
+    def route(t, item, actor):
+        if item["id"] == a["id"]:
+            raise RuntimeError("provider exploded token=abc123secret")
+        return real_route(t, item, actor)
+
+    monkeypatch.setattr(queue, "_route", route)
+    delivery.dispatch_due(demo_tenant, now=db.now() + 8000)
+    fa, fb = queue.get(demo_tenant, a["id"]), queue.get(demo_tenant, b["id"])
+    assert fb["status"] == "sent"
+    assert fa["status"] == "send_failed" and "abc123secret" not in fa["status_reason"]
+    # an error before the send (in the checks) is isolated too, never left 'sending' or retried every tick
+    c_ = queue.add(demo_tenant, "reminder", "Third reminder.", channel="email", recipient_ref="c@example.invalid",
+                   meta={"send_after": db.now() + 3600})
+    queue.approve(demo_tenant, c_["id"], "o")
+    monkeypatch.setattr(delivery, "cancel_reason", lambda t, item: (_ for _ in ()).throw(ValueError("bad data")))
+    delivery.dispatch_due(demo_tenant, now=db.now() + 8000)
+    assert queue.get(demo_tenant, c_["id"])["status"] == "send_failed"
+    monkeypatch.setattr(delivery, "cancel_reason", real_reason)
+
+
+def test_a_send_interrupted_mid_way_is_recovered_not_stuck(demo_tenant):
+    it = queue.add(demo_tenant, "reminder", "Hello.", channel="email", recipient_ref="a@example.invalid")
+    assert queue._claim(demo_tenant, it["id"], queue.OPEN)  # as if the server died right after claiming it
+    assert "recovered" not in delivery.dispatch_due(demo_tenant)  # a slow send is left alone
+    r = delivery.dispatch_due(demo_tenant, now=db.now() + queue.STUCK_AFTER + 60)
+    assert r["recovered"] == [it["id"]]
+    got = queue.get(demo_tenant, it["id"])
+    assert got["status"] == "send_failed" and "may or may not have gone out" in got["status_reason"]
+    assert queue.cancel(demo_tenant, it["id"], "o")["status"] == "cancelled"
+
+
+def test_cancelling_an_approved_invite_cancels_the_call_and_its_reminders(tenant):
+    lid = _lead(tenant)
+    start = db.now() + 3 * DAY
+    inv = queue.add(tenant, "calendar_invite", "Strategy call", channel="calendar", recipient_ref="test.lead@example.invalid",
+                    meta={"lead_id": lid, "slot": {"start": start, "end": start + 2700, "label": "Thu 10:00"},
+                          "attendees": ["test.lead@example.invalid"], "owner_only": True})
+    assert queue.approve(tenant, inv["id"], "o")["status"] == "awaiting_manual_send"
+    ladder = queue.list_items(tenant, kind="reminder")
+    assert len(ladder) == 3
+    queue.cancel(tenant, inv["id"], "owner(owner)", reason="They asked to move it")
+    assert {queue.get(tenant, i["id"])["status"] for i in ladder} == {"cancelled"}
+    with tenant.db() as c:
+        assert c.execute("SELECT status FROM calendar_events WHERE queue_id=?", (inv["id"],)).fetchone()[0] == "cancelled"
+    assert _events(tenant, "booking_cancelled")
+
+
+def test_stopping_a_sequence_cancels_its_drafted_step(tenant):
+    lid = _lead(tenant)
+    first = queue.add(tenant, "setter_reply", "Thanks for reaching out.", channel="instagram_dm", recipient_ref="@test_demo",
+                      meta={"lead_id": lid, "prospect_facing": True, "lead_tier": "warm", "prior_contact": True})
+    cid = delivery.register_cadence(tenant, ("lead", lid), first["id"], "instagram_dm", "@test_demo", template="lead",
+                                    context={"followups": ["A short video. Want it?", "A quick tip. What do you do today?"]})
+    queue.approve(tenant, first["id"], "o")
+    queue.mark_sent(tenant, first["id"], "o")
+    step = delivery.run_cadences(tenant, now=db.now() + 3 * DAY)["drafted"][0]
+    assert delivery.stop_cadence(tenant, cid, "owner(owner)")
+    got = queue.get(tenant, step)
+    assert got["status"] == "cancelled" and "stopped" in got["status_reason"]
+
+
+def test_one_broken_sequence_does_not_stop_the_others(tenant, monkeypatch):
+    lids = []
+    for n in range(2):
+        lid = _lead(tenant, handle=f"@seq{n}_demo", email=f"seq{n}@example.invalid")
+        first = queue.add(tenant, "setter_reply", "Thanks for reaching out.", channel="instagram_dm", recipient_ref=f"@seq{n}_demo",
+                          meta={"lead_id": lid, "prospect_facing": True, "lead_tier": "warm", "prior_contact": True})
+        delivery.register_cadence(tenant, ("lead", lid), first["id"], "instagram_dm", f"@seq{n}_demo", template="lead",
+                                  context={"followups": ["A short video. Want it?", "A quick tip?"]})
+        queue.approve(tenant, first["id"], "o")
+        queue.mark_sent(tenant, first["id"], "o")
+        lids.append(lid)
+    real = delivery.party_label
+    monkeypatch.setattr(delivery, "party_label",
+                        lambda t, p: (_ for _ in ()).throw(RuntimeError("x")) if p[1] == lids[0] else real(t, p))
+    res = delivery.run_cadences(tenant, now=db.now() + 3 * DAY)
+    monkeypatch.setattr(delivery, "party_label", real)
+    assert len(res["drafted"]) == 1
+    assert sorted(r["status"] for r in delivery.list_cadences(tenant)) == ["active", "waiting_send"]  # retried later
+
+
+def test_unsubscribe_or_stop_from_a_chain_lead_blocks_every_channel(tenant, monkeypatch):
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")
+    _address(tenant)
+    cl = _chain_lead(tenant, {"full_name": "Pat Example (DEMO)", "email": "pat.chain@example.invalid", "instagram": "pat_chain_demo"})
+    it = queue.add(tenant, "followup", "Quick idea. Worth a look?", channel="email", recipient_ref="pat.chain@example.invalid",
+                   meta={"prospect_facing": True, "lead_tier": "warm", "chain_lead_id": cl, "prior_contact": True})
+    queue.approve(tenant, it["id"], "o")
+    token = queue.get(tenant, it["id"])["meta"]["unsubscribe_path"].split("/u/")[1]
+    assert delivery.unsubscribe(token)["already"] is False
+    assert delivery.is_dnc(tenant, ("chain_lead", cl))
+    dm = queue.add(tenant, "booking_dm", "Here are three times. Which suits?", channel="instagram_dm",
+                   recipient_ref="@pat_chain_demo", meta={"prospect_facing": True, "lead_tier": "warm", "chain_lead_id": cl,
+                                                          "prior_contact": True})
+    assert dm["status"] == "held" and any(f["code"] == "do_not_contact" for f in dm["flags"])
+    cl2 = _chain_lead(tenant, {"full_name": "Sam Example (DEMO)", "instagram": "sam_chain_demo"}, "lg-review-2")
+    chain.record_reply(tenant, cl2, "Please stop messaging me")
+    assert delivery.is_dnc(tenant, ("chain_lead", cl2)) and len(_events(tenant, "dnc_set")) == 2
+
+
+def test_unsubscribe_clicked_twice_at_once_applies_once(client, tenant, monkeypatch):
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")
+    _address(tenant)
+    pid = _prospect(tenant)
+    it = queue.add(tenant, "prospect_email", "Quick idea. Worth a look?", channel="email", recipient_ref="pat.example@example.invalid",
+                   meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": pid})
+    queue.approve(tenant, it["id"], "o")
+    token = queue.get(tenant, it["id"])["meta"]["unsubscribe_path"].split("/u/")[1]
+    out = []
+    ths = [threading.Thread(target=lambda: out.append(delivery.unsubscribe(token)["already"])) for _ in range(4)]
+    for th in ths:
+        th.start()
+    for th in ths:
+        th.join()
+    assert sorted(out) == [False, True, True, True]
+    assert len(_events(tenant, "unsubscribed")) == 1 and len(_events(tenant, "dnc_set")) == 1
+
+
+def test_unsubscribe_guessing_is_throttled_but_real_unsubscribes_never_are(client, monkeypatch):
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")
+    codes = [client.post("/u/owner.not-a-real-token").status_code for _ in range(40)]
+    assert codes[0] == 404 and codes[-1] == 429
+    assert client.get("/u/owner.not-a-real-token").status_code == 429
+    # the same address (say, a mail provider's one-click POSTs) can still unsubscribe with a real link
+    t = tenancy.get("owner")
+    _address(t)
+    it = queue.add(t, "prospect_email", "Quick idea. Worth a look?", channel="email", recipient_ref="pat.example@example.invalid",
+                   meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": _prospect(t)})
+    queue.approve(t, it["id"], "o")
+    path = queue.get(t, it["id"])["meta"]["unsubscribe_path"]
+    assert client.get(path).status_code == 200
+    r = client.post(path, content=b"List-Unsubscribe=One-Click",
+                    headers={"content-type": "application/x-www-form-urlencoded"})
+    assert r.status_code == 200 and "unsubscribed" in r.text
+
+
+def test_times_can_only_be_picked_from_a_booking_message_that_went_out(tenant):
+    lid = _lead(tenant)
+    off = sales.offer_times(tenant, lid)
+    for status in ("send_failed", "scheduled", "cancelled"):
+        queue._set(tenant, off["booking_dm"], status=status)
+        with pytest.raises(sales.BookingError) as ei:
+            sales.pick_slot(tenant, lid, 0)
+        assert ei.value.status == 409, status
+    queue._set(tenant, off["booking_dm"], status="awaiting_manual_send")
+    assert sales.pick_slot(tenant, lid, 0)["invite"]
+
+
+def test_coach_sees_their_students_sequences(client):
+    demo_login(client, "coach")
+    me = client.get("/t/demo/api/me").json()["user"]
+    t = tenancy.get("demo")
+    with t.db() as c:
+        sid = c.execute("INSERT INTO students(name,email,coach_id,demo) VALUES(?,?,?,1)",
+                        ("Kit Example (DEMO)", "kit@example.invalid", me["id"])).lastrowid
+        other = c.execute("INSERT INTO students(name,email,coach_id,demo) VALUES(?,?,?,1)",
+                          ("Lou Example (DEMO)", "lou@example.invalid", 999999)).lastrowid
+    mine = _user(t, "kit_review", "student", student_id=sid)
+    theirs = _user(t, "lou_review", "student", student_id=other)
+    a = delivery.register_cadence(t, ("prospect", _prospect(t, owner_user_id=mine)), 0, "instagram_dm", "@pat_demo",
+                                  owner_user_id=mine)
+    b = delivery.register_cadence(t, ("prospect", _prospect(t, owner_user_id=theirs, handle="@lou_p_demo")), 0, "instagram_dm",
+                                  "@lou_p_demo", owner_user_id=theirs)
+    ids = {r["id"] for r in client.get("/t/demo/api/delivery/cadences").json()["items"]}
+    assert a in ids and b not in ids
+    assert client.post(f"/t/demo/api/delivery/cadences/{b}/stop").status_code == 404
+
+
+def test_previewed_email_drafts_are_not_blocked_for_the_footer_the_queue_adds(tenant):
+    _address(tenant)
+    # another feature previewing a prospect email before queueing it: the footer is added by queue.add, so only the
+    # postal-address rule can apply to the preview; the queue's own check still enforces the unsubscribe line
+    assert delivery.guard_rules("Quick idea?", "outreach", {"channel": "email"}, tenant) == []
+    codes = {f["code"] for f in delivery.guard_rules("Quick idea?", "outreach", {"_channel": "email"}, tenant)}
+    assert codes == {"missing_unsubscribe", "missing_postal_address"}
+    skills.put_profile(tenant, {"identity": {"postal_address": ""}}, "test")
+    assert {f["code"] for f in delivery.guard_rules("Quick idea?", "outreach", {"channel": "email"}, tenant)} == {
+        "missing_postal_address"}  # still needs the address set up before any prospect email
+
+
+def test_chain_reminders_use_the_handle_form_the_chain_dms_use(tenant):
+    cl = _chain_lead(tenant, {"full_name": "Pat Example (DEMO)", "instagram": "pat_chain_demo"})
+    assert delivery._party_row(tenant, ("chain_lead", cl))["handle"] == "@pat_chain_demo"
+
+
+def test_cancelling_an_old_call_keeps_the_rescheduled_calls_reminders(tenant):
+    lid = _lead(tenant)
+    calls = []
+    for days in (3, 5):  # first booking, then a second one (rescheduled) with the same lead
+        start = db.now() + days * DAY
+        inv = queue.add(tenant, "calendar_invite", "Strategy call", channel="calendar", recipient_ref="test.lead@example.invalid",
+                        meta={"lead_id": lid, "slot": {"start": start, "end": start + 2700, "label": f"day {days}"},
+                              "attendees": ["test.lead@example.invalid"], "owner_only": True})
+        queue.approve(tenant, inv["id"], "o")
+        with tenant.db() as c:
+            ev = c.execute("SELECT id FROM calendar_events WHERE queue_id=?", (inv["id"],)).fetchone()[0]
+        calls.append((ev, [i["id"] for i in queue.list_items(tenant, kind="reminder")
+                           if i["meta"].get("calendar_event_id") == ev]))
+    (old_ev, old_rem), (new_ev, new_rem) = calls
+    for qid in old_rem + new_rem:
+        queue.approve(tenant, qid, "o")  # approved: they wait as scheduled
+    delivery.cancel_booking(tenant, old_ev, "owner(owner)")
+    assert {queue.get(tenant, q)["status"] for q in old_rem} == {"cancelled"}
+    assert {queue.get(tenant, q)["status"] for q in new_rem} == {"scheduled"}
+    # and the send-time predicate agrees: the new call's reminders still go out
+    for q in new_rem:
+        assert delivery.cancel_reason(tenant, queue.get(tenant, q, scrub=False)) is None
+
+
+def test_out_of_range_ids_are_422_never_a_database_overflow(client):
+    demo_login(client, "owner")
+    big = 2 ** 70
+    calls = [
+        ("get", f"/t/demo/api/queue/{big}", None), ("put", f"/t/demo/api/queue/{big}", {"body": "x"}),
+        ("post", f"/t/demo/api/queue/{big}/approve", None), ("post", f"/t/demo/api/queue/{big}/reject", None),
+        ("post", f"/t/demo/api/queue/{big}/sent", None), ("post", f"/t/demo/api/queue/{big}/cancel", None),
+        ("post", f"/t/demo/api/queue/{big}/send-now", None), ("post", f"/t/demo/api/delivery/cadences/{big}/stop", None),
+        ("delete", f"/t/demo/api/delivery/contacts/{big}", None), ("post", f"/t/demo/api/leads/{big}/reply", {"text": "yes"}),
+        ("post", f"/t/demo/api/leads/{big}/offer-times", None), ("post", f"/t/demo/api/leads/{big}/pick-slot", {"index": 0}),
+        ("get", f"/t/demo/api/leads/{big}/booking", None), ("post", f"/t/demo/api/chain/leads/{big}/offer-times", None),
+        ("post", f"/t/demo/api/chain/leads/{big}/pick-slot", {"index": 0}), ("post", f"/t/demo/api/bookings/{big}/cancel", None),
+        ("post", f"/t/demo/api/chain/leads/{big}/reply", {"text": "yes"}),
+        ("post", f"/t/demo/api/chain/leads/{big}/outcome", {"outcome": "showed"}),
+        ("post", "/t/demo/api/delivery/contacts", {"party_type": "lead", "party_id": big, "channel": "email",
+                                                   "address": "a@example.invalid"}),
+        ("post", "/t/demo/api/leads/1/pick-slot", {"start": 1e308}),
+    ]
+    for method, url, body in calls:
+        r = getattr(client, method)(url, **({"json": body} if body is not None else {}))
+        assert r.status_code == 422, (method, url, r.status_code)
+    assert client.get("/t/demo/api/delivery/contacts", params={"party_type": "lead", "party_id": big}).status_code == 422
+    assert client.get("/t/demo/api/queue", params={"ids": str(big)}).status_code == 200
+    assert client.get("/t/demo/api/queue", params={"run_id": big}).status_code == 422

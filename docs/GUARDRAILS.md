@@ -56,7 +56,15 @@ Client assets (VSL, webinar script, pages, that funnel's emails) may state the s
   (`sent` / `send_failed`). Mock transports run only in the demo workspace. The scheduled dispatcher re-runs the
   guardrails and the never-invite check and evaluates `meta.cancel_if` before anything goes. Stage moves, caps and
   stats count `sent`, never `approved`. Prospect email carries a postal-address footer, an unsubscribe link and
-  List-Unsubscribe headers; `/u/{token}` sets do-not-contact and suppresses the address.
+  List-Unsubscribe headers; `/u/{token}` (guessing is throttled, a real link always works, applied once) sets
+  do-not-contact and suppresses the address.
+  In a real workspace a prospect email cannot be approved (live or copy-and-send) until `OPERATOR_PUBLIC_URL` is set,
+  so the link never points at localhost. A send interrupted mid-way becomes `send_failed` after 15 minutes and is
+  never retried by itself.
+- **Your drafts stay yours.** A queue item carrying `meta.owner_user_id` (outreach a person drafted for their own
+  prospects/clients) is visible to and decided by that person and the owner only, never by other staff through
+  their role; queue counts cover only what the viewer may see. Only the owner can record SMS/phone opt-in collected
+  outside the app (audited as consent); everyone else's contacts opt in by replying START.
 - **No impersonation.** Banned names are scrubbed (generated text, traces, citations, the UI via a response
   middleware) and block any queue item. A named persona needs recorded consent (Owner console → Personality).
 - **Demo labelled and separate.** Fictional records carry "(DEMO)" and `example.invalid`; `data/demo.db` is separate;

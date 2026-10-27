@@ -60,6 +60,10 @@ export function BurstPanel() {
   );
 }
 
+const REPLY_LABEL: Record<string, string> = {
+  positive: "wants a call", negative: "not now", question: "asked a question", neutral: "no clear answer", stop: "asked us to stop",
+};
+
 function ReplyPanel({ lead, onDone }: { lead: any; onDone: () => void }) {
   const { go, toast } = useApp();
   const [text, setText] = useState("");
@@ -83,7 +87,7 @@ function ReplyPanel({ lead, onDone }: { lead: any; onDone: () => void }) {
     run(`reply-${classification || "auto"}`, () => post(`/leads/${lead.id}/reply`, { text: text.trim() || "(reply noted without its text)", classification }), (r) => {
       setBooking(r.booking);
       setNext(r.next || "");
-      toast(`Reply recorded (${r.classification})`, "good");
+      toast(`Reply recorded: ${REPLY_LABEL[r.classification] || "noted"}`, "good");
     });
   const offer = () => run("offer", () => post(`/leads/${lead.id}/offer-times`), (r) => { setBooking(r); setNext("Approve the booking message in the queue, then record the time they pick."); });
   const pick = (i: number) =>

@@ -132,7 +132,8 @@ def _party_row(tenant, party: tuple[str, int]) -> dict | None:
         fields = (db.jload(r.get("data"), {}) or {}).get("fields", {}) or {}
         r["name"] = fields.get("full_name") or f"Lead {pid}"
         r["email"] = fields.get("email")
-        r["handle"] = fields.get("instagram")
+        ig = str(fields.get("instagram") or "").strip()
+        r["handle"] = ("@" + ig.lstrip("@")) if ig else None  # same form the chain's own DMs use
     return r
 
 
@@ -152,6 +153,9 @@ def is_dnc(tenant, party: tuple[str, int]) -> bool:
         if t == "lead":
             r = c.execute("SELECT do_not_contact FROM leads WHERE id=?", (pid,)).fetchone()
             return bool(r and r["do_not_contact"])
+        if t == "chain_lead":
+            r = c.execute("SELECT do_not_contact FROM chain_leads WHERE id=?", (pid,)).fetchone()
+            return bool(r and r["do_not_contact"])
     return False
 
 
@@ -162,6 +166,8 @@ def set_dnc(tenant, party: tuple[str, int], actor: str, reason: str = "") -> boo
             n = c.execute("UPDATE prospects SET do_not_contact=1, stage='dnc', updated=? WHERE id=?", (db.now(), pid)).rowcount
         elif t == "lead":
             n = c.execute("UPDATE leads SET do_not_contact=1 WHERE id=?", (pid,)).rowcount
+        elif t == "chain_lead":
+            n = c.execute("UPDATE chain_leads SET do_not_contact=1 WHERE id=?", (pid,)).rowcount
         else:
             n = 0
     if n:
@@ -404,12 +410,15 @@ def _norm_space(s: str) -> str:
 
 def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
     """Prospect-facing email must carry an unsubscribe line and the business postal address."""
-    channel = (meta or {}).get("_channel") or (meta or {}).get("channel")
+    queued = (meta or {}).get("_channel")  # set by the queue, which adds the footer before checking
+    channel = queued or (meta or {}).get("channel")
     if mode != "outreach" or channel != "email":
         return []
     flags = []
     low = (text or "").lower()
-    if "unsubscribe" not in low or (UNSUB_PLACEHOLDER not in text and "/u/" not in text):
+    # a draft previewed before it is queued has no footer yet (queue.add adds it), so only the queue's own
+    # check can judge the footer's text; a business postal address must be set up either way
+    if queued and ("unsubscribe" not in low or (UNSUB_PLACEHOLDER not in text and "/u/" not in text)):
         flags.append(guardrails._flag("missing_unsubscribe", "block",
                                       "Prospect emails need an unsubscribe line with a working link", ""))
     addr = postal_address(tenant) if tenant is not None else ""
@@ -417,7 +426,7 @@ def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
         flags.append(guardrails._flag("missing_postal_address", "block",
                                       "Add your business postal address (Business profile, Identity) before emailing "
                                       "prospects", ""))
-    elif _norm_space(addr) not in _norm_space(text):
+    elif queued and _norm_space(addr) not in _norm_space(text):
         flags.append(guardrails._flag("missing_postal_address", "block",
                                       "Prospect emails must show your business postal address", ""))
     return flags
@@ -490,10 +499,10 @@ def unsubscribe(token: str) -> dict | None:
         return None
     t, row = found
     party = (row["party_type"], row["party_id"]) if row["party_type"] and row["party_id"] is not None else None
-    first = row["used"] is None
+    with t.db() as c:  # claim: two clicks at once (or a mail scanner plus a person) apply it once
+        first = c.execute("UPDATE unsubscribe_tokens SET used=? WHERE token_hash=? AND used IS NULL",
+                          (db.now(), row["token_hash"])).rowcount == 1
     if first:
-        with t.db() as c:
-            c.execute("UPDATE unsubscribe_tokens SET used=? WHERE token_hash=?", (db.now(), row["token_hash"]))
         if row["address"]:
             suppress(t, row["address"], row["channel"], "unsubscribed", party)
         audit.log(t, "unsubscribe-link", "consent", {"unsubscribed": True, "party_type": row["party_type"],
@@ -652,11 +661,14 @@ def booking_cancelled(tenant, meta: dict, party: tuple[str, int] | None, since: 
                 return True
         for r in c.execute("SELECT payload FROM app_events WHERE name='booking_cancelled' AND created>?", (since,)):
             p = db.jload(r["payload"], {}) or {}
-            if ev is not None and _int(p.get("event_id")) == ev:
-                return True
+            pev = _int(p.get("event_id"))
+            if ev is not None and pev is not None:
+                if pev == ev:  # this reminder's own call; another (older) booking being cancelled says nothing
+                    return True
+                continue
             if party and p.get("party_type") == party[0] and _int(p.get("party_id")) == party[1]:
                 return True
-        if party and party[0] == "chain_lead":
+        if ev is None and party and party[0] == "chain_lead":
             r = c.execute("SELECT status FROM chain_bookings WHERE lead_id=? ORDER BY id DESC LIMIT 1", (party[1],)).fetchone()
             if r and r["status"] == "cancelled":
                 return True
@@ -702,16 +714,26 @@ def cancel_reason(tenant, item: dict) -> str | None:
 def dispatch_due(tenant, now: float | None = None, limit: int = 200) -> dict:
     """Scheduler tick: deliver approved items whose send_after has come (or cancel them with a reason)."""
     now = now or db.now()
+    recovered = queue.recover_stuck(tenant, now)
     with tenant.db() as c:
         ids = [r["id"] for r in c.execute("SELECT id FROM queue WHERE status='scheduled' AND COALESCE(send_after,0)<=? "
                                           "ORDER BY send_after, id LIMIT ?", (now, limit))]
     if not ids:
-        return {"due": 0, "results": []}
+        return {"due": 0, "results": [], **({"recovered": recovered} if recovered else {})}
 
     def fn(run: runtime.Run):
         results = []
         for qid in ids:
-            it = queue.dispatch(tenant, qid, "scheduler", now=now)
+            try:
+                it = queue.dispatch(tenant, qid, "scheduler", now=now)
+            except Exception as e:  # noqa: BLE001 - one bad item must not hold up every other due item
+                from .redact import redact
+
+                log.warning("scheduled send %s could not be checked: %s", qid, redact(f"{type(e).__name__}: {e}")[:300])
+                queue._set(tenant, qid, only_if="scheduled", status="send_failed",
+                           status_reason=redact(f"It couldn't be checked before sending ({type(e).__name__}); nothing "
+                                                "was sent. Try again or cancel it.")[:500])
+                it = queue.get(tenant, qid, scrub=False)
             if it is None:
                 continue
             results.append({"id": qid, "status": it["status"], "reason": it.get("status_reason")})
@@ -719,7 +741,7 @@ def dispatch_due(tenant, now: float | None = None, limit: int = 200) -> dict:
         for r in results:
             by[r["status"]] = by.get(r["status"], 0) + 1
         run.note("dispatch", {"due": len(ids)}, by, label="Send, hand over or cancel each due item")
-        return {"due": len(ids), "results": results, "by_status": by}
+        return {"due": len(ids), "results": results, "by_status": by, **({"recovered": recovered} if recovered else {})}
 
     res = runtime.execute(tenant, "delivery", f"Scheduled sends ({len(ids)} due)",
                           ["Re-check guardrails and cancel rules", "Send, hand over or cancel each due item"], fn, "scheduler")
@@ -833,11 +855,17 @@ def stop_cadences(tenant, party: tuple[str, int], status: str, reason: str) -> i
 
 
 def stop_cadence(tenant, cid: int, actor: str) -> bool:
+    """A person stops a sequence: its next step, if already drafted and not yet sent, is cancelled too."""
     with tenant.db() as c:
         n = c.execute(f"UPDATE cadences SET status='stopped', reason=?, updated=? WHERE id=? AND status IN "
                       f"({','.join('?' * len(LIVE_CADENCE))})", (f"Stopped by {actor}", db.now(), cid, *LIVE_CADENCE)).rowcount
     if n:
         audit.log(tenant, actor, "settings", {"cadence_stopped": cid})
+        cad = _cadence(tenant, cid)
+        it = queue.get(tenant, cad["queue_id"], scrub=False) if cad and cad.get("queue_id") else None
+        if it and it["status"] in queue.OPEN + queue.OUTBOX:
+            queue.cancel_system(tenant, it["id"], f"The follow-up sequence was stopped by {actor}, so this was not sent.",
+                                actor=actor, from_statuses=(it["status"],))
     return bool(n)
 
 
@@ -895,46 +923,63 @@ def run_cadences(tenant, now: float | None = None, limit: int = 200) -> dict:
         return {"due": 0, "drafted": []}
     cap = int(get_settings(tenant)["daily_touch_cap"] or 0)
 
+    def one(run: runtime.Run, cid: int) -> tuple[str, int] | None:
+        with tenant.db() as c:  # claim: two ticks never draft the same step
+            if c.execute("UPDATE cadences SET status='drafting' WHERE id=? AND status='active'", (cid,)).rowcount != 1:
+                return None
+        cad = _cadence(tenant, cid)
+        party = (cad["party_type"], cad["party_id"])
+        if is_dnc(tenant, party) or suppressed(tenant, [cad["recipient_ref"] or ""]):
+            _cad_update(tenant, cid, status="stopped", reason="The contact asked not to be contacted")
+            return "stopped", cid
+        if inbound_since(tenant, party, cad["recipient_ref"], cad["last_outbound_at"] or 0):
+            _cad_update(tenant, cid, status="replied", reason="They replied, so the sequence stopped")
+            return "stopped", cid
+        if sends_today(tenant, cad["owner_user_id"], now) >= cap:
+            _cad_update(tenant, cid, status="active", due_at=next_morning(now))
+            return "deferred", cid
+        pb = playbook(tenant, cad["template"], cad["context"])
+        if (cad["step"] or 0) >= len(pb):
+            _cad_update(tenant, cid, status="done", reason="Sequence finished with no reply")
+            return None
+        st = pb[cad["step"] or 0]
+        body = render_step(st, cad["context"])
+        key = PARTY_META.get(cad["party_type"])
+        meta = {"prospect_facing": True, "lead_tier": cad["lead_tier"] or "cold", "prior_contact": True,
+                "cadence_id": cid, "cadence_step": (cad["step"] or 0) + 1, "template_key": st["key"],
+                "ai_mode": "rules", "cancel_if": ["lead_replied_since", "prospect_dnc", "unsubscribed"]}
+        if key:
+            meta[key] = cad["party_id"]
+        if cad["owner_user_id"] is not None:
+            meta["owner_user_id"] = cad["owner_user_id"]
+        if (cad["channel"] or "") == "email":  # keep the thread: same subject as the first message
+            first = queue.get(tenant, cad["first_queue_id"], scrub=False) if cad.get("first_queue_id") else None
+            subj = str(((first or {}).get("meta") or {}).get("subject") or "").strip()
+            if subj:
+                meta["subject"] = subj if subj.lower().startswith("re:") else f"Re: {subj}"
+        item = queue.add(tenant, "followup", body, channel=cad["channel"] or "instagram_dm",
+                         recipient_ref=cad["recipient_ref"],
+                         title=f"Follow-up {(cad['step'] or 0) + 1}: {party_label(tenant, party)}", meta=meta,
+                         run_id=run.id, actor="cadence", demo=bool(cad["demo"]))
+        _cad_update(tenant, cid, status="waiting_send", queue_id=item["id"])
+        return "drafted", item["id"]
+
     def fn(run: runtime.Run):
-        drafted, stopped, deferred = [], [], []
+        out: dict[str, list[int]] = {"drafted": [], "stopped": [], "deferred": []}
         for cid in due:
-            with tenant.db() as c:  # claim: two ticks never draft the same step
-                if c.execute("UPDATE cadences SET status='drafting' WHERE id=? AND status='active'", (cid,)).rowcount != 1:
-                    continue
-            cad = _cadence(tenant, cid)
-            party = (cad["party_type"], cad["party_id"])
-            if is_dnc(tenant, party) or suppressed(tenant, [cad["recipient_ref"] or ""]):
-                _cad_update(tenant, cid, status="stopped", reason="The contact asked not to be contacted")
-                stopped.append(cid)
+            try:
+                res = one(run, cid)
+            except Exception as e:  # noqa: BLE001 - one broken sequence must not stop every other one
+                from .redact import redact
+
+                log.warning("follow-up sequence %s could not draft its step: %s", cid, redact(f"{type(e).__name__}: {e}")[:300])
+                with tenant.db() as c:  # try again in an hour instead of staying stuck in 'drafting'
+                    c.execute("UPDATE cadences SET status='active', due_at=?, updated=? WHERE id=? AND status='drafting'",
+                              (now + 3600, db.now(), cid))
                 continue
-            if inbound_since(tenant, party, cad["recipient_ref"], cad["last_outbound_at"] or 0):
-                _cad_update(tenant, cid, status="replied", reason="They replied, so the sequence stopped")
-                stopped.append(cid)
-                continue
-            if sends_today(tenant, cad["owner_user_id"], now) >= cap:
-                _cad_update(tenant, cid, status="active", due_at=next_morning(now))
-                deferred.append(cid)
-                continue
-            pb = playbook(tenant, cad["template"], cad["context"])
-            if (cad["step"] or 0) >= len(pb):
-                _cad_update(tenant, cid, status="done", reason="Sequence finished with no reply")
-                continue
-            st = pb[cad["step"] or 0]
-            body = render_step(st, cad["context"])
-            key = PARTY_META.get(cad["party_type"])
-            meta = {"prospect_facing": True, "lead_tier": cad["lead_tier"] or "cold", "prior_contact": True,
-                    "cadence_id": cid, "cadence_step": (cad["step"] or 0) + 1, "template_key": st["key"],
-                    "ai_mode": "rules", "cancel_if": ["lead_replied_since", "prospect_dnc", "unsubscribed"]}
-            if key:
-                meta[key] = cad["party_id"]
-            if cad["owner_user_id"] is not None:
-                meta["owner_user_id"] = cad["owner_user_id"]
-            item = queue.add(tenant, "followup", body, channel=cad["channel"] or "instagram_dm",
-                             recipient_ref=cad["recipient_ref"],
-                             title=f"Follow-up {(cad['step'] or 0) + 1}: {party_label(tenant, party)}", meta=meta,
-                             run_id=run.id, actor="cadence", demo=bool(cad["demo"]))
-            _cad_update(tenant, cid, status="waiting_send", queue_id=item["id"])
-            drafted.append(item["id"])
+            if res:
+                out[res[0]].append(res[1])
+        drafted, stopped, deferred = out["drafted"], out["stopped"], out["deferred"]
         run.note("draft", {"due": len(due)}, {"drafted": len(drafted), "stopped": len(stopped), "deferred": len(deferred)},
                  label="Draft the next step (template, AI off)")
         return {"due": len(due), "drafted": drafted, "stopped": stopped, "deferred": deferred}
@@ -1044,9 +1089,24 @@ def _on_booking_cancelled(tenant, name: str, payload: dict) -> None:
             r["meta"] = db.jload(r["meta"], {}) or {}
         rows += [r for r in extra if r["id"] not in {x["id"] for x in rows}]
     for it in rows:
-        if "booking_cancelled" in (it["meta"].get("cancel_if") or []):
-            queue.cancel_system(tenant, it["id"], "The call was cancelled, so this reminder was not sent.",
-                                from_statuses=(it["status"],))
+        if "booking_cancelled" not in (it["meta"].get("cancel_if") or []):
+            continue
+        own_ev = _int(it["meta"].get("calendar_event_id"))
+        if ev is not None and own_ev is not None and own_ev != ev:
+            continue  # a reminder for a different (rescheduled) call with the same person
+        queue.cancel_system(tenant, it["id"], "The call was cancelled, so this reminder was not sent.",
+                            from_statuses=(it["status"],))
+
+
+@queue.on_cancel("calendar_invite")
+def _invite_cancelled(tenant, item: dict, actor: str) -> None:
+    """An approved invite that is cancelled before it went out: the call it booked (and its reminder
+    ladder) is cancelled too, so nobody gets 'see you in two hours' for a call that never existed."""
+    with tenant.db() as c:
+        evs = [r["id"] for r in c.execute("SELECT id FROM calendar_events WHERE queue_id=? AND status!='cancelled'",
+                                          (item["id"],))]
+    for ev in evs:
+        cancel_booking(tenant, ev, actor)
 
 
 def cancel_booking(tenant, event_id: int, actor: str) -> dict:

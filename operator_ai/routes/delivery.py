@@ -3,18 +3,22 @@ sending settings, follow-up sequences, contact points, and the public one-click 
 from __future__ import annotations
 
 import html
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from .. import auth, db, delivery, queue
+from .. import audit, auth, db, delivery, queue
 from ..agents import sales
 from ..deps import Ctx, require, require_owner
 from ..live import chain
 
 router = APIRouter()
 public_router = APIRouter()
+
+MAX_ID = 2 ** 53  # ids beyond this are malformed input (422), never a database overflow (500)
+Id = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _qerr(e: queue.QueueError):
@@ -24,9 +28,7 @@ def _qerr(e: queue.QueueError):
 def _visible(ctx: Ctx, qid: int) -> dict:
     """The item if this user may see it (same rule as GET /queue/{id}); otherwise 404."""
     item = queue.get(ctx.tenant, qid, scrub=False)
-    kinds = queue.decidable_kinds(ctx.role)
-    own = item is not None and item["meta"].get("owner_user_id") == ctx.user["id"] and item["kind"] in auth.OWN_DECIDE
-    if item is None or (kinds is not None and item["kind"] not in kinds and not own):
+    if not queue.visible(ctx.role, item, ctx.user["id"]):
         raise HTTPException(404, "Not found")
     return item
 
@@ -37,7 +39,7 @@ class SentBody(BaseModel):
 
 
 @router.post("/queue/{qid}/sent")
-def mark_sent(qid: int, b: SentBody | None = None, ctx: Ctx = Depends(require("queue"))):
+def mark_sent(qid: Id, b: SentBody | None = None, ctx: Ctx = Depends(require("queue"))):
     _visible(ctx, qid)
     try:
         return queue.mark_sent(ctx.tenant, qid, ctx.actor, ctx.role, ctx.user["id"], permalink=b.permalink if b else None)
@@ -50,7 +52,7 @@ class CancelBody(BaseModel):
 
 
 @router.post("/queue/{qid}/cancel")
-def cancel(qid: int, b: CancelBody | None = None, ctx: Ctx = Depends(require("queue"))):
+def cancel(qid: Id, b: CancelBody | None = None, ctx: Ctx = Depends(require("queue"))):
     _visible(ctx, qid)
     try:
         return queue.cancel(ctx.tenant, qid, ctx.actor, ctx.role, ctx.user["id"], reason=b.reason if b else "")
@@ -59,7 +61,7 @@ def cancel(qid: int, b: CancelBody | None = None, ctx: Ctx = Depends(require("qu
 
 
 @router.post("/queue/{qid}/send-now")
-def send_now(qid: int, ctx: Ctx = Depends(require("queue"))):
+def send_now(qid: Id, ctx: Ctx = Depends(require("queue"))):
     _visible(ctx, qid)
     try:
         return queue.send_now(ctx.tenant, qid, ctx.actor, ctx.role, ctx.user["id"])
@@ -129,9 +131,11 @@ def _cadence_scope(ctx: Ctx) -> dict:
     if ctx.role == "owner":
         return {}
     ids = [ctx.user["id"]]
-    if ctx.role == "coach":
+    if ctx.role == "coach":  # a coach also sees their own students' sequences
         with ctx.tenant.db() as c:
-            ids += [r["id"] for r in c.execute("SELECT id FROM users WHERE coach_id=?", (ctx.user["id"],))]
+            ids += [r["id"] for r in c.execute(
+                "SELECT id FROM users WHERE coach_id=? OR student_id IN (SELECT id FROM students WHERE coach_id=?)",
+                (ctx.user["id"], ctx.user["id"]))]
     types = ["lead", "chain_lead"] if auth.has_tab(ctx.role, "sales") else []
     return {"owner_user_ids": ids, "party_types": types}
 
@@ -142,7 +146,7 @@ def cadences(ctx: Ctx = Depends(require("queue"))):
 
 
 @router.post("/delivery/cadences/{cid}/stop")
-def stop_cadence(cid: int, ctx: Ctx = Depends(require("queue"))):
+def stop_cadence(cid: Id, ctx: Ctx = Depends(require("queue"))):
     if cid not in {r["id"] for r in delivery.list_cadences(ctx.tenant, limit=5000, **_cadence_scope(ctx))}:
         raise HTTPException(404, "Not found")
     if not delivery.stop_cadence(ctx.tenant, cid, ctx.actor):
@@ -175,7 +179,7 @@ PARTY_PATTERN = "^(prospect|lead|chain_lead|student|client)$"
 
 
 @router.get("/delivery/contacts")
-def list_contacts(party_type: str = Query(..., pattern=PARTY_PATTERN), party_id: int = Query(..., ge=1),
+def list_contacts(party_type: str = Query(..., pattern=PARTY_PATTERN), party_id: int = Query(..., ge=1, le=MAX_ID),
                   ctx: Ctx = Depends(require("queue"))):
     if not _may_party(ctx, party_type, party_id):
         raise HTTPException(404, "Not found")
@@ -184,7 +188,7 @@ def list_contacts(party_type: str = Query(..., pattern=PARTY_PATTERN), party_id:
 
 class ContactBody(BaseModel):
     party_type: str = Field(pattern=PARTY_PATTERN)
-    party_id: int = Field(ge=1)
+    party_id: int = Field(ge=1, le=MAX_ID)
     channel: str = Field(pattern="^(email|sms|phone|whatsapp|telegram|slack|instagram_dm|linkedin)$")
     address: str = Field(min_length=2, max_length=300)
     verified: bool = False
@@ -195,15 +199,24 @@ class ContactBody(BaseModel):
 def add_contact(b: ContactBody, ctx: Ctx = Depends(require("queue"))):
     if not _may_party(ctx, b.party_type, b.party_id):
         raise HTTPException(404, "Not found")
+    if b.opted_in and ctx.role != "owner":
+        # consent to texts/calls comes from the person (they reply START); only the owner may record
+        # consent collected another way, and it is audited
+        raise HTTPException(403, "Only the owner can record that someone agreed to texts or calls. They can also opt "
+                                 "in themselves by replying START.")
     try:
-        return delivery.add_contact_point(ctx.tenant, b.party_type, b.party_id, b.channel, b.address, verified=b.verified,
-                                          opted_in_=b.opted_in, source="manual", actor=ctx.actor)
+        cp = delivery.add_contact_point(ctx.tenant, b.party_type, b.party_id, b.channel, b.address, verified=b.verified,
+                                        opted_in_=b.opted_in, source="manual", actor=ctx.actor)
     except ValueError as e:
         raise HTTPException(422, str(e))
+    if b.opted_in:
+        audit.log(ctx.tenant, ctx.actor, "consent", {"opted_in": True, "contact_point": cp["id"], "channel": b.channel,
+                                                     "party_type": b.party_type, "party_id": b.party_id})
+    return cp
 
 
 @router.delete("/delivery/contacts/{cp_id}")
-def delete_contact(cp_id: int, ctx: Ctx = Depends(require("queue"))):
+def delete_contact(cp_id: Id, ctx: Ctx = Depends(require("queue"))):
     with ctx.tenant.db() as c:
         r = db.row(c.execute("SELECT party_type, party_id FROM contact_points WHERE id=?", (cp_id,)).fetchone())
     if r is None or not _may_party(ctx, r["party_type"], r["party_id"]):
@@ -231,28 +244,28 @@ class LeadReplyBody(BaseModel):
 
 class PickBody(BaseModel):
     index: int | None = Field(None, ge=0, le=9)
-    start: float | None = Field(None, gt=0)
+    start: float | None = Field(None, gt=0, lt=1e11)
 
 
 @router.post("/leads/{lead_id}/reply")
-def lead_reply(lead_id: int, b: LeadReplyBody, ctx: Ctx = Depends(require("sales"))):
+def lead_reply(lead_id: Id, b: LeadReplyBody, ctx: Ctx = Depends(require("sales"))):
     return _booking_call(lambda: sales.record_reply(ctx.tenant, lead_id, b.text, b.classification, ctx.user))
 
 
 @router.post("/leads/{lead_id}/offer-times")
-def lead_offer(lead_id: int, ctx: Ctx = Depends(require("sales"))):
+def lead_offer(lead_id: Id, ctx: Ctx = Depends(require("sales"))):
     return _booking_call(lambda: sales.offer_times(ctx.tenant, lead_id, ctx.user))
 
 
 @router.post("/leads/{lead_id}/pick-slot")
-def lead_pick(lead_id: int, b: PickBody, ctx: Ctx = Depends(require("sales"))):
+def lead_pick(lead_id: Id, b: PickBody, ctx: Ctx = Depends(require("sales"))):
     if b.index is None and b.start is None:
         raise HTTPException(422, "Say which time they picked")
     return _booking_call(lambda: sales.pick_slot(ctx.tenant, lead_id, b.index, b.start, ctx.user))
 
 
 @router.get("/leads/{lead_id}/booking")
-def lead_booking(lead_id: int, ctx: Ctx = Depends(require("sales"))):
+def lead_booking(lead_id: Id, ctx: Ctx = Depends(require("sales"))):
     """The latest booking message for a lead (its times and whether they are still valid)."""
     with ctx.tenant.db() as c:
         lead = c.execute("SELECT id, stage, do_not_contact FROM leads WHERE id=?", (lead_id,)).fetchone()
@@ -268,19 +281,19 @@ def lead_booking(lead_id: int, ctx: Ctx = Depends(require("sales"))):
 
 
 @router.post("/chain/leads/{lead_id}/offer-times")
-def chain_offer(lead_id: int, ctx: Ctx = Depends(require("sales"))):
+def chain_offer(lead_id: Id, ctx: Ctx = Depends(require("sales"))):
     return _booking_call(lambda: chain.offer_times(ctx.tenant, lead_id))
 
 
 @router.post("/chain/leads/{lead_id}/pick-slot")
-def chain_pick(lead_id: int, b: PickBody, ctx: Ctx = Depends(require("sales"))):
+def chain_pick(lead_id: Id, b: PickBody, ctx: Ctx = Depends(require("sales"))):
     if b.index is None and b.start is None:
         raise HTTPException(422, "Say which time they picked")
     return _booking_call(lambda: chain.pick_slot(ctx.tenant, lead_id, b.index, b.start))
 
 
 @router.post("/bookings/{event_id}/cancel")
-def cancel_booking(event_id: int, ctx: Ctx = Depends(require("sales"))):
+def cancel_booking(event_id: Id, ctx: Ctx = Depends(require("sales"))):
     try:
         return delivery.cancel_booking(ctx.tenant, event_id, ctx.actor)
     except KeyError:
@@ -305,11 +318,38 @@ _INVALID = ("Link not valid", "This unsubscribe link isn't valid. If you keep ge
                               "one of them and ask to be removed.")
 
 
+_RATE_WINDOW, _RATE_MAX = 60.0, 30
+
+
+def _bad_link(request: Request) -> HTMLResponse:
+    """An unknown token: 404, or 429 once this address has tried too many unknown tokens in a minute.
+    Only failures are throttled. A real unsubscribe is never refused, even when mail providers send many
+    one-click POSTs from the same address."""
+    import time as _t
+    from collections import deque
+
+    hits = getattr(request.app.state, "unsub_bad", None)
+    if hits is None:
+        hits = request.app.state.unsub_bad = {}
+    ip = request.client.host if request.client else "?"
+    now = _t.monotonic()
+    q = hits.setdefault(ip, deque())
+    while q and now - q[0] > _RATE_WINDOW:
+        q.popleft()
+    q.append(now)
+    if len(hits) > 10000:  # bound memory: forget idle addresses
+        for k in [k for k, v in hits.items() if not v or now - v[-1] > _RATE_WINDOW]:
+            hits.pop(k, None)
+    if len(q) > _RATE_MAX:
+        return _page("Too many requests", "Please wait a minute and try again.", status=429)
+    return _page(*_INVALID, status=404)
+
+
 @public_router.get("/u/{token}", response_class=HTMLResponse)
-def unsubscribe_page(token: str):
+def unsubscribe_page(token: str, request: Request):
     found = delivery.lookup_token(token)
     if not found:
-        return _page(*_INVALID, status=404)
+        return _bad_link(request)
     t, row = found
     if row["used"]:
         return _page("You're unsubscribed", f"You won't get more emails like this from {delivery.brand_name(t)}.")
@@ -318,9 +358,9 @@ def unsubscribe_page(token: str):
 
 
 @public_router.post("/u/{token}", response_class=HTMLResponse)
-async def unsubscribe_post(token: str, request: Request):
-    await request.body()  # one-click POST (RFC 8058) or the form button; the body itself is not needed
+def unsubscribe_post(token: str, request: Request):
+    # one-click POST (RFC 8058) or the form button; the body is never read (nothing in it is needed)
     res = delivery.unsubscribe(token)
     if res is None:
-        return _page(*_INVALID, status=404)
+        return _bad_link(request)
     return _page("You're unsubscribed", f"You won't get more emails like this from {res['brand']}.")

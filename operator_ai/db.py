@@ -238,7 +238,9 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("queue", "status_reason", "TEXT"),       # plain-English why: scheduled for, cancelled because, failed because
     ("queue", "original_body", "TEXT"),       # the first draft, kept when a person edits it (learning signal)
     ("queue", "reject_code", "TEXT"),         # tone | wrong_fact | too_long | off_brand | compliance | timing | ...
+    ("queue", "claimed_at", "REAL"),          # when an approval/dispatch claimed it ('sending'): stuck sends are recovered
     ("leads", "do_not_contact", "INTEGER DEFAULT 0"),
+    ("chain_leads", "do_not_contact", "INTEGER DEFAULT 0"),  # set by a STOP reply or the unsubscribe link
     ("calendar_events", "party_type", "TEXT"),
     ("calendar_events", "party_id", "INTEGER"),
     ("calendar_events", "queue_id", "INTEGER"),

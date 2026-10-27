@@ -219,7 +219,10 @@ def _make_tenants():
     return [tenancy.get("owner"), empty, own]
 
 
-def test_chain_end_to_end_three_tenants(client, world):
+def test_chain_end_to_end_three_tenants(client, world, monkeypatch):
+    # 2026-10 delivery review: a prospect email (here the booking DM by email) is refused in a real workspace until the
+    # server's public address is set, so the unsubscribe link a person sends or copies never points at localhost
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")
     tenants = _make_tenants()
     for n, t in enumerate(tenants):
         _connect(t)
@@ -288,7 +291,8 @@ def test_chain_end_to_end_three_tenants(client, world):
             assert c.execute("SELECT COUNT(*) FROM chain_leads").fetchone()[0] == 1
 
 
-def test_invite_blocked_at_send_time(env, world):
+def test_invite_blocked_at_send_time(env, world, monkeypatch):
+    monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://operator.example.invalid")  # prospect email needs a public link
     tenancy.ensure_defaults()
     t = tenancy.get("owner")
     _connect(t)

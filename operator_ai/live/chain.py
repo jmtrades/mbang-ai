@@ -179,7 +179,8 @@ def record_reply(tenant, lead_id: int, text: str, classification: str | None = N
                     delivery.suppress(tenant, a, None, "asked to stop", ("chain_lead", lead_id))
             with tenant.db() as c:
                 c.execute("UPDATE chain_leads SET stage='lost' WHERE id=?", (lead_id,))
-            events.emit(tenant, "dnc_set", {"party_type": "chain_lead", "party_id": lead_id})
+            if not delivery.set_dnc(tenant, ("chain_lead", lead_id), "chain", "asked to stop"):  # emits dnc_set
+                events.emit(tenant, "dnc_set", {"party_type": "chain_lead", "party_id": lead_id})
             out["next"] = "They asked not to be contacted. Nothing more will be sent."
         elif cls == "positive":
             try:

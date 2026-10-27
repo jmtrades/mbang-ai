@@ -316,6 +316,10 @@ def choose_slot(tenant, bdm: dict | None, index: int | None = None, start: float
         raise BookingError(409, "No times have been offered yet. Offer times first.")
     if bdm["status"] in queue.OPEN + ("sending",):
         raise BookingError(409, "Approve the booking message first: they can only pick from times they were sent.")
+    if bdm["status"] == "scheduled":
+        raise BookingError(409, "The booking message hasn't gone out yet (it's scheduled). Send it first.")
+    if bdm["status"] not in ("sent", "awaiting_manual_send", "approved"):
+        raise BookingError(409, "The booking message with these times was never sent. Offer fresh times first.")
     slots = bdm["meta"].get("slots") or []
     if not slots:
         raise BookingError(409, "That message offered no times. Offer times first.")
