@@ -292,7 +292,14 @@ K1, B = 1.5, 0.75
 def tag_skills(sections: list[Section], idf) -> None:
     if not sections:
         return
-    tfs = [Counter(textnorm.tokens(s.title + "\n" + s.text)) for s in sections]
+    tfs = []
+    for s in sections:
+        tf = Counter(textnorm.tokens(s.title + "\n" + s.text))
+        if T.norm_cmp(s.doc_title) != T.norm_cmp(s.title):
+            # the document's own title says what its sections are about ("DM Playbook"): without it a section on
+            # handling DM replies that mentions a lead's budget reads as an ads lesson
+            tf.update(textnorm.tokens(s.doc_title))
+        tfs.append(tf)
     lens = [sum(tf.values()) or 1 for tf in tfs]
     avg = sum(lens) / len(lens)
     queries = {k: textnorm.expand(textnorm.tokens(q)) for k, (_, q) in common.SKILLS.items() if q}
@@ -318,6 +325,10 @@ def tag_skills(sections: list[Section], idf) -> None:
 RULE_START = re.compile(
     r"^(never|always|only|use|ask|keep|send|kill|test|confirm|don'?t|do not|make|book|message|pick|write|run|give|"
     r"change|follow|track|move|state|answer|read|go|check|put|stop|start|add|share|tell|offer|compare|avoid|"
+    # the imperatives an owner's own SOP opens its rules with, beyond the ones above
+    r"play|present|explain|spend|mention|open|log|thank|describe|reply|respond|name|teach|say|qualify|list|reach|"
+    r"wait|limit|focus|include|record|email|invite|agree|repeat|recap|summari[sz]e|treat|plan|prepare|review|update|"
+    r"note|cut|drop|remind|schedule|reschedule|introduce|listen|pause|lead with|"
     r"every|each|rule \d+|benchmark|segment \d+)\b", re.I)
 MODAL = re.compile(r"\b(must|should|the rule|has to|have to|needs? to|is the|means)\b", re.I)
 META = re.compile(r"^(this is (the|our|a)|welcome|that'?s it|alright|okay|ok,|so let'?s|let'?s (talk|start|go)|today we|"
@@ -375,11 +386,15 @@ def pick_key_points(cands: list[Candidate]) -> tuple[list[Candidate], list[Candi
     examples = [c for c in cands if EXAMPLE.search(c.text)]
     mistakes = [c for c in cands if MISTAKE.search(c.text) and c not in examples]
     rest = [c for c in cands if c not in examples and c not in mistakes]
-    want = max(MIN_KEY_POINTS, min(MAX_KEY_POINTS, round(len(cands) / 3) or MIN_KEY_POINTS))
+    # about a third of the sentences, but never fewer than the section's own rules (up to the maximum): a short SOP
+    # section is mostly rules, and a rule left out of the lesson is never practised or examined
+    rules = sum(1 for c in rest if RULE_START.search(c.text) or MODAL.search(c.text))
+    want = max(MIN_KEY_POINTS, min(MAX_KEY_POINTS, max(round(len(cands) / 3), rules)))
     pool = rest if len(rest) >= MIN_KEY_POINTS else rest + mistakes
     chosen = sorted(pool, key=lambda c: -c.score)[:want]
     chosen.sort(key=lambda c: (c.line, c.pos))
-    return chosen, examples[:3], mistakes[:5]
+    # a "never ..." line taught as a key point is not listed again under Common mistakes
+    return chosen, examples[:3], [m for m in mistakes if m not in chosen][:5]
 
 
 # --------------------------------------------------------------------------- 4. order
@@ -546,6 +561,39 @@ OBJECTION = re.compile(
     r"(?P<verb>says?|tells? you|asks?|needs? to|wants? to)\s+(?P<x>[^,]{3,80}),\s*(?P<y>.+)$", re.I)
 
 
+_FIRST_PERSON = [(r"\bthey are\b", "I'm"), (r"\bthey're\b", "I'm"), (r"\bthey were\b", "I was"), (r"\bthey've\b", "I've"),
+                 (r"\bthey'll\b", "I'll"), (r"\bthey'd\b", "I'd"), (r"\bthey\b", "I"), (r"\bthemselves\b", "myself"),
+                 (r"\btheirs\b", "mine"), (r"\btheir\b", "my"), (r"\bthem\b", "me")]
+_INDIRECT_Q = re.compile(r"^(how|what|why|when|where|who|which|whether|if)\b", re.I)
+
+
+def spoken_objection(x: str, verb: str) -> str:
+    """The objection the way the prospect says it out loud, so a drill card or a "What do you say?" question quotes a
+    person, not the SOP's reported speech: says they are not interested -> "I'm not interested"; says they need to ask
+    their partner -> "I need to ask my partner"; asks how much it costs -> "Can you tell me how much it costs?"."""
+    s = " ".join((x or "").split()).strip().strip("\"'“”").rstrip(".,;")
+    verb = (verb or "").lower()
+    if not s:
+        return ""
+    if verb.startswith("ask"):
+        if _INDIRECT_Q.match(s):
+            s = "Can you tell me " + s[0].lower() + s[1:]
+        elif re.match(r"^for\s+\S", s, re.I):      # asks for a discount -> "Can I get a discount?"
+            s = "Can I get " + s[4:].strip()
+        elif re.match(r"^about\s+\S", s, re.I):    # asks about the refund policy -> "What about the refund policy?"
+            s = "What about " + s[6:].strip()
+        return s[0].upper() + s[1:] + ("" if s.endswith("?") else "?")
+    s = re.sub(r"^that\s+", "", s, flags=re.I)
+    if verb.startswith("need"):
+        s = "I need to " + s
+    elif verb.startswith("want"):
+        s = "I want to " + s
+    for pat, rep in _FIRST_PERSON:
+        s = re.sub(pat, rep, s, flags=re.I)
+    s = re.sub(r"\bi\b", "I", s)
+    return s[0].upper() + s[1:]
+
+
 def extract_objections(sections: list[Section], skipped: list[dict] | None = None, tenant=None) -> list[dict]:
     """'When someone says X, Y' -> {objection: X, answer: Y (+ the next sentence on that line), file, line}."""
     out, seen = [], set()
@@ -556,14 +604,9 @@ def extract_objections(sections: list[Section], skipped: list[dict] | None = Non
                 m = OBJECTION.match(s)
                 if not m:
                     continue
-                x = m.group("x").strip().strip("\"'“”")
-                verb = m.group("verb").lower()
-                if verb.startswith("need"):
-                    x = "I need to " + x
-                elif verb.startswith("want"):
-                    x = "I want to " + x
-                x = re.sub(r"^(that\s+)", "", x, flags=re.I)
-                x = x[0].upper() + x[1:]
+                x = spoken_objection(m.group("x"), m.group("verb"))
+                if not x:
+                    continue
                 y = m.group("y").strip()
                 y = y[0].upper() + y[1:]
                 answer = y if len(sents) <= i + 1 else f"{y} {sents[i + 1]}"
@@ -634,12 +677,21 @@ def upsert_drills(tenant, pairs: list[dict]) -> int:
     get the extracted answer and its exact citation."""
     n = 0
     with tenant.db() as c:
-        existing = [(set(textnorm.tokens(r["objection"])), r["id"]) for r in c.execute("SELECT id, objection FROM drills")]
+        existing = []
+        for r in c.execute("SELECT id, objection, source, citation, lines FROM drills"):
+            src_file = (db.jload(r["citation"], {}) or {}).get("file") if r["source"] == "academy" else None
+            existing.append((set(textnorm.tokens(r["objection"])), r["id"], (src_file, r["lines"]) if src_file else None))
         for p in pairs:
             pt = set(textnorm.tokens(p["objection"]))
             cite = db.jdump(_pair_cite(p))
-            # "I need to ask my partner" and "I need to ask a partner" are the same drill
-            match = next((did for toks, did in existing if toks and pt and len(toks & pt) / len(toks | pt) >= 0.6), None)
+            here = (p["file"], f"{p['line']}-{p['line']}")
+            # an earlier build's drill from the same course line is this drill, whatever its wording was then
+            # ("They are not interested"); otherwise "I need to ask my partner" and "... a partner" are the same drill
+            match = next((did for _, did, line in existing if line == here), None)
+            if match is not None:
+                c.execute("UPDATE drills SET objection=? WHERE id=?", (p["objection"], match))
+            else:
+                match = next((did for toks, did, _ in existing if toks and pt and len(toks & pt) / len(toks | pt) >= 0.6), None)
             if match is not None:
                 c.execute("UPDATE drills SET answer=?, citation=?, skill=?, lines=? WHERE id=?",
                           (p["answer"], cite, p["skill"], f"{p['line']}-{p['line']}", match))
@@ -647,7 +699,7 @@ def upsert_drills(tenant, pairs: list[dict]) -> int:
                 did = c.execute("INSERT INTO drills(objection,answer,citation,source,created,skill,lines) VALUES(?,?,?,?,?,?,?)",
                                 (p["objection"], p["answer"], cite, "academy", db.now(), p["skill"],
                                  f"{p['line']}-{p['line']}")).lastrowid
-                existing.append((pt, did))
+                existing.append((pt, did, here))
                 n += 1
     return n
 

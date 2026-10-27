@@ -138,7 +138,9 @@ def answer(tenant, user: dict, item_id: int, given, ms: int | None = None, conte
         if card is None and les["lesson_key"] in certify.done_keys(tenant, user["id"]):
             srs.add_cards(tenant, user["id"], "quiz", [item_id])
             card = srs.card_for(tenant, user["id"], "quiz", item_id)
-        if card is not None and (context == "review" or card["due"] <= time.time()):
+        # Only a card that is due moves. The answer is on screen after the first try, so re-answering a card (or
+        # answering one early) must not push it out to weeks away: that would skip exactly the reviews that teach.
+        if card is not None and card["due"] <= time.time():
             grade = srs.auto_grade(g["correct"], ms, srs.median_ms(tenant, item_id, it["kind"]), prior)
             review = srs.schedule(tenant, user["id"], card["id"], grade)
             review["grade"] = grade

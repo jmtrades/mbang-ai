@@ -310,6 +310,9 @@ def _decide(s: Session, cls: dict) -> list[dict]:
             segs.append(_seg("monologue"))
         elif "multi_question" in acts:
             segs.append(_seg("multi_question"))
+        elif "unclear" in acts:
+            trust(-2)  # a person answers nonsense with confusion, not "Go on."
+            segs.append(_seg("unclear"))
         else:
             segs.append(_seg("neutral"))
     elif "rapport" in acts and st["rapport"] < RAPPORT_MAX and st["learner_turns"] <= 3:

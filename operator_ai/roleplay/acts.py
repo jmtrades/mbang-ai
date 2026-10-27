@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from .. import guardrails
+from .. import guardrails, textnorm
 
 WORD = re.compile(r"[A-Za-z0-9'’$£€%-]+")
 _SENT = re.compile(r"(?<=[.!?])\s+|\n+")
@@ -172,7 +172,24 @@ ACT_LABELS = {
     "discount": "Offered a discount", "multi_question": "Several questions at once", "monologue": "Long monologue",
     "too_short": "Question too short to count", "stuffing": "Keyword stuffing", "violation": "Compliance violation",
     "personalised": "Personal opener", "pitch_early": "Pitched too early", "statement": "Statement",
+    "unclear": "Didn't make sense",
 }
+# Short replies that make sense on their own even without a single function word.
+_INTERJECTIONS = {"thanks", "thank", "great", "cool", "nice", "sure", "yes", "yeah", "yep", "no", "nope", "perfect",
+                  "awesome", "brilliant", "sorry", "hello", "hi", "hey", "right", "gotcha", "understood", "noted",
+                  "absolutely", "totally", "fair", "wow", "agreed", "exactly", "lovely", "cheers", "fine", "true"}
+
+
+def is_unclear(text: str) -> bool:
+    """A turn a person couldn't make sense of: a few words with no function word, no question and nothing a listener
+    could take as a reply ("banana", "asdf qwer"). "Thanks!" or "Okay." are fine."""
+    ws = [w.lower().strip("'’-") for w in words(text)]
+    ws = [w for w in ws if w]
+    if not ws or len(ws) > 4 or "?" in (text or ""):
+        return False
+    return not any(w in textnorm.STOP or w in _INTERJECTIONS for w in ws)
+
+
 DIM_ACT = {d: f"ask_{d}" for d in DIM_CUES}
 
 
@@ -373,6 +390,6 @@ def classify(text: str, scenario: dict, ctx: dict, tenant=None) -> dict:
     if stuffing:
         acts.append("stuffing")
     if not acts:
-        acts.append("statement")
+        acts.append("unclear" if is_unclear(text) else "statement")
     return {"acts": acts, "dims": dims, "flags": flags, "questions": len(qs), "words": n_words, "stuffing": stuffing,
             "hedging": hedging, "cited": cited, "blocked": blocked}
