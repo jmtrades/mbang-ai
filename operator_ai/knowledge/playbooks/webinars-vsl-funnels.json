@@ -970,7 +970,7 @@
    "confidence": "medium"
   },
   {
-   "id": "agentic-outreach-guardrails",
+   "id": "webinar-agentic-outreach-guardrails",
    "title": "Build the AI operator's outreach on a consent ledger, per-client sender identity and hard compliance gates",
    "category": "system-design",
    "guidance": "If the system sends reminders, follow-ups or setter outreach on a client's behalf, the client is the sender of record, so every guardrail must be enforced in code rather than left to prompts. The minimum is four things. First, a consent ledger: per phone number and email, what was consented to, when, on which form version, and any revocation. Second, per-client sender identity: an authenticated email domain with SPF, DKIM and DMARC, and a 10DLC brand and campaign for texts. Third, hard gates for quiet hours (8am-9pm recipient local), opt-out handling across all channels, and spam-rate circuit breakers. Fourth, a claims filter that blocks unreviewed income or result language in generated copy. Calls or voicemails using an artificial or prerecorded voice for marketing need prior express written consent, and synthetic voices should be assumed to fall in that category. Keep every outbound message and call log for audit.",

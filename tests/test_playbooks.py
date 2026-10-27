@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 import pytest
 
@@ -45,19 +46,36 @@ def _bullets(answer: str) -> list[str]:
 
 
 # ---------------------------------------------------------------- loader + validation
+def _shipped() -> tuple[int, int]:
+    files = sorted((Path(playbooks.__file__).parent / "knowledge" / "playbooks").glob("*.json"))
+    return len(files), sum(len(json.loads(f.read_text())["entries"]) for f in files)
+
+
+N_DOMAINS, N_ENTRIES = _shipped()
+
+
 def test_library_loads_every_domain_and_entry():
     lib = playbooks.load()
-    assert len(lib.domains) == 8
-    assert len(lib.entries) == 182
-    assert len(set(lib.entries)) == len(lib.order) == 182
+    assert N_DOMAINS >= 9 and N_ENTRIES >= 200
+    assert len(lib.domains) == N_DOMAINS
+    assert len(lib.entries) == N_ENTRIES
+    assert len(set(lib.entries)) == len(lib.order) == N_ENTRIES
     for e in lib.entries.values():
         assert e.title and e.guidance and e.category
         assert re.match(r"^\d{4}-\d{2}", e.as_of)
         assert e.confidence in ("high", "medium", "low")
         assert e.sources and all(s["url"].startswith(("https://", "http://")) for s in e.sources)
-    # the one repeated id in the data is kept unique (qualified with its domain) and reported
-    assert "agentic-outreach-guardrails" in lib.entries
-    assert "webinars-vsl-funnels--agentic-outreach-guardrails" in lib.entries
+    assert lib.problems == []  # the shipped data is clean
+
+
+def test_repeated_id_is_qualified_with_its_domain_and_reported(tmp_path):
+    entry = {"id": "same-id", "title": "T", "category": "c", "guidance": "G.", "as_of": "2026-10", "confidence": "high",
+             "sources": [{"title": "S", "url": "https://example.org/a"}]}
+    for dom in ("alpha", "beta"):
+        (tmp_path / f"{dom}.json").write_text(json.dumps({"domain": dom, "title": dom.title(), "researched": "2026-10-27",
+                                                          "entries": [entry]}))
+    lib = playbooks.load(tmp_path)
+    assert "same-id" in lib.entries and "beta--same-id" in lib.entries
     assert any("already used" in p for p in lib.problems)
 
 
@@ -104,7 +122,7 @@ def test_load_from_a_directory_skips_bad_files_and_entries(tmp_path):
 
 def test_domains_get_and_domain_detail():
     ds = playbooks.domains()
-    assert len(ds) == 8 and sum(d["count"] for d in ds) == 182
+    assert len(ds) == N_DOMAINS and sum(d["count"] for d in ds) == N_ENTRIES
     assert all(re.match(r"^\d{4}-\d{2}-\d{2}$", d["researched"]) for d in ds)
     full = playbooks.get("speed-to-lead-five-minute-routing")
     assert full["steps"] and full["do"] and full["dont"] and full["benchmarks"] and full["sources"]
@@ -132,7 +150,7 @@ def test_index_is_separate_from_the_course(on):
 
     lib = playbooks.load()
     course = index.for_tenant(on)
-    assert lib.index is not course and lib.index.N == 182
+    assert lib.index is not course and lib.index.N == N_ENTRIES
     assert all(ch.kind == "playbook" and ch.corpus_id == "playbooks" for ch in lib.index.chunks)
     assert not any(f.startswith("playbooks/") for f in course.docs)
     assert all(not h["file"].startswith("playbooks/") for h in retrieval.search(on, "speed to lead routing"))
@@ -361,7 +379,7 @@ def test_overview_every_role(client, role):
     r = client.get("/t/demo/api/playbooks")
     assert r.status_code == 200
     d = r.json()
-    assert d["enabled"] is True and d["can_browse"] is True and d["total"] == 182 and len(d["domains"]) == 8
+    assert d["enabled"] is True and d["can_browse"] is True and d["total"] == N_ENTRIES and len(d["domains"]) == N_DOMAINS
     assert d["banner"] == playbooks.BANNER and d["latest_researched"] and d["switch"] == "third_party_kb"
     assert d["can_toggle"] is (role == "owner")
     if role != "owner":
@@ -571,7 +589,7 @@ def test_switch_off_overview_carries_no_library_content_for_non_owners(client):
     t = tenancy.get("owner")
     auth.create_user(t, "setter1", "setter-pw-123456", "setter")
     owner_view = client.get("/t/owner/api/playbooks").json()
-    assert owner_view["total"] == 182 and owner_view["domains"]  # the owner previews to decide
+    assert owner_view["total"] == N_ENTRIES and owner_view["domains"]  # the owner previews to decide
     login(client, username="setter1", password="setter-pw-123456")
     r = client.get("/t/owner/api/playbooks")
     assert r.status_code == 200
