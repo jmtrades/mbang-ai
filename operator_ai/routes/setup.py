@@ -2,13 +2,13 @@
 ("What I know about you": everyone, their own; owner and a student's coach may read a student's)."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from .. import db, memory, setup
+from .. import audit, db, memory, setup
 from ..deps import Ctx, get_ctx, require
 
 router = APIRouter()
@@ -140,7 +140,7 @@ def export_memory(ctx: Ctx = Depends(get_ctx)):
 
 
 @router.get("/memory/user/{uid}")
-def read_member_memory(uid: int, ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
+def read_member_memory(uid: Annotated[int, Path(ge=1, le=2**62)], ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
     """Read-only: the owner sees anyone's; a coach sees only their own students'; nobody else."""
     if uid == ctx.user["id"]:
         return memory.get(ctx.tenant, uid)
@@ -152,6 +152,8 @@ def read_member_memory(uid: int, ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
                                                          and u["coach_id"] == ctx.user["id"]))
     if not allowed:
         raise HTTPException(404, "Not found")
+    # someone else's memory was opened: that is on the record (the values never are)
+    audit.log(ctx.tenant, ctx.actor, "memory.read", {"user_id": uid})
     out = memory.get(ctx.tenant, uid)
     out["read_only"] = True
     return out

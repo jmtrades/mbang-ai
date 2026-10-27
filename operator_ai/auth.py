@@ -118,6 +118,8 @@ def login(tenant, username: str, pw: str, ip: str) -> tuple[str, dict] | None:
         if _fail_count(c, f"ip:{ip}") >= LOGIN_MAX_FAILS or _fail_count(c, f"user:{username}") >= LOGIN_MAX_FAILS:
             raise Throttled()
         u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (username,)).fetchone()
+        if u is None and "@" in username:  # [team] invited people sign in with their (lower-case) email; phones capitalise
+            u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (username.strip().lower(),)).fetchone()
         ok = u is not None and check_pw(pw, u["pw_hash"])
         if not ok:
             c.execute("INSERT INTO login_fails(key,at) VALUES(?,?)", (f"ip:{ip}", time.time()))

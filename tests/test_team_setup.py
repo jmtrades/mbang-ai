@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from operator_ai import audit, auth, db, llm, memory, queue, setup, team, tenancy
-from tests.conftest import demo_login, login
+from tests.conftest import demo_login, login, owner_password
 
 O = "/t/owner/api"
 D = "/t/demo/api"
@@ -70,9 +70,20 @@ def test_invite_link_shown_once_only_hash_stored_and_email_queued_not_sent(owner
     assert res["run_id"]
 
 
-def test_invite_email_guardrails_and_banned_name_holds_it(owner, tenant):
+def test_invite_email_guardrails_and_banned_name_holds_it(app, owner, tenant):
     owner.put(f"{O}/settings", json={"key": "banned_names", "value": ["Pat Sample"]})
-    r = _invite(owner, "pat@example.com", "setter", display="Pat Sample").json()
+    # a banned name can't become anyone's display name (no impersonation), from the owner's form or the join screen
+    bad = _invite(owner, "pat@example.com", "setter", display="Pat Sample")
+    assert bad.status_code == 422 and "banned" in bad.json()["detail"]
+    res = _invite(owner, "pat@example.com", "setter").json()
+    _, acc = _join(app, _token(res), display="Pat Sample")
+    assert acc.status_code == 422
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM users WHERE lower(display) LIKE '%pat sample%'").fetchone()[0] == 0
+    # the queued email still goes through the guardrails: a banned name anywhere in it (here the inviter) holds it
+    with tenant.db() as c:
+        c.execute("UPDATE users SET display='Pat Sample' WHERE username='owner'")
+    r = _invite(owner, "pat2@example.com", "setter").json()
     assert r["queue_item"]["status"] == "held"
     assert any(f["code"] == "banned_name" for f in r["queue_item"]["flags"])
     # the clean template itself passes every rule
@@ -386,6 +397,8 @@ def test_export_user_data_no_secrets(app, owner, tenant):
     assert data["user_memory"] and data["student_record"]["email"] == "exp@example.com"
     text = e.text
     assert "scrypt$" not in text and "token_hash" not in text
+    sent = data["team_emails_to_them"]
+    assert [m["kind"] for m in sent] == ["invite"] and "[link removed]" in sent[0]["body"] and _token(res) not in text
     assert owner.get(f"{O}/team/users/9999/export").status_code == 404
     assert "team.export" in {a["kind"] for a in audit.recent(tenant, 30)}
 
@@ -404,6 +417,8 @@ def test_delete_user_soft_deletes_and_scrubs(app, owner, tenant):
     assert d.status_code == 200, d.text
     out = d.json()
     assert out["drafts_rejected"] == 1 and out["removed"].get("user_memory") == 2 and out["kept"]
+    labels = [r["label"] for r in out["removed_list"]]
+    assert "“What I know about you” entries" in labels and not any("_" in x for x in labels)  # plain words, no table names
     assert member.get(f"{O}/me").status_code == 401
     assert _other(app).post(f"{O}/auth/login", json={"username": "del@example.com", "password": STRONG}).status_code == 401
     with tenant.db() as c:
@@ -557,6 +572,8 @@ def test_coach_reads_only_own_students_memory(client, demo_tenant):
     demo_login(client, "coach")
     r = client.get(f"{D}/memory/user/{sid}")
     assert r.status_code == 200 and r.json()["read_only"] and "(DEMO)" in r.json()["profile"]["offer"]
+    seen = [a for a in audit.recent(demo_tenant, 20) if a["kind"] == "memory.read"]
+    assert seen and seen[0]["actor"].startswith("demo-coach(") and "(DEMO)" not in seen[0]["detail"]
     with demo_tenant.db() as c:
         c.execute("UPDATE students SET coach_id=? WHERE id=?", (other, rec))
     assert client.get(f"{D}/memory/user/{sid}").status_code == 404
@@ -649,6 +666,157 @@ def test_invite_email_is_owner_only_in_the_queue(app, owner):
     assert qid not in ids
     assert coach.post(f"{O}/queue/{qid}/approve").status_code == 403
     assert coach.get(f"{O}/queue/{qid}").status_code == 404
+
+
+# --------------------------------------------------------------------------- review fixes: hardening
+def test_out_of_range_ids_are_422_not_500(owner):
+    big = 2**70
+    for method, path, body in [
+        ("get", f"/team/users/{big}/export", None), ("get", f"/memory/user/{big}", None),
+        ("post", f"/team/invites/{big}/revoke", {}), ("post", f"/team/students/{big}/coach", {"coach_id": None}),
+        ("post", f"/team/reset-requests/{big}/dismiss", {}), ("delete", f"/team/assignments/{big}/{big}", None),
+        ("post", f"/team/users/{big}/role", {"role": "coach"}), ("post", f"/team/users/{big}/deactivate", {}),
+        ("post", f"/team/users/{big}/reactivate", {}), ("post", f"/team/users/{big}/reset-link", {}),
+        ("post", f"/team/users/{big}/delete", {"confirm": "x"}),
+        ("post", "/team/invites", {"email": "a@example.com", "role": "student", "coach_id": big}),
+        ("post", "/team/invites", {"role": "student", "student_id": big}),
+        ("post", "/team/assignments", {"manager_id": big, "member_id": 2}),
+        ("post", "/team/students/import", {"text": "A B, ab@example.com", "coach_id": big}),
+        ("post", "/team/students/1/coach", {"coach_id": big}),
+        ("get", "/team/users/0/export", None),
+    ]:
+        r = getattr(owner, method)(f"{O}{path}", **({"json": body} if body is not None else {}))
+        assert r.status_code == 422, (path, body, r.status_code)
+
+
+def test_import_unreadable_csv_is_a_plain_422(owner, tenant):
+    r = owner.post(f"{O}/team/students/import", json={"text": "Ann B, ann@example.com\nBig, " + "x" * 200_000})
+    assert r.status_code == 422 and "can't be read" in r.json()["detail"]
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM students").fetchone()[0] == 0  # all or nothing
+
+
+def test_export_sign_in_activity_is_this_person_only(app, owner):
+    a = _token(_invite(owner, "a_b@example.com", "setter").json())
+    b = _token(_invite(owner, "axb@example.com", "setter").json())
+    _, ra = _join(app, a)
+    _join(app, b)
+    login(_other(app), username="axb@example.com", password=STRONG)  # someone else signs in
+    data = owner.get(f"{O}/team/users/{ra.json()['user']['id']}/export").json()["data"]
+    assert [x["kind"] for x in data["sign_in_activity"]] == ["team.join"]  # '_' is not a wildcard any more
+
+
+def test_shared_demo_accounts_cannot_be_switched_off_deleted_or_reset(client, demo_tenant):
+    demo_login(client, "owner")
+    ids = {u["username"]: u for u in client.get(f"{D}/team").json()["users"]}
+    coach = ids["demo-coach"]
+    assert coach["shared_demo"] is True and ids["demo-coach2"]["shared_demo"] is False
+    for path, body in ((f"/team/users/{coach['id']}/deactivate", {}), (f"/team/users/{coach['id']}/role", {"role": "setter"}),
+                       (f"/team/users/{coach['id']}/reset-link", {}),
+                       (f"/team/users/{coach['id']}/delete", {"confirm": "demo-coach"})):
+        r = client.post(f"{D}{path}", json=body)
+        assert r.status_code == 403 and "shared by everyone" in r.json()["detail"], path
+    # the next visitor still gets a working one-click coach
+    other = TestClient(client.app)
+    demo_login(other, "coach")
+    assert other.get(f"{D}/me").json()["user"]["role"] == "coach"
+    # 'forgot password' for a one-click account records nothing; the seeded request is one the visitor can act on
+    before = len(client.get(f"{D}/team").json()["reset_requests"])
+    assert other.post(f"{D}/join/forgot", json={"ident": "demo-setter"}).status_code == 200
+    reqs = client.get(f"{D}/team").json()["reset_requests"]
+    assert len(reqs) == before == 1
+    made = client.post(f"{D}/team/users/{reqs[0]['user_id']}/reset-link", json={"origin": "http://testserver"})
+    assert made.status_code == 200 and made.json()["queue_item"]["status"] == "pending"
+    # the non-shared demo accounts are fully manageable
+    assert client.post(f"{D}/team/users/{ids['demo-coach2']['id']}/deactivate", json={}).status_code == 200
+
+
+def test_switch_off_and_delete_withdraw_queued_link_emails(app, owner, tenant):
+    res = _invite(owner, "wd@example.com", "student").json()
+    _, r = _join(app, _token(res))
+    u = r.json()["user"]
+    rl = owner.post(f"{O}/team/users/{u['id']}/reset-link", json={"origin": "http://testserver"}).json()
+    owner.post(f"{O}/team/users/{u['id']}/deactivate", json={})
+    item = queue.get(tenant, rl["queue_item"]["id"])
+    assert item["status"] == "rejected" and _token(rl) not in item["body"]  # nobody can approve a dead link out
+    owner.post(f"{O}/team/users/{u['id']}/reactivate", json={})
+    rl2 = owner.post(f"{O}/team/users/{u['id']}/reset-link", json={"origin": "http://testserver"}).json()
+    # an open invite tied to their student record (sent to another address) dies with the account too
+    other = owner.post(f"{O}/team/invites", json={"role": "student", "student_id": u["student_id"], "email": "alt@example.com",
+                                                   "origin": "http://testserver"})
+    assert other.status_code == 409  # the record already has an account
+    with tenant.db() as c:
+        c.execute("INSERT INTO invites(email,role,token_hash,created_by,created,expires,kind,student_id) "
+                  "VALUES('alt@example.com','student','h-alt','owner',?,?,'invite',?)",
+                  (time.time(), time.time() + 3600, u["student_id"]))
+    assert owner.post(f"{O}/team/users/{u['id']}/delete", json={"confirm": "wd@example.com"}).status_code == 200
+    item2 = queue.get(tenant, rl2["queue_item"]["id"])
+    assert item2["status"] == "rejected" and _token(rl2) not in item2["body"]
+    with tenant.db() as c:
+        assert c.execute("SELECT revoked FROM invites WHERE token_hash='h-alt'").fetchone()[0]
+
+
+def test_deleting_a_coach_unassigns_their_students(app, owner, tenant):
+    _, rc = _join(app, _token(_invite(owner, "gone.coach@example.com", "coach").json()))
+    coach = rc.json()["user"]["id"]
+    owner.post(f"{O}/team/students/import", json={"text": "S One, s1@example.com\nS Two, s2@example.com", "coach_id": coach})
+    pending = _invite(owner, "s3@example.com", "student", coach_id=coach).json()
+    out = owner.post(f"{O}/team/users/{coach}/delete", json={"confirm": "gone.coach@example.com"}).json()
+    assert out["removed"]["students_unassigned"] == 2
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM students WHERE coach_id=?", (coach,)).fetchone()[0] == 0
+    # an invite made while they were the coach doesn't attach the new student to a deleted account
+    _, r = _join(app, _token(pending))
+    assert r.status_code == 200 and r.json()["user"]["coach_id"] is None
+
+
+def test_run_traces_never_hold_links_or_full_emails(owner, tenant):
+    owner.post(f"{O}/team/students/import", json={"text": "Tr Ace, trace.me@example.com", "invite": True,
+                                                  "origin": "http://testserver"})
+    res = _invite(owner, "trace2@example.com", "coach").json()
+    with tenant.db() as c:
+        traces = " ".join((r["steps"] or "") + (r["result"] or "") for r in c.execute("SELECT steps, result FROM runs"))
+    assert "token=" not in traces and "#/join" not in traces and _token(res) not in traces
+    assert "trace2@example.com" not in traces  # the queued email (with its address) stays out of the trace
+    assert res["link"].startswith("/t/owner/#/join?token=")  # the owner still gets the link, once
+
+
+def test_expired_link_still_reads_expired_after_housekeeping(owner, tenant):
+    a = _invite(owner, "exp2@example.com", "setter").json()
+    with tenant.db() as c:
+        c.execute("UPDATE invites SET expires=? WHERE id=?", (time.time() - 10, a["invite"]["id"]))
+    inv = {i["id"]: i for i in owner.get(f"{O}/team").json()["invites"]}  # runs the housekeeping
+    assert inv[a["invite"]["id"]]["state"] == "expired"
+    assert _other(owner.app).post(f"{O}/join/check", json={"token": _token(a)}).json()["detail"].startswith("This link has expired")
+
+
+def test_remembered_facts_are_shown_not_stored_in_the_thread(demo_tenant):
+    from operator_ai import threads
+    from operator_ai.agents import router
+
+    with demo_tenant.db() as c:
+        u = auth.user_public(dict(c.execute("SELECT * FROM users WHERE username='demo-student'").fetchone()))
+    out = router.handle(demo_tenant, "How do I pick a niche?", u)
+    assert out["meta"]["remembered"] and "Settings" in out["meta"]["remembered"]["label"]
+    stored = threads.get(demo_tenant, out["thread_id"], u["id"])
+    assert all("remembered" not in (m.get("meta") or {}) for m in stored["messages"])  # deleting memory leaves no copy
+
+
+def test_invited_person_signs_in_with_email_in_any_case(app, owner):
+    _join(app, _token(_invite(owner, "case.test@example.com", "setter").json()))
+    # a phone keyboard capitalises the first letter; the account is still found
+    r = _other(app).post(f"{O}/auth/login", json={"username": " Case.Test@Example.com", "password": STRONG})
+    assert r.status_code == 200 and r.json()["user"]["username"] == "case.test@example.com"
+    assert _other(app).post(f"{O}/auth/login", json={"username": "Case.Test@Example.com", "password": "wrong-one-123"}).status_code == 401
+    assert _other(app).post(f"{O}/auth/login", json={"username": "OWNER", "password": owner_password()}).status_code == 401
+
+
+def test_invite_sent_hook_registered_by_the_handler_list():
+    from operator_ai import handlers
+
+    assert "operator_ai.team" in handlers.MODULES
+    handlers.load()
+    assert team._after_invite_sent in queue._SENT_HOOKS["invite"] and team._after_invite_sent in queue._SENT_HOOKS["password_reset"]
 
 
 # --------------------------------------------------------------------------- browser: invite -> join -> signed in

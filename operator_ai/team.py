@@ -132,14 +132,30 @@ def _user(c, uid: int) -> dict | None:
     return db.row(c.execute("SELECT * FROM users WHERE id=? AND deleted IS NULL", (uid,)).fetchone())
 
 
-def _target(tenant, uid: int, allow_owner: bool = False) -> dict:
+def shared_demo_account(tenant, u: dict | None) -> bool:
+    """The pitch demo's one-click accounts (demo-owner, demo-coach ...) are shared by every visitor."""
+    return bool(tenant.is_demo and u and u.get("username") in {f"demo-{r}" for r in auth.ROLES})
+
+
+def _target(tenant, uid: int, allow_owner: bool = False, allow_shared_demo: bool = False) -> dict:
     with tenant.db() as c:
         u = _user(c, uid)
     if u is None:
         raise TeamError(404, "Not found")
     if u["role"] == "owner" and not allow_owner:
         raise TeamError(403, "Owner accounts are managed on the server, not from this screen.")
+    if not allow_shared_demo and shared_demo_account(tenant, u):
+        # switching it off, deleting it or resetting its password would sign out (or lock out) everyone trying the demo
+        raise TeamError(403, "This one-click demo account is shared by everyone trying the demo, so it can't be changed. "
+                             "Invite a new (DEMO) person to try this.")
     return u
+
+
+def _banned_name(tenant, name: str) -> bool:
+    """A display name may not carry a name on the workspace's banned list (no impersonation)."""
+    from . import guardrails
+
+    return bool(name) and guardrails.scrub(name, guardrails.tenant_banned_names(tenant)) != name
 
 
 def _kill_sessions(c, uid: int) -> int:
@@ -185,8 +201,10 @@ def draft_invite_email(tenant, *, name: str, role: str, inviter: str, link: str,
 # --------------------------------------------------------------------------- invites
 def _public_invite(r: dict, now: float | None = None) -> dict:
     now = now or time.time()
-    state = ("used" if r.get("used") else "cancelled" if r.get("revoked") else
-             "expired" if (r.get("expires") or 0) < now else "open")
+    expires = r.get("expires") or 0
+    # housekeeping closes expired links after the fact (revoked >= expires): those still read as expired
+    state = ("used" if r.get("used") else "cancelled" if r.get("revoked") and r["revoked"] < expires else
+             "expired" if expires < now else "cancelled" if r.get("revoked") else "open")
     return {"id": r["id"], "kind": r.get("kind") or "invite", "email": r.get("email"), "role": r.get("role"),
             "role_label": ROLE_LABEL.get(r.get("role") or "", r.get("role")), "display": r.get("display"),
             "user_id": r.get("user_id"), "coach_id": r.get("coach_id"), "student_id": r.get("student_id"),
@@ -208,6 +226,11 @@ def _queue_invite_email(tenant, iid: int, *, kind: str, email: str, name: str, r
     with tenant.db() as c:
         c.execute("UPDATE invites SET queue_id=? WHERE id=?", (item["id"], iid))
     return item
+
+
+def _traced(inv: dict) -> dict:
+    """What a run trace keeps of an invite (coaches can read traces): no full address, no name."""
+    return {**inv, "email": mask_email(inv.get("email")) if inv.get("email") else None, "display": None}
 
 
 def _queue_summary(item: dict | None) -> dict | None:
@@ -251,9 +274,14 @@ def create_invite(tenant, actor: str, *, email: str | None = None, role: str = "
     if tenant.is_demo and not em.endswith("@example.invalid"):
         raise TeamError(422, "The pitch demo only invites fictional addresses ending in @example.invalid.")
     name = clean_display(display) or clean_display((student or {}).get("name")) or em.split("@")[0]
+    if _banned_name(tenant, name):
+        raise TeamError(422, "That name is on your banned-names list (Settings), so it can't be used. Leave the name "
+                             "empty or use another one.")
     name = _demo_label(tenant, name)
     plan = ["Check the address and role", "Create a one-time link (only its fingerprint is stored)",
             "Draft the invite email from a template", "Put the email in the approval queue"]
+    # the link exists only in the response (and the queued email); the run trace never holds it
+    once: dict = {}
 
     def fn(run):
         token = secrets.token_urlsafe(32)
@@ -274,24 +302,28 @@ def create_invite(tenant, actor: str, *, email: str | None = None, role: str = "
         iid = run.step("create_link", {"expires_in_days": INVITE_TTL // 86400}, _insert, label="Created a one-time link")
         path = join_path(tenant, token)
         full = base_url(origin) + path
+        once.update(link=path, full_link=full if base_url(origin) else None)
         item = None
         if send_email:
-            item = run.step("queue_email", {"to": mask_email(em), "kind": "invite"},
-                            lambda: _queue_invite_email(tenant, iid, kind="invite", email=em, name=name, role=role,
-                                                        inviter=inviter, link=full, expires=expires, actor=actor,
-                                                        run_id=run.id),
-                            label="Drafted the invite email (template) and queued it for approval")
+            def _queue():
+                nonlocal item
+                item = _queue_invite_email(tenant, iid, kind="invite", email=em, name=name, role=role, inviter=inviter,
+                                           link=full, expires=expires, actor=actor, run_id=run.id)
+                return _queue_summary(item)
+
+            run.step("queue_email", {"to": mask_email(em), "kind": "invite"}, _queue,
+                     label="Drafted the invite email (template) and queued it for approval")
         audit.log(tenant, actor, "team.invite", {"invite_id": iid, "role": role, "to": mask_email(em),
                                                  "queued": item["id"] if item else None})
         _cleanup_from_others(tenant, iid, em)
         with tenant.db() as c:
             row = db.row(c.execute("SELECT * FROM invites WHERE id=?", (iid,)).fetchone())
-        return {"invite": _public_invite(row), "link": path, "full_link": full if base_url(origin) else None,
-                "shown_once": True, "queue_item": _queue_summary(item),
+        once["invite"] = _public_invite(row)
+        return {"invite": _traced(once["invite"]), "shown_once": True, "queue_item": _queue_summary(item),
                 "label": "Invite email drafted from a template (AI not used)"}
 
     res = runtime.execute(tenant, "team", f"Invite a {ROLE_LABEL[role]}", plan, fn, actor=actor)
-    out = res["result"]
+    out = {**res["result"], **once}
     out["run_id"] = res["run_id"]
     return out
 
@@ -441,6 +473,10 @@ def _link_student(c, tenant, inv: dict, name: str, email: str) -> tuple[int, int
                              "(SELECT student_id FROM users WHERE student_id IS NOT NULL AND deleted IS NULL) "
                              "ORDER BY id LIMIT 1", (email,)).fetchone())
     coach = inv.get("coach_id")
+    if coach:
+        co = _user(c, coach)
+        if co is None or co["role"] != "coach" or not co["active"]:
+            coach = None  # the coach picked at invite time was switched off, deleted or moved since
     if s is None:
         sid = c.execute("INSERT INTO students(name,email,coach_id,joined,stage,clients,demo) VALUES(?,?,?,?,?,0,?)",
                         (name, email, coach, time.time(), "foundations", 1 if tenant.is_demo else 0)).lastrowid
@@ -480,6 +516,8 @@ def accept(tenant, token: str, password: str, ip: str, display: str | None = Non
             return session, auth.user_public(_user(c, u["id"]))
 
     name = clean_display(display) or row.get("display") or email.split("@")[0]
+    if _banned_name(tenant, name):
+        raise TeamError(422, "That name can't be used in this workspace. Choose another name.")
     name = _demo_label(tenant, name)
     probs = password_problems(password, email, name)
     if probs:
@@ -517,7 +555,7 @@ def request_reset(tenant, ident: str, ip: str) -> dict:
         key = norm_email(ident)
         u = db.row(c.execute("SELECT * FROM users WHERE deleted IS NULL AND active=1 AND role<>'owner' AND "
                              "(lower(username)=? OR lower(email)=?)", (key, key)).fetchone()) if key else None
-        if u is None:
+        if u is None or shared_demo_account(tenant, u):
             return generic
         recent = c.execute("SELECT 1 FROM team_reset_requests WHERE user_id=? AND handled IS NULL AND created>?",
                            (u["id"], time.time() - 86400)).fetchone()
@@ -553,6 +591,7 @@ def create_reset_link(tenant, uid: int, actor: str, *, send_email: bool = True, 
     email = norm_email(u.get("email") or (u["username"] if valid_email(u["username"]) else ""))
     plan = ["Cancel older reset links", "Create a one-time link (only its fingerprint is stored)",
             "Draft the reset email from a template", "Put the email in the approval queue"]
+    once: dict = {}
 
     def fn(run):
         token = secrets.token_urlsafe(32)
@@ -578,23 +617,28 @@ def create_reset_link(tenant, uid: int, actor: str, *, send_email: bool = True, 
                        label="Created a one-time reset link")
         path = join_path(tenant, token)
         full = base_url(origin) + path
+        once.update(link=path, full_link=full if base_url(origin) else None)
         item = None
         if send_email and email and not (tenant.is_demo and not email.endswith("@example.invalid")):
-            item = run.step("queue_email", {"to": mask_email(email), "kind": "reset"},
-                            lambda: _queue_invite_email(tenant, iid, kind="reset", email=email, name=u.get("display") or "",
-                                                        role=u["role"], inviter=inviter, link=full, expires=expires,
-                                                        actor=actor, run_id=run.id),
-                            label="Drafted the reset email (template) and queued it for approval")
+            def _queue():
+                nonlocal item
+                item = _queue_invite_email(tenant, iid, kind="reset", email=email, name=u.get("display") or "",
+                                           role=u["role"], inviter=inviter, link=full, expires=expires, actor=actor,
+                                           run_id=run.id)
+                return _queue_summary(item)
+
+            run.step("queue_email", {"to": mask_email(email), "kind": "reset"}, _queue,
+                     label="Drafted the reset email (template) and queued it for approval")
         audit.log(tenant, actor, "team.reset_link", {"user_id": uid, "invite_id": iid,
                                                      "queued": item["id"] if item else None})
         with tenant.db() as c:
             row = db.row(c.execute("SELECT * FROM invites WHERE id=?", (iid,)).fetchone())
-        return {"invite": _public_invite(row), "link": path, "full_link": full if base_url(origin) else None,
-                "shown_once": True, "queue_item": _queue_summary(item),
+        once["invite"] = _public_invite(row)
+        return {"invite": _traced(once["invite"]), "shown_once": True, "queue_item": _queue_summary(item),
                 "no_email": not email, "label": "Reset email drafted from a template (AI not used)"}
 
     res = runtime.execute(tenant, "team", f"Password reset link for user #{uid}", plan, fn, actor=actor)
-    out = res["result"]
+    out = {**res["result"], **once}
     out["run_id"] = res["run_id"]
     return out
 
@@ -626,6 +670,7 @@ def list_users(tenant) -> list[dict]:
         u["manages"] = [{"id": a["member_id"], "display": names.get(a["member_id"])} for a in assigns
                         if a["manager_id"] == u["id"] and a["member_id"] in names]
         u["demo"] = "(DEMO)" in (u["display"] or "")
+        u["shared_demo"] = shared_demo_account(tenant, u)
     users.sort(key=lambda u: (not u["active"], ROLE_ORDER.get(u["role"], 9), (u["display"] or "").lower()))
     return users
 
@@ -661,13 +706,18 @@ def set_role(tenant, uid: int, role: str, actor: str) -> dict:
 def set_active(tenant, uid: int, active: bool, actor: str) -> dict:
     u = _target(tenant, uid)
     ended = 0
+    open_links: list[dict] = []
     with tenant.db() as c, db.tx(c):
         c.execute("UPDATE users SET active=? WHERE id=?", (1 if active else 0, uid))
         if not active:
             ended = _kill_sessions(c, uid)
-            # an unused reset link for a switched-off account must not work
+            # an unused reset link for a switched-off account must not work, and its queued email must not go out
+            open_links = db.rows(c.execute("SELECT id, queue_id FROM invites WHERE user_id=? AND kind='reset' AND used IS NULL "
+                                           "AND revoked IS NULL", (uid,)))
             c.execute("UPDATE invites SET revoked=? WHERE user_id=? AND kind='reset' AND used IS NULL AND revoked IS NULL",
                       (time.time(), uid))
+    for r in open_links:
+        _retire_queue_copy(tenant, r["queue_id"], "Account switched off")
     audit.log(tenant, actor, "team.activate" if active else "team.deactivate",
               {"user_id": uid, "role": u["role"], "sessions_ended": ended})
     return {"ok": True, "user_id": uid, "active": active, "sessions_ended": ended}
@@ -750,7 +800,12 @@ def parse_import(text: str) -> tuple[list[dict], list[dict]]:
     """CSV lines "name, email[, niche]" (a header row is optional). Returns (rows, problems)."""
     rows, problems = [], []
     reader = csv.reader(io.StringIO(text or ""))
-    for n, rec in enumerate(reader, start=1):
+    try:
+        records = list(enumerate(reader, start=1))
+    except csv.Error:
+        raise TeamError(422, f"Line {reader.line_num or 1} can't be read: check for a missing quote or a very long "
+                             "value. Paste one student per line: name, email, niche.")
+    for n, rec in records:
         cells = [clean_display(x, 200) for x in rec]
         if not any(cells):
             continue
@@ -813,7 +868,7 @@ def import_students(tenant, text: str, actor: str, *, coach_id: int | None = Non
             return {"created": len(created), "skipped": len(skipped)}
 
         run.step("import", {"lines": len(rows) + len(problems)}, _write, label="Created student records")
-        invites, not_invited = [], 0
+        invites, not_invited = links, 0
         if invite:
             for s in created[:IMPORT_MAX_INVITES]:
                 if _on_never_invite_list(tenant, s["email"]):
@@ -831,10 +886,14 @@ def import_students(tenant, text: str, actor: str, *, coach_id: int | None = Non
             run.note("invites", {"requested": len(created)}, {"drafted": len(invites), "not_invited": not_invited},
                      label="Drafted invites for approval")
         audit.log(tenant, actor, "team.import", {"created": len(created), "skipped": len(skipped), "invites": len(invites)})
-        return {"created": created, "skipped": skipped, "invites": invites, "not_invited": not_invited}
+        # the trace keeps counts and line numbers; names, addresses and one-time links go back to the owner only
+        made.extend(created)
+        return {"created": len(created), "skipped": skipped, "invites": len(invites), "not_invited": not_invited}
 
+    links: list[dict] = []
+    made: list[dict] = []
     res = runtime.execute(tenant, "team", "Import students", plan, fn, actor=actor)
-    out = res["result"]
+    out = {**res["result"], "created": made, "invites": links}
     out["run_id"] = res["run_id"]
     return out
 
@@ -850,6 +909,17 @@ PERSONAL_TABLES = [
     ("team_reset_requests", "user_id"), ("prospects", "owner_user_id"), ("proposals", "owner_user_id"),
 ]
 EXPORT_LIMIT = 5000
+# what the owner reads after a delete (plain words, not table names)
+REMOVED_LABEL = {
+    "user_memory": "“What I know about you” entries", "setup_progress": "checklist ticks", "queries": "questions asked",
+    "projects": "projects", "memories": "project notes", "uploads": "uploaded files", "voice_sessions": "voice sessions",
+    "drill_cards": "practice cards", "academy_progress": "lesson progress records", "academy_attempts": "quiz answers",
+    "academy_review": "review cards", "roleplays": "role-plays", "certifications": "certifications",
+    "channel_links": "linked chat accounts", "team_reset_requests": "password reset requests", "prospects": "prospects",
+    "proposals": "proposals", "threads": "chats", "missions": "missions", "team_assignments": "team assignments",
+    "invites": "invite and reset links closed", "students_unassigned": "students now without a coach",
+    "checkin_notes": "check-in notes cleared",
+}
 
 
 def _tables(c) -> dict[str, set[str]]:
@@ -898,9 +968,17 @@ def export_user(tenant, uid: int, actor: str) -> dict:
         data["queue_items_drafted_for_them"] = [
             _clean_row({k: r[k] for k in ("id", "kind", "channel", "title", "body", "status", "created", "decided_at")})
             for r in c.execute("SELECT * FROM queue WHERE json_extract(meta,'$.owner_user_id')=? LIMIT ?", (uid, EXPORT_LIMIT))]
-        data["sign_in_activity"] = db.rows(c.execute("SELECT at, kind FROM audit WHERE actor LIKE ? AND kind IN "
-                                                     "('login','logout','login.fail') ORDER BY id DESC LIMIT 500",
-                                                     (u["username"] + "%",)))
+        addr = norm_email(u.get("email") or (u["username"] if valid_email(u["username"]) else ""))
+        data["team_emails_to_them"] = [
+            _clean_row({k: r[k] for k in ("id", "kind", "channel", "title", "body", "status", "created", "decided_at")})
+            for r in c.execute("SELECT * FROM queue WHERE kind IN ('invite','password_reset') AND lower(recipient_ref)=? "
+                               "LIMIT ?", (addr, EXPORT_LIMIT))] if addr else []
+        # exact actor match: a LIKE pattern would let '_' or '%' in an address pull in someone else's sign-ins
+        uname = u["username"]
+        data["sign_in_activity"] = db.rows(c.execute(
+            "SELECT at, kind FROM audit WHERE (actor=? OR substr(actor, 1, ?)=?) AND kind IN "
+            "('login','logout','login.fail','team.join','team.password_reset') ORDER BY id DESC LIMIT 500",
+            (uname, len(uname) + 1, uname + "(")))
         data["active_sessions"] = c.execute("SELECT COUNT(*) FROM sessions WHERE user_id=? AND expires>?",
                                             (uid, time.time())).fetchone()[0]
     _strip_tokens(data)
@@ -955,10 +1033,19 @@ def delete_user(tenant, uid: int, confirm: str, actor: str, actor_id: int | None
             removed["missions"] = c.execute("DELETE FROM missions WHERE user_id=?", (uid,)).rowcount
         removed["team_assignments"] = c.execute("DELETE FROM team_assignments WHERE manager_id=? OR member_id=?",
                                                 (uid, uid)).rowcount
-        removed["invites"] = c.execute("UPDATE invites SET email=NULL, display=NULL, revoked=COALESCE(revoked, ?) "
-                                       "WHERE user_id=? OR lower(email)=?",
-                                       (now, uid, norm_email(u.get("email") or u["username"]))).rowcount
         sid = u.get("student_id")
+        # every link about this person (their invites, reset links, invites tied to their student record) stops
+        # working, and a queued email carrying one is withdrawn below
+        mine = "(user_id=? OR lower(email)=? OR (? IS NOT NULL AND student_id=?))"
+        args = (uid, norm_email(u.get("email") or u["username"]), sid, sid)
+        open_links = db.rows(c.execute(f"SELECT queue_id FROM invites WHERE {mine} AND used IS NULL AND queue_id IS NOT NULL",
+                                       args))
+        removed["invites"] = c.execute(f"UPDATE invites SET email=NULL, display=NULL, revoked=COALESCE(revoked, ?) "
+                                       f"WHERE {mine}", (now, *args)).rowcount
+        if u["role"] == "coach" or c.execute("SELECT 1 FROM students WHERE coach_id=?", (uid,)).fetchone():
+            # their students go back to 'no coach yet' instead of pointing at a deleted account
+            removed["students_unassigned"] = c.execute("UPDATE students SET coach_id=NULL WHERE coach_id=?", (uid,)).rowcount
+            c.execute("UPDATE users SET coach_id=NULL WHERE coach_id=?", (uid,))
         if sid:
             c.execute("UPDATE students SET name='Deleted student', email=NULL, intake=NULL, plan=NULL, niche=NULL "
                       "WHERE id=?", (sid,))
@@ -967,6 +1054,8 @@ def delete_user(tenant, uid: int, confirm: str, actor: str, actor_id: int | None
         c.execute("UPDATE users SET username=?, display='Deleted user', email=NULL, pw_hash=?, active=0, deleted=?, "
                   "coach_id=NULL WHERE id=?", (f"deleted-{uid}-{secrets.token_hex(3)}", auth.hash_pw(secrets.token_urlsafe(24)),
                                                now, uid))
+    for r in open_links:
+        _retire_queue_copy(tenant, r["queue_id"], "Account deleted")
     rejected = 0
     for item in queue.list_items(tenant, status="open", limit=5000):
         if item["meta"].get("owner_user_id") == uid:
@@ -976,7 +1065,9 @@ def delete_user(tenant, uid: int, confirm: str, actor: str, actor_id: int | None
             except queue.QueueError:
                 pass
     audit.log(tenant, actor, "team.delete", {"user_id": uid, "removed": removed, "drafts_rejected": rejected})
-    return {"ok": True, "user_id": uid, "removed": {k: v for k, v in removed.items() if v}, "drafts_rejected": rejected,
+    kept = {k: v for k, v in removed.items() if v}
+    return {"ok": True, "user_id": uid, "removed": kept, "drafts_rejected": rejected,
+            "removed_list": [{"label": REMOVED_LABEL.get(k, k.replace("_", " ")), "count": v} for k, v in kept.items()],
             "kept": ["Approval history and the audit log (they prove what was sent and who approved it). "
                      "The account now shows as 'Deleted user'.",
                      "Check-in numbers without notes, so programme totals stay correct."]}
@@ -1026,9 +1117,11 @@ def seed_demo(tenant) -> None:
     with tenant.db() as c:
         ids = {r["username"]: r["id"] for r in c.execute("SELECT id, username FROM users")}
     setter, closer, student = ids.get("demo-setter"), ids.get("demo-closer"), ids.get("demo-student")
+    coach2 = ids.get("demo-coach2")
     with tenant.db() as c, db.tx(c):
         for uname, row in (("demo-setter", "imani.setter@example.invalid"), ("demo-closer", "abel.closer@example.invalid"),
-                           ("demo-coach", "rivera.coach@example.invalid"), ("demo-student", "ava.hartley@example.invalid")):
+                           ("demo-coach", "rivera.coach@example.invalid"), ("demo-student", "ava.hartley@example.invalid"),
+                           ("demo-coach2", "okafor.coach@example.invalid")):
             if uname in ids:
                 c.execute("UPDATE users SET email=? WHERE id=?", (row, ids[uname]))
         if setter and closer:
@@ -1040,8 +1133,9 @@ def seed_demo(tenant) -> None:
                             "VALUES(?,?,?,?,?,?,'invite',?,1)",
                             ("priya.tiwari@example.invalid", "student", _hash(secrets.token_urlsafe(32)), "demo-owner(owner)",
                              now - 10 * 86400, now - 3 * 86400, "Priya Tiwari (DEMO)"))
-        if setter:
-            c.execute("INSERT INTO team_reset_requests(user_id, created) VALUES(?,?)", (setter, now - 3600))
+        if coach2:
+            # a reset request the visitor can act on (the one-click accounts are shared, so they can't be reset)
+            c.execute("INSERT INTO team_reset_requests(user_id, created) VALUES(?,?)", (coach2, now - 3600))
         if student:
             c.execute("INSERT OR IGNORE INTO setup_progress(user_id,item,done) VALUES(?,?,?)", (student, "meet_coach", now - 30 * 86400))
     # one open invite waiting for approval (its link works only inside the demo database)

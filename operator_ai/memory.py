@@ -225,7 +225,8 @@ def hint(tenant, user: dict | None, intent: str = "question") -> dict | None:
             facts.append({"label": "Your goal", "value": m["goal"]})
         if not facts:
             return None
-        return {"facts": facts[:6], "label": "From “What I know about you” (you can edit or delete it in Settings)"}
+        where = "Business profile" if (user or {}).get("role") == "owner" else "Settings"
+        return {"facts": facts[:6], "label": f"From “What I know about you” (you can edit or delete it in {where})"}
     except Exception:  # noqa: BLE001
         return None
 

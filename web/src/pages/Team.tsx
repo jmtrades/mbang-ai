@@ -10,6 +10,7 @@ type User = {
   id: number; username: string; display: string; role: string; role_label: string; active: boolean; email?: string | null;
   coach_id?: number | null; coach?: string | null; student_id?: number | null; sessions: number; students?: number | null;
   managers: { id: number; display: string }[]; manages: { id: number; display: string }[]; created: number; demo: boolean;
+  shared_demo?: boolean;
 };
 type Invite = {
   id: number; kind: "invite" | "reset"; email: string | null; role: string; role_label: string; display: string | null; state: string;
@@ -156,6 +157,7 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
   if (!user) return null;
   const owner = user.role === "owner";
   const self = user.id === me.user.id;
+  const shared = !!user.shared_demo;
   const run = async (key: string, fn: () => Promise<any>, msg?: string) => {
     setBusy(key);
     setErr(null);
@@ -178,7 +180,7 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
         <div className="space-y-3 text-sm">
           <p className="font-medium">The account was deleted and its personal records removed.</p>
           <ul className="list-disc space-y-1 pl-5 text-muted">
-            {Object.entries(deleted.removed || {}).map(([k, v]) => <li key={k}>{String(v)} {k.replace(/_/g, " ")}</li>)}
+            {(deleted.removed_list || []).map((r: { label: string; count: number }) => <li key={r.label}>{r.count.toLocaleString()} {r.label}</li>)}
             {deleted.drafts_rejected ? <li>{deleted.drafts_rejected} open draft(s) in their name rejected</li> : null}
           </ul>
           <p className="text-xs text-muted">Kept: {deleted.kept?.join(" ")}</p>
@@ -195,14 +197,19 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
             <p className="rounded-lg border border-line bg-panel-2 px-3 py-2 text-xs text-muted">Owner accounts are managed on the server, not from this screen.</p>
           ) : (
             <>
-              <section className="space-y-2">
+              {shared && (
+                <p className="rounded-lg border border-line bg-panel-2 px-3 py-2 text-xs text-muted" data-testid="shared-demo-note">
+                  Everyone trying the demo signs in with this one-click account, so its role, access and password can't be changed. Invite a new (DEMO) person to try those.
+                </p>
+              )}
+              {!shared && <section className="space-y-2">
                 <h4 className="font-semibold">Role</h4>
                 <div className="flex gap-2">
                   <div className="min-w-0 flex-1"><Select value={role} onChange={(e) => setRole(e.target.value)} options={data.roles} aria-label="Role" disabled={self} /></div>
                   <Button onClick={() => run("role", () => post(`/team/users/${user.id}/role`, { role }), "Role changed")} disabled={role === user.role || self} loading={busy === "role"}>Save</Button>
                 </div>
                 <p className="text-xs text-muted">Takes effect on their next click. Each role sees only its own tabs and approves only its kind of drafts.</p>
-              </section>
+              </section>}
 
               {user.role === "student" && user.student_id && (
                 <section className="space-y-2">
@@ -239,7 +246,7 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
                 </section>
               )}
 
-              <section className="space-y-2">
+              {!shared && <section className="space-y-2">
                 <h4 className="font-semibold">Access</h4>
                 {user.active ? (
                   <>
@@ -249,9 +256,9 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
                 ) : (
                   <Button tone="good" loading={busy === "on"} onClick={() => run("on", () => post(`/team/users/${user.id}/reactivate`, {}), "Switched back on")}><UserCheck className="size-4" /> Switch back on</Button>
                 )}
-              </section>
+              </section>}
 
-              {user.active && (
+              {user.active && !shared && (
                 <section className="space-y-2">
                   <h4 className="font-semibold">Password</h4>
                   {reset ? <LinkOnce res={reset} emailLive={data.email_live} kind="reset" /> : (
@@ -271,7 +278,7 @@ function ManageDrawer({ user, data, onClose, onChanged }: { user: User | null; d
           <section className="space-y-2">
             <h4 className="font-semibold">Their data</h4>
             <a href={`${BASE}/team/users/${user.id}/export`} download className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel px-3.5 py-2 text-sm font-medium hover:bg-panel-2"><Download className="size-4" /> Export everything (JSON)</a>
-            {!owner && !self && (
+            {!owner && !self && !shared && (
               <div className="space-y-2 rounded-lg border border-red-200 bg-red-50/50 p-3">
                 <p className="text-xs text-red-950">Delete removes their name, email, password, memory, chats, uploads, practice and prospect lists, and rejects open drafts in their name. Approval history and the audit log are kept. This can't be undone.</p>
                 <Field label={`Type ${user.username} to confirm`}><Input value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" /></Field>

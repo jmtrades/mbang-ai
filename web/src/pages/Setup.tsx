@@ -52,7 +52,7 @@ function BrandEditor({ brand, onSaved }: { brand: any; onSaved: () => void }) {
         <Field label="Main colour"><Input type="color" value={b.primary} onChange={(e) => setB({ ...b, primary: e.target.value })} className="h-10 p-1" /></Field>
         <Field label="Accent colour"><Input type="color" value={b.accent} onChange={(e) => setB({ ...b, accent: e.target.value })} className="h-10 p-1" /></Field>
       </div>
-      <Field label="Logo" hint="An https:// link to your logo image. It shows on sign-in and in the menu.">
+      <Field label="Logo" hint="An https:// link to your logo image, saved with your brand.">
         <Input value={b.logo} maxLength={500} placeholder="https://…/logo.png" onChange={(e) => setB({ ...b, logo: e.target.value.trim() })} />
       </Field>
       {b.logo.startsWith("https://") && <img src={b.logo} alt="Logo preview" className="h-10 max-w-[12rem] rounded border border-line object-contain" />}

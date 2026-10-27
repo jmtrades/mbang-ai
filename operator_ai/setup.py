@@ -219,8 +219,9 @@ def checklist(tenant) -> dict:
     items.append(_item("ai", "AI key and budget (optional)", "done" if reason is None else "optional",
                        "Everything works without AI (rules, templates, retrieval, labelled replays). A key plus a budget "
                        "adds AI drafting. Keys are never typed into the browser.",
-                       ai_detail, command=f'export ANTHROPIC_API_KEY=... then scripts/tenant_admin.py budget {tid} ai 200000 '
-                                          f'--owner-yes "<your reason>"', action="Set on the server", required=False,
+                       ai_detail, command=f'scripts/tenant_admin.py budget {tid} ai 200000 --owner-yes "<your reason>"',
+                       action="On the server: put ANTHROPIC_API_KEY (or OPENAI_API_KEY) in the server's environment, "
+                              "then set a token budget", required=False,
                        data={"key_present": key, "budget": budget, "used": used}))
 
     # 5. integrations
@@ -290,8 +291,9 @@ def checklist(tenant) -> dict:
                        "A nightly backup means a lost server or a bad change costs a day, not the programme.",
                        (f"Newest backup: {when}" if when else "No backup archive found on this server")
                        + (" · marked as handled elsewhere" if bdec == "configured_elsewhere" else ""),
-                       command="scripts/backup.sh  (schedule it nightly with cron or a systemd timer, see deploy/README.md)",
-                       action="Run on the server", data=bk))
+                       command="scripts/backup.sh",
+                       action="On the server: run it once, then schedule it nightly (cron or a systemd timer, see "
+                              "deploy/README.md)", data=bk))
     # 13. preflight
     pf = preflight(tenant)
     ok = sum(1 for p in pf if p["ok"])

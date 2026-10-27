@@ -11,6 +11,7 @@ MODULES = [
     "operator_ai.missions", "operator_ai.prospects", "operator_ai.proposals", "operator_ai.academy",
     "operator_ai.roleplay", "operator_ai.persona", "operator_ai.delivery", "operator_ai.inbound",
     "operator_ai.escalations", "operator_ai.webinars", "operator_ai.client_ops", "operator_ai.playbooks",
+    "operator_ai.team",  # on_sent: removes a one-time link from the queue copy once the email has really gone out
 ]
 _loaded = False
 

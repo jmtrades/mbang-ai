@@ -4,7 +4,9 @@ Every body model forbids unknown fields, so a malformed or unexpected body is a 
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,6 +20,11 @@ public_router = APIRouter(prefix="/t/{tid}/api")
 
 class _Body(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+# Ids are bounded so an out-of-range number is a 422, never a 500 from SQLite's 64-bit integers.
+MAX_ID = 2**62
+PathId = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _err(e: team.TeamError):
@@ -44,8 +51,8 @@ class InviteBody(_Body):
     email: str | None = Field(None, max_length=200)
     role: str = Field(pattern="^(coach|setter|closer|student)$")
     display: str | None = Field(None, max_length=80)
-    coach_id: int | None = Field(None, ge=1)
-    student_id: int | None = Field(None, ge=1)
+    coach_id: int | None = Field(None, ge=1, le=MAX_ID)
+    student_id: int | None = Field(None, ge=1, le=MAX_ID)
     send_email: bool = True
     origin: str | None = _ORIGIN
 
@@ -65,7 +72,7 @@ class NoteBody(_Body):
 
 
 @router.post("/team/invites/{iid}/revoke")
-def revoke(iid: int, b: NoteBody, ctx: Ctx = Depends(require("team"))):
+def revoke(iid: PathId, b: NoteBody, ctx: Ctx = Depends(require("team"))):
     try:
         return team.revoke_invite(ctx.tenant, iid, ctx.actor)
     except team.TeamError as e:
@@ -78,7 +85,7 @@ class RoleBody(_Body):
 
 
 @router.post("/team/users/{uid}/role")
-def change_role(uid: int, b: RoleBody, ctx: Ctx = Depends(require("team"))):
+def change_role(uid: PathId, b: RoleBody, ctx: Ctx = Depends(require("team"))):
     if uid == ctx.user["id"]:
         raise HTTPException(409, "You can't change your own role.")
     try:
@@ -88,7 +95,7 @@ def change_role(uid: int, b: RoleBody, ctx: Ctx = Depends(require("team"))):
 
 
 @router.post("/team/users/{uid}/deactivate")
-def deactivate(uid: int, b: NoteBody, ctx: Ctx = Depends(require("team"))):
+def deactivate(uid: PathId, b: NoteBody, ctx: Ctx = Depends(require("team"))):
     if uid == ctx.user["id"]:
         raise HTTPException(409, "You can't switch off your own account.")
     try:
@@ -98,7 +105,7 @@ def deactivate(uid: int, b: NoteBody, ctx: Ctx = Depends(require("team"))):
 
 
 @router.post("/team/users/{uid}/reactivate")
-def reactivate(uid: int, b: NoteBody, ctx: Ctx = Depends(require("team"))):
+def reactivate(uid: PathId, b: NoteBody, ctx: Ctx = Depends(require("team"))):
     try:
         return team.set_active(ctx.tenant, uid, True, ctx.actor)
     except team.TeamError as e:
@@ -111,7 +118,7 @@ class ResetBody(_Body):
 
 
 @router.post("/team/users/{uid}/reset-link")
-def reset_link(uid: int, b: ResetBody, ctx: Ctx = Depends(require("team"))):
+def reset_link(uid: PathId, b: ResetBody, ctx: Ctx = Depends(require("team"))):
     try:
         return team.create_reset_link(ctx.tenant, uid, ctx.actor, send_email=b.send_email, origin=b.origin,
                                       inviter=ctx.user.get("display") or "")
@@ -120,7 +127,7 @@ def reset_link(uid: int, b: ResetBody, ctx: Ctx = Depends(require("team"))):
 
 
 @router.get("/team/users/{uid}/export")
-def export(uid: int, ctx: Ctx = Depends(require("team"))):
+def export(uid: PathId, ctx: Ctx = Depends(require("team"))):
     try:
         data = team.export_user(ctx.tenant, uid, ctx.actor)
     except team.TeamError as e:
@@ -133,7 +140,7 @@ class DeleteBody(_Body):
 
 
 @router.post("/team/users/{uid}/delete")
-def delete(uid: int, b: DeleteBody, ctx: Ctx = Depends(require("team"))):
+def delete(uid: PathId, b: DeleteBody, ctx: Ctx = Depends(require("team"))):
     try:
         return team.delete_user(ctx.tenant, uid, b.confirm, ctx.actor, actor_id=ctx.user["id"])
     except team.TeamError as e:
@@ -142,11 +149,11 @@ def delete(uid: int, b: DeleteBody, ctx: Ctx = Depends(require("team"))):
 
 # --------------------------------------------------------------------------- students + assignments
 class CoachBody(_Body):
-    coach_id: int | None = Field(None, ge=1)
+    coach_id: int | None = Field(None, ge=1, le=MAX_ID)
 
 
 @router.post("/team/students/{sid}/coach")
-def set_coach(sid: int, b: CoachBody, ctx: Ctx = Depends(require("team"))):
+def set_coach(sid: PathId, b: CoachBody, ctx: Ctx = Depends(require("team"))):
     try:
         return team.assign_coach(ctx.tenant, sid, b.coach_id, ctx.actor)
     except team.TeamError as e:
@@ -155,7 +162,7 @@ def set_coach(sid: int, b: CoachBody, ctx: Ctx = Depends(require("team"))):
 
 class ImportBody(_Body):
     text: str = Field(min_length=1, max_length=400_000)
-    coach_id: int | None = Field(None, ge=1)
+    coach_id: int | None = Field(None, ge=1, le=MAX_ID)
     invite: bool = False
     origin: str | None = _ORIGIN
 
@@ -170,8 +177,8 @@ def import_students(b: ImportBody, ctx: Ctx = Depends(require("team"))):
 
 
 class AssignBody(_Body):
-    manager_id: int = Field(ge=1)
-    member_id: int = Field(ge=1)
+    manager_id: int = Field(ge=1, le=MAX_ID)
+    member_id: int = Field(ge=1, le=MAX_ID)
 
 
 @router.post("/team/assignments")
@@ -183,7 +190,7 @@ def assign(b: AssignBody, ctx: Ctx = Depends(require("team"))):
 
 
 @router.delete("/team/assignments/{manager_id}/{member_id}")
-def unassign(manager_id: int, member_id: int, ctx: Ctx = Depends(require("team"))):
+def unassign(manager_id: PathId, member_id: PathId, ctx: Ctx = Depends(require("team"))):
     try:
         return team.remove_assignment(ctx.tenant, manager_id, member_id, ctx.actor)
     except team.TeamError as e:
@@ -191,7 +198,7 @@ def unassign(manager_id: int, member_id: int, ctx: Ctx = Depends(require("team")
 
 
 @router.post("/team/reset-requests/{rid}/dismiss")
-def dismiss_request(rid: int, b: NoteBody, ctx: Ctx = Depends(require("team"))):
+def dismiss_request(rid: PathId, b: NoteBody, ctx: Ctx = Depends(require("team"))):
     import time
 
     from .. import audit
