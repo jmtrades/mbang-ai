@@ -352,7 +352,7 @@ def run_agent(tenant, build_id: int, agent_key: str, user: dict | None = None, b
                         chosen, source = a["text"], "AI"
                 else:
                     label = f"Rules draft (AI not used): {a['reason']}"
-                sc = rubrics.score(chosen, d["asset"], meta, names)
+                sc = rubrics.score(chosen, d["asset"], meta, names, tenant=tenant)
                 passes = not guardrails.blocked(sc["flags"]) and (sc["score"] >= 60 or d["asset"] == "generic")
                 out.append({"input": it, "body": chosen, "source": source, "score": sc["score"], "passes": passes,
                             "label": label, "flags": sc["flags"], "kind": d["kind"], "meta": meta})

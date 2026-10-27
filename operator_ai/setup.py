@@ -253,9 +253,10 @@ def checklist(tenant) -> dict:
         team = _count(c, "SELECT COUNT(*) FROM users WHERE role<>'owner' AND deleted IS NULL AND active=1")
         invites = _count(c, "SELECT COUNT(*) FROM invites WHERE COALESCE(kind,'invite')='invite'")
         students = _count(c, "SELECT COUNT(*) FROM students")
-        missions = _count(c, "SELECT COUNT(*) FROM missions") if "missions" in tables else 0
+        missions = _count(c, "SELECT COUNT(*) FROM missions WHERE COALESCE(status,'') NOT IN ('cancelled')") \
+            if "missions" in tables else 0
         academy_n, academy_what = _academy(c, tables)
-        persona_n = _count(c, "SELECT COUNT(*) FROM persona_profiles") if "persona_profiles" in tables else 0
+    persona_n, persona_what = _persona_state(tenant)
 
     # 7. team invited
     items.append(_item("team", "Invite your team", "done" if team or invites else "todo",
@@ -279,7 +280,7 @@ def checklist(tenant) -> dict:
     pstat = "done" if persona_n or pdec else "optional"
     items.append(_item("persona", "Decide on a persona (optional)", pstat,
                        "A named persona needs the person's recorded consent. Without one, the assistant speaks as your "
-                       "brand.", "Persona set up" if persona_n else {"use": "You plan to set one up",
+                       "brand.", persona_what if persona_n else {"use": "You plan to set one up",
                                                                      "not_now": "Decided: not now"}.get(pdec, "Not decided"),
                        href="#/console", action="Open the persona section", required=False))
     # 12. backups
@@ -308,12 +309,26 @@ def checklist(tenant) -> dict:
 
 
 def _academy(c, tables: set[str]) -> tuple[int, str]:
-    for t in ("academy_builds", "academy_paths"):
-        if t in tables:
-            cols = {r[1] for r in c.execute(f"PRAGMA table_info({t})")}
-            if "status" in cols:
-                return _count(c, f"SELECT COUNT(*) FROM {t} WHERE status='published'"), "published build(s)"
-    return _count(c, "SELECT COUNT(*) FROM academy_lessons"), "lesson(s)"
+    """The Academy is set up once the owner has published lessons from a build (academy_lessons.status 'published';
+    drafts waiting for review and stale lessons don't count)."""
+    if "academy_lessons" not in tables:
+        return 0, "published lesson(s)"
+    return _count(c, "SELECT COUNT(*) FROM academy_lessons WHERE status='published'"), "published lesson(s)"
+
+
+def _persona_state(tenant) -> tuple[int, str]:
+    """1 with a plain description when a persona is live (the subject's signed consent is in force), else 0 with
+    the current state (a mined profile waiting for the subject, a withdrawn or expired consent ...)."""
+    try:
+        from . import persona
+
+        st = persona.status(tenant)
+        label = str(st.get("label") or st.get("state") or "")
+        if persona.active(tenant):
+            return 1, f"Persona live: {label}" if label else "Persona live (signed consent in force)"
+        return 0, label or "No persona"
+    except Exception:  # noqa: BLE001 - the checklist must render even if a feature can't be read
+        return 0, "No persona"
 
 
 # --------------------------------------------------------------------------- brand
@@ -407,9 +422,8 @@ def first_run(tenant, user: dict, role: str | None = None) -> dict:
                 bool(sid) and _count(c, "SELECT COUNT(*) FROM checkins WHERE student_id=?", (sid,)) > 0, "#/checkin",
                 "Check in")
             lessons = 0
-            if "academy_progress" in tables:
-                lessons = _count(c, "SELECT COUNT(*) FROM academy_progress WHERE user_id=? AND (score IS NOT NULL OR "
-                                    "lower(COALESCE(status,'')) IN ('done','complete','completed','passed','mastered'))", (uid,))
+            if "academy_progress" in tables:  # the Academy marks a finished lesson status='complete'
+                lessons = _count(c, "SELECT COUNT(*) FROM academy_progress WHERE user_id=? AND status='complete'", (uid,))
             add("lesson", "Finish your first lesson", "Lessons come from the programme's own material.", lessons > 0,
                 "#/academy", "Open the Academy")
             plays = _count(c, "SELECT COUNT(*) FROM roleplays WHERE user_id=? AND status='complete'", (uid,)) \
@@ -419,8 +433,9 @@ def first_run(tenant, user: dict, role: str | None = None) -> dict:
             pros = _count(c, "SELECT COUNT(*) FROM prospects WHERE owner_user_id=?", (uid,)) if "prospects" in tables else 0
             add("prospects", "Build your first prospect list", "Ten good-fit businesses beat a hundred random ones.",
                 pros > 0, "#/prospects", "Open Prospects")
-            sent = _count(c, "SELECT COUNT(*) FROM queue WHERE json_extract(meta,'$.owner_user_id')=? AND status='approved'",
-                          (uid,))
+            # delivery truth: outreach counts once it really went out (sent by a live sender or confirmed "I sent it")
+            sent = _count(c, "SELECT COUNT(*) FROM queue WHERE json_extract(meta,'$.owner_user_id')=? AND status='sent' "
+                             "AND json_extract(meta,'$.prospect_facing')=1", (uid,))
             add("outreach", "Send your first outreach", "You approve every message before it goes out.", sent > 0,
                 "#/queue", "Open your approvals")
         else:
@@ -428,11 +443,14 @@ def first_run(tenant, user: dict, role: str | None = None) -> dict:
                 _count(c, "SELECT COUNT(*) FROM user_memory WHERE user_id=?", (uid,)) > 0, "#/settings", "Open Settings")
             lessons = 0
             if "academy_progress" in tables:
-                lessons = _count(c, "SELECT COUNT(*) FROM academy_progress WHERE user_id=?", (uid,))
+                lessons = _count(c, "SELECT COUNT(*) FROM academy_progress WHERE user_id=? AND status='complete'", (uid,))
             add("lesson", "Finish your first lesson", "Your role's path in the Academy.", lessons > 0, "#/academy",
                 "Open the Academy")
-            add("drill", "Practise an objection", "Short spaced-repetition drills.",
-                _count(c, "SELECT COUNT(*) FROM drill_cards WHERE user_id=?", (uid,)) > 0, "#/drills", "Open drills")
+            # drills live in the Academy's review store (academy_review, item_kind 'drill'); older drill_cards rows too
+            drilled = _count(c, "SELECT COUNT(*) FROM academy_review WHERE user_id=? AND item_kind='drill' AND reps>0",
+                             (uid,)) if "academy_review" in tables else 0
+            drilled += _count(c, "SELECT COUNT(*) FROM drill_cards WHERE user_id=? AND reps>0", (uid,))
+            add("drill", "Practise an objection", "Short spaced-repetition drills.", drilled > 0, "#/drills", "Open drills")
             if role == "coach":
                 add("students", "Look over your students", "See who needs you this week.", None, "#/students",
                     "Open Accountability", manual=True)

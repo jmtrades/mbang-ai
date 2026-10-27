@@ -1125,7 +1125,7 @@ def test_one_broken_due_item_does_not_hold_up_the_others(demo_tenant, monkeypatc
     c_ = queue.add(demo_tenant, "reminder", "Third reminder.", channel="email", recipient_ref="c@example.invalid",
                    meta={"send_after": db.now() + 3600})
     queue.approve(demo_tenant, c_["id"], "o")
-    monkeypatch.setattr(delivery, "cancel_reason", lambda t, item: (_ for _ in ()).throw(ValueError("bad data")))
+    monkeypatch.setattr(delivery, "cancel_reason", lambda t, item, *a: (_ for _ in ()).throw(ValueError("bad data")))
     delivery.dispatch_due(demo_tenant, now=db.now() + 8000)
     assert queue.get(demo_tenant, c_["id"])["status"] == "send_failed"
     monkeypatch.setattr(delivery, "cancel_reason", real_reason)
@@ -1138,8 +1138,20 @@ def test_a_send_interrupted_mid_way_is_recovered_not_stuck(demo_tenant):
     r = delivery.dispatch_due(demo_tenant, now=db.now() + queue.STUCK_AFTER + 60)
     assert r["recovered"] == [it["id"]]
     got = queue.get(demo_tenant, it["id"])
-    assert got["status"] == "send_failed" and "may or may not have gone out" in got["status_reason"]
+    # needs_attention: a person checks whether it went out; nothing re-sends it by itself
+    assert got["status"] == "needs_attention" and "may or may not have gone out" in got["status_reason"]
+    assert delivery.dispatch_due(demo_tenant, now=db.now() + 2 * queue.STUCK_AFTER)["due"] == 0
+    assert queue.get(demo_tenant, it["id"])["status"] == "needs_attention"
     assert queue.cancel(demo_tenant, it["id"], "o")["status"] == "cancelled"
+    # ... or confirms it did go out (on_sent runs once), or sends it again on purpose
+    two = queue.add(demo_tenant, "reminder", "Hello again.", channel="email", recipient_ref="b@example.invalid")
+    assert queue._claim(demo_tenant, two["id"], queue.OPEN)
+    delivery.dispatch_due(demo_tenant, now=db.now() + queue.STUCK_AFTER + 60)
+    assert queue.mark_sent(demo_tenant, two["id"], "o")["status"] == "sent"
+    three = queue.add(demo_tenant, "reminder", "Hello a third time.", channel="email", recipient_ref="c@example.invalid")
+    assert queue._claim(demo_tenant, three["id"], queue.OPEN)
+    delivery.dispatch_due(demo_tenant, now=db.now() + queue.STUCK_AFTER + 60)
+    assert queue.send_now(demo_tenant, three["id"], "o")["status"] == "sent"  # the demo's mock transport
 
 
 def test_cancelling_an_approved_invite_cancels_the_call_and_its_reminders(tenant):

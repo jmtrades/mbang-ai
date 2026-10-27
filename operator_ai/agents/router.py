@@ -95,9 +95,22 @@ _QUESTION = re.compile(r"\?|^\s*(how|what|why|when|where|which|who|should|could|
 _RATE_PCT = re.compile(r"\d+(?:\.\d+)?\s?%")
 
 
+# "how do I improve my close rate?", "what should I fix?": a real question asked about the numbers, not a bare
+# "here are my numbers?"
+_ASKS = re.compile(r"\b(how|what|why|which|where|should|can|could|would|is it|any tips|advice)\b[^?]{0,200}\?", re.I)
+
+
+def asks_about_numbers(text: str) -> bool:
+    return bool(_ASKS.search(text or ""))
+
+
 def is_metrics(text: str, metrics: dict) -> bool:
     """Numbers are a diagnosis request when there are three or more of them, or two with no question asked (a
-    measured rate like "4%" counts as data). Two numbers inside a question are context for the question."""
+    measured rate like "4%" counts as data). Numbers inside a real question ("I booked 3 calls and 2 showed, how do I
+    improve my close rate?") are context for the question: it is answered by the coach, with the diagnosis of those
+    numbers alongside, never replaced by the bare diagnostic."""
+    if asks_about_numbers(text) and not _RATE_PCT.search(text):  # a measured rate ("4% on 500 DMs") is data
+        return False
     if len(metrics) >= 3:
         return True
     if len(metrics) == 2:
@@ -155,6 +168,29 @@ def classify(text: str, filename: str | None = None) -> str:
     return "question"
 
 
+def _numbers_context(nums: dict) -> tuple[str, dict]:
+    """What the numbers in a question say, from the same pure maths as the diagnostic (no run, nothing stored)."""
+    try:
+        an = diagnostic.analyse(nums)
+    except Exception:  # noqa: BLE001 - context is a bonus; the coach answer stands on its own
+        return "", {}
+    rows = [r for r in an.get("stages", an.get("rows", [])) or [] if isinstance(r, dict) and r.get("kind") != "cost"]
+    if not rows:
+        return "", {}
+    bits = []
+    for r in rows[:3]:
+        v, b = r.get("value"), r.get("benchmark")
+        if isinstance(v, (int, float)) and isinstance(b, (int, float)):
+            bits.append(f"{r['label'].lower()} {v:.0%} (benchmark {b:.0%})")
+    if not bits:
+        return "", {}
+    bn = an.get("bottleneck") or {}
+    line = "From your numbers: " + "; ".join(bits) + "."
+    if bn.get("label"):
+        line += f" The weakest step is {bn['label'].lower()}."
+    return line, {"rates": bits, "bottleneck": bn.get("label")}
+
+
 def _strip_instruction(text: str) -> str:
     lines = text.strip().splitlines()
     if len(lines) > 1 and REVIEW_ASK.search(lines[0]) and len(lines[0].split()) <= 14:
@@ -191,7 +227,11 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
                                       "not_used": res.get("not_used", []), "followup": bool(res["parts"] and previous
                                                                                             and res["parts"][0]["part"].startswith(previous.rstrip("?. ")))}
         nums = parse_metrics(text) if not filename else {}
-        if len(nums) >= 2:  # numbers inside a question: answer it, and offer the diagnosis
+        if len(nums) >= 2:  # numbers inside a question: answer it, with what those numbers say, and offer the diagnosis
+            ctx_line, ctx = _numbers_context(nums)
+            if ctx_line:
+                reply = reply.rstrip() + "\n\n" + ctx_line
+                meta["diagnostic_context"] = ctx
             reply = (reply.rstrip() + "\n\nWant a full diagnosis? Send your numbers on their own (for example "
                      "'800 DMs, 40 replies, 6 booked, 2 showed') and I'll find the bottleneck.")
             meta["offer_diagnostic"] = True

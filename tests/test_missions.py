@@ -22,8 +22,15 @@ ANS = {"niche": "fitness coaches", "offer": "Done-for-you DM setting", "price": 
 @pytest.fixture(autouse=True)
 def bare(monkeypatch):
     """Each test decides which feature modules exist (they're being built in parallel). Other features' guard-rule
-    plug-ins are left out so these tests exercise the missions engine with the core guardrails."""
+    plug-ins are left out so these tests exercise the missions engine with the core guardrails. (The real modules
+    are run together in tests/test_integration_wiring.py and tests/test_e2e_first_client.py.)"""
     handlers.load()
+    import importlib
+
+    from operator_ai import app as _app
+
+    for name in _app.ROUTE_MODULES:  # the API's own route modules are imported first, so building the app still works
+        importlib.import_module(f"operator_ai.routes.{name}")
     for f in FEATURES:
         monkeypatch.setitem(sys.modules, f"operator_ai.{f}", None)
     monkeypatch.setattr(guardrails, "_plugins", [])
@@ -364,7 +371,8 @@ def test_certification_gate_with_academy_and_needs_cert(tenant, monkeypatch):
     assigned: list = []
     fake = types.ModuleType("operator_ai.academy")
     fake.is_certified = lambda t, uid, path, level: (uid, path, level) in certified
-    fake.assign = lambda t, user_id, path_key, level=None: assigned.append((user_id, path_key)) or 1
+    # the real academy.enrol(tenant, user_id, path_key, actor) signature (self-enrolment on the path)
+    fake.enrol = lambda t, user_id, path_key, actor="system": assigned.append((user_id, path_key)) or True
     monkeypatch.setitem(sys.modules, "operator_ai.academy", fake)
     o = owner_of(tenant)
     add_prospects(tenant, o["id"], 31)
@@ -393,21 +401,23 @@ def test_prospects_feature_is_used_when_installed(tenant, monkeypatch, clock):
     calls = {"research": [], "draft": []}
     fake = types.ModuleType("operator_ai.prospects")
 
-    def research(t, prospect_id, user=None):
+    # the real signatures: prospects.research(tenant, user, pid, web=False) and
+    # prospects.draft_openers_bulk(tenant, user, channel, ids=None, limit=20) -> {"queued": [{"queue_id": ...}]}
+    def research(t, user, prospect_id, web=False):
         calls["research"].append(prospect_id)
         with t.db() as c:
             c.execute("UPDATE prospects SET research=?, stage='researched' WHERE id=?",
                       (json.dumps({"facts": [{"claim": "Runs a 6-week programme", "source_url": "https://example.invalid/a"}]}),
                        prospect_id))
 
-    def draft_openers(t, owner_user_id, prospect_ids, mission_id=None):
-        calls["draft"].append(list(prospect_ids))
-        return {"queue_ids": [queue.add(t, "dm_opener", "Quick question about your 6-week programme: how is it filling?",
-                                        channel="instagram_dm", recipient_ref=f"@p{pid}",
-                                        meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": pid,
-                                              "owner_user_id": owner_user_id})["id"] for pid in prospect_ids]}
+    def draft_openers_bulk(t, user, channel="instagram_dm", ids=None, limit=20):
+        calls["draft"].append(list(ids))
+        return {"queued": [{"prospect_id": pid, "queue_id": queue.add(
+            t, "dm_opener", "Quick question about your 6-week programme: how is it filling?", channel="instagram_dm",
+            recipient_ref=f"@p{pid}", meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": pid,
+                                            "owner_user_id": user["id"]})["id"]} for pid in ids], "skipped": []}
 
-    fake.research, fake.draft_openers = research, draft_openers
+    fake.research, fake.draft_openers_bulk = research, draft_openers_bulk
     monkeypatch.setitem(sys.modules, "operator_ai.prospects", fake)
     o = owner_of(tenant)
     add_prospects(tenant, o["id"], 30)
@@ -420,7 +430,7 @@ def test_prospects_feature_is_used_when_installed(tenant, monkeypatch, clock):
     item = queue.get(tenant, st["openers"]["queue_ids"][0])
     assert item["meta"]["mission_id"] == m["id"] and item["meta"]["step_id"] == st["openers"]["id"]
     # a broken feature function falls back to the rules openers instead of failing the mission
-    fake.draft_openers = lambda t, owner_user_id, prospect_ids: 1 / 0
+    fake.draft_openers_bulk = lambda t, user, channel="instagram_dm", ids=None, limit=20: 1 / 0
     approve_all(tenant, o, st["openers"]["queue_ids"])
     clock[0] += 2 * registry.DAY
     engine.tick(tenant)
@@ -895,13 +905,13 @@ def test_wrapped_function_cannot_claim_someone_elses_draft(tenant, monkeypatch):
                         meta={"prospect_facing": True, "lead_tier": "cold"})
     pids = add_prospects(tenant, stu["id"], 31)
 
-    def draft_openers(tenant, prospect_ids, owner_user_id):
+    def draft_openers_bulk(tenant, user, channel="instagram_dm", ids=None, limit=20):
         mine = queue.add(tenant, "dm_opener", "Hi Casey, quick question: how do new clients find you today?",
                          channel="instagram_dm", recipient_ref="@prospect_x",
-                         meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": prospect_ids[0]})
+                         meta={"prospect_facing": True, "lead_tier": "cold", "prospect_id": ids[0]})
         return {"queue_ids": [foreign["id"], mine["id"]], "items": [{"id": foreign["id"], "kind": "x", "status": "y"}]}
 
-    monkeypatch.setitem(sys.modules, "operator_ai.prospects", types.SimpleNamespace(draft_openers=draft_openers))
+    monkeypatch.setitem(sys.modules, "operator_ai.prospects", types.SimpleNamespace(draft_openers_bulk=draft_openers_bulk))
     m = engine.create(tenant, stu, "Get my first client", None, ANS)
     approve_all(tenant, stu, S(m)["offer_doc"]["queue_ids"])
     approve_all(tenant, stu, S(engine.get(tenant, m["id"]))["profile"]["queue_ids"])

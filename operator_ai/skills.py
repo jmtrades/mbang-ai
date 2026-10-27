@@ -3,12 +3,15 @@ weekly triggers and an on-source-change trigger. Workers only ever produce draft
 whose skill needs a login that isn't in the vault names the missing login instead of running."""
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
 from typing import Callable
 
 from . import brief as brief_mod
 from . import db, guardrails, queue, retrieval, runtime, tenancy, vault
+
+log = logging.getLogger("operator.skills")
 
 PROFILE_SECTIONS = {
     "identity": ["name", "tagline", "owner_display", "postal_address"],  # postal_address: footer of prospect emails
@@ -194,10 +197,21 @@ def run_due_workers(now: float | None = None) -> int:
 
 
 def on_source_change(tenant, source: str) -> int:
-    """Called when the knowledge base or the Drive inbox changes. Drafts only."""
+    """Called when the knowledge base or the Drive inbox changes. Drafts only. Also: Academy lessons built from changed
+    sections go stale, and the role-play scoring rules' SOP citations are checked again."""
     n = 0
     for w in list_workers(tenant):
         if w["enabled"] and w["trigger"] == "on_source_change":
             run_worker(tenant, w["id"], f"source changed: {source}")
             n += 1
+    for hook in ("operator_ai.academy:on_source_change", "operator_ai.roleplay.rubric:on_source_change"):
+        mod, _, fn = hook.partition(":")
+        try:
+            import importlib
+
+            getattr(importlib.import_module(mod), fn)(tenant, source)
+        except Exception:  # noqa: BLE001 - a feature's check must never stop a knowledge-base update
+            from .redact import redact
+
+            log.warning("source-change hook failed: %s", redact(hook))
     return n

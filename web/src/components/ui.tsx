@@ -8,7 +8,7 @@ export type Me = {
   user: { id: number; username: string; display: string; role: string };
   tabs: string[];
   tenant: { id: string; name: string; kind: string; is_demo: boolean; kb_scope: string };
-  brand: { name?: string; primary?: string; accent?: string; owner_display?: string };
+  brand: { name?: string; primary?: string; accent?: string; owner_display?: string; logo?: string };
   is_demo: boolean;
   ai: { enabled: boolean; label: string; pill: string; budget: number; used: number };
   can_decide: string[];

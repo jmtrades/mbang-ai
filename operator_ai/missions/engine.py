@@ -873,7 +873,25 @@ def clean_numbers(numbers: dict | None) -> dict:
 
 
 # --------------------------------------------------------------------------- next actions
-_ORDER = {"replan": 0, "answer": 1, "fix": 2, "approve": 3, "send_by_hand": 4, "call": 5, "do": 6, "retry": 7, "waiting_owner": 8}
+_ORDER = {"escalation": 0, "replan": 0, "answer": 1, "fix": 2, "approve": 3, "send_by_hand": 4, "call": 5, "do": 6, "retry": 7,
+          "waiting_owner": 8}
+
+
+def _escalation_actions(tenant, user: dict) -> list[dict]:
+    """Open escalations assigned to this person (a positive reply waiting too long for an answer, a draft held for a
+    day, a complaint, a mission step that keeps failing), so they show up next to the mission work."""
+    try:
+        with tenant.db() as c:
+            rows = db.rows(c.execute(
+                "SELECT id, kind, severity, detail, mission_id, demo FROM escalations WHERE status='open' AND "
+                "assignee_user_id=? ORDER BY CASE severity WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, id DESC "
+                "LIMIT 10", (user["id"],)))
+    except Exception:  # noqa: BLE001 - no escalations table (an old database): nothing to show
+        return []
+    href = "#/channels" if user.get("role") == "owner" else "#/queue?tab=inbox"
+    return [{"mission_id": r["mission_id"] or 0, "mission": "Inbox and escalations", "demo": bool(r["demo"]),
+             "kind": "escalation", "escalation_id": r["id"], "severity": r["severity"], "escalation_kind": r["kind"],
+             "title": r["detail"], "cta": "Open", "href": href} for r in rows]
 
 
 def next_actions(tenant, user: dict, mission_ids: list[int] | None = None) -> list[dict]:
@@ -927,6 +945,8 @@ def next_actions(tenant, user: dict, mission_ids: list[int] | None = None) -> li
             for r in c.execute("SELECT id, rule FROM mission_replans WHERE mission_id=? AND status='proposed'", (mid,)):
                 out.append({**base, "kind": "replan", "replan_id": r["id"], "title": "Review a suggested plan change",
                             "cta": "Review"})
+    if mission_ids is None:  # the person's whole to-do list: escalations assigned to them come first
+        out += _escalation_actions(tenant, user)
     out.sort(key=lambda a: (_ORDER.get(a["kind"], 9), a["mission_id"]))
     return out
 

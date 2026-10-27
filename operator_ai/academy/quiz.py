@@ -574,7 +574,7 @@ def _grade_write(tenant, item: dict, text: str) -> dict:
     if len(text.split()) < 3:
         return {"correct": False, "score": 0.0, "chosen_option": text[:300],
                 "feedback": {"criteria": [], "flags": [], "citations": [], "note": "Write at least a full sentence."}}
-    res = rubrics.score(text, asset, meta, guardrails.tenant_banned_names(tenant))
+    res = rubrics.score(text, asset, meta, guardrails.tenant_banned_names(tenant), tenant=tenant)
     flags = res["flags"]
     cites, by_key = critique.evidence(tenant, res["criteria"])
     crit = [{"label": c["label"], "score": c["score"], "fix": c["fix"], "quote": c["quote"],

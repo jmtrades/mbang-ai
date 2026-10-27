@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, LayoutGrid, List as ListIcon, Plus, Send, Upload } from "lucide-react";
 import { ApiError, get, post, put } from "../api";
+import { InboxPanel } from "./inbox/InboxPanel";
 import {
   Badge, Button, Card, CopyButton, DemoBadge, Drawer, Empty, ErrorBox, Field, FlagList, Input, Loading, Modal, PageHeader,
   Select, Stat, Table, Tabs, TextArea, TraceLink, cx, isDemo, useApi, useApp,
@@ -103,6 +104,8 @@ export default function Prospects({ query }: { query?: URLSearchParams }) {
   const tabs = [
     { key: "pipeline", label: "Pipeline" }, { key: "import", label: "Import" }, { key: "icp", label: "Ideal client" },
     { key: "stats", label: "Opener results" }, { key: "proposals", label: "Proposals" },
+    // everyone but the owner (who has the Channels page) reads and answers their own replies here
+    ...(data && !data.is_owner ? [{ key: "inbox", label: "Inbox" }] : []),
     ...(data?.is_owner ? [{ key: "settings", label: "Scoring & caps" }] : []),
   ];
   return (
@@ -126,6 +129,7 @@ export default function Prospects({ query }: { query?: URLSearchParams }) {
       {tab === "stats" && <StatsTab />}
       {tab === "proposals" && <ProposalsTab onOpen={(id) => setOpen({ id, tab: "proposal" })} />}
       {tab === "settings" && data?.is_owner && <SettingsTab />}
+      {tab === "inbox" && data && !data.is_owner && <div data-testid="prospects-inbox"><InboxPanel /></div>}
       {open && <ProspectDrawer id={open.id} initialTab={open.tab} overview={data} onClose={() => setOpen(null)} onChanged={reload} />}
       <AddModal open={adding} onClose={() => setAdding(false)} bases={data?.lawful_bases || []} onDone={(id) => { setAdding(false); reload(); if (id) setOpen({ id }); }} />
       <BulkModal open={bulk} onClose={() => setBulk(false)} overview={data} onDone={reload} />

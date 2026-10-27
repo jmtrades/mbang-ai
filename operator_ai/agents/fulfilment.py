@@ -57,7 +57,8 @@ def _hooks(b: dict, templates: list[str]) -> list[str]:
 
 def review_hooks(tenant, hooks: list[str]) -> list[dict]:
     names = guardrails.tenant_banned_names(tenant)
-    return [{"hook": h, **{k: v for k, v in rubrics.score(h + " Book a call.", "ad", {"client_asset": True}, names).items()
+    return [{"hook": h, **{k: v for k, v in rubrics.score(h + " Book a call.", "ad", {"client_asset": True}, names,
+                                                          tenant=tenant).items()
                          if k in ("score", "detected")}} for h in hooks]
 
 

@@ -75,7 +75,8 @@ def c_ai_words(text, ctx):
 
 
 def c_guardrails(text, ctx):
-    flags = guardrails.check(text, ctx.get("mode", "plain"), ctx.get("meta"), ctx.get("banned", []))
+    # with the tenant, its plug-in rules apply too (proof records: the outreach range is substantiated or not)
+    flags = guardrails.check(text, ctx.get("mode", "plain"), ctx.get("meta"), ctx.get("banned", []), tenant=ctx.get("tenant"))
     ctx["flags"] = flags
     if guardrails.blocked(flags):
         f = next(f for f in flags if f["severity"] == "block")
@@ -278,11 +279,12 @@ def get(asset_type: str) -> list[Rule]:
     return RUBRICS.get(asset_type, RUBRICS["generic"])
 
 
-def score(text: str, asset_type: str, meta: dict | None = None, banned: list[str] | None = None) -> dict:
+def score(text: str, asset_type: str, meta: dict | None = None, banned: list[str] | None = None, tenant=None) -> dict:
     """Deterministic rubric score. Returns weighted score /100, per-criterion results,
-    detected flaw codes and the guardrail flags."""
+    detected flaw codes and the guardrail flags. Pass the tenant so its rule plug-ins (proof records, persona,
+    prospect research) apply exactly as they do in the approval queue."""
     meta = meta_for(asset_type, meta)
-    ctx = {"mode": guardrails.mode_for(meta), "meta": meta, "banned": banned or []}
+    ctx = {"mode": guardrails.mode_for(meta), "meta": meta, "banned": banned or [], "tenant": tenant}
     crit = []
     detected: set[str] = set()
     total_w = 0.0

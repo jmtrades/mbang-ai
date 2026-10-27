@@ -98,6 +98,18 @@ function ExternalChips({ items }: { items?: any[] }) {
   );
 }
 
+/** What the assistant remembered about this person and used for the answer ("What I know about you"). */
+function Remembered({ r }: { r: { facts: { label: string; value: unknown }[]; label: string } }) {
+  if (!r?.facts?.length) return null;
+  return (
+    <div className="rounded-[10px] border border-line bg-panel px-2.5 py-1.5 text-[11.5px] text-muted" data-testid="remembered">
+      <span className="font-medium text-ink-2">Using what you told me: </span>
+      {r.facts.map((f, i) => <span key={i}>{i ? " · " : ""}{f.label}: <span className="text-ink">{String(f.value)}</span></span>)}
+      <span className="block text-[11px]">{r.label}</span>
+    </div>
+  );
+}
+
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
   if (meta.intent === "goal" && meta.mission_draft) return <StartMission draft={meta.mission_draft} />;
@@ -267,6 +279,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
                       </div>
                       {m.meta.receipt && <p className="text-[11.5px] text-muted">{m.meta.receipt.summary}{m.meta.receipt.warnings?.length ? ` — ${m.meta.receipt.warnings[0]}` : ""}</p>}
                       {m.meta.note && <p className="text-[11.5px] italic text-muted">{m.meta.note}</p>}
+                      {m.meta.remembered && <Remembered r={m.meta.remembered} />}
                       <Extra meta={m.meta} />
                       <Citations items={m.meta.citations} />
                       <ExternalChips items={m.meta.external} />

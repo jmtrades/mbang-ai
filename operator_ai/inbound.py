@@ -510,8 +510,9 @@ def _process(tenant, inbound: dict, party: dict, cls: dict, meta: dict, run: run
 
     # opt-out: stop everything, never auto-draft a reply
     if label == "unsubscribe" or meta.get("opt_out"):
-        d = run.step("dnc", {"party": ptype}, lambda: apply_dnc(tenant, party, inbound, reason="asked to stop"),
-                     "Stop all contact")
+        bounce = meta.get("bounce") if meta.get("bounce") in ("bounce", "complaint") else None
+        d = run.step("dnc", {"party": ptype}, lambda: apply_dnc(tenant, party, inbound, reason="asked to stop",
+                                                                kind=bounce or "stop"), "Stop all contact")
         res.update(dnc=True, classification="unsubscribe", label=LABELS["unsubscribe"], escalation_id=d["escalation_id"])
         if _RULES[0][2].search(inbound["body"]):  # "stop or I'll report you": a person must also see the threat
             from . import escalations
@@ -522,7 +523,8 @@ def _process(tenant, inbound: dict, party: dict, cls: dict, meta: dict, run: run
                 assignee_user_id=party.get("owner_user_id"), ref=f"inbound:{inbound['id']}")
             _set_inbound(tenant, inbound["id"], escalation_id=res["escalation_id"])
         _set_inbound(tenant, inbound["id"], status="handled", classification="unsubscribe")
-        _emit_reply(tenant, party, inbound, "unsubscribe", None)
+        if not bounce:  # a bounce or complaint is not a reply from the person
+            _emit_reply(tenant, party, inbound, "unsubscribe", None)
         return res
 
     # legal threats, refunds and complaints: a person handles these
@@ -660,7 +662,7 @@ def _set_prospect_stage(tenant, pid: int, stage: str, owner_user_id: int | None)
 
 
 # --------------------------------------------------------------------------- do-not-contact
-def apply_dnc(tenant, party: dict, inbound: dict, reason: str = "asked to stop") -> dict:
+def apply_dnc(tenant, party: dict, inbound: dict, reason: str = "asked to stop", kind: str = "stop") -> dict:
     """STOP / unsubscribe: do-not-contact on the record, the address on the never-contact list, an SMS/Telegram
     opt-out row, open drafts to them held, dnc_set emitted and a low-priority escalation so a person knows."""
     ptype, pid = party["party_type"], party.get("party_id")
@@ -691,16 +693,25 @@ def apply_dnc(tenant, party: dict, inbound: dict, reason: str = "asked to stop")
         c.execute("UPDATE conversations SET state='opted_out' WHERE id=?", (inbound["conversation_id"],))
     audit.log(tenant, f"{channel}-inbound", "consent", {"channel": channel, "opt_in": False, "party": ptype, "held": held})
     events.emit(tenant, "dnc_set", {"party_type": ptype, "party_id": pid, "channel": channel,
-                                    "owner_user_id": party.get("owner_user_id")})
+                                    "owner_user_id": party.get("owner_user_id"),
+                                    **({"reason": kind} if kind != "stop" else {})})
     from . import escalations
 
     who = party.get("name") or PARTY_LABELS.get(ptype, "Someone")
     held_txt = ("No drafts to them were waiting." if not held else
                 f"{held} waiting draft{'s were' if held > 1 else ' was'} held.")
-    eid = escalations.raise_(tenant, "dnc_request", "low",
-                             f"{who} asked not to be contacted ({CHANNEL_LABELS.get(channel, channel)}). Outreach to them has "
-                             f"stopped. {held_txt}", assignee_user_id=party.get("owner_user_id"),
-                             ref=f"dnc:{ptype}:{pid or key}")
+    if kind in ("bounce", "complaint"):
+        what = "reported an email as spam" if kind == "complaint" else "has an email address that bounced (hard bounce)"
+        eid = escalations.raise_(tenant, "spam_complaint" if kind == "complaint" else "email_bounce",
+                                 "medium" if kind == "complaint" else "low",
+                                 f"{who} {what}. The address is now on do-not-contact and outreach to them has stopped. "
+                                 f"{held_txt}", assignee_user_id=party.get("owner_user_id"),
+                                 ref=f"{kind}:{ptype}:{pid or key}")
+    else:
+        eid = escalations.raise_(tenant, "dnc_request", "low",
+                                 f"{who} asked not to be contacted ({CHANNEL_LABELS.get(channel, channel)}). Outreach to them "
+                                 f"has stopped. {held_txt}", assignee_user_id=party.get("owner_user_id"),
+                                 ref=f"dnc:{ptype}:{pid or key}")
     _set_inbound(tenant, inbound["id"], escalation_id=eid)
     return {"held": held, "blocked": len(addrs), "escalation_id": eid}
 

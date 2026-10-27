@@ -178,10 +178,11 @@ def save(tenant, user_id: int, filename: str, data: bytes, project_id: int | Non
         # a client tenant's own material (kb_scope=own) is searchable once uploaded by its owner
         tenant.kb_dir.mkdir(parents=True, exist_ok=True)
         (tenant.kb_dir / f"{Path(safe).stem}.txt").write_text(ex["text"])
-        from . import index
+        from . import index, skills
 
         index.invalidate()
         rec["added_to_kb"] = True
+        skills.on_source_change(tenant, f"upload:{safe}")  # workers, stale Academy lessons, role-play rubric citations
     rec["id"] = uid
     return rec
 

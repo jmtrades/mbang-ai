@@ -378,7 +378,61 @@ def parse_email(raw: str) -> dict:
     auto = hdr("Auto-Submitted").lower()
     return {"from": addr, "from_name": name, "subject": hdr("Subject")[:300],
             "body": strip_quotes(body), "message_id": hdr("Message-ID").strip()[:200],
-            "auto_reply": bool((auto and auto != "no") or hdr("X-Autoreply") or hdr("X-Autorespond"))}
+            "auto_reply": bool((auto and auto != "no") or hdr("X-Autoreply") or hdr("X-Autorespond")),
+            "bounce": _bounce_of(msg, hdr, addr)}
+
+
+_BOUNCE_FROM = re.compile(r"^(mailer-daemon|postmaster|mail-daemon|bounces?)(\+|@|$)", re.I)
+_BOUNCE_SUBJECT = re.compile(r"undeliver|delivery (status notification|failure|has failed)|returned mail|mail delivery "
+                             r"(failed|subsystem)|failure notice|address not found", re.I)
+_RCPT_FIELD = re.compile(r"^(?:Final-Recipient|Original-Recipient|Original-Rcpt-To|X-Failed-Recipients)\s*:\s*"
+                         r"(?:rfc822\s*;\s*)?<?([^\s<>;,]+@[^\s<>;,]+)>?", re.I | re.M)
+
+
+def _bounce_of(msg, hdr, sender: str) -> dict | None:
+    """A delivery-status report (hard bounce) or a feedback report (spam complaint) about an email we sent.
+    Returns {kind: 'bounce'|'complaint', recipient, hard} or None for an ordinary message. Only these structured
+    reports (or a mailer-daemon bounce naming the failed address) count; a person's reply never does."""
+    try:
+        ctype = msg.get_content_type()
+        report = (msg.get_param("report-type") or "").lower() if ctype == "multipart/report" else ""
+        text_parts = []
+        for part in msg.walk() if msg.is_multipart() else [msg]:
+            pt = part.get_content_type()
+            if pt in ("message/delivery-status", "message/feedback-report", "text/plain", "text/rfc822-headers"):
+                payload = part.get_payload()
+                if isinstance(payload, list):
+                    payload = "\n".join(str(p) for p in payload)
+                text_parts.append(str(payload or ""))
+            elif pt == "message/rfc822":
+                inner = part.get_payload()
+                inner = inner[0] if isinstance(inner, list) and inner else inner
+                try:
+                    to = str(inner.get("To", "") or "")
+                    if to:
+                        text_parts.append(f"Original-Rcpt-To: {inbound.parse_address(to)[1]}")
+                except Exception:  # noqa: BLE001
+                    pass
+        blob = "\n".join(text_parts) + "\n" + "X-Failed-Recipients: " + hdr("X-Failed-Recipients")
+        kind = "complaint" if report == "feedback-report" else "bounce" if report == "delivery-status" else None
+        if kind is None and (hdr("X-Failed-Recipients") or (_BOUNCE_FROM.match(sender or "") and
+                                                             _BOUNCE_SUBJECT.search(hdr("Subject")))):
+            kind = "bounce"
+        if kind is None:
+            return None
+        m = _RCPT_FIELD.search(blob)
+        if not m:
+            return None
+        recipient = m.group(1).strip().strip(".")
+        hard = True
+        if kind == "bounce":
+            st = re.search(r"^Status\s*:\s*([245])\.", blob, re.I | re.M)
+            act = re.search(r"^Action\s*:\s*(\w+)", blob, re.I | re.M)
+            # a temporary failure (4.x.x, "delayed") is not a reason to stop contacting someone
+            hard = not ((st and st.group(1) == "4") or (act and act.group(1).lower() in ("delayed", "relayed", "delivered")))
+        return {"kind": kind, "recipient": recipient[:254], "hard": hard}
+    except Exception:  # noqa: BLE001 - an odd report is treated as an ordinary message
+        return None
 
 
 def inbound_email(tenant, sig: str | None, raw: bytes, ts: str | None = None) -> dict:
@@ -390,6 +444,20 @@ def inbound_email(tenant, sig: str | None, raw: bytes, ts: str | None = None) ->
         return _dup("email", p["message_id"])
 
     def handle() -> dict:
+        b = p.get("bounce")
+        if b:
+            # a hard bounce or a spam complaint about an email we sent: the RECIPIENT goes on do-not-contact through
+            # the same path as a STOP reply (never a holding reply to the mailer-daemon)
+            log_id = _log(tenant, "email", "in", p["from"], p["body"], {"subject": p["subject"], "bounce": b})
+            if not b["hard"]:
+                return {"ok": True, "parsed": p, "bounce": b, "ignored": "temporary delivery failure"}
+            what = "Spam complaint" if b["kind"] == "complaint" else "Bounced"
+            res = inbound.route(tenant, "email", b["recipient"],
+                                f"[{what}] The email to {b['recipient']} " + ("was reported as spam." if b["kind"] == "complaint"
+                                                                              else "could not be delivered (hard bounce)."),
+                                {"subject": p["subject"], "provider_id": p["message_id"] or None, "opt_out": True,
+                                 "bounce": b["kind"], "no_draft": True, "log_id": log_id, "actor": "email-bounce"})
+            return {"ok": True, "parsed": p, **res}
         log_id = _log(tenant, "email", "in", p["from"], p["body"], {"subject": p["subject"]})
         res = inbound.route(tenant, "email", p["from"], p["body"][:4000] or p["subject"],
                             {"subject": p["subject"], "provider_id": p["message_id"] or None, "display_name": p["from_name"],

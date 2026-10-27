@@ -32,6 +32,15 @@ KINDS = {
     "complaint": "Complaint",
     "dnc_request": "Asked not to be contacted",
     "runs_interrupted": "Work interrupted by a restart",
+    # raised by the other features (each keeps its own label instead of falling back to "other")
+    "email_bounce": "Email address bounced",
+    "spam_complaint": "Spam complaint",
+    "password_reset_request": "Password reset requested",
+    "client_churn_risk": "Client at risk",
+    "rubric_citation": "Role-play scoring rule needs checking",
+    "mission_off_track": "Mission off track",
+    "mission_step_failed": "Mission step keeps failing",
+    "zero_calls_day14": "No calls booked by day 14",
     "other": "Needs a person",
 }
 SEVERITIES = ("low", "medium", "high")

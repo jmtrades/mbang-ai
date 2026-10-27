@@ -2,26 +2,29 @@ import { useEffect, useState } from "react";
 import { Ban, Check, Clock, ExternalLink, Inbox, Pencil, RotateCw, Send, X } from "lucide-react";
 import { ApiError, post, put } from "../api";
 import { Badge, Button, Card, CopyButton, DemoBadge, Empty, ErrorBox, Field, FlagList, Input, Loading, PageHeader, Reveal, Select, Stat, Table, Tabs, TextArea, TraceLink, cx, humanize, isDemo, useApi, useApp } from "../components/ui";
+import { InboxPanel } from "./inbox/InboxPanel";
 
 const STATUS_TONE: Record<string, any> = {
   pending: "info", held: "bad", needs_human: "warn", approved: "good", rejected: "neutral", scheduled: "info",
-  awaiting_manual_send: "warn", sending: "info", sent: "good", send_failed: "bad", cancelled: "neutral",
+  awaiting_manual_send: "warn", sending: "info", sent: "good", send_failed: "bad", cancelled: "neutral", needs_attention: "bad",
 };
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pending approval", held: "Held by guardrails", needs_human: "Needs a person", approved: "Approved", rejected: "Rejected",
   scheduled: "Scheduled", awaiting_manual_send: "Waiting for you to send", sending: "Sending", sent: "Sent",
-  send_failed: "Failed to send", cancelled: "Cancelled",
+  send_failed: "Failed to send", cancelled: "Cancelled", needs_attention: "Check if it went out",
 };
 // most urgent first, whatever order the server counts arrive in
-const STATUS_ORDER = ["held", "needs_human", "pending", "send_failed", "awaiting_manual_send", "scheduled", "sending", "sent", "approved", "cancelled", "rejected"];
+const STATUS_ORDER = ["held", "needs_attention", "needs_human", "pending", "send_failed", "awaiting_manual_send", "scheduled", "sending", "sent", "approved", "cancelled", "rejected"];
 const DOT: Record<string, string> = {
   held: "bg-bad", needs_human: "bg-warn", pending: "bg-info", approved: "bg-good", rejected: "bg-faint", scheduled: "bg-info",
   awaiting_manual_send: "bg-warn", sending: "bg-info", sent: "bg-good", send_failed: "bg-bad", cancelled: "bg-faint",
+  needs_attention: "bg-bad",
 };
 const FILTERS = [
   { value: "open", label: "Needs a decision" }, { value: "scheduled", label: "Scheduled" },
   { value: "awaiting_manual_send", label: "Waiting for you to send" }, { value: "sent", label: "Sent" },
-  { value: "send_failed", label: "Failed" }, { value: "cancelled", label: "Cancelled" }, { value: "approved", label: "Approved (nothing to send)" },
+  { value: "send_failed", label: "Failed" }, { value: "needs_attention", label: "Interrupted: check if it went out" },
+  { value: "cancelled", label: "Cancelled" }, { value: "approved", label: "Approved (nothing to send)" },
   { value: "rejected", label: "Rejected" }, { value: "all", label: "All" },
 ];
 const REJECT_REASONS = [
@@ -238,6 +241,16 @@ function Item({ it, index = 0, onChange }: { it: any; index?: number; onChange: 
           )}
         </div>
       )}
+      {it.status === "needs_attention" && (
+        <div className="mt-3 space-y-2" data-testid="needs-attention">
+          <p className="text-sm text-bad">Sending was interrupted, so it may or may not have gone out. Check the conversation first: nothing is sent again by itself.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button tone="good" size="sm" loading={busy === "sent"} onClick={() => run("sent", () => post(`/queue/${it.id}/sent`, {}), () => toast("Marked as sent", "good"))}><Check className="size-3.5" /> It went out</Button>
+            {!INTERNAL.includes(ch) && <Button size="sm" loading={busy === "send"} onClick={sendNow}><RotateCw className="size-3.5" /> It didn't: send it again</Button>}
+            <Button size="sm" loading={busy === "cancel"} onClick={cancel}><Ban className="size-3.5" /> Cancel</Button>
+          </div>
+        </div>
+      )}
       {it.status === "send_failed" && (
         <div className="mt-3 flex flex-wrap gap-2">
           {!INTERNAL.includes(ch) && <Button tone="primary" size="sm" loading={busy === "send"} onClick={sendNow}><RotateCw className="size-3.5" /> Try again</Button>}
@@ -430,7 +443,10 @@ function SendingSettings() {
 export default function Queue({ query }: { query: URLSearchParams }) {
   const { me } = useApp();
   const [tab, setTab] = useState(query.get("tab") || "approvals");
-  const tabs = [{ key: "approvals", label: "Approvals" }, { key: "sequences", label: "Follow-up sequences" }, ...(me.user.role === "owner" ? [{ key: "sending", label: "Sending settings" }] : [])];
+  const owner = me.user.role === "owner";
+  // the owner reads every conversation on the Channels page; everyone else reads their own replies here
+  const tabs = [{ key: "approvals", label: "Approvals" }, ...(!owner ? [{ key: "inbox", label: "Inbox" }] : []),
+    { key: "sequences", label: "Follow-up sequences" }, ...(owner ? [{ key: "sending", label: "Sending settings" }] : [])];
   return (
     <div>
       <PageHeader
@@ -439,6 +455,7 @@ export default function Queue({ query }: { query: URLSearchParams }) {
       />
       <Tabs value={tab} onChange={setTab} tabs={tabs} />
       {tab === "approvals" && <Approvals query={query} />}
+      {tab === "inbox" && !owner && <div data-testid="queue-inbox"><InboxPanel /></div>}
       {tab === "sequences" && <Sequences />}
       {tab === "sending" && me.user.role === "owner" && <SendingSettings />}
     </div>

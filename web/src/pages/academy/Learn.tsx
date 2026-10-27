@@ -77,6 +77,7 @@ export function LessonReader({ id, onBack, onRolePlay }: { id: number; onBack: (
               </div>
             ) : (
             <>
+            {data.framing?.opener && <p className="mb-3 text-sm italic text-ink-2" data-testid="lesson-framing">{data.framing.opener}</p>}
             {data.body && <p className="mb-4 whitespace-pre-wrap break-words text-sm leading-relaxed">{data.body}</p>}
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Key points</h4>
             <ul className="space-y-2">{data.key_points.map((k: any, i: number) => <Point key={i} k={k} />)}</ul>
@@ -91,6 +92,12 @@ export function LessonReader({ id, onBack, onRolePlay }: { id: number; onBack: (
                 <h4 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-muted">Common mistakes</h4>
                 <ul className="space-y-2">{data.mistakes.map((k: any, i: number) => <Point key={i} k={k} />)}</ul>
               </>
+            )}
+            {data.framing && (
+              <div className="mt-4 space-y-1">
+                {data.framing.closer && <p className="text-sm italic text-ink-2">{data.framing.closer}</p>}
+                <p className="text-[11.5px] text-muted">{data.framing.badge}. <a className="underline" href={data.framing.disclosure} target="_blank" rel="noreferrer">About this</a></p>
+              </div>
             )}
             </>
             )}

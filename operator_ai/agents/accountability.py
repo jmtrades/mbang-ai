@@ -186,7 +186,11 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
                     continue
                 name = " ".join(str(s.get("name") or "").split()) or f"Student #{s['id']}"
                 try:
-                    q = queue.add(tenant, "nudge", NUDGES[top].format(first=_first(s.get("name"))), channel="telegram",
+                    from .. import persona
+
+                    # [persona] word preferences on the template text, only under a signed student_nudges consent
+                    body = persona.style_template(tenant, NUDGES[top].format(first=_first(s.get("name"))), "student_nudges")
+                    q = queue.add(tenant, "nudge", body, channel="telegram",
                                   recipient_ref=name, title=f"Nudge: {name} — {SIGNALS[top][0]}",
                                   meta={"student_id": s["id"], "signal": top, "citation": cites.get(top)}, run_id=run.id,
                                   actor=actor, demo=bool(s["demo"]))

@@ -70,7 +70,19 @@ def lesson_view(tenant, viewer: dict, lesson_id: int) -> dict:
         "practise": {"coaching_kind": common.COACHING_KIND.get(L["skill"]), "roleplay_skill": L["skill"],
                      "questions": len(items)},
         "stale": L["status"] == "stale", "source": {"file": L["source_file"], "lines": L["source_lines"]},
+        # [persona] an approved opener/closer around the lesson, only while the subject's signed consent covers
+        # lesson_framing and this learner hasn't chosen a neutral voice; None = neutral. The cited lines are untouched.
+        "framing": _framing(tenant, viewer, L["id"]),
     }
+
+
+def _framing(tenant, viewer: dict, lesson_id: int) -> dict | None:
+    try:
+        from .. import persona
+
+        return persona.framing(tenant, "lesson_framing", f"lesson-{lesson_id}", user=viewer)
+    except Exception:  # noqa: BLE001 - framing is optional; the lesson stands on its own
+        return None
 
 
 def complete_lesson(tenant, user: dict, lesson_id: int) -> dict:

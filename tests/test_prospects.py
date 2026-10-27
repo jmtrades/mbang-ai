@@ -1188,8 +1188,9 @@ def test_web_research_switch_from_the_server_cli(tenant, owner):
     assert run("switch", "owner", "prospect_web_research", "off").returncode == 0
     tenancy.clear_cache()
     assert not P.web_research_enabled(tenancy.get("owner"))
-    # the settings API can't flip it
-    assert owner.put("/t/owner/api/settings", json={"key": "prospect_web_research", "value": True}).status_code == 422
+    # the settings API can't flip it: it is a server-only switch (config.BOX_ONLY), like every live switch
+    assert owner.put("/t/owner/api/settings", json={"key": "prospect_web_research", "value": True}).status_code == 403
+    assert "prospect_web_research" in owner.get("/t/owner/api/settings").json()["server_only"]
     tenancy.clear_cache()
     assert not P.web_research_enabled(tenancy.get("owner"))
 

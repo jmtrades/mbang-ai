@@ -22,6 +22,7 @@ type Session = {
   id: number; user: string; status: "active" | "complete" | "abandoned"; scenario: Scenario; mode: string; mode_label: string;
   exam: boolean; hints: boolean; seed: number; created: number; demo: boolean; turns: Turn[]; score: any; run_id: number;
   can_play: boolean; is_learner: boolean; can_signoff: boolean; meters?: { trust: string; trust_value: number; patience: number; patience_max: number };
+  framing?: { opener: string | null; closer: string | null; badge: string; disclosure: string } | null;
   hint?: string | null; reveals?: { key: string; said: string; revealed: boolean }[];
 };
 
@@ -414,6 +415,7 @@ function Scorecard({ s, busy, onAgain, onDrill, onSigned }: { s: Session; busy: 
         {!!sc.integrity_flags?.length && (
           <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Crammed turns ({sc.integrity_flags.length}): stage keywords, or answers to several different objections, packed into one line. Those turns earn no credit and cost points.</p>
         )}
+        {s.framing?.opener && <p className="mt-3 text-sm italic text-ink-2" data-testid="debrief-framing">{s.framing.opener}</p>}
         {!!focus.length && (
           <div className="mt-4">
             <h4 className="mb-1 text-sm font-semibold">Work on these next</h4>
@@ -426,6 +428,12 @@ function Scorecard({ s, busy, onAgain, onDrill, onSigned }: { s: Session; busy: 
                 </li>
               ))}
             </ol>
+          </div>
+        )}
+        {s.framing && (
+          <div className="mt-3 space-y-1">
+            {s.framing.closer && <p className="text-sm italic text-ink-2">{s.framing.closer}</p>}
+            <p className="text-[11.5px] text-muted">{s.framing.badge}. <a className="underline" href={s.framing.disclosure} target="_blank" rel="noreferrer">About this</a></p>
           </div>
         )}
       </Card>

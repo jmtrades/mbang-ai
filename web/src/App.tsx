@@ -70,8 +70,15 @@ function applyBrand(brand: Me["brand"] | undefined) {
 
 const initial = (s: string) => (s.trim()[0] || "O").toUpperCase();
 
-function BrandMark({ name, className }: { name: string; className?: string }) {
-  return <span aria-hidden className={cx("brand-mark grid size-8 shrink-0 place-items-center rounded-[9px] text-[14px] font-semibold", className)}>{initial(name)}</span>;
+/** The brand's logo (saved in Setup: an https image link or a small uploaded image), else its monogram. */
+function BrandMark({ name, logo, className }: { name: string; logo?: string | null; className?: string }) {
+  const [broken, setBroken] = useState(false);
+  const ok = typeof logo === "string" && /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/i.test(logo) && !broken;
+  if (ok) {
+    return <img src={logo as string} alt="" aria-hidden data-testid="brand-logo" onError={() => setBroken(true)}
+      className={cx("size-8 shrink-0 rounded-[9px] bg-panel object-contain ring-1 ring-line", className)} />;
+  }
+  return <span aria-hidden data-testid="brand-monogram" className={cx("brand-mark grid size-8 shrink-0 place-items-center rounded-[9px] text-[14px] font-semibold", className)}>{initial(name)}</span>;
 }
 
 // ---------------------------------------------------------------- small stores
@@ -163,7 +170,7 @@ function SignIn({ onDone }: { onDone: () => void }) {
     <main className="grid min-h-dvh bg-bg lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <section className="hero-surface hidden flex-col justify-between overflow-hidden border-r border-line p-10 lg:flex xl:p-14" aria-label={`About ${brand}`}>
         <div className="flex items-center gap-2.5">
-          <BrandMark name={brand} />
+          <BrandMark name={brand} logo={pub?.brand?.logo} />
           <span className="text-[15px] font-semibold">{brand}</span>
         </div>
         <div className="max-w-lg">
@@ -183,7 +190,7 @@ function SignIn({ onDone }: { onDone: () => void }) {
       <section className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-[400px]">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <BrandMark name={brand} />
+            <BrandMark name={brand} logo={pub?.brand?.logo} />
             <span className="text-[15px] font-semibold">{brand}</span>
           </div>
           <h1 className="t-h1">Sign in to {brand}</h1>
@@ -194,6 +201,11 @@ function SignIn({ onDone }: { onDone: () => void }) {
             {err && <ErrorBox error={err} />}
             <Button tone="primary" className="w-full" size="lg" loading={busy === "login"} type="submit">Sign in</Button>
           </form>
+          {!isDemo && (
+            <p className="mt-3 text-right text-[13px]">
+              <a href="#/join?forgot=1" className="focus-ring rounded font-medium text-brand hover:underline" data-testid="forgot-password">Forgot password?</a>
+            </p>
+          )}
           <p className="mt-3 text-[12px] leading-relaxed text-muted">The owner password is written to a private file on the server when the workspace is created. It is never shown here.</p>
 
           <div className="my-7 flex items-center gap-3 text-[12px] font-medium text-muted">
@@ -271,7 +283,7 @@ function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; 
     >
       <nav ref={navRef} className="flex h-full flex-col" aria-label="Main">
         <div className="flex items-center gap-2.5 px-4 pb-3 pt-4 md:pt-3">
-          <BrandMark name={brand} />
+          <BrandMark name={brand} logo={me.brand?.logo} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[14px] font-semibold leading-tight text-ink">{brand}</div>
             <div className="truncate text-[12px] leading-tight text-muted">{me.tenant.name}</div>
@@ -338,7 +350,7 @@ function Header({ me, page, onMenu, onSearch }: { me: Me; page: string; onMenu: 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-[color-mix(in_oklab,var(--bg)_82%,transparent)] px-3 backdrop-blur-xl backdrop-saturate-150 md:px-5">
       <IconButton label="Open menu" className="-ml-1 md:hidden" onClick={onMenu}><Menu className="size-5" /></IconButton>
-      <a href="#/" className="focus-ring flex items-center rounded-[9px] md:hidden" aria-label={`${brand} home`}><BrandMark name={brand} className="size-7 text-[13px]" /></a>
+      <a href="#/" className="focus-ring flex items-center rounded-[9px] md:hidden" aria-label={`${brand} home`}><BrandMark name={brand} logo={me.brand?.logo} className="size-7 text-[13px]" /></a>
       <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 md:block">
         <ol className="flex min-w-0 items-center gap-1.5 text-[13px]">
           <li className="shrink-0 max-xl:hidden"><a href="#/" className="focus-ring rounded text-muted transition-colors hover:text-ink">{me.tenant.name}</a></li>
@@ -570,6 +582,7 @@ function Boot() {
 }
 
 export default function App() {
+  useHash(); // re-render on hash changes, so "Forgot password?" (#/join?forgot=1) opens the join screen at once
   const [me, setMe] = useState<Me | null>(null);
   const [state, setState] = useState<"loading" | "signin" | "ready" | "error">("loading");
   const [err, setErr] = useState<ApiError | null>(null);

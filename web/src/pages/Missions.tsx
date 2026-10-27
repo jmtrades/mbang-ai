@@ -16,7 +16,7 @@ const STEP_TONE: Record<string, any> = {
 };
 const ACTION_LABEL: Record<string, string> = {
   replan: "Plan change", answer: "Answer", fix: "Fix a draft", approve: "Approve", send_by_hand: "Send by hand", call: "Call",
-  do: "Your task", retry: "Problem", waiting_owner: "Waiting",
+  do: "Your task", retry: "Problem", waiting_owner: "Waiting", escalation: "Needs you",
 };
 const OUTCOME_LABEL: Record<string, string> = {
   positive: "Positive reply", not_interested: "Not interested", booked: "Call booked", showed: "They showed up",
@@ -191,7 +191,7 @@ function NextActions({ items, onChanged, compact }: { items: any[]; onChanged: (
             <div className="min-w-0 flex-1">
               <p className="break-words text-sm">{a.title}</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                <Badge tone={a.kind === "fix" || a.kind === "retry" ? "bad" : a.kind === "waiting_owner" ? "neutral" : "warn"}>{ACTION_LABEL[a.kind] || "To do"}</Badge>
+                <Badge tone={a.kind === "fix" || a.kind === "retry" || (a.kind === "escalation" && a.severity === "high") ? "bad" : a.kind === "waiting_owner" ? "neutral" : "warn"}>{ACTION_LABEL[a.kind] || "To do"}</Badge>
                 {!compact && <span className="break-words">{a.mission}</span>}
                 {a.demo && <DemoBadge />}
               </p>

@@ -294,6 +294,27 @@ def validate(tenant) -> list[dict]:
     return out
 
 
+def on_source_change(tenant, source: str = "") -> dict:
+    """skills.on_source_change calls this when the knowledge base changes: the scoring rules' SOP citations are
+    checked again. A rule the owner had confirmed that no longer checks out is reported to the owner (exam scoring
+    already refuses to certify on a flagged rule)."""
+    res = validate(tenant)
+    bad = [v["rule_key"] for v in res if not v["ok"]]
+    confirmed_bad = [v["rule_key"] for v in res if not v["ok"] and v.get("status") == "confirmed"]
+    tenant.set("roleplay_rubric_check", {"source": str(source)[:120], "flagged": bad, "confirmed_flagged": confirmed_bad})
+    if confirmed_bad:
+        try:
+            from .. import escalations
+
+            escalations.raise_(tenant, "rubric_citation", "low",
+                               f"{len(confirmed_bad)} confirmed role-play scoring rule(s) no longer match the course material "
+                               f"after it changed ({', '.join(confirmed_bad)[:200]}). Re-point or re-confirm them in "
+                               "Academy, Role-play, Scoring rules.", ref="roleplay:rubric")
+        except Exception:  # noqa: BLE001 - the check result is stored either way
+            pass
+    return {"checked": len(res), "flagged": bad, "confirmed_flagged": confirmed_bad}
+
+
 def citation(tenant, rule: dict, cid: str) -> dict:
     """A citation chip for a scored criterion: the SOP passage the rule comes from."""
     res = resolve(tenant, rule.get("cite_file") or "", rule.get("cite_lines") or "")

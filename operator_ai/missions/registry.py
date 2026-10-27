@@ -453,15 +453,14 @@ def cert_state(tenant, uid: int, path_key: str, level: str) -> str:
 
 
 def assign_path(sc: StepCtx, path_key: str, level: str) -> bool:
-    fn = feature_fn("academy", "assign")
+    """Put the mission's user on the Academy path (academy.enrol: their own enrolment, no coach note to approve)."""
+    fn = feature_fn("academy", "enrol")
     if fn is None:
         return False
     try:
-        invoke(fn, sc.tenant, user_id=sc.uid, user=sc.user, path_key=path_key, level=level, actor=sc.actor,
-               assigned_by=sc.actor, reason=f"Mission #{sc.mid}", mission_id=sc.mid)
-        return True
+        return bool(fn(sc.tenant, sc.uid, path_key, sc.actor))
     except Exception:  # noqa: BLE001
-        log.warning("academy.assign failed")
+        log.warning("academy.enrol failed")
         return False
 
 
@@ -567,8 +566,7 @@ def _research_fit(sc: StepCtx) -> StepResult:
     ok, errors = 0, 0
     for p in rows:
         try:
-            invoke(fn, sc.tenant, prospect_id=p["id"], pid=p["id"], user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid,
-                   actor=sc.actor)
+            fn(sc.tenant, sc.user, p["id"])  # prospects.research: the prospect's own fields (and its site, if switched on)
             ok += 1
         except Exception:  # noqa: BLE001 - one prospect failing must not stop the others
             errors += 1
@@ -684,18 +682,22 @@ def _daily_openers(sc: StepCtx) -> StepResult:
     if not picks:
         return StepResult("blocked_human", "No prospects left to contact. Add more on the Prospects page.",
                           output={"href": "#/prospects"}, wait={"events": ["prospect_added"], "recheck": True})
-    fn = feature_fn("prospects", "draft_openers")
+    fn = feature_fn("prospects", "draft_openers_bulk")
     qids: list[int] = []
     source = "rules"
     if fn is not None:
         try:
+            # the prospects feature drafts research-checked openers (its own caps, claims and never-invite checks);
+            # one call per channel: Instagram for prospects with a handle, email for the rest
             mark = queue_watermark(sc.tenant)
-            res = invoke(fn, sc.tenant, prospect_ids=[p["id"] for p in picks], ids=[p["id"] for p in picks],
-                         user=sc.user, owner_user_id=sc.uid, limit=len(picks), mission_id=sc.mid, actor=sc.actor)
-            qids = qids_from(sc.tenant, res, mark)
+            by_channel = {"instagram_dm": [p["id"] for p in picks if p.get("handle")],
+                          "email": [p["id"] for p in picks if not p.get("handle") and p.get("email")]}
+            for ch, ids in by_channel.items():
+                if ids:
+                    qids += qids_from(sc.tenant, fn(sc.tenant, sc.user, ch, ids=ids, limit=len(ids)), mark)
             source = "prospects"
         except Exception:  # noqa: BLE001 - fall back to the generic rules openers
-            log.warning("prospects.draft_openers failed; using rules openers")
+            log.warning("prospects.draft_openers_bulk failed; using rules openers")
             qids = []
     if not qids:
         qids = _fallback_openers(sc, picks)
@@ -725,9 +727,12 @@ def _followups(sc: StepCtx) -> StepResult:
     if sc.ctx.get("won"):
         return StepResult("done", "Goal won: follow-ups stopped.")
     if feature_fn("delivery", "run_cadences") is not None:
-        return StepResult("waiting_event", "Follow-ups run on the follow-up cadence after each confirmed send.",
+        # openers from the prospects feature get its research-checked day 2/4/7 follow-ups when each opener is confirmed
+        # sent; any other first touch starts delivery's follow-up sequence. Either way each one waits for approval.
+        return StepResult("waiting_event", "Follow-ups are drafted after each confirmed send (days 2, 4 and 7) and stop "
+                                           "when they reply. Each one waits for your approval.",
                           wait={"events": ["client_won"]}, cycle=sc.step.get("cycles", 0) == 0,
-                          output={"handled_by": "cadence"})
+                          output={"handled_by": "prospects" if feature_fn("prospects", "draft_followups") else "cadence"})
     open_ids = q_states(sc.tenant, [q for q in (sc.step.get("queue_ids") or [])])["open"]
     replied = replied_ids(sc.tenant, sc.mid)
     with sc.tenant.db() as c:
@@ -1002,21 +1007,30 @@ def _proposal(sc: StepCtx) -> StepResult:
         return StepResult("skipped", "Goal won before a proposal was needed.")
     d = _last_party(sc, "showed", "booked") or {}
     pid = d.get("party_id")
-    fn = feature_fn("proposals", "build")
-    if fn is not None and pid:
+    build, send = feature_fn("proposals", "build"), feature_fn("proposals", "send")
+    if build is not None and pid:
         try:
             mark = queue_watermark(sc.tenant)
-            res = invoke(fn, sc.tenant, prospect_id=pid, user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid,
-                         call_notes=sc.ctx.get("call_notes") or "", actor=sc.actor)
-            got = qids_from(sc.tenant, res, mark)
+            price = sc.answers.get("price")
+            pricing = {"retainer": price, "currency": sc.answers.get("currency") or "USD"} if price else None
+            prop = build(sc.tenant, sc.user, int(pid), call_notes=sc.ctx.get("call_notes") or "", pricing=pricing,
+                         numbers=sc.ctx.get("numbers") if isinstance(sc.ctx.get("numbers"), dict) else None)["proposal"]
+            got: list[int] = []
+            if send is not None and not prop.get("blocked"):
+                p = prospect(sc.tenant, pid, sc.uid) or {}
+                res = send(sc.tenant, sc.user, prop["id"], "email" if p.get("email") else "instagram_dm")
+                got = qids_from(sc.tenant, res, mark)
             if got:
                 tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
-                return StepResult("waiting_approval", "Proposal drafted: approve it in the queue.", queue_ids=got,
-                                  output={"qids": got, "source": "proposals"})
+                return StepResult("waiting_approval", "Proposal drafted from your call: approve it in the queue. Its page "
+                                                      "goes live only after approval.", queue_ids=got,
+                                  output={"qids": got, "source": "proposals", "proposal_id": prop["id"]},
+                                  context={"proposal_id": prop["id"]})
             return StepResult("blocked_human", "Proposal drafted: review it and send it for approval on the Prospects page.",
-                              output={"source": "proposals", "href": "#/prospects"}, wait={"events": ["item_sent"]})
+                              output={"source": "proposals", "href": "#/prospects", "proposal_id": prop["id"]},
+                              wait={"events": ["item_sent"]})
         except Exception:  # noqa: BLE001 - fall back to the rules proposal
-            log.warning("proposals.build failed; using the rules proposal")
+            log.warning("proposals.build/send failed; using the rules proposal")
     p = prospect(sc.tenant, pid, sc.uid) or {}
     if p.get("do_not_contact"):
         return StepResult("blocked_human", "This prospect asked not to be contacted, so no proposal is drafted. Skip this "
@@ -1059,8 +1073,10 @@ def _client_onboarding_start(sc: StepCtx) -> StepResult:
     fn = feature_fn("client_ops", "start_onboarding")
     if fn is not None and cid:
         try:
-            invoke(fn, sc.tenant, client_id=cid, user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid, actor=sc.actor)
-            return StepResult("done", "Client onboarding started.", output={"client_id": cid, "source": "client_ops"})
+            # idempotent: client ops already started it on client_won; this makes sure (and never drafts a second kickoff)
+            res = fn(sc.tenant, int(cid), owner_user_id=sc.uid, actor=sc.actor)
+            return StepResult("done", "Client onboarding started.",
+                              output={"client_id": cid, "source": "client_ops", "kickoff_queue_id": res.get("kickoff_queue_id")})
         except Exception:  # noqa: BLE001 - fall back to an onboarding mission
             log.warning("client_ops.start_onboarding failed; starting an onboarding mission")
     return StepResult("done", "Started a client onboarding mission.",
@@ -1211,13 +1227,16 @@ def _webinar_chain(sc: StepCtx) -> StepResult:
            success="Event scheduled", feature="webinars")
 def _webinar_schedule(sc: StepCtx) -> StepResult:
     at = sc.answers.get("event_date")
-    fn = feature_fn("webinars", "schedule", "create", "create_webinar")
+    fn = feature_fn("webinars", "create")
     if fn is not None and at:
         try:
-            res = invoke(fn, sc.tenant, chain_id=sc.ctx.get("chain_id"), starts_at=at, user=sc.user, mission_id=sc.mid,
-                         title=sc.answers.get("offer") or sc.mission.get("goal"), actor=sc.actor)
-            wid = res.get("id") if isinstance(res, dict) else res
-            return StepResult("done", f"Webinar scheduled for {when(at)}.", output={"webinar": wid}, context={"webinar_id": wid})
+            # the event, its registration page and email templates: each one still needs approval on the Webinar page
+            res = fn(sc.tenant, {"title": sc.answers.get("offer") or sc.mission.get("goal"), "starts_at": float(at),
+                                 "tz": sc.answers.get("tz") or "UTC", "chain_id": sc.ctx.get("chain_id")}, sc.user)
+            wid = res.get("id")
+            return StepResult("done", f"Webinar scheduled for {when(at)}. Approve its page and emails on the Webinar page.",
+                              output={"webinar": wid, "href": "#/webinar",
+                                      "page_queue_id": res.get("page_queue_id")}, context={"webinar_id": wid})
         except Exception:  # noqa: BLE001
             log.warning("webinars scheduling failed; recording the date only")
     if not at:
@@ -1358,9 +1377,9 @@ def _fulfil_client(sc: StepCtx) -> StepResult:
     if fn is not None:
         try:
             mark = queue_watermark(sc.tenant)
-            res = invoke(fn, sc.tenant, client_id=cl["id"], user=sc.user, owner_user_id=sc.uid, mission_id=sc.mid,
-                         actor=sc.actor)
-            got = qids_from(sc.tenant, res, mark)
+            res = fn(sc.tenant, int(cl["id"]), owner_user_id=sc.uid, actor=sc.actor)
+            got = qids_from(sc.tenant, [res.get("kickoff_queue_id"), *((res.get("fulfilment") or {}).get("queue_ids") or [])],
+                            mark)
             tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
             return StepResult("waiting_approval" if got else "done", "Client onboarding started.", queue_ids=got,
                               output={"qids": got, "source": "client_ops"}, context={"client_id": cl["id"]})
@@ -1427,8 +1446,8 @@ def _weekly_client_ops(sc: StepCtx) -> StepResult:
         if fn is not None:
             try:
                 mark = queue_watermark(sc.tenant)
-                got = qids_from(sc.tenant, invoke(fn, sc.tenant, client_id=cl["id"], user=sc.user, owner_user_id=sc.uid,
-                                                  mission_id=sc.mid, actor=sc.actor), mark)
+                res = fn(sc.tenant, int(cl["id"]), sc.user)
+                got = qids_from(sc.tenant, [res.get("report_queue_id"), res.get("monthly_queue_id")], mark)
                 tag_queue(sc.tenant, got, sc.mid, sc.step["id"], sc.uid, own=True)
             except Exception:  # noqa: BLE001
                 got = []
@@ -1477,7 +1496,10 @@ def _weekly_student_nudges(sc: StepCtx) -> StepResult:
     for s in at_risk:
         top = s["signals"][0]["key"]
         first = (re.sub(r"\(DEMO\)", "", s["name"] or "").split() or ["there"])[0]
-        ids.append(draft(sc, "nudge", accountability.NUDGES[top].format(first=first), channel="telegram",
+        from .. import persona
+
+        nudge_text = persona.style_template(sc.tenant, accountability.NUDGES[top].format(first=first), "student_nudges")
+        ids.append(draft(sc, "nudge", nudge_text, channel="telegram",
                          recipient=s["name"], title=f"Nudge: {s['name']} ({accountability.SIGNALS[top][0].lower()})",
                          meta={"student_id": s["id"], "signal": top})["id"])
     nxt = next_weekday(sc.now, wd)

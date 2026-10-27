@@ -19,6 +19,7 @@ BOX_ONLY = {
     "ai_token_budget",
     "critique_token_budget",
     "demo_course_material",  # the public demo may read the real inputs/ course (default: fictional fixture only)
+    "prospect_web_research",  # prospects: fetch one page of a prospect's own website (robots.txt honoured), off by default
 }
 
 

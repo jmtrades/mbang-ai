@@ -872,6 +872,27 @@ def check_sources(tenant) -> dict:
     return {"changed": changed, "removed": removed, "up_to_date": not changed and not removed}
 
 
+def mark_stale_sources(tenant, source: str = "", actor: str = "system") -> dict:
+    """The material changed (Drive sync, an upload to the knowledge base, or the daily check): every published lesson
+    whose cited section changed or disappeared becomes 'stale', with its practice questions, so learners see the
+    badge and the owner gets the rebuild in Admin. Nothing is regenerated or published here."""
+    with tenant.db() as c:
+        if c.execute("SELECT 1 FROM academy_lessons WHERE status='published' LIMIT 1").fetchone() is None:
+            return {"checked": False, "reason": "no published lessons", "stale": []}
+    try:
+        res = check_sources(tenant)
+    except common.Refused as e:  # the course material isn't loaded (fixture outside the demo): nothing to compare
+        return {"checked": False, "reason": str(e), "stale": []}
+    ids = [x["id"] for x in res["changed"] + res["removed"]]
+    if ids:
+        with tenant.db() as c:
+            for lid in ids:
+                c.execute("UPDATE academy_lessons SET status='stale' WHERE id=? AND status='published'", (lid,))
+                c.execute("UPDATE academy_quiz_items SET status='stale' WHERE lesson_id=? AND status='published'", (lid,))
+        audit.log(tenant, actor, "settings", {"academy_stale": ids, "source": str(source)[:120]})
+    return {"checked": True, "stale": ids, "changed": res["changed"], "removed": res["removed"]}
+
+
 # --------------------------------------------------------------------------- approval workflow
 def decide_lesson(tenant, lesson_id: int, decision: str, actor: str) -> dict:
     """draft -> published (its practice items publish with it; exam items need their own approval),

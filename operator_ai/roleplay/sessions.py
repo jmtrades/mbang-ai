@@ -7,6 +7,7 @@ owner signs off a completed session; nobody signs off their own.
 from __future__ import annotations
 
 import secrets
+import time
 import threading
 
 from .. import audit, db, events, guardrails, llm, runtime
@@ -127,6 +128,41 @@ def _turn_out(t: dict, exam: bool = False) -> dict:
 
 
 # --------------------------------------------------------------------------- lifecycle
+EXAM_ATTEMPTS_PER_DAY = 3      # per scenario; an abandoned exam counts as a (failed) attempt
+USER_AI_TOKENS_PER_DAY = 10_000  # AI phrasing of persona lines, per learner per local day (owner setting overrides)
+
+
+def exam_attempts_today(tenant, user_id: int, scenario_key: str) -> int:
+    """Exam sessions started on this scenario in the last 24 hours that did not pass: failed, abandoned or still
+    open. Abandoning a weak exam and starting again therefore uses up an attempt."""
+    with tenant.db() as c:
+        rows = c.execute("SELECT status, score FROM roleplays WHERE user_id=? AND scenario_key=? AND exam=1 AND created>?",
+                         (user_id, scenario_key, db.now() - 86400)).fetchall()
+    n = 0
+    for r in rows:
+        sc = db.jload(r["score"], None) or {}
+        if not (r["status"] == "complete" and sc.get("passed")):
+            n += 1
+    return n
+
+
+def ai_tokens_today(tenant, user_id: int) -> int:
+    """AI tokens this learner's role-play sessions used since local midnight."""
+    lt = time.localtime()
+    start = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 0, 0, 0, 0, 0, -1))
+    with tenant.db() as c:
+        rows = c.execute("SELECT state FROM roleplays WHERE user_id=? AND mode='ai' AND created>=?", (user_id, start)).fetchall()
+    return sum(int(((db.jload(r["state"], {}) or {}).get("st") or {}).get("ai_tokens") or 0) for r in rows)
+
+
+def user_ai_cap(tenant) -> int:
+    try:
+        v = int(tenant.get("roleplay_ai_daily_tokens", USER_AI_TOKENS_PER_DAY))
+    except (TypeError, ValueError):
+        v = USER_AI_TOKENS_PER_DAY
+    return max(0, v)
+
+
 def start(tenant, user: dict, scenario_key: str, seed: int | None = None, mode: str = "rules", exam: bool = False,
           hints: bool = True) -> dict:
     sc = scenarios.get(tenant, scenario_key)
@@ -134,12 +170,18 @@ def start(tenant, user: dict, scenario_key: str, seed: int | None = None, mode: 
         raise KeyError(scenario_key)
     if exam:
         mode, hints, seed = "rules", False, None  # certification attempts: rules only, no hints, server-chosen seed
+        if exam_attempts_today(tenant, user["id"], sc["key"]) >= EXAM_ATTEMPTS_PER_DAY:
+            raise Conflict(f"You've used today's {EXAM_ATTEMPTS_PER_DAY} exam attempts for this scenario (an abandoned "
+                           "exam counts as an attempt). Practise it, then try the exam again tomorrow.")
     if seed is None:
         seed = secrets.randbelow(1_000_000)
     s = engine.new_session(sc, seed, mode, exam, hints, tenant)
     if s.mode == "ai":
-        s.st["ai_cap"] = ai.session_cap(tenant)
-        s.st["ai_note"] = llm.unavailable_reason(tenant)
+        # each session's cap, and never more than what is left of this learner's daily allowance
+        left = max(0, user_ai_cap(tenant) - ai_tokens_today(tenant, user["id"]))
+        s.st["ai_cap"] = min(ai.session_cap(tenant), left)
+        s.st["ai_note"] = llm.unavailable_reason(tenant) or (
+            None if left > 0 else "Today's AI allowance for role-play is used up: replies use the templates until tomorrow.")
     actor = _actor(user)
     title = f"Role-play: {sc['title']}"
     run = runtime.Run(tenant, "roleplay", title, PLAN, actor)
@@ -217,8 +259,13 @@ def abandon(tenant, user: dict, rid: int) -> dict:
             raise Forbidden("Only the learner can abandon this session")
         if r["status"] != "active":
             raise Conflict("This session has already ended")
+        # an abandoned exam is recorded as a failed attempt (it counts against today's exam attempts and is never
+        # certification evidence)
+        score = db.jdump({"exam": True, "passed": False, "outcome": "abandoned", "end_reason": "abandoned",
+                          "certifiable": False, "total": 0}) if r["exam"] else None
         with tenant.db() as c:
-            c.execute("UPDATE roleplays SET status='abandoned', updated=? WHERE id=?", (db.now(), rid))
+            c.execute("UPDATE roleplays SET status='abandoned', score=COALESCE(?, score), updated=? WHERE id=?",
+                      (score, db.now(), rid))
     return view(tenant, user, rid)
 
 
@@ -293,6 +340,15 @@ def mode_label(r: dict, s: engine.Session) -> str:
     return base + (f" ({note}; template lines are used.)" if note and note not in ("AI phrased",) and "Replayed" not in note else "")
 
 
+def _debrief_framing(tenant, r, viewer: dict) -> dict | None:
+    try:
+        from .. import persona
+
+        return persona.framing(tenant, "roleplay_debriefs", f"roleplay-{r['id']}", user=viewer)
+    except Exception:  # noqa: BLE001 - framing is optional
+        return None
+
+
 def view(tenant, viewer: dict, rid: int) -> dict:
     r = _load_row(tenant, rid, viewer)
     s = _session(tenant, r)
@@ -328,6 +384,9 @@ def view(tenant, viewer: dict, rid: int) -> dict:
         "demo": bool(r["demo"]), "turns": turns, "score": score, "run_id": r["run_id"],
         "can_play": active and is_learner, "is_learner": is_learner,
         "can_signoff": complete and not is_learner and viewer["role"] in ("owner", "coach") and not (score or {}).get("signoff"),
+        # [persona] the debrief may open and close with the subject's approved framing lines (roleplay_debriefs scope,
+        # never during an exam, never for a neutral-voice learner); the scores and model lines are untouched
+        "framing": _debrief_framing(tenant, r, viewer) if complete and not r["exam"] else None,
     }
     if active and not s.exam:
         b = "low" if s.st["trust"] < 35 else "mid" if s.st["trust"] < 65 else "high"

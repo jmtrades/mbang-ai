@@ -364,13 +364,25 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
     actor = f"{user['username']}({user['role']})" if user else "system"
     if own_run:
         run = runtime.Run(tenant, "coach", f"Coach: {question[:80]}", PLAN, actor)
+    # [memory] what this person told the assistant about their business ("What I know about you"): with the AI on it
+    # helps pick which course passages apply to them; the answer still comes only from the course, with citations
+    about = None
+    if user and user.get("id"):
+        from .. import memory
+
+        mem = memory.for_user(tenant, user["id"])
+        about = "; ".join(f"{k}: {str(mem[k])[:120]}" for k in ("niche", "offer", "goal") if mem.get(k)) or None
     try:
-        res = _answer(tenant, question, run, k, context, external)
+        res = _answer(tenant, question, run, k, context, external, about=about)
     except Exception as e:
         run.fail(e)
         raise
     res["run_id"] = run.id
     res["ai_mode"] = run.ai_mode
+    if user and user.get("id"):
+        from .. import memory
+
+        res["remembered"] = memory.hint(tenant, user, "question")
     # [persona] consent-gated framing: returns res unchanged unless a valid, subject-signed persona consent covers this
     # user and surface (operator_ai/persona/apply.py). Also answers "are you <name>?" honestly. Never raises.
     from ..persona import apply as persona_apply
@@ -390,7 +402,8 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
     return res
 
 
-def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None = None, external: bool = True) -> dict:
+def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None = None, external: bool = True,
+            about: str | None = None) -> dict:
     lang = run.step("detect_language", {"question": question}, lambda: translate.detect(question), "Detect language")
     q_en = translate.to_english_terms(question, lang) if lang != "en" else question
 
@@ -449,6 +462,9 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
 
     passages = "\n\n".join(f"[{h['id']}] ({h['title']}, lines {h['lines']})\n{h['text']}" for h in usable)
     prompt = f"Question: {question}\n\nCourse passages:\n{passages}"
+    if about:
+        prompt += (f"\n\nAbout the person asking (their own notes; use them only to choose which passages apply, never as "
+                   f"a source, never quoted): {about}")
     names = guardrails.tenant_banned_names(tenant)
     text, cited, mode, label = "", [], "rules", "Extractive answer from course passages (AI off)"
     reason = llm.unavailable_reason(tenant)
@@ -456,7 +472,8 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
     def _ai():
         out = llm.complete(tenant, SYSTEM, prompt, purpose="coach", run_id=run.id, max_tokens=700)
         data = llm.parse_json(out["text"])
-        llm.save_replay(tenant, "coach-q", _norm_q(question), out["text"], run.id)
+        if not about:  # an answer shaped by one person's notes is never replayed to someone else
+            llm.save_replay(tenant, "coach-q", _norm_q(question), out["text"], run.id)
         return data
 
     data = None

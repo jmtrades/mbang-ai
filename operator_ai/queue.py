@@ -34,8 +34,10 @@ log = logging.getLogger("operator.queue")
 
 OPEN = ("pending", "held", "needs_human")
 OUTBOX = ("scheduled", "awaiting_manual_send")
-STATUSES = OPEN + ("approved", "rejected") + OUTBOX + ("sending", "sent", "send_failed", "cancelled")
-CANCELLABLE = OUTBOX + ("send_failed",)
+# needs_attention: a send was interrupted mid-way (the server stopped while it was 'sending'), so nobody knows
+# whether it went out. A person checks and confirms it was sent, sends it again, or cancels it; never re-sent blindly.
+STATUSES = OPEN + ("approved", "rejected") + OUTBOX + ("sending", "sent", "send_failed", "cancelled", "needs_attention")
+CANCELLABLE = OUTBOX + ("send_failed", "needs_attention")
 
 # channel -> mock transport label. Used ONLY in demo workspaces ("mock:*" writes to channel_messages only).
 MOCK_CHANNELS = {
@@ -354,18 +356,19 @@ STUCK_AFTER = 15 * 60  # a send that is still 'sending' after this long was inte
 
 
 def recover_stuck(tenant, now: float | None = None) -> list[int]:
-    """Items left in 'sending' by a crash mid-send become send_failed with a warning, so a person checks
-    whether it went out before trying again (never retried automatically: a duplicate is worse than a miss)."""
+    """Items left in 'sending' by a crash mid-send (claimed_at older than STUCK_AFTER) become needs_attention: a
+    person checks whether it went out, then marks it sent, sends it again or cancels it. Never retried automatically:
+    a duplicate message is worse than a missed one."""
     now = now or db.now()
     with tenant.db() as c:
         ids = [r["id"] for r in c.execute("SELECT id FROM queue WHERE status='sending' AND claimed_at IS NOT NULL "
                                           "AND claimed_at < ?", (now - STUCK_AFTER,))]
     out = []
     for qid in ids:
-        if _set(tenant, qid, only_if="sending", status="send_failed",
-                status_reason="Sending was interrupted, so it may or may not have gone out. Check before you try again, "
-                              "or cancel it."):
-            audit.log(tenant, "scheduler", "queue.send_failed", {"id": qid, "at": "recover_stuck"})
+        if _set(tenant, qid, only_if="sending", status="needs_attention",
+                status_reason="Sending was interrupted, so it may or may not have gone out. Check first: if it went out, "
+                              "mark it sent; if not, send it again or cancel it."):
+            audit.log(tenant, "scheduler", "queue.needs_attention", {"id": qid, "at": "recover_stuck"})
             out.append(qid)
     return out
 
@@ -391,7 +394,7 @@ def _restore(tenant, qid: int, prev: str) -> None:
 _LABEL = {"pending": "waiting for approval", "held": "held by guardrails", "needs_human": "waiting for a person",
           "approved": "approved", "rejected": "rejected", "scheduled": "scheduled", "sending": "being sent right now",
           "awaiting_manual_send": "waiting for someone to send it", "sent": "sent", "send_failed": "marked as failed",
-          "cancelled": "cancelled"}
+          "cancelled": "cancelled", "needs_attention": "waiting for someone to check whether it went out"}
 
 
 def _already(item: dict) -> QueueError:
@@ -523,11 +526,12 @@ def reject(tenant, qid: int, actor: str, role: str = "owner", reason: str = "", 
 # --------------------------------------------------------------------------- after approval
 def mark_sent(tenant, qid: int, actor: str, role: str = "owner", user_id: int | None = None,
               permalink: str | None = None) -> dict:
-    """A person confirms they sent an approved manual-channel item from their own account."""
+    """A person confirms they sent an approved manual-channel item from their own account, or that an interrupted
+    send (needs_attention) did go out."""
     item = _lookup(tenant, qid, role, user_id, "confirm")
-    if item["status"] != "awaiting_manual_send":
+    if item["status"] not in ("awaiting_manual_send", "needs_attention"):
         raise QueueError(409, "Only approved messages waiting for you to send can be marked as sent")
-    if not _claim(tenant, qid, ("awaiting_manual_send",)):
+    if not _claim(tenant, qid, (item["status"],)):
         raise QueueError(409, "Someone else just updated this item")
     meta = dict(item["meta"])
     if permalink:
@@ -572,9 +576,9 @@ def cancel_system(tenant, qid: int, reason: str, actor: str = "system",
 def send_now(tenant, qid: int, actor: str, role: str = "owner", user_id: int | None = None) -> dict:
     """Send a scheduled item now, or try a failed send again. The same checks as the dispatcher run."""
     item = _lookup(tenant, qid, role, user_id, "send")
-    if item["status"] not in ("scheduled", "send_failed"):
+    if item["status"] not in ("scheduled", "send_failed", "needs_attention"):
         raise QueueError(409, "Only scheduled or failed items can be sent now")
-    if item["status"] == "send_failed" and (item["channel"] or "manual") in INTERNAL_CHANNELS:
+    if item["status"] in ("send_failed", "needs_attention") and (item["channel"] or "manual") in INTERNAL_CHANNELS:
         raise QueueError(409, "A change that failed part-way can't be retried here. Roll it back from its page and "
                               "propose it again.")
     out = dispatch(tenant, qid, actor, force=True, from_statuses=(item["status"],))

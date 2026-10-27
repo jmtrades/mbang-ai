@@ -17,6 +17,7 @@ TENANT_TICKS = [
     "operator_ai.inbound:check_slas",          # speed-to-lead and stuck-item escalations
     "operator_ai.webinars:tick",               # per-registrant reminders around each event
     "operator_ai.client_ops:tick",             # weekly client ops and reports
+    "operator_ai.academy:tick",                # daily: published lessons whose source changed go stale
 ]
 
 

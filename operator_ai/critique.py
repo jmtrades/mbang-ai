@@ -30,7 +30,7 @@ def evidence(tenant, criteria: list[dict], only_failing: bool = True, prefix: st
 
 
 def critique(tenant, text: str, asset_type: str, meta: dict | None = None) -> dict:
-    res = rubrics.score(text, asset_type, meta, guardrails.tenant_banned_names(tenant))
+    res = rubrics.score(text, asset_type, meta, guardrails.tenant_banned_names(tenant), tenant=tenant)
     cites, by_key = evidence(tenant, res["criteria"])
     for c in res["criteria"]:
         c["citations"] = by_key.get(c["key"], [])
