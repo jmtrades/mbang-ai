@@ -18,6 +18,7 @@ BOX_ONLY = {
     "live_channels_enabled",
     "ai_token_budget",
     "critique_token_budget",
+    "demo_course_material",  # the public demo may read the real inputs/ course (default: fictional fixture only)
 }
 
 

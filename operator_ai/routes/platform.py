@@ -102,6 +102,10 @@ from .. import call_review, channels, crm, skills, uploads  # noqa: E402
 async def upload(file: UploadFile = File(...), project_id: int | None = Form(None), to_kb: bool = Form(False),
                  ctx: Ctx = Depends(require("projects"))):
     data = await file.read(uploads.MAX_BYTES + 1)
+    # adding to the knowledge base is a KB-admin write: owner only, and never in the public pitch demo (anyone can
+    # sign in there as owner, and what they add would show up in every demo visitor's coach answers)
+    if to_kb and ctx.tenant.is_demo:
+        raise HTTPException(403, "Read-only in the pitch demo: the knowledge base can only be changed in a real workspace.")
     allow_kb = to_kb and ctx.role == "owner" and ctx.tenant.kb_scope in ("own", "course")
     try:
         return uploads.save(ctx.tenant, ctx.user["id"], file.filename or "upload", data, project_id, to_kb=allow_kb)

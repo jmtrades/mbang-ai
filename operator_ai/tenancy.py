@@ -87,6 +87,9 @@ _cache: dict[tuple[str, str], Tenant] = {}
 
 
 def get(tid: str) -> Tenant:
+    # a tenant id comes straight from the URL: anything that isn't a valid id is simply not found
+    if not isinstance(tid, str) or not _ID_RE.match(tid):
+        raise TenantNotFound(str(tid)[:40])
     key = (str(config.get().data_dir), tid)
     if key in _cache:
         return _cache[key]
@@ -157,6 +160,8 @@ def create(tid: str, name: str, kb_scope: str = "empty", kind: str = "client") -
     if kind == "client":
         t.set("ai_token_budget", 0)
         t.set("critique_token_budget", 0)
+    if kind == "demo":
+        ensure_demo_budget(t)
     t.set("live_meta_enabled", False)
     t.set("meta_allowlist", [])
     t.set("live_calendar_enabled", False)
@@ -195,6 +200,38 @@ def ensure_defaults() -> None:
         create(cfg.default_tenant, f"{cfg.brand} programme", kb_scope="course", kind="owner")
     if "demo" not in existing:
         create("demo", f"{cfg.brand} pitch demo", kb_scope="course", kind="demo")
+    else:
+        ensure_demo_budget(get("demo"))  # demo workspaces created before the demo had its own budget
+
+
+# The public demo never inherits the server-wide AI budget: it gets its own small one, capped by the server
+# default (no AI on the server -> none in the demo). Its *_used counters survive every reset, so resetting
+# the demo never refills the budget; only the server CLI can (scripts/tenant_admin.py budget demo ...).
+DEMO_AI_BUDGET_CAP = 20_000
+DEMO_CRITIQUE_BUDGET_CAP = 5_000
+
+
+def demo_budgets() -> dict[str, int]:
+    cfg = config.get()
+
+    def cap(env: str, default: int) -> int:
+        try:
+            return max(0, int(os.environ.get(env, default)))
+        except ValueError:
+            return default
+    return {"ai_token_budget": max(0, min(cfg.ai_token_budget_default, cap("OPERATOR_DEMO_AI_TOKEN_BUDGET",
+                                                                          DEMO_AI_BUDGET_CAP))),
+            "critique_token_budget": max(0, min(cfg.critique_token_budget_default,
+                                                cap("OPERATOR_DEMO_CRITIQUE_TOKEN_BUDGET", DEMO_CRITIQUE_BUDGET_CAP)))}
+
+
+def ensure_demo_budget(t: Tenant) -> None:
+    """Pin the demo's budgets once (never overwrite what the server CLI set later)."""
+    if not t.is_demo:
+        return
+    for k, v in demo_budgets().items():
+        if t.get(k) is None:
+            t.set(k, v)
 
 
 def is_demo_db(t: Tenant) -> bool:

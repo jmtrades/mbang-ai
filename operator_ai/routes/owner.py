@@ -2,20 +2,33 @@
 vault, MCP tokens, engagement alerts."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from .. import console, index, mcp_server, tenancy, vault
+from .. import claims, console, index, mcp_server, tenancy, vault
 from ..deps import Ctx, require, require_owner
 
 router = APIRouter()
+
+DEMO_READ_ONLY = "Read-only in the pitch demo: the knowledge base and proof records can only be changed in a real workspace."
+
+
+def kb_writer(ctx: Ctx = Depends(require_owner)) -> Ctx:
+    """KB admin and proof records change what every coach answer and prospect message may say: owner only,
+    and never in the public demo (anyone can sign in there as owner with one click)."""
+    if ctx.tenant.is_demo:
+        raise HTTPException(403, DEMO_READ_ONLY)
+    return ctx
 
 
 @router.get("/kb")
 def kb(ctx: Ctx = Depends(require("kb"))):
     idx = index.for_tenant(ctx.tenant)
     return {"files": console.kb_files(ctx.tenant), "scope": ctx.tenant.kb_scope, "status": idx.status(),
-            "third_party_switch": False, "exclusions": index.load_exclusions()}
+            "third_party_switch": False, "exclusions": index.load_exclusions(ctx.tenant),
+            "read_only": ctx.tenant.is_demo or ctx.role != "owner",
+            "read_only_reason": DEMO_READ_ONLY if ctx.tenant.is_demo else None}
 
 
 class KbPatch(BaseModel):
@@ -27,7 +40,7 @@ class KbPatch(BaseModel):
 
 
 @router.put("/kb")
-def kb_patch(b: KbPatch, ctx: Ctx = Depends(require_owner)):
+def kb_patch(b: KbPatch, ctx: Ctx = Depends(kb_writer)):
     try:
         return console.kb_update(ctx.tenant, b.file, ctx.actor, b.licence, b.provenance, b.priority, b.note)
     except KeyError:
@@ -43,14 +56,20 @@ class Exclusion(BaseModel):
 
 
 @router.post("/kb/exclusions")
-def add_exclusion(b: Exclusion, ctx: Ctx = Depends(require_owner)):
-    items = index.load_exclusions()
+def add_exclusion(b: Exclusion, ctx: Ctx = Depends(kb_writer)):
+    if not b.lines and not b.ts:
+        raise HTTPException(422, "Give a line range (10-12) or a time range (0:01:00-0:02:00)")
+    if b.file not in index.for_tenant(ctx.tenant).docs:
+        raise HTTPException(404, "Not an indexed file")
+    items = index.load_exclusions(ctx.tenant)
+    if len(items) >= 500:
+        raise HTTPException(422, "Too many exclusions (500 max); remove some first")
     items.append({k: v for k, v in b.model_dump().items() if v})
-    index.save_exclusions(items)
+    index.save_exclusions(ctx.tenant, items)
     from .. import audit
 
     audit.log(ctx.tenant, ctx.actor, "kb.admin", {"exclusion": b.file})
-    return {"exclusions": items}
+    return {"exclusions": index.load_exclusions(ctx.tenant)}
 
 
 @router.get("/provenance")
@@ -117,7 +136,7 @@ def drive(ctx: Ctx = Depends(require("drive"))):
 
 
 @router.post("/drive/sync")
-def drive_sync(ctx: Ctx = Depends(require_owner)):
+def drive_sync(ctx: Ctx = Depends(kb_writer)):
     return {"staged": console.drive_fetch_and_stage(ctx.tenant, ctx.actor)}
 
 
@@ -126,7 +145,7 @@ class DriveDecision(BaseModel):
 
 
 @router.post("/drive/staged/{sid}")
-def drive_decide(sid: int, b: DriveDecision, ctx: Ctx = Depends(require_owner)):
+def drive_decide(sid: int, b: DriveDecision, ctx: Ctx = Depends(kb_writer)):
     try:
         return console.drive_decide(ctx.tenant, sid, b.approve, ctx.actor)
     except KeyError:
@@ -186,3 +205,47 @@ def tenants(ctx: Ctx = Depends(require_owner)):
     if ctx.tenant.kind != "owner":
         raise HTTPException(403, "Only the programme owner workspace lists tenants")
     return {"items": [t.to_dict() for t in tenancy.list_all()]}
+
+
+# proof records (claims substantiation): a figure reaches prospects only while a current record exists
+@router.get("/claims")
+def claims_list(ctx: Ctx = Depends(require("console"))):
+    return {"items": claims.list_records(ctx.tenant), "claim_keys": claims.CLAIM_KEYS,
+            "current": claims.has_valid(ctx.tenant), "evidence_types": sorted(claims.EVIDENCE_TYPES),
+            "max_file_mb": claims.MAX_FILE_BYTES // (1024 * 1024), "max_days": claims.MAX_VALID_DAYS,
+            "read_only": ctx.tenant.is_demo or ctx.role != "owner",
+            "read_only_reason": DEMO_READ_ONLY if ctx.tenant.is_demo else None}
+
+
+class ClaimBody(BaseModel):
+    claim_key: str = Field("outreach_range", pattern="^[a-z_]{2,40}$")
+    typicality_note: str = Field(min_length=1, max_length=1000)
+    valid_days: int = Field(180, ge=1, le=claims.MAX_VALID_DAYS)
+    statement: str | None = Field(None, max_length=300)
+
+
+@router.post("/claims")
+def claims_add(b: ClaimBody, ctx: Ctx = Depends(kb_writer)):
+    return claims.add(ctx.tenant, b.claim_key, b.typicality_note, b.valid_days, ctx.actor, b.statement)
+
+
+@router.post("/claims/{rid}/evidence")
+async def claims_evidence(rid: int, file: UploadFile = File(...), ctx: Ctx = Depends(kb_writer)):
+    data = await file.read(claims.MAX_FILE_BYTES + 1)
+    return claims.add_evidence(ctx.tenant, rid, file.filename or "evidence", data, ctx.actor)
+
+
+@router.get("/claims/{rid}/evidence/{eid}")
+def claims_evidence_file(rid: int, eid: int, ctx: Ctx = Depends(require_owner)):
+    path, ev = claims.evidence_file(ctx.tenant, rid, eid)
+    return FileResponse(path, media_type=ev.get("type") or "application/octet-stream", filename=ev.get("name"),
+                        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"})
+
+
+class ExpireBody(BaseModel):
+    reason: str = Field("", max_length=300)
+
+
+@router.post("/claims/{rid}/expire")
+def claims_expire(rid: int, b: ExpireBody, ctx: Ctx = Depends(kb_writer)):
+    return claims.expire(ctx.tenant, rid, ctx.actor, b.reason)

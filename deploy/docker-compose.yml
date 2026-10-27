@@ -11,6 +11,7 @@ services:
     volumes:
       - operator-data:/app/data
       - operator-backups:/app/backups
+      - operator-backup-keys:/app/backup-keys  # vault keys: kept apart, never copied offsite
       - ../inputs:/app/inputs:ro
     expose:
       - "8850"
@@ -36,5 +37,6 @@ services:
 volumes:
   operator-data:
   operator-backups:
+  operator-backup-keys:
   caddy-data:
   caddy-config:

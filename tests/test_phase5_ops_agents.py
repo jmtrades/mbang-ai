@@ -36,12 +36,19 @@ def test_owner_editable_weights(tenant):
     assert sales.score(COLD, "referral", sales.weights(tenant))["tier"] == "warm"
 
 
-def test_reply_line_follows_money_rule():
+def test_reply_line_follows_money_rule(tenant):
+    from operator_ai import claims
+
     lead = {"answers": HOT}
-    hot_line = sales.reply_line(lead, "hot")
+    # no proof record (the default): even a hot lead gets the no-figure line
+    assert sales.reply_line(lead, "hot", tenant).startswith("Let me help") and "$" not in sales.reply_line(lead, "hot", tenant)
+    rec = claims.add(tenant, "outreach_range", "Typical results are much lower; this is the best quartile of clients.",
+                     90, "owner")
+    claims.add_evidence(tenant, rec["id"], "summary.csv", b"month,revenue\n1,1\n", "owner")
+    hot_line = sales.reply_line(lead, "hot", tenant)
     assert "$50k-$100k a month" in hot_line and hot_line.startswith("Let me make")
-    assert guardrails.check(hot_line, "outreach", {"lead_tier": "hot"}) == []
-    cold_line = sales.reply_line({"answers": COLD}, "cold")
+    assert guardrails.check(hot_line, "outreach", {"lead_tier": "hot"}, tenant=tenant) == []
+    cold_line = sales.reply_line({"answers": COLD}, "cold", tenant)
     assert "$" not in cold_line and cold_line.startswith("Let me help")
 
 

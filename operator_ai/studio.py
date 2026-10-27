@@ -7,7 +7,7 @@ from __future__ import annotations
 import secrets
 
 from . import brief as brief_mod
-from . import critique, db, llm, queue, runtime
+from . import critique, db, guardrails, llm, queue, runtime
 
 LINES = {
     "outreach": "Outreach", "ads": "Ads", "funnels": "Funnels", "creatives": "Creatives", "webinars": "Webinars",
@@ -15,7 +15,7 @@ LINES = {
 }
 
 
-def _drafts(line: str, b: dict) -> list[dict]:
+def _drafts(line: str, b: dict, tenant=None) -> list[dict]:
     """Rules drafts per line: (title, asset_type, body, meta)."""
     n, o, mech, pain, aud = b["niche"], b["outcome"], b["mechanism"], b["pain"], b["audience"]
     if line == "outreach":
@@ -27,7 +27,7 @@ def _drafts(line: str, b: dict) -> list[dict]:
              "body": f"Here's a short video on how {n} get {o} without {pain}. Want me to send it over?",
              "meta": {"prospect_facing": True, "lead_tier": "cold", "prior_contact": True}},
             {"title": "Call offer (warm lead)", "asset": "dm_script", "kind": "dm", "channel": "instagram_dm",
-             "body": f"Let me make [their brand] $50k-$100k a month through our {mech}. Would a quick call be useful?",
+             "body": guardrails.range_line("[their brand]", f"our {mech}", tenant) + " Would a quick call be useful?",
              "meta": {"prospect_facing": True, "lead_tier": "warm", "prior_contact": True}},
         ]
     if line == "ads":
@@ -75,7 +75,7 @@ def run_line(tenant, line: str, partial_brief: dict | None = None, user: dict | 
 
     def fn(r: runtime.Run):
         r.note("brief", partial_brief or {}, {"brief": b, "missing": built["missing"]}, label="Brief")
-        drafts = r.step("draft", {"line": line}, lambda: _drafts(line, b), "Draft (rules)")
+        drafts = r.step("draft", {"line": line}, lambda: _drafts(line, b, tenant), "Draft (rules)")
         if llm.unavailable_reason(tenant) is None and line in ("ads", "outreach"):
             # free-form AI variant; it still goes through the same review below
             try:

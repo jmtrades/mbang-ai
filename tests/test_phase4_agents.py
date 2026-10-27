@@ -201,8 +201,9 @@ def test_diagnostic_pure_maths():
     by = {s["key"]: s for s in a["stages"]}
     assert by["reply"]["value"] == 0.05 and by["reply"]["below"]
     assert by["show"]["value"] == pytest.approx(0.3333, abs=1e-3)
-    # reply: (0.10-0.05)*800 extra replies * downstream 0.5*0.5*0.6*0.333*0.5 * 3000
-    assert by["reply"]["monthly_cost"] == 3000
+    # reply: (0.10-0.05)*800 = 40 extra replies, carried through the later stages at max(actual, benchmark):
+    # conversation 0.5, link 0.5, booked 0.6, show max(0.333, 0.6)=0.6, close 0.5 -> 40*0.045 = 1.8 sales * 3000
+    assert by["reply"]["monthly_cost"] == 5400
     assert a["bottleneck"]["key"] == "reply"
 
 

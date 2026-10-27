@@ -3,12 +3,36 @@ per signal (cited), nudges (queued), coach escalation tasks, per-coach lists, an
 and the Retention Star (5-point community health). Built to run over 2,000+ students."""
 from __future__ import annotations
 
+import logging
 import time
 from collections import defaultdict
 
 from .. import db, queue, retrieval, runtime
 
+log = logging.getLogger("operator.accountability")
 DAY = 86400
+
+
+def _first(name) -> str:
+    """The word to greet a student by; a blank or odd name never breaks the sweep."""
+    return (str(name or "").split() or ["there"])[0]
+
+
+def _f(v, default: float = 0.0) -> float:
+    """A number from a stored value, whatever was stored (old rows, bad imports)."""
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return default
+    return x if x == x and x not in (float("inf"), float("-inf")) else default
+
+
+def _clamp_int(v, lo: int, hi: int, default: int) -> int:
+    try:
+        x = int(float(v))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return max(lo, min(hi, x))
 SIGNALS = {
     "checkin_gap": ("Missed check-ins", "check-in accountability weekly community thread coach review", 30),
     "low_outreach": ("Outreach volume dropped", "send twenty openers a day log replies volume", 20),
@@ -37,15 +61,16 @@ def _load(tenant, student_ids: list[int] | None = None) -> tuple[list[dict], dic
                          "WHERE at > ? ORDER BY at", (since,)).fetchall()
     by: dict[int, list[dict]] = defaultdict(list)
     for r in rows:
-        by[r[0]].append({"at": r[1], "outreach": r[2] or 0, "booked": r[3] or 0, "showed": r[4] or 0, "mood": r[5] or 0,
-                         "wins": r[6] or ""})
+        by[r[0]].append({"at": _f(r[1]), "outreach": int(_f(r[2])), "booked": int(_f(r[3])), "showed": int(_f(r[4])),
+                         "mood": int(_f(r[5])), "wins": r[6] or ""})
     return students, by
 
 
 def risk(student: dict, cks: list[dict], now: float | None = None) -> dict:
     now = now or time.time()
     signals = []
-    last = cks[-1]["at"] if cks else student.get("joined") or now
+    joined = _f(student.get("joined"), now) or now
+    last = cks[-1]["at"] if cks else joined
     gap_days = (now - last) / DAY
     if gap_days > 17:
         signals.append(("checkin_gap", 45, f"{int(gap_days)} days since last check-in"))
@@ -63,7 +88,7 @@ def risk(student: dict, cks: list[dict], now: float | None = None) -> dict:
     moods = [c["mood"] for c in cks[-2:] if c["mood"]]
     if moods and sum(moods) / len(moods) < 3:
         signals.append(("low_mood", 15, f"mood {sum(moods) / len(moods):.1f}/5"))
-    if (student.get("clients") or 0) == 0 and now - (student.get("joined") or now) > 60 * DAY:
+    if _f(student.get("clients")) == 0 and now - joined > 60 * DAY:
         signals.append(("no_clients", 10, "no clients after 60 days"))
     score = min(100, sum(s[1] for s in signals))
     return {"score": score, "level": "high" if score >= 50 else "medium" if score >= 25 else "low",
@@ -152,16 +177,23 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
         nudges = []
         tasks = []
 
+        skipped: list[int] = []
+
         def _nudges():
             for s in at_risk:
                 top = s["signals"][0]["key"] if s["signals"] else None
-                if not top:
+                if top not in NUDGES:
                     continue
-                first = s["name"].split()[0]
-                q = queue.add(tenant, "nudge", NUDGES[top].format(first=first), channel="telegram", recipient_ref=s["name"],
-                              title=f"Nudge: {s['name']} — {SIGNALS[top][0]}",
-                              meta={"student_id": s["id"], "signal": top, "citation": cites.get(top)}, run_id=run.id,
-                              actor=actor, demo=bool(s["demo"]))
+                name = " ".join(str(s.get("name") or "").split()) or f"Student #{s['id']}"
+                try:
+                    q = queue.add(tenant, "nudge", NUDGES[top].format(first=_first(s.get("name"))), channel="telegram",
+                                  recipient_ref=name, title=f"Nudge: {name} — {SIGNALS[top][0]}",
+                                  meta={"student_id": s["id"], "signal": top, "citation": cites.get(top)}, run_id=run.id,
+                                  actor=actor, demo=bool(s["demo"]))
+                except Exception:  # noqa: BLE001 - one bad student row must not stop everyone else's nudge
+                    log.exception("nudge skipped for student %s", s.get("id"))
+                    skipped.append(s["id"])
+                    continue
                 nudges.append(q["id"])
             return nudges
 
@@ -181,7 +213,8 @@ def run_interventions(tenant, user: dict | None = None, limit: int = 50) -> dict
 
         run.step("escalations", {}, _tasks, "Coach escalation tasks")
         dg = run.step("digest", {}, lambda: digest(tenant, b), "Owner digest")
-        return {"at_risk": len(at_risk), "nudges": nudges, "tasks": tasks, "digest": dg, "citations": cites}
+        return {"at_risk": len(at_risk), "nudges": nudges, "tasks": tasks, "digest": dg, "citations": cites,
+                "skipped": skipped}
 
     out = runtime.execute(tenant, "accountability", "Accountability sweep", PLAN, fn, actor)
     return {**out["result"], "run_id": out["run_id"]}
@@ -206,11 +239,15 @@ def digest(tenant, b: dict | None = None) -> dict:
 
 
 def submit_checkin(tenant, student_id: int, data: dict) -> int:
+    """Numbers are clamped to sane ranges whatever the channel sent ("/checkin 99999999999999999999" from
+    Telegram must not overflow the database write)."""
+    data = data if isinstance(data, dict) else {}
     with tenant.db() as c:
         return c.execute("INSERT INTO checkins(student_id,at,outreach,calls_booked,calls_showed,mood,wins,blockers,demo) "
                          "VALUES(?,?,?,?,?,?,?,?,?)",
-                         (student_id, db.now(), int(data.get("outreach") or 0), int(data.get("calls_booked") or 0),
-                          int(data.get("calls_showed") or 0), int(data.get("mood") or 3), str(data.get("wins") or "")[:500],
+                         (student_id, db.now(), _clamp_int(data.get("outreach"), 0, 100000, 0),
+                          _clamp_int(data.get("calls_booked"), 0, 10000, 0), _clamp_int(data.get("calls_showed"), 0, 10000, 0),
+                          _clamp_int(data.get("mood"), 1, 5, 3), str(data.get("wins") or "")[:500],
                           str(data.get("blockers") or "")[:500], 1 if tenant.is_demo else 0)).lastrowid
 
 

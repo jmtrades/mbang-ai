@@ -64,7 +64,7 @@ export default function Projects() {
             <Upload className="size-4" /> {busy === "up" ? "Reading…" : "Upload a file"}
             <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} aria-label="Upload a file" />
           </label>}>
-          {me.user.role === "owner" && <label className="mb-2 flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={toKb} onChange={(e) => setToKb(e.target.checked)} /> Add to my knowledge base</label>}
+          {me.user.role === "owner" && !me.is_demo && <label className="mb-2 flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={toKb} onChange={(e) => setToKb(e.target.checked)} /> Add to my knowledge base</label>}
           {receipt && (
             <div className="mb-3 rounded-[10px] border border-good-line bg-good-soft p-3 text-sm text-good-ink" data-testid="receipt">
               <b>What I read:</b> {receipt.summary}

@@ -113,7 +113,7 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
         metrics = parse_metrics(text)
         res = diagnostic.diagnose(tenant, metrics, user=user, label="from chat")
         bn = res["bottleneck"]
-        reply = res["prescription"] if bn else "Every stage with enough data is at or above the SOP benchmark."
+        reply = res["prescription"]  # with no bottleneck it says why (low volume, no data or all at benchmark)
         meta = {"citations": res["citations"], "run_id": res["run_id"], "metrics": metrics,
                 "next_best_action": res.get("next_best_action"), "bottleneck": bn, "mode": res.get("mode")}
         payload = res

@@ -2,16 +2,20 @@
 from __future__ import annotations
 
 import importlib
+import json
 import logging
+import os
 import re
 import time
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
-from . import config, tenancy
+from . import config, ratelimit, tenancy
+from .errors import InputError
 from .redact import redact
 
 log = logging.getLogger("operator")
@@ -41,6 +45,45 @@ def _load_routers(app: FastAPI) -> None:
 
 
 _TENANT_PATH = re.compile(r"^/t/([^/]+)/(api|report)")
+_TENANT_API = re.compile(r"^/t/[^/]+/api/")
+# responses the scrub never rewrites: the screens that manage the banned list and the persona's banned
+# words must show (and save back) exactly what the owner typed
+_SCRUB_EXEMPT = re.compile(r"/api/(settings|personality)$")
+_SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+class _NonFinite(ValueError):
+    pass
+
+
+def _reject_constant(name: str):
+    raise _NonFinite(name)
+
+
+def _origin_netloc(request: Request) -> str | None:
+    """host[:port] of the page that sent the request (Origin, else Referer), or None when neither is sent."""
+    for h in ("origin", "referer"):
+        v = request.headers.get(h)
+        if v:
+            if v == "null":
+                return "null"
+            try:
+                return urlsplit(v).netloc.lower() or "null"
+            except ValueError:
+                return "null"
+    return None
+
+
+def _allowed_netlocs(request: Request) -> set[str]:
+    out = {(request.headers.get("host") or "").lower()}
+    fwd = request.headers.get("x-forwarded-host")
+    if fwd:
+        out.add(fwd.split(",")[0].strip().lower())
+    for v in [os.environ.get("OPERATOR_PUBLIC_URL", "")] + os.environ.get("OPERATOR_ALLOWED_ORIGINS", "").split(","):
+        v = v.strip()
+        if v:
+            out.add(urlsplit(v).netloc.lower())
+    return {x for x in out if x}
 
 
 def create_app(start_workers: bool = True) -> FastAPI:
@@ -64,11 +107,13 @@ def create_app(start_workers: bool = True) -> FastAPI:
 
     @app.middleware("http")
     async def scrub_banned_names(request: Request, call_next):
-        """Safety net: banned names are scrubbed from every tenant API response (the settings
-        endpoint that manages the list is the one exception)."""
+        """Safety net: banned names are scrubbed from every tenant API response. The scrub walks the decoded
+        JSON and rewrites string values only, so a banned word that equals a key or a JSON literal ("status",
+        "false") can never corrupt a response. The settings and personality endpoints that manage the lists
+        are exempt, so what the owner saved round-trips unchanged."""
         response = await call_next(request)
         m = _TENANT_PATH.match(request.url.path)
-        if not m or request.url.path.endswith("/api/settings") or "json" not in response.headers.get("content-type", ""):
+        if not m or _SCRUB_EXEMPT.search(request.url.path) or "json" not in response.headers.get("content-type", ""):
             return response
         from . import guardrails
 
@@ -76,9 +121,59 @@ def create_app(start_workers: bool = True) -> FastAPI:
         if not names:
             return response
         body = b"".join([chunk async for chunk in response.body_iterator])
-        text = guardrails.scrub(body.decode("utf-8", errors="replace"), names)
         headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
-        return Response(text, status_code=response.status_code, headers=headers, media_type="application/json")
+        try:
+            data = json.loads(body)
+        except ValueError:
+            return Response(body, status_code=response.status_code, headers=headers, media_type="application/json")
+        out = json.dumps(guardrails.scrub_json(data, names), ensure_ascii=False, separators=(",", ":"))
+        return Response(out, status_code=response.status_code, headers=headers, media_type="application/json")
+
+    @app.middleware("http")
+    async def same_origin_writes(request: Request, call_next):
+        """CSRF defence in depth (the session cookie is already SameSite=Lax and HttpOnly): a state-changing
+        API call sent by a page on another site is refused. Requests with no Origin/Referer (server-to-server,
+        scripts, tests) are judged by the cookie alone."""
+        if request.method not in _SAFE_METHODS and _TENANT_API.match(request.url.path):
+            src = _origin_netloc(request)
+            if src is not None and src not in _allowed_netlocs(request):
+                return JSONResponse({"detail": "Refused: this request came from another website."}, status_code=403)
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def reject_non_finite_json(request: Request, call_next):
+        """Python's JSON parser accepts NaN and Infinity; the app never does (they turn into 500s later)."""
+        if request.method in ("POST", "PUT", "PATCH") and "json" in request.headers.get("content-type", ""):
+            body = await request.body()
+            if b"NaN" in body or b"Infinity" in body:
+                try:
+                    json.loads(body, parse_constant=_reject_constant)
+                except _NonFinite:
+                    return JSONResponse({"detail": "Numbers must be finite: NaN and Infinity aren't allowed."},
+                                        status_code=422)
+                except ValueError:
+                    pass  # malformed JSON: the route answers 422 itself
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if request.url.path.startswith("/t/"):
+            # the app itself is never framed by another site (the public minis under /m/ are embeddable)
+            response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        if _TENANT_API.match(request.url.path):
+            response.headers.setdefault("Cache-Control", "no-store")
+        return response
+
+    @app.exception_handler(InputError)
+    async def _input_error(request: Request, exc: InputError):
+        return JSONResponse({"detail": redact(str(exc))}, status_code=exc.status)
+
+    @app.exception_handler(ratelimit.Limited)
+    async def _limited(request: Request, exc: ratelimit.Limited):
+        return JSONResponse({"detail": str(exc)}, status_code=429, headers={"Retry-After": str(exc.retry_after)})
 
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError):
@@ -130,8 +225,10 @@ def create_app(start_workers: bool = True) -> FastAPI:
     def static(path: str):
         if path.startswith(("t/", "api/", "m/")):
             raise HTTPException(404, "Not found")
+        root = WEB_DIST.resolve()
         f = (WEB_DIST / path).resolve()
-        if WEB_DIST.exists() and str(f).startswith(str(WEB_DIST.resolve())) and f.is_file():
+        # is_relative_to, not a string prefix: "../dist-old/x" must not pass as inside "dist"
+        if WEB_DIST.exists() and f.is_relative_to(root) and f != root and f.is_file():
             headers = {"Cache-Control": "no-cache"} if f.name in ("sw.js", "manifest.webmanifest") else {}
             return FileResponse(f, headers=headers)
         raise HTTPException(404, "Not found")

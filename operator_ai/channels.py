@@ -186,8 +186,14 @@ def strip_quotes(body: str) -> str:
 def parse_email(raw: str) -> dict:
     msg = email.message_from_string(raw, policy=email.policy.default)
     part = msg.get_body(preferencelist=("plain", "html")) if msg.is_multipart() else msg
-    body = part.get_content() if part is not None else ""
-    if part is not None and part.get_content_type() == "text/html":
+    try:
+        body = part.get_content() if part is not None else ""
+    except (LookupError, ValueError, KeyError):  # an unknown charset or a broken part: read it as bytes
+        payload = part.get_payload(decode=True) if part is not None else b""
+        body = payload.decode("utf-8", errors="replace") if isinstance(payload, bytes) else ""
+    if not isinstance(body, str):  # an image or other binary body: there is no text to read
+        body = ""
+    if part is not None and part.get_content_type() == "text/html" and body:
         from .uploads import _html
 
         body = _html(body)

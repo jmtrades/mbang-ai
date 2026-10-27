@@ -24,3 +24,4 @@ test-results/
 playwright-report/
 .claude/worktrees/
 web/*.tsbuildinfo
+backup-keys/

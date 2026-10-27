@@ -42,11 +42,23 @@ def ensure_seeded(tenant) -> None:
     if not tenant.is_demo:
         return
     with _lock:
+        tenancy.ensure_demo_budget(tenant)
         if tenant.get("seeded_at"):
             if tenant.get("third_party_kb") is None and tenancy.is_demo_db(tenant):
                 tenant.set("third_party_kb", True)  # demo seeded before the playbooks existed
+            if tenancy.is_demo_db(tenant):
+                _seed_claims(tenant)  # demo seeded before proof records existed (idempotent)
             return
         seed(tenant)
+
+
+def _seed_claims(tenant) -> None:
+    """The fictional proof record goes in before the queue, so the demo's range DM is judged against it."""
+    try:
+        from . import claims
+    except ImportError:  # pragma: no cover
+        return
+    claims.seed_demo(tenant)
 
 
 def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
@@ -172,6 +184,7 @@ def seed(tenant, n_students: int = 24, n_leads: int = 37) -> dict:
     tenant.set("brand", {**(tenant.get("brand", {}) or {}), "name": tenant.get("brand", {}).get("name") or config.get().brand})
     # the demo shows the 2026 Playbooks (external, researched best practice); real workspaces start with it off
     tenant.set("third_party_kb", True)
+    _seed_claims(tenant)
     _seed_queue(tenant, rng)
     _seed_questions(tenant)
     _seed_features(tenant)
@@ -284,7 +297,16 @@ def _seed_questions(tenant) -> None:
 
 
 # --------------------------------------------------------------------------- reset
+DEMO_BACKUPS_KEEP = 5
+# Settings a reset never touches: branding, the demo marker, every server-only switch and, crucially, the
+# demo's AI budgets *and what has been used of them*, so resetting the demo never refills its AI budget.
+RESET_KEEP = ("brand", "is_demo", "live_meta_enabled", "meta_allowlist", "live_calendar_enabled", "live_channels_enabled",
+              "ai_token_budget", "ai_token_used", "critique_token_budget", "critique_token_used", "demo_course_material")
+
+
 def backup(tenant) -> Path:
+    """Copy the demo DB before a reset. Only the newest DEMO_BACKUPS_KEEP demo copies are kept, so repeated
+    resets can't fill the disk."""
     src = tenant.db_path
     dest_dir = config.get().data_dir / "backups"
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -297,6 +319,10 @@ def backup(tenant) -> Path:
         s.close()
         d.close()
     dest.chmod(0o600)
+    old = sorted(dest_dir.glob("demo-*.db"), key=lambda p: (p.stat().st_mtime, p.name))
+    for p in old[:-DEMO_BACKUPS_KEEP]:
+        if p != dest:
+            p.unlink(missing_ok=True)
     return dest
 
 
@@ -313,8 +339,21 @@ def reset(tenant, actor: str = "system") -> dict:
                     if t in ("settings", "audit"):
                         continue
                     c.execute(f"DELETE FROM {t}")
-                c.execute("DELETE FROM settings WHERE key NOT IN ('brand','is_demo','live_meta_enabled','meta_allowlist',"
-                          "'live_calendar_enabled')")
+                c.execute(f"DELETE FROM settings WHERE key NOT IN ({','.join('?' * len(RESET_KEEP))})", RESET_KEEP)
+        try:
+            from . import claims
+
+            claims.reset_files(tenant)
+        except ImportError:  # pragma: no cover
+            pass
+        # anything added to the demo's own knowledge-base folder (before KB writes were refused there) goes too
+        if tenant.kb_dir.exists() and any(tenant.kb_dir.glob("*.txt")):
+            from . import index
+
+            for f in tenant.kb_dir.glob("*.txt"):
+                f.unlink(missing_ok=True)
+            index.invalidate()
+        tenancy.ensure_demo_budget(tenant)
         counts = seed(tenant)
     audit.log(tenant, actor, "demo.reset", {"backup": bk.name})
     return {"ok": True, "backup": bk.name, "seeded": counts}

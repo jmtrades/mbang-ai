@@ -50,7 +50,7 @@ scripts/run.sh                                                        # http://1
 
 Nothing outbound leaves without approval, and approval only marks items ready or delivers to a mock transport. No
 impersonation (banned-names scrub everywhere). No fake proof, fake scarcity or deceptive subject lines (negation-aware).
-Prospect outreach may only mention a hedged "$50k-$100k a month" — and never to cold leads. Demo data is labelled
+Prospect outreach may only mention a hedged "$50k-$100k a month", never to cold leads, and only while the owner holds a current proof record for it (none by default). Demo data is labelled
 and separate. Secrets live in an AES-256-GCM vault. The course KB belongs to the owner tenant only. Live switches are
 off and server-only. AI budget 0 fails closed. Everything is audited.
 
@@ -74,5 +74,5 @@ scripts/eval_retrieval.py               # hit@5 / hit@10 on tests/gold_questions
 
 ## Docs
 
-`docs/ARCHITECTURE.md` · `docs/GUARDRAILS.md` · `docs/LIVE_READINESS.md` · `docs/DEMO_SCRIPT.md` · `DECISIONS.md` ·
+`docs/ARCHITECTURE.md` · `docs/GUARDRAILS.md` · `docs/SECURITY.md` · `docs/LIVE_READINESS.md` · `docs/DEMO_SCRIPT.md` · `DECISIONS.md` ·
 `PROGRESS.md` · `SELF_SCORE.md`

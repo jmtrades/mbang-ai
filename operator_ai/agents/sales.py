@@ -58,11 +58,12 @@ def _brand_of(lead: dict) -> str:
     return a.get("business") or "your business"
 
 
-def reply_line(lead: dict, tier: str) -> str:
-    """Line 1 follows the money rule: warm/hot get the hedged range, cold gets the no-figure line."""
+def reply_line(lead: dict, tier: str, tenant=None) -> str:
+    """Line 1 follows the money rule: warm/hot get the hedged range only while the tenant holds a current proof
+    record for it (claims.py); everyone else, and every tenant without a record, gets the no-figure line."""
     brand = _brand_of(lead)
     if tier in ("hot", "warm"):
-        return guardrails.range_line(brand, "our booking system")
+        return guardrails.range_line(brand, "our booking system", tenant)
     return guardrails.no_figure_line(brand, "our booking system")
 
 
@@ -81,7 +82,7 @@ def setter_script(tenant, lead: dict, tier: str) -> dict:
     lines = [
         f"Opener: Saw {_brand_of(lead)} is working on {a.get('goal', 'growth')}. What's the main thing holding that back right now? [S1]",
         "Qualify: What are your numbers like today, roughly how many new clients a month? (one question per message) [S1]",
-        f"Offer the call: {reply_line(lead, tier)} Would a quick call be useful? [S{min(2, len(cites))}]",
+        f"Offer the call: {reply_line(lead, tier, tenant)} Would a quick call be useful? [S{min(2, len(cites))}]",
     ]
     return {"lines": lines, "citations": cites}
 
@@ -127,7 +128,7 @@ def process_lead(tenant, lead_id: int, user: dict | None = None, full: bool = Tr
         brief = run.step("precall_brief", {}, lambda: precall_brief(tenant, lead), "Pre-call brief")
         meta = {"prospect_facing": True, "lead_tier": sc["tier"], "lead_id": lead_id, "prior_contact": True}
         rcpt = lead["handle"] or lead["email"]
-        reply = reply_line(lead, sc["tier"]) + " Would a quick call this week be useful?"
+        reply = reply_line(lead, sc["tier"], tenant) + " Would a quick call this week be useful?"
         q_reply = run.step("reply", {"tier": sc["tier"]},
                            lambda: queue.add(tenant, "setter_reply", reply, channel="instagram_dm", recipient_ref=rcpt,
                                              title=f"Reply to {lead['name']}", meta=meta, run_id=run.id, actor=actor, demo=demo),
@@ -189,7 +190,7 @@ def quick_lead(tenant, lead_id: int) -> dict:
     sc = score(lead["answers"], lead["source"], weights(tenant))
     with tenant.db() as c:
         c.execute("UPDATE leads SET tier=?, score=?, route=? WHERE id=?", (sc["tier"], sc["score"], sc["route"], lead_id))
-    reply = reply_line(lead, sc["tier"]) + " Would a quick call this week be useful?"
+    reply = reply_line(lead, sc["tier"], tenant) + " Would a quick call this week be useful?"
     q = queue.add(tenant, "setter_reply", reply, channel="instagram_dm", recipient_ref=lead["handle"],
                   title=f"Reply to {lead['name']}", meta={"prospect_facing": True, "lead_tier": sc["tier"], "prior_contact": True,
                                                           "lead_id": lead_id, "tag": f"burst:{lead['batch']}"},

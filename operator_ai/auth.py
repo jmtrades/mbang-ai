@@ -84,6 +84,9 @@ def check_pw(pw: str, stored: str) -> bool:
         return False
 
 
+_DUMMY_HASH = hash_pw(secrets.token_urlsafe(16))
+
+
 def create_user(tenant, username: str, pw: str, role: str, display: str | None = None,
                 coach_id: int | None = None) -> int:
     if role not in ROLES:
@@ -118,7 +121,9 @@ def login(tenant, username: str, pw: str, ip: str) -> tuple[str, dict] | None:
         if _fail_count(c, f"ip:{ip}") >= LOGIN_MAX_FAILS or _fail_count(c, f"user:{username}") >= LOGIN_MAX_FAILS:
             raise Throttled()
         u = c.execute("SELECT * FROM users WHERE username=? AND active=1", (username,)).fetchone()
-        ok = u is not None and check_pw(pw, u["pw_hash"])
+        # an unknown username costs the same scrypt work as a wrong password, so timing doesn't reveal which
+        # usernames exist
+        ok = check_pw(pw, u["pw_hash"] if u is not None else _DUMMY_HASH) and u is not None
         if not ok:
             c.execute("INSERT INTO login_fails(key,at) VALUES(?,?)", (f"ip:{ip}", time.time()))
             c.execute("INSERT INTO login_fails(key,at) VALUES(?,?)", (f"user:{username}", time.time()))

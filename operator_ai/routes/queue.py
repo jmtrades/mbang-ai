@@ -104,7 +104,7 @@ class CheckBody(BaseModel):
 
 @router.post("/guardrails/check")
 def check(b: CheckBody, ctx: Ctx = Depends(get_ctx)):
-    flags = guardrails.check(b.text, b.mode, b.meta, guardrails.tenant_banned_names(ctx.tenant))
+    flags = guardrails.check(b.text, b.mode, b.meta, guardrails.tenant_banned_names(ctx.tenant), tenant=ctx.tenant)
     return {"flags": flags, "blocked": guardrails.blocked(flags), "needs_review": guardrails.needs_review(flags)}
 
 

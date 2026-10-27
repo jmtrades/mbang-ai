@@ -102,6 +102,67 @@ def verify_citations(answer: str, cited: list[str], allowed: set[str]) -> tuple[
     return clean, kept, stripped
 
 
+def _split_claims(line: str) -> list[str]:
+    """Sentences of one line; a trailing run of [S#] markers ("... hours. [S1]") stays with its sentence."""
+    out: list[str] = []
+    for s in re.split(r"(?<=[.!?])\s+", line.strip()):
+        if out and re.fullmatch(r"(?:\[S\d+\]\s*)+[.!?]?", s):
+            out[-1] = f"{out[-1]} {s}"
+        elif s:
+            out.append(s)
+    return out
+
+
+def ground_sentences(text: str, allowed: set[str]) -> tuple[str, list[str]]:
+    """An AI answer is served as course-grounded only claim by claim: every sentence must carry a valid [S#]
+    (short connectors without numbers, like "In short:", may stay). Uncited sentences are dropped. Returns
+    (kept text, kept ids); ("", []) when no valid citation is left."""
+    lines = []
+    for line in (text or "").split("\n"):
+        keep = []
+        for s in _split_claims(line):
+            if any(c in allowed for c in CITE_RE.findall(s)):
+                keep.append(s)
+            elif ((s.endswith(":") and len(s.split()) <= 6) or len(s.split()) <= 2) and not re.search(r"\d", s):
+                # a connector ("In short:", "Yes.") may stay; "Raise your prices." is advice and needs a citation
+                keep.append(s)
+        if keep:
+            lines.append(" ".join(keep))
+    clean = "\n".join(lines).strip()
+    kept = [c for c in dict.fromkeys(CITE_RE.findall(clean)) if c in allowed]
+    return (clean, kept) if kept else ("", [])
+
+
+def guard_sentences(tenant, text: str) -> tuple[str, list[dict]]:
+    """Run the guardrails (plain mode) on every sentence of an AI answer and drop the blocked ones. Banned names
+    are not a reason to drop (they are scrubbed instead). Returns (clean text, dropped [{sentence, codes}])."""
+    lines, dropped = [], []
+    for line in (text or "").split("\n"):
+        keep = []
+        for s in _split_claims(line):
+            flags = [f for f in guardrails.check(CITE_RE.sub("", s), "plain", None, None, tenant=tenant)
+                     if f["severity"] == "block"]
+            if flags:
+                dropped.append({"sentence": s[:200], "codes": sorted({f["code"] for f in flags})})
+            else:
+                keep.append(s)
+        if keep:
+            lines.append(" ".join(keep))
+    return "\n".join(lines).strip(), dropped
+
+
+def _extractive_text(tenant, per_part: list[dict], judged: list[dict], usable: list[dict]) -> str:
+    bits = []
+    for pp, j in zip(per_part, judged):
+        if j["covered"] == "no":
+            continue
+        part_hits = [h for h in usable if h["id"] in set(pp["ids"][:5])]
+        bits.append(extractive(pp["part"], part_hits, max_sentences=3 if len(per_part) == 1 else 2,
+                               idf=index.for_tenant(tenant).idf))
+    bits = [b for b in bits if b]
+    return ("From the course material:\n" + "\n".join(bits)) if bits else ""
+
+
 def verify_external(text: str, allowed: set[str]) -> tuple[str, list[str], list[str]]:
     """Strip any [X#] that isn't in the external list. Returns (clean text, kept ids, stripped ids)."""
     stripped = sorted({c for c in XCITE_RE.findall(text) if c not in allowed})
@@ -268,17 +329,28 @@ def _not_used(tenant, hits: list[dict]) -> list[dict]:
     return out
 
 
-FOLLOWUP = re.compile(r"^\s*(and|what about|how about|also|same for|what if|ok|okay|so|then|but|why|how come|and if)\b|"
-                      r"\b(it|that|this|those|them|these|there)\b", re.I)
+FOLLOWUP_LEAD = re.compile(r"^\s*(and|what about|how about|also|same for|what if|ok|okay|so|then|but|why|how come|"
+                           r"and if|and for|what else)\b", re.I)
+# words that point back at the previous question; "there" is left out ("Is there a kill rule?" is a new question)
+FOLLOWUP_REF = re.compile(r"\b(it|its|it's|that|this|those|them|these|they|one|ones)\b", re.I)
+FOLLOWUP = FOLLOWUP_LEAD  # kept for callers that imported the old name
 
 
 def resolve_followup(question: str, previous: str | None) -> tuple[str, bool]:
-    """A short follow-up ("what about for webinars?", "how long should it run?") is read in the
-    context of the previous question in the thread. Returns (question to search with, used_context)."""
+    """A short follow-up ("what about for webinars?", "how long should it run?") is read in the context of the
+    previous question in the thread. Only a question that really refers back counts: one with no subject of its
+    own, a pronoun standing in for the earlier subject, or a continuation opener ("what about ...") with at
+    most a couple of its own content words. "Is there a kill rule for ads?" after a USP question is a new
+    question. Returns (question to search with, used_context)."""
     if not previous:
         return question, False
     words = question.split()
-    if len(words) <= 9 and FOLLOWUP.search(question):
+    if len(words) > 9:
+        return question, False
+    content = [t for t in textnorm.tokens(question) if len(t) > 1]
+    lead = bool(FOLLOWUP_LEAD.search(question))
+    ref = bool(FOLLOWUP_REF.search(question))
+    if not content or (ref and len(content) <= 2) or (lead and len(content) <= 2):
         return f"{previous.rstrip('?. ')} — {question}", True
     return question, False
 
@@ -426,7 +498,19 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
     if XCITE_RE.search(clean):
         stripped = sorted(set(stripped) | set(XCITE_RE.findall(clean)))
         clean = re.sub(r"[ \t]{2,}", " ", XCITE_RE.sub("", clean)).strip()
-    if covered != "no" and not kept and usable and mode != "live":
+    if covered != "no" and mode in ("live", "replay"):
+        # AI text (live or replayed) is served only claim by claim with valid citations, and only the sentences
+        # that pass the guardrails; nothing cited left -> the extractive answer from the same passages instead
+        clean, kept = run.step("ground", {"kept": kept}, lambda: ground_sentences(clean, allowed),
+                               "Keep only cited sentences")
+        clean, dropped = run.step("guardrails", {}, lambda: guard_sentences(tenant, clean), "Guardrail check")
+        kept = [c for c in dict.fromkeys(CITE_RE.findall(clean)) if c in allowed]
+        if not kept:
+            text = run.step("answer_fallback", {"why": "AI answer had no valid cited, guardrail-clean sentence"},
+                            lambda: _extractive_text(tenant, per_part, judged, usable), "Extractive answer instead")
+            clean, kept, _ = verify_citations(text, [], allowed)
+            mode, label = "rules", "Extractive answer from course passages (the AI answer had no valid citations)"
+    if covered != "no" and not kept and usable and mode not in ("live", "replay"):
         # extractive answers always carry their passages
         kept = [usable[0]["id"]]
         clean = f"{clean} [{usable[0]['id']}]".strip()
