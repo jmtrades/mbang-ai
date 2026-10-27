@@ -617,7 +617,8 @@ export default function App() {
         <ReconnectBar />
         {state === "loading" && <Boot />}
         {state === "error" && <div className="mx-auto max-w-xl p-8"><ErrorBox error={err} retry={load} /></div>}
-        {state === "signin" && <SignIn onDone={load} />}
+        {/* the join screen (invite link, reset link, "Forgot password?") replaces the sign-in page while it's open */}
+        {state === "signin" && !location.hash.startsWith("#/join") && <SignIn onDone={load} />}
         {location.hash.startsWith("#/join") && <Join onDone={load} />}
         {state === "ready" && me && <Shell me={me} reloadMe={load} />}
       </LazyMotion>

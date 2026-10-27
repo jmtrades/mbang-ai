@@ -70,7 +70,13 @@ A negator only counts when it governs the match: in the same clause and within a
 | Address on the suppression list (unsubscribed, asked to stop) | `unsubscribed` | block | emails, @handles, phone numbers |
 | Live channel on but no usable address | `no_address` | block | e.g. a Telegram nudge with no linked chat and no email |
 | Prospect email without an unsubscribe line | `missing_unsubscribe` | block | `delivery.guard_rules`; the footer is added automatically |
-| Prospect email without the business postal address | `missing_postal_address` | block | Business profile, Identity |
+| Prospect email without the sender's postal address | `missing_postal_address` | block | Business profile, Identity; a student's own prospects: Prospects, Ideal client, Sender details |
+| Opener / follow-up / call-times message naming a number, quote or offer not in the prospect's research | `unverified_personalisation` | block | `prospects.guard_rules`; the sender's own footer counts as known |
+| A `[[...]]` placeholder still in a prospects draft or proposal | `unfilled_placeholder` | block | |
+| Messaging a prospect the owner released to the team | `claim_released` | block | |
+| A first message or due follow-up after today's cap of confirmed sends | `daily_cap` | block | checked again at approval |
+| The persona's name, or an approved phrase of 3+ words, in outreach / client assets / own-prospect items | `persona_in_outreach` | block | `persona.guard_rules` |
+| Speaking as the persona ("I'm X", "X here", sign-offs) | `impersonation` | block | also on public minis and chat |
 
 ### Outreach money rule (prospect-facing only)
 

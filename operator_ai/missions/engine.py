@@ -607,7 +607,10 @@ def _ev_stage(tenant, name, p):
             add_event(tenant, mid, "reply", {"party_type": "prospect", "party_id": pid, "positive": False},
                       key=f"prospect:{pid}:other")
         elif stage == "call_booked":
-            add_event(tenant, mid, "booked", {"party_type": "prospect", "party_id": pid}, key=f"prospect:{pid}")
+            # the prospects feature moves the stage before or after booking_made arrives (subscriber order):
+            # either way the event carries starts_at, filled in by booking_made when it has a time
+            add_event(tenant, mid, "booked", {"party_type": "prospect", "party_id": pid, "starts_at": None},
+                      key=f"prospect:{pid}")
         elif stage == "won":
             mark_won(tenant, mid, client_id=None, source="prospect stage")
             continue

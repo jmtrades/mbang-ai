@@ -68,9 +68,10 @@ def test_role_play_tab_inbox_forgot_link_and_logo(tmp_path):
         ctx = browser.new_context(viewport={"width": 390, "height": 844})
         page = ctx.new_page()
         page.goto(f"{base}/t/owner/", wait_until="networkidle")
+        assert page.get_by_test_id("brand-monogram").count()  # no logo set yet: the monogram
         page.get_by_test_id("forgot-password").click()
         page.get_by_text("Forgot your password?").wait_for(timeout=15000)
-        assert page.get_by_test_id("brand-monogram").count()  # no logo set yet: the monogram
+        assert page.get_by_role("heading", level=1).count() == 1  # the join screen replaces the sign-in page
         ctx.close()
         # with a logo saved (Setup, brand), the shell shows it instead of the monogram
         ctx = browser.new_context(viewport={"width": 1440, "height": 900})

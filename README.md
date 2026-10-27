@@ -48,7 +48,10 @@ scripts/run.sh                                                        # http://1
 
 ## Guardrails (summary — details in `docs/GUARDRAILS.md`)
 
-Nothing outbound leaves without approval, and approval only marks items ready or delivers to a mock transport. No
+Nothing outbound leaves without approval, and nothing counts as sent until it really went out: an approved item waits
+for its time, is sent by a person who confirms "I sent it" (Instagram/LinkedIn/phone always), or goes through a live
+sender only behind a server-only switch; mock transports run only in the demo. Hard bounces, spam complaints and STOP
+replies set do-not-contact. A person's own outreach is theirs: other staff can't see or approve it. No
 impersonation (banned-names scrub everywhere). No fake proof, fake scarcity or deceptive subject lines (negation-aware).
 Prospect outreach may only mention a hedged "$50k-$100k a month", never to cold leads, and only while the owner holds a current proof record for it (none by default). Demo data is labelled
 and separate. Secrets live in an AES-256-GCM vault. The course KB belongs to the owner tenant only. Live switches are

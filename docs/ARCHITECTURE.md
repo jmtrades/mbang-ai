@@ -43,6 +43,17 @@ queue.add → guardrails → pending | held | needs_human ──(human approves:
 | Platform | `threads.py`, `uploads.py`, `skills.py`, `call_review.py`, `channels.py`, `mcp_server.py`, `console.py`, `calendar.py` |
 | Live layer | `live/net.py` (retries, token bucket), `live/meta.py`, `live/gcal.py`, `live/chain.py` |
 | Reporting | `reports.py` (Day One, Command Centre, Morning brief), `scorecard.py` (Go-live), `evals.py` |
+| First client | `prospects.py` (ICP, lawful imports, claims, research, guarded drafts, caps, booking, win), `proposals.py` (public page `/t/<tid>/p/<token>`), `missions/` (goal-driven plans over typed steps that call the real feature functions) |
+| Delivery and replies | `delivery.py` (scheduled sends, manual-send truth, cadences, compliance footer, `/u/<token>`), `inbound.py` (reply routing, classification, STOP and bounces → do-not-contact), `escalations.py` (SLAs, owner alerts) |
+| Training | `academy/` (cited lessons, questions, spaced repetition, certificates, the own-outreach gate), `roleplay/` (turn-aware scoring, rubric rules as data, exam attempts, AI phrasing caps), `persona/` (subject-signed consent, framing on consented surfaces) |
+| After the win | `client_ops.py` (onboarding checklist, intake `/c/<tid>/<token>`, weekly ops), `webinars.py` (events, `/w/<tid>/<slug>`, fan-out held by delivery) |
+| Team and setup | `team.py` (invites, `#/join`, resets, data rights), `setup.py` (owner checklist and first-run lists from every feature's real state), `memory.py` ("What I know about you", read by the Coach) |
+
+Features talk through `events.py` (item_sent, reply_received, prospect_stage, client_won, booking_made,
+certification_awarded, dnc_set ...), `queue.on_approve / on_sent / on_reject / on_cancel`, `meta.send_after /
+send_before / cancel_if` (the delivery dispatcher), `scheduler.TENANT_TICKS`, `demo.FEATURE_SEEDERS` and
+`guardrails.RULE_PLUGINS`. A queue item's life: pending | held | needs_human → approved → scheduled |
+awaiting_manual_send → sending → sent | send_failed | needs_attention (interrupted: a person checks) | cancelled.
 
 ## Data
 

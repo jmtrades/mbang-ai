@@ -9,7 +9,8 @@
 Every event is written to app_events first (so a mission engine or report can read history), then
 subscribers run in process. A failing subscriber is logged and never stops the emitter or the others.
 Known names (add yours here): item_sent, reply_received, prospect_stage, client_won, booking_made,
-booking_cancelled, certification_awarded, mission_step_done, dnc_set.
+booking_cancelled, certification_awarded, mission_step_done, dnc_set (reason: bounce | complaint when it came from
+an email report), unsubscribed, cadence_done, escalation_raised, roleplay_completed, roleplay_signed_off.
 """
 from __future__ import annotations
 
