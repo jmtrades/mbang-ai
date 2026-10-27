@@ -23,3 +23,4 @@ web/dist/
 test-results/
 playwright-report/
 .claude/worktrees/
+web/*.tsbuildinfo

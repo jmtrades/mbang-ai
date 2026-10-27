@@ -64,7 +64,7 @@ export default function Calls() {
           </div>
           {res.objections.length > 0 && <p className="mt-3 text-sm">Objections: {res.objections.map((o: any) => `${o.objection}${o.handled ? " (handled)" : " (not handled)"}`).join(" · ")}</p>}
           {res.discounted && <p className="mt-1 text-sm text-bad">The rep offered a discount to close — the course says never to.</p>}
-          <p className="mt-1 text-xs text-muted">{res.drills.length} objection drill(s) added to the drill bank.</p>
+          <p className="mt-1 text-xs text-muted">{res.drills.length} objection {res.drills.length === 1 ? "drill" : "drills"} added to the drill bank.</p>
         </Card>
       )}
     </div>

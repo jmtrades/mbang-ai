@@ -27,7 +27,7 @@ export default function Mcp() {
       <div className="grid gap-4 xl:grid-cols-2">
         <Card title="Mint a token">
           <div className="flex gap-2"><Input placeholder="Label (e.g. my laptop)" value={label} onChange={(e) => setLabel(e.target.value)} /><Button tone="primary" onClick={mint} disabled={!label}>Mint</Button></div>
-          {tok && <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm"><b>Shown once.</b> Copy it now: <code className="break-all">{tok}</code> <CopyButton text={tok} /></div>}
+          {tok && <div className="mt-3 rounded-[10px] border border-warn-line bg-warn-soft p-3 text-sm text-warn-ink"><b>Shown once.</b> Copy it now: <code className="break-all">{tok}</code> <CopyButton text={tok} /></div>}
           <p className="mt-3 text-xs text-muted">Endpoint: <code>POST /mcp</code> · tools: {data?.tools?.map((t: string) => <Badge key={t} className="mr-1">{t}</Badge>)}</p>
           <pre className="prose-pre mt-2 rounded-lg bg-panel-2 p-2 font-mono text-[11px]">{example}</pre>
         </Card>

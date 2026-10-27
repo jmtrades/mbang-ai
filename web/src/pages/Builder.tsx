@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bot, Building2, Play, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bot, Building2, Check, Network, Play, RotateCcw, Sparkles } from "lucide-react";
 import { ApiError, get, post } from "../api";
-import { Badge, Button, Card, DemoBadge, ErrorBox, Field, Input, Loading, PageHeader, Run, RunSteps, TextArea, TraceLink, cx, isDemo, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, DemoBadge, ErrorBox, Field, Input, Loading, PageHeader, Run, RunSteps, TextArea, TraceLink, cx, humanize, isDemo, useApi, useApp } from "../components/ui";
 
 const HARD_STOP_MS = 90_000;
 
@@ -113,6 +113,16 @@ export default function Builder({ rest, query }: { rest: string[]; query: URLSea
 
   // ------------------------------------------------------------ picker
   if (!buildId) {
+    const pickedPreset = presets.data?.presets.find((p: any) => p.key === picked);
+    const pickCls = (on: boolean, own = false) => cx(
+      "focus-ring card relative flex flex-col items-start gap-2 p-4 text-left transition-[border-color,box-shadow,background-color]",
+      on ? "border-brand bg-brand-soft shadow-[0_0_0_3px_var(--brand-ring)]" : own ? "border-dashed border-line-strong bg-panel-2/60 shadow-none hover:border-brand-line hover:bg-panel" : "hover:border-line-strong hover:shadow-md",
+    );
+    const Tick = ({ on }: { on: boolean }) => (
+      <span aria-hidden className={cx("grid size-[18px] shrink-0 place-items-center rounded-full border transition-colors", on ? "border-transparent bg-brand text-[var(--brand-ink)]" : "border-line-strong bg-panel")}>
+        {on && <Check className="size-3" strokeWidth={3} />}
+      </span>
+    );
     return (
       <div ref={topRef}>
         <PageHeader title="Build a business's AI team" subtitle="Pick a business. Five departments with two agents each are generated from rules in under a second, then any agent can run on demo data. Nothing sends." />
@@ -120,22 +130,57 @@ export default function Builder({ rest, query }: { rest: string[]; query: URLSea
         {presets.loading && <Loading rows={3} />}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" data-testid="business-picker">
           {presets.data?.presets.map((p: any) => (
-            <button key={p.key} data-preset={p.key} onClick={() => setPicked(p.key)} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left transition", picked === p.key ? "border-brand ring-2 ring-brand/20" : "hover:border-black/20")}>
-              <div className="flex w-full items-center justify-between"><Building2 className="size-5 text-brand" /><DemoBadge /></div>
-              <div className="font-semibold">{p.name.replace(" (DEMO)", "")}</div>
-              <div className="text-xs text-muted">{p.niche} · {p.offer.replace(" (DEMO)", "")}</div>
+            <button key={p.key} type="button" data-preset={p.key} aria-pressed={picked === p.key} onClick={() => setPicked(p.key)} className={pickCls(picked === p.key)}>
+              <div className="flex w-full items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-[9px] bg-brand-soft text-brand ring-1 ring-brand-line"><Building2 className="size-4" /></span>
+                <span className="ml-auto"><DemoBadge /></span>
+                <Tick on={picked === p.key} />
+              </div>
+              <div className="mt-1 font-semibold text-ink">{p.name.replace(" (DEMO)", "")}</div>
+              <div className="text-[12.5px] leading-snug text-muted">{humanize(p.niche)} · {p.offer.replace(" (DEMO)", "")}</div>
             </button>
           ))}
-          <button data-preset="own" onClick={() => setPicked("own")} className={cx("focus-ring card flex flex-col items-start gap-2 p-4 text-left", picked === "own" ? "border-brand ring-2 ring-brand/20" : "hover:border-black/20")}>
-            <Sparkles className="size-5 text-brand" />
-            <div className="font-semibold">Your own business</div>
-            <div className="text-xs text-muted">Fill in a short profile</div>
+          <button type="button" data-preset="own" aria-pressed={picked === "own"} onClick={() => setPicked("own")} className={pickCls(picked === "own", true)}>
+            <div className="flex w-full items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-[9px] bg-panel text-brand ring-1 ring-line"><Sparkles className="size-4" /></span>
+              <span className="ml-auto" />
+              <Tick on={picked === "own"} />
+            </div>
+            <div className="mt-1 font-semibold text-ink">Your own business</div>
+            <div className="text-[12.5px] leading-snug text-muted">Fill in a short profile</div>
           </button>
         </div>
-        <div className="mt-4">
-          {picked && picked !== "own" && <Button tone="primary" loading={busy === "gen"} onClick={() => generate({ preset: picked })} data-testid="generate">Generate departments</Button>}
-          {picked === "own" && <Card title="Your own business"><OwnForm onGenerate={generate} busy={busy === "gen"} /></Card>}
-        </div>
+
+        {picked === "own" ? (
+          <Card title="Your own business" subtitle="Only the name is required. Everything else sharpens the drafts." className="mt-4"><OwnForm onGenerate={generate} busy={busy === "gen"} /></Card>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-lg)] border border-line bg-panel-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <p className="text-[13.5px] text-muted">
+              {pickedPreset
+                ? <><span className="font-medium text-ink">{pickedPreset.name.replace(" (DEMO)", "")}</span> is ready: 5 departments and 10 agents, generated from rules.</>
+                : "Pick a business above to generate its departments."}
+            </p>
+            <Button tone="primary" loading={busy === "gen"} disabled={!picked} onClick={() => picked && generate({ preset: picked })} data-testid="generate">
+              Generate departments <ArrowRight className="size-4" />
+            </Button>
+          </div>
+        )}
+
+        <ol className="mt-10 grid gap-x-8 gap-y-5 border-t border-line pt-8 md:grid-cols-3" aria-label="How it works">
+          {[
+            { icon: Building2, t: "Pick a business", d: "A ready-made example, or your own in a short profile." },
+            { icon: Network, t: "Get five departments", d: "Ads, webinars, sales follow-up, content and support. Two agents each, with a KPI, a trigger and guardrails." },
+            { icon: Play, t: "Run any agent", d: "It drafts on fictional inputs and shows every step. Drafts wait in the approval queue; nothing sends." },
+          ].map(({ icon: I, t, d }, i) => (
+            <li key={t} className="flex gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-[9px] border border-line bg-panel text-muted shadow-xs"><I className="size-4" /></span>
+              <div>
+                <div className="text-[14px] font-semibold text-ink"><span className="mr-1.5 tabular-nums text-muted">{i + 1}.</span>{t}</div>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     );
   }
@@ -179,20 +224,35 @@ export default function Builder({ rest, query }: { rest: string[]; query: URLSea
       <ErrorBox error={err || runErr} />
       <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
         <Card title="Agent" actions={<Button tone="primary" onClick={runAgent} loading={busy === "run" || run?.status === "running"} data-testid="run-demo"><Play className="size-4" /> Run on demo data</Button>}>
-          <dl className="space-y-2 text-sm" data-testid="agent-card">
-            <div><dt className="text-xs font-semibold text-muted">Produces</dt><dd>{agent.produces}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">Trigger</dt><dd>{agent.trigger}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">KPI</dt><dd>{agent.kpi}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">Guardrails</dt><dd className="flex flex-wrap gap-1">{agent.guardrails.map((g: string) => <Badge key={g} tone="warn">{g}</Badge>)}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">Instructions</dt><dd className="text-muted">{agent.instructions}</dd></div>
-            <div><dt className="text-xs font-semibold text-muted">DEMO inputs ({agent.inputs.length})</dt>
-              <dd><ul className="mt-1 space-y-1">{agent.inputs.map((i: any, n: number) => (
-                <li key={n} className="rounded-md bg-panel-2 px-2 py-1 text-xs"><span className="font-medium">{i.from}</span> <DemoBadge />: {i.text}</li>
+          <dl className="space-y-4 text-[13.5px]" data-testid="agent-card">
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div><dt className="mb-1 text-[12px] font-medium text-muted">Produces</dt><dd className="text-ink">{agent.produces}</dd></div>
+              <div><dt className="mb-1 text-[12px] font-medium text-muted">Trigger</dt><dd className="text-ink">{agent.trigger}</dd></div>
+              <div><dt className="mb-1 text-[12px] font-medium text-muted">KPI</dt><dd className="text-ink">{agent.kpi}</dd></div>
+            </div>
+            <div><dt className="mb-1.5 text-[12px] font-medium text-muted">Guardrails</dt><dd className="flex flex-wrap gap-1.5">{agent.guardrails.map((g: string) => <Badge key={g} tone="warn">{g}</Badge>)}</dd></div>
+            <div><dt className="mb-1 text-[12px] font-medium text-muted">Instructions</dt><dd className="leading-relaxed text-ink-2">{agent.instructions}</dd></div>
+            <div><dt className="mb-1.5 text-[12px] font-medium text-muted">DEMO inputs ({agent.inputs.length})</dt>
+              <dd><ul className="space-y-1.5">{agent.inputs.map((i: any, n: number) => (
+                <li key={n} className="rounded-[10px] border border-line-2 bg-panel-2 px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink">{String(i.from).replace(" (DEMO)", "")} <DemoBadge /></div>
+                  <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{i.text}</p>
+                </li>
               ))}</ul></dd></div>
           </dl>
         </Card>
         <div className="space-y-4">
-          {!run && <Card><p className="text-sm text-muted">Run the agent on its DEMO inputs. You'll see each step tick: load input → rules draft → AI pass → review → queue.</p></Card>}
+          {!run && (
+            <Card title="What a run does" subtitle="Runs on the fictional inputs. Every step is traced; every draft waits for approval.">
+              <ol className="space-y-1.5">
+                {["Load the inputs", "Draft from rules and the playbook", "AI pass (labelled; skipped when AI is off)", "Review against the guardrails", "Queue each draft for approval"].map((t, i) => (
+                  <li key={t} className="flex items-center gap-2.5 rounded-[10px] border border-line bg-panel-2 px-3 py-2 text-[13.5px] text-muted">
+                    <span className="grid size-5 shrink-0 place-items-center rounded-full border border-line-strong text-[11px] font-semibold tabular-nums">{i + 1}</span>{t}
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
           {run && (
             <Card title="Run" actions={<TraceLink runId={run.id} />}>
               <RunSteps run={run} compact />

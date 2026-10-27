@@ -59,8 +59,8 @@ export default function Outreach() {
       {data && tab === "funnel" && (
         <Card title="Weekly funnel">
           {data.funnel.length === 0 ? <p className="text-sm text-muted">No activity yet.</p> : (
-            <div className="h-72"><ResponsiveContainer><BarChart data={data.funnel}><CartesianGrid strokeDasharray="3 3" stroke="#e4e3dd" /><XAxis dataKey="week" /><YAxis allowDecimals={false} /><Tooltip />
-              {["sent", "replied", "quality_conversation", "link_sent", "booked", "showed", "closed"].map((s, i) => <Bar key={s} dataKey={s} fill={["#5b6cff", "#7c8bff", "#16a34a", "#22c55e", "#b45309", "#f59e0b", "#7c3aed"][i]} />)}
+            <div className="h-72"><ResponsiveContainer><BarChart data={data.funnel}><CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} /><XAxis dataKey="week" /><YAxis allowDecimals={false} /><Tooltip />
+              {["sent", "replied", "quality_conversation", "link_sent", "booked", "showed", "closed"].map((s, i) => <Bar key={s} dataKey={s} fill={`var(--ramp-${i + 1})`} radius={[3, 3, 0, 0]} />)}
             </BarChart></ResponsiveContainer></div>
           )}
         </Card>

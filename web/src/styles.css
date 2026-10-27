@@ -1,76 +1,387 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter/opsz.css";
 
-/* Brand tokens. White-label: the app overwrites --brand / --brand-2 from tenant settings. */
+/* `dark:` utilities follow <html data-theme="dark"> (set from the user's choice or the system). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================================ tokens
+   White-label: the app overwrites --brand / --brand-2 (and --brand-ink) from tenant settings.
+   Everything else derives from them, so any brand colour gets readable buttons, links and tints. */
 :root {
   --brand: #5b6cff;
   --brand-2: #16a34a;
   --brand-ink: #ffffff;
-  --bg: #f6f6f3;
-  --panel: #ffffff;
-  --panel-2: #fbfbf9;
-  --side: #14161b;
-  --side-ink: #c9ccd6;
-  --side-active: #23262e;
-  --ink: #16181d;
-  --muted: #5d6270;
-  --line: #e4e3dd;
-  --warn: #b45309;
-  --bad: #b91c1c;
-  --good: #15803d;
-  --demo: #7c3aed;
-  --radius: 12px;
+
+  --brand-solid: color-mix(in oklab, var(--brand) 92%, black);
+  --brand-hover: color-mix(in oklab, var(--brand) 80%, black);
+  --brand-fg: color-mix(in oklab, var(--brand) 76%, black);
+  --brand-soft: color-mix(in oklab, var(--brand) 8%, var(--panel));
+  --brand-soft-2: color-mix(in oklab, var(--brand) 15%, var(--panel));
+  --brand-line: color-mix(in oklab, var(--brand) 32%, var(--line));
+  --brand-ring: color-mix(in oklab, var(--brand) 26%, transparent);
+  --focus: var(--brand-fg);
+
+  /* surfaces */
+  --side: #f2f2f4;           /* app chrome behind the sidebar */
+  --bg: #fbfbfc;             /* page canvas */
+  --panel: #ffffff;          /* cards */
+  --panel-2: #f8f8fa;        /* quiet fills: code, inputs at rest, table heads */
+  --hover: rgb(24 24 27 / 0.045);
+  --press: rgb(24 24 27 / 0.08);
+  --side-ink: #4f4f58;
+  --side-active: rgb(24 24 27 / 0.07);
+  --overlay: rgb(9 9 11 / 0.42);
+
+  /* ink */
+  --ink: #17171a;
+  --ink-2: #3a3a42;
+  --muted: #64646e;          /* ≥ 4.5:1 on panel and side */
+  --faint: #9d9da7;          /* decoration only (icons, separators), never text */
+  --placeholder: #74747e;    /* input hints: ≥ 4.5:1 on panel */
+
+  /* lines */
+  --line: #e4e4e8;
+  --line-2: #ededf0;
+  --line-strong: #d0d0d6;
+
+  /* status: fg (text/icons), soft (tint), ink (text on tint), line (ring on tint), solid (fill under white text) */
+  --good: #15803d; --good-soft: #effcf3; --good-ink: #166534; --good-line: #c4ecd2; --good-solid: #16803c;
+  --bad: #c42323; --bad-soft: #fef3f2; --bad-ink: #9f1c1c; --bad-line: #fbd0cc; --bad-solid: #c42323;
+  --warn: #b45309; --warn-soft: #fffaeb; --warn-ink: #8a3c0b; --warn-line: #fbe2a8;
+  --info: #0369a1; --info-soft: #f0f8ff; --info-ink: #075985; --info-line: #c4e3f8;
+  --demo: #7c3aed; --demo-soft: #f6f3ff; --demo-ink: #6125c9; --demo-line: #e0d6fe;
+  --neutral-soft: #f3f3f5; --neutral-line: #e4e4e8;
+
+  /* depth */
+  --sh-xs: 0 1px 2px rgb(16 16 20 / 0.05);
+  --sh-sm: 0 1px 2px rgb(16 16 20 / 0.05), 0 1px 3px rgb(16 16 20 / 0.03);
+  --sh-md: 0 6px 16px -4px rgb(16 16 20 / 0.08), 0 2px 4px -2px rgb(16 16 20 / 0.05);
+  --sh-lg: 0 16px 36px -10px rgb(16 16 20 / 0.16), 0 4px 10px -4px rgb(16 16 20 / 0.06);
+  --sh-xl: 0 28px 70px -14px rgb(16 16 20 / 0.3), 0 10px 20px -10px rgb(16 16 20 / 0.12);
+  --shadow-btn: 0 1px 2px rgb(16 16 20 / 0.06), inset 0 -1px 0 rgb(16 16 20 / 0.04);
+  --shadow-primary: 0 1px 2px rgb(16 16 20 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 -1px 0 rgb(0 0 0 / 0.1);
+  --card-highlight: 0 0 #0000;
+
+  /* shape */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* data viz: categorical series + a brand ramp for ordered stages (funnels) */
+  --viz-1: var(--brand-solid); --viz-2: #0d9488; --viz-3: #d97706; --viz-4: #9333ea; --viz-5: #e11d48;
+  --ramp-1: color-mix(in oklab, var(--brand) 28%, var(--panel)); --ramp-2: color-mix(in oklab, var(--brand) 40%, var(--panel));
+  --ramp-3: color-mix(in oklab, var(--brand) 52%, var(--panel)); --ramp-4: color-mix(in oklab, var(--brand) 64%, var(--panel));
+  --ramp-5: color-mix(in oklab, var(--brand) 76%, var(--panel)); --ramp-6: color-mix(in oklab, var(--brand) 88%, var(--panel));
+  --ramp-7: var(--brand-solid);
+
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364646e' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+
   color-scheme: light;
 }
 
+:root[data-theme="dark"] {
+  --brand-solid: color-mix(in oklab, var(--brand) 88%, black);
+  --brand-hover: color-mix(in oklab, var(--brand) 86%, white);
+  --brand-fg: color-mix(in oklab, var(--brand) 58%, white);
+  --brand-soft: color-mix(in oklab, var(--brand) 14%, var(--panel));
+  --brand-soft-2: color-mix(in oklab, var(--brand) 24%, var(--panel));
+  --brand-line: color-mix(in oklab, var(--brand) 40%, var(--line));
+  --brand-ring: color-mix(in oklab, var(--brand) 40%, transparent);
+
+  --side: #0a0a0c;
+  --bg: #0e0e11;
+  --panel: #151518;
+  --panel-2: #1a1a1e;
+  --hover: rgb(255 255 255 / 0.055);
+  --press: rgb(255 255 255 / 0.09);
+  --side-ink: #a6a6b0;
+  --side-active: rgb(255 255 255 / 0.075);
+  --overlay: rgb(0 0 0 / 0.62);
+
+  --ink: #ececef;
+  --ink-2: #c6c6cd;
+  --muted: #9696a1;
+  --faint: #72727c;
+  --placeholder: #8a8a94;
+
+  --line: #26262b;
+  --line-2: #1f1f23;
+  --line-strong: #36363d;
+
+  --good: #4ade80; --good-soft: rgb(34 197 94 / 0.12); --good-ink: #86efac; --good-line: rgb(34 197 94 / 0.26); --good-solid: #15803d;
+  --bad: #f87171; --bad-soft: rgb(239 68 68 / 0.13); --bad-ink: #fca5a5; --bad-line: rgb(239 68 68 / 0.3); --bad-solid: #b91c1c;
+  --warn: #fbbf24; --warn-soft: rgb(245 158 11 / 0.12); --warn-ink: #fcd34d; --warn-line: rgb(245 158 11 / 0.28);
+  --info: #38bdf8; --info-soft: rgb(14 165 233 / 0.13); --info-ink: #7dd3fc; --info-line: rgb(14 165 233 / 0.3);
+  --demo: #a78bfa; --demo-soft: rgb(139 92 246 / 0.16); --demo-ink: #c4b5fd; --demo-line: rgb(139 92 246 / 0.34);
+  --neutral-soft: rgb(255 255 255 / 0.06); --neutral-line: rgb(255 255 255 / 0.1);
+
+  --sh-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sh-sm: 0 1px 2px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.3);
+  --sh-md: 0 8px 20px -6px rgb(0 0 0 / 0.6), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  --sh-lg: 0 18px 40px -10px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --sh-xl: 0 30px 80px -16px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-btn: 0 1px 2px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --shadow-primary: 0 1px 2px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.18);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.035);
+
+  --viz-1: color-mix(in oklab, var(--brand) 80%, white); --viz-2: #2dd4bf; --viz-3: #fbbf24; --viz-4: #c084fc; --viz-5: #fb7185;
+  --ramp-1: color-mix(in oklab, var(--brand) 30%, var(--panel)); --ramp-2: color-mix(in oklab, var(--brand) 42%, var(--panel));
+  --ramp-3: color-mix(in oklab, var(--brand) 54%, var(--panel)); --ramp-4: color-mix(in oklab, var(--brand) 66%, var(--panel));
+  --ramp-5: color-mix(in oklab, var(--brand) 78%, var(--panel)); --ramp-6: color-mix(in oklab, var(--brand) 90%, var(--panel));
+  --ramp-7: color-mix(in oklab, var(--brand) 80%, white);
+
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239696a1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+
+  /* Safety net for screens that use Tailwind's light tints directly (bg-green-50, text-amber-900 …):
+     remap them to dark-friendly values so every page stays legible in dark mode. */
+  --color-red-50: rgb(239 68 68 / 0.1); --color-red-100: rgb(239 68 68 / 0.16); --color-red-200: rgb(239 68 68 / 0.3);
+  --color-red-300: rgb(239 68 68 / 0.42); --color-red-700: #fca5a5; --color-red-800: #fca5a5; --color-red-900: #fecaca;
+  --color-amber-50: rgb(245 158 11 / 0.1); --color-amber-100: rgb(245 158 11 / 0.16); --color-amber-200: rgb(245 158 11 / 0.3);
+  --color-amber-300: rgb(245 158 11 / 0.42); --color-amber-700: #fcd34d; --color-amber-800: #fcd34d; --color-amber-900: #fde68a;
+  --color-yellow-50: rgb(234 179 8 / 0.1); --color-yellow-100: rgb(234 179 8 / 0.16); --color-yellow-800: #fde047; --color-yellow-900: #fef08a;
+  --color-green-50: rgb(34 197 94 / 0.1); --color-green-100: rgb(34 197 94 / 0.16); --color-green-200: rgb(34 197 94 / 0.28);
+  --color-green-300: rgb(34 197 94 / 0.4); --color-green-700: #86efac; --color-green-800: #86efac; --color-green-900: #bbf7d0;
+  --color-emerald-50: rgb(16 185 129 / 0.1); --color-emerald-100: rgb(16 185 129 / 0.16); --color-emerald-200: rgb(16 185 129 / 0.28);
+  --color-emerald-700: #6ee7b7; --color-emerald-800: #6ee7b7; --color-emerald-900: #a7f3d0;
+  --color-sky-50: rgb(14 165 233 / 0.1); --color-sky-100: rgb(14 165 233 / 0.16); --color-sky-200: rgb(14 165 233 / 0.3);
+  --color-sky-700: #7dd3fc; --color-sky-800: #7dd3fc; --color-sky-900: #bae6fd;
+  --color-blue-50: rgb(59 130 246 / 0.1); --color-blue-100: rgb(59 130 246 / 0.16); --color-blue-200: rgb(59 130 246 / 0.3);
+  --color-blue-700: #93c5fd; --color-blue-800: #93c5fd; --color-blue-900: #bfdbfe;
+  --color-indigo-50: rgb(99 102 241 / 0.12); --color-indigo-100: rgb(99 102 241 / 0.18); --color-indigo-700: #a5b4fc; --color-indigo-800: #a5b4fc;
+  --color-violet-50: rgb(139 92 246 / 0.12); --color-violet-100: rgb(139 92 246 / 0.18); --color-violet-200: rgb(139 92 246 / 0.32);
+  --color-violet-700: #c4b5fd; --color-violet-800: #c4b5fd; --color-violet-900: #ddd6fe;
+  --color-purple-50: rgb(168 85 247 / 0.12); --color-purple-100: rgb(168 85 247 / 0.18); --color-purple-800: #d8b4fe;
+  --color-rose-50: rgb(244 63 94 / 0.1); --color-rose-100: rgb(244 63 94 / 0.16); --color-rose-800: #fda4af;
+  --color-orange-50: rgb(249 115 22 / 0.1); --color-orange-100: rgb(249 115 22 / 0.16); --color-orange-800: #fdba74;
+  --color-gray-50: rgb(255 255 255 / 0.04); --color-gray-100: rgb(255 255 255 / 0.06); --color-gray-200: rgb(255 255 255 / 0.1);
+  --color-gray-500: #9696a1; --color-gray-600: #a6a6b0; --color-gray-700: #c6c6cd; --color-gray-800: #dcdce0; --color-gray-900: #ececef;
+  --color-slate-50: rgb(255 255 255 / 0.04); --color-slate-100: rgb(255 255 255 / 0.06); --color-slate-200: rgb(255 255 255 / 0.1);
+  --color-slate-500: #9696a1; --color-slate-600: #a6a6b0; --color-slate-700: #c6c6cd; --color-slate-800: #dcdce0; --color-slate-900: #ececef;
+  --color-zinc-50: rgb(255 255 255 / 0.04); --color-zinc-100: rgb(255 255 255 / 0.06); --color-zinc-200: rgb(255 255 255 / 0.1);
+  --color-zinc-500: #9696a1; --color-zinc-600: #a6a6b0; --color-zinc-700: #c6c6cd; --color-zinc-800: #dcdce0; --color-zinc-900: #ececef;
+}
+
 @theme inline {
-  --color-brand: var(--brand);
+  --color-brand: var(--brand-solid);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-soft-2: var(--brand-soft-2);
+  --color-brand-line: var(--brand-line);
   --color-brand-2: var(--brand-2);
   --color-bg: var(--bg);
   --color-panel: var(--panel);
   --color-panel-2: var(--panel-2);
+  --color-hover: var(--hover);
+  --color-press: var(--press);
   --color-side: var(--side);
   --color-side-ink: var(--side-ink);
   --color-side-active: var(--side-active);
   --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-placeholder: var(--placeholder);
   --color-line: var(--line);
-  --color-warn: var(--warn);
-  --color-bad: var(--bad);
+  --color-line-2: var(--line-2);
+  --color-line-strong: var(--line-strong);
   --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-good-ink: var(--good-ink);
+  --color-good-line: var(--good-line);
+  --color-good-solid: var(--good-solid);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-bad-ink: var(--bad-ink);
+  --color-bad-line: var(--bad-line);
+  --color-bad-solid: var(--bad-solid);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-line: var(--warn-line);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-ink: var(--info-ink);
+  --color-info-line: var(--info-line);
   --color-demo: var(--demo);
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --color-demo-soft: var(--demo-soft);
+  --color-demo-ink: var(--demo-ink);
+  --color-demo-line: var(--demo-line);
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --shadow-xs: var(--sh-xs);
+  --shadow-sm: var(--sh-sm);
+  --shadow-md: var(--sh-md);
+  --shadow-lg: var(--sh-lg);
+  --shadow-xl: var(--sh-xl);
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-}
-* { box-sizing: border-box; }
-::selection { background: color-mix(in oklab, var(--brand) 25%, transparent); }
+/* ============================================================================ base
+   In the base layer so any utility class on an element still wins. */
+@layer base {
+  html, body, #root { min-height: 100%; }
+  html { background: var(--side); }
+  body {
+    margin: 0;
+    background: var(--side);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: -0.006em;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  ::selection { background: color-mix(in oklab, var(--brand) 26%, transparent); }
+  /* no orphaned last words in headings ("Day One with Operator / AI"), fewer ragged paragraph endings */
+  h1, h2, h3, .t-display { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.92em; }
+  :not(pre) > code { padding: 0.1em 0.35em; border-radius: 5px; background: var(--neutral-soft); border: 1px solid var(--line-2); }
+  hr { border-color: var(--line); }
+  summary { cursor: pointer; }
+  ::placeholder { color: var(--placeholder); opacity: 1; }
+  input[type="checkbox"], input[type="radio"], input[type="range"], progress { accent-color: var(--brand-solid); }
+  input[type="checkbox"], input[type="radio"] { width: 15px; height: 15px; cursor: pointer; }
 
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  /* focus: one visible, brand-tinted ring everywhere a keyboard lands */
+  :where(a, button, [role="button"], [role="tab"], [role="option"], summary, [tabindex]):focus-visible,
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  :where(input, textarea, select):focus-visible { outline: none; }
 }
-.skeleton {
-  background: linear-gradient(90deg, #eeede8 0%, #f6f5f1 50%, #eeede8 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite linear;
-  border-radius: 8px;
+
+/* Links and brand-coloured text use the contrast-safe brand tone in both themes. */
+.text-brand, .hover\:text-brand:hover, .group:hover .group-hover\:text-brand { color: var(--brand-fg); }
+/* Safety net: a raw white surface becomes a card surface in dark mode. */
+:root[data-theme="dark"] .bg-white { background-color: var(--panel); }
+
+/* ============================================================================ type scale */
+@layer components {
+  .t-display { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.04; letter-spacing: -0.034em; font-weight: 640; }
+  .t-h1 { font-size: 24px; line-height: 1.2; letter-spacing: -0.021em; font-weight: 600; }
+  .t-h2 { font-size: 18px; line-height: 1.3; letter-spacing: -0.016em; font-weight: 600; }
+  .t-h3 { font-size: 15px; line-height: 1.35; letter-spacing: -0.011em; font-weight: 600; }
+  .t-lead { font-size: 15.5px; line-height: 1.6; letter-spacing: -0.009em; color: var(--muted); }
+  .t-body { font-size: 14px; line-height: 1.55; }
+  .t-small { font-size: 13px; line-height: 1.5; }
+  .t-caption { font-size: 12px; line-height: 1.45; color: var(--muted); }
+  .t-overline { font-size: 11px; line-height: 1.3; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-highlight), var(--sh-xs);
+  }
+  .card-hover { transition: border-color 0.15s, box-shadow 0.2s, transform 0.2s var(--ease-out-soft); }
+  .card-hover:hover { border-color: var(--line-strong); box-shadow: var(--card-highlight), var(--sh-md); }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--neutral-soft) 0%, var(--hover) 40%, var(--neutral-soft) 80%);
+    background-color: var(--neutral-soft);
+    background-size: 220% 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: 7px;
+  }
+
+  .prose-pre { white-space: pre-wrap; word-break: break-word; }
+
+  .select-native {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: var(--chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 16px;
+    padding-right: 2rem;
+  }
+
+  /* hero surface: brand-tinted light, quiet grid; works with any brand colour and both themes */
+  .hero-surface {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(70% 90% at 0% 0%, color-mix(in oklab, var(--brand) 13%, transparent) 0%, transparent 70%),
+      radial-gradient(60% 80% at 100% 100%, color-mix(in oklab, var(--brand) 8%, transparent) 0%, transparent 70%),
+      var(--panel);
+  }
+  .hero-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, var(--line-2) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-2) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(80% 70% at 15% 0%, black 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(80% 70% at 15% 0%, black 0%, transparent 75%);
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .brand-mark {
+    background: linear-gradient(140deg, color-mix(in oklab, var(--brand) 82%, white) 0%, var(--brand) 45%, color-mix(in oklab, var(--brand) 62%, black) 100%);
+    color: var(--brand-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(16 16 20 / 0.2);
+  }
 }
-@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.prose-pre { white-space: pre-wrap; word-break: break-word; }
-.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-.scroll-thin::-webkit-scrollbar-thumb { background: #d6d5cf; border-radius: 8px; }
-.focus-ring:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--good) 45%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.pulse-dot { animation: pulse-dot 2.4s ease-out infinite; }
+
+/* soft top/bottom edges on a scrolling list, so rows fade out instead of being sliced by the header/footer */
+.fade-edges {
+  mask-image: linear-gradient(to bottom, transparent 0, black 10px, black calc(100% - 22px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 10px, black calc(100% - 22px), transparent 100%);
+}
+
+.scroll-thin { scrollbar-width: thin; }
+.scroll-none { scrollbar-width: none; }
+.scroll-none::-webkit-scrollbar { display: none; }
 
 /* grid children must be allowed to shrink so wide tables scroll inside their card, not the page */
 main .grid > * { min-width: 0; }
 main table { min-width: max-content; }
+
+/* ============================================================================ charts (recharts) */
+.recharts-text, .recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 11px; }
+.recharts-cartesian-grid line, .recharts-cartesian-grid-horizontal line, .recharts-cartesian-grid-vertical line { stroke: var(--line); }
+.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line { stroke: var(--line-strong); }
+.recharts-default-tooltip {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--sh-md);
+  color: var(--ink);
+  font-size: 12px;
+}
+.recharts-tooltip-cursor { fill: var(--hover); }
+.recharts-legend-item-text { color: var(--muted) !important; }
+.recharts-surface { overflow: visible; }
+
+/* ============================================================================ theme switch + motion */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.22s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

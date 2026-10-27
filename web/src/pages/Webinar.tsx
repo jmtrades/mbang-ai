@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Presentation, RefreshCw } from "lucide-react";
 import { ApiError, get, post } from "../api";
-import { Badge, Button, Card, Citations, ErrorBox, Field, Loading, PageHeader, Tabs, TextArea, TraceLink, useApi, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, Empty, ErrorBox, Field, Loading, PageHeader, Tabs, TextArea, TraceLink, useApi, useApp } from "../components/ui";
 import { BriefForm } from "../components/BriefForm";
 
 function ChainView({ chainId, onRerun }: { chainId: string; onRerun: (r: any) => void }) {
@@ -42,7 +42,7 @@ function ChainView({ chainId, onRerun }: { chainId: string; onRerun: (r: any) =>
             {open === s.step && s.output && (
               <div className="border-t border-line px-3 py-2">
                 {s.output.data?.html ? (
-                  <iframe title={s.label} sandbox="" srcDoc={s.output.data.html} className="h-72 w-full rounded border border-line bg-white" />
+                  <iframe title={s.label} sandbox="" srcDoc={s.output.data.html} className="h-72 w-full rounded-lg border border-line bg-[#fff]" />
                 ) : (
                   <pre className="prose-pre text-sm">{s.output.body}</pre>
                 )}
@@ -110,7 +110,7 @@ export default function Webinar() {
               </div>
             )}
           </Card>
-          <div>{chainId ? <ChainView key={chainId} chainId={chainId} onRerun={setLast} /> : <Card><p className="text-sm text-muted">Run a chain to see every linked output.</p></Card>}</div>
+          <div>{chainId ? <ChainView key={chainId} chainId={chainId} onRerun={setLast} /> : <Empty icon={<Presentation />} title="No chain run yet" hint="Run a chain to see every linked output: ads, registration page, reminders and follow-ups, all queued for approval." />}</div>
         </div>
       )}
       {tab === "rehearsal" && (

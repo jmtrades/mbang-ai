@@ -41,7 +41,7 @@ export function ReviewResult({ r }: { r: any }) {
                 </div>
                 {f.line && <blockquote className="border-l-2 border-line pl-2 text-sm italic text-muted">“{f.line}”</blockquote>}
                 <p className="mt-1 text-sm"><b>Fix:</b> {f.fix}</p>
-                {f.suggestion && <p className="mt-1 rounded bg-green-50 px-2 py-1 text-sm text-green-900"><b>Try:</b> {f.suggestion}</p>}
+                {f.suggestion && <p className="mt-1 rounded-md border border-good-line bg-good-soft px-2 py-1 text-sm text-good-ink"><b>Try:</b> {f.suggestion}</p>}
                 {f.citations?.length > 0 && <Citations items={r.citations.filter((c: any) => f.citations.includes(c.id))} />}
               </li>
             ))}
@@ -53,8 +53,8 @@ export function ReviewResult({ r }: { r: any }) {
           {r.criteria.map((c: any) => (
             <div key={c.key} className="flex items-center gap-3 text-sm">
               <div className="w-56 shrink-0 truncate" title={c.label}>{c.label}</div>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/5">
-                <div className={cx("h-full rounded-full", c.score >= 8 ? "bg-good" : c.score >= 5 ? "bg-amber-500" : "bg-bad")} style={{ width: `${c.score * 10}%` }} />
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--neutral-soft)]">
+                <div className={cx("h-full rounded-full", c.score >= 8 ? "bg-good" : c.score >= 5 ? "bg-warn" : "bg-bad")} style={{ width: `${c.score * 10}%` }} />
               </div>
               <div className="w-10 text-right tabular-nums">{c.score}</div>
               <div className="w-16 text-right text-xs text-muted">×{c.weight}</div>

@@ -1,6 +1,7 @@
+import { PenLine } from "lucide-react";
 import { useState } from "react";
 import { ApiError, post } from "../api";
-import { Badge, Button, Card, ErrorBox, Field, PageHeader, Select, TextArea } from "../components/ui";
+import { Badge, Button, Card, Empty, ErrorBox, Field, PageHeader, Select, TextArea } from "../components/ui";
 import { ReviewResult } from "../components/Review";
 
 const KINDS = [
@@ -52,7 +53,7 @@ export default function Coaching() {
             <ErrorBox error={err} retry={run} />
           </div>
         </Card>
-        <div>{res ? <ReviewResult r={res} /> : <Card><p className="text-sm text-muted">Fixes appear here, each with the course passage behind it.</p></Card>}</div>
+        <div>{res ? <ReviewResult r={res} /> : <Empty icon={<PenLine />} title="Your fixes will appear here" hint="Each fix comes with the course passage behind it, so you learn the rule, not just the edit." />}</div>
       </div>
     </div>
   );

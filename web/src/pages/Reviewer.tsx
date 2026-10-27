@@ -1,6 +1,7 @@
+import { ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 import { ApiError, post } from "../api";
-import { Button, Card, ErrorBox, Field, PageHeader, Select, TextArea, useApi } from "../components/ui";
+import { Button, Card, Empty, ErrorBox, Field, PageHeader, Select, TextArea, useApi } from "../components/ui";
 import { ReviewResult } from "../components/Review";
 
 const SAMPLE = "In today's fast-paced world, unlock your clinic's potential with our game-changer system.\nClick here! Book now! Download the guide!";
@@ -25,7 +26,7 @@ export default function Reviewer() {
   };
   return (
     <div>
-      <PageHeader title="Work Reviewer" subtitle="Ads, funnels, VSLs, Looms, DM scripts, sales calls, bios and posts — scored against the programme rubric, each rule tied to an SOP." />
+      <PageHeader title="Work reviewer" subtitle="Ads, funnels, VSLs, Looms, DM scripts, sales calls, bios and posts — scored against the programme rubric, each rule tied to an SOP." />
       <div className="grid gap-4 xl:grid-cols-2">
         <Card title="Paste the work">
           <div className="space-y-3">
@@ -40,7 +41,7 @@ export default function Reviewer() {
             <ErrorBox error={err} retry={run} />
           </div>
         </Card>
-        <div>{res ? <ReviewResult r={res} /> : <Card><p className="text-sm text-muted">The score, line-level fixes and SOP citations appear here.</p></Card>}</div>
+        <div>{res ? <ReviewResult r={res} /> : <Empty icon={<ClipboardCheck />} title="Nothing reviewed yet" hint="Paste an ad, a script, a DM or a funnel. You get a score, line-level fixes and the SOP each fix comes from." />}</div>
       </div>
     </div>
   );

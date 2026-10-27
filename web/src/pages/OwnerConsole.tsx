@@ -27,7 +27,7 @@ export default function OwnerConsole({ query }: { query: URLSearchParams }) {
     <div>
       <PageHeader title="Owner console" subtitle="Personality, members and payments, recent and unanswered questions, engagement alerts." />
       {alerts.data?.items?.length > 0 && (
-        <div className="mb-4 space-y-2" data-testid="alerts">{alerts.data.items.map((a: any) => <a key={a.text} href={a.href} className={`block rounded-lg border px-3 py-2 text-sm ${a.level === "warn" ? "border-amber-200 bg-amber-50" : "border-sky-200 bg-sky-50"}`}>{a.text}</a>)}</div>
+        <div className="mb-4 space-y-2" data-testid="alerts">{alerts.data.items.map((a: any) => <a key={a.text} href={a.href} className={`focus-ring block rounded-[10px] border px-3 py-2 text-sm transition-colors ${a.level === "warn" ? "border-warn-line bg-warn-soft text-warn-ink" : "border-info-line bg-info-soft text-info-ink"}`}>{a.text}</a>)}</div>
       )}
       <ErrorBox error={err} />
       <Tabs value={tab} onChange={setTab} tabs={[{ key: "personality", label: "Personality" }, { key: "members", label: "Members & payments" }, { key: "queries", label: "Questions" }]} />

@@ -44,6 +44,7 @@ scripts/run.sh                                                        # http://1
 | Platform | Threads, projects + memory, uploads with local OCR, business profile, skills + workers, call review + drills, mock channels, MCP server, mock CRM, minis + embed, Drive inbox sync, members + payments |
 | Owner | Approval queue, runs & traces, audit log, KB admin + provenance, evals, Go-live scorecard, Command Centre, Morning brief |
 | Live layer (off) | Signed Meta lead webhook → lead fetch → qualification → booking → Google Calendar event, tested against fakes |
+| Console UI | White-label design system (tokens, light/dark/system theme, bundled Inter), role-aware collapsible sidebar, phone tab bar, ⌘K / Ctrl K command palette, Day One home with what-to-do-next, reduced-motion aware transitions |
 
 ## Guardrails (summary — details in `docs/GUARDRAILS.md`)
 

@@ -1,7 +1,8 @@
-import { ArrowRight } from "lucide-react";
-import { Card, CopyButton, Empty, ErrorBox, Loading, PageHeader, useApi } from "../components/ui";
+import { ArrowRight, Sunrise } from "lucide-react";
+import { Button, Card, CopyButton, Empty, ErrorBox, Loading, PageHeader, Reveal, tidyCount, useApi, useApp } from "../components/ui";
 
 export default function MorningBrief() {
+  const { me, go } = useApp();
   const { data, error, loading, reload } = useApi<any>("/brief");
   return (
     <div>
@@ -9,17 +10,17 @@ export default function MorningBrief() {
         right={data && <CopyButton text={data.text} label="Copy as text" />} />
       <ErrorBox error={error} retry={reload} />
       {loading && <Loading rows={5} />}
-      {data && data.items.length === 0 && <Empty title="Nothing needs you this morning" hint="No held drafts, no high-risk students, no bottleneck, no missing logins." />}
+      {data && data.items.length === 0 && <Empty icon={<Sunrise />} title="Nothing needs you this morning" hint="No held drafts, no high-risk students, no bottleneck, no missing logins." action={me.tabs.includes("command") ? <Button size="sm" onClick={() => go("/command")}>Open the command centre</Button> : <Button size="sm" onClick={() => go("/")}>Back to Day One</Button>} />}
       {data && data.items.length > 0 && (
         <ol className="space-y-3" data-testid="brief">
-          {data.items.map((it: any) => (
-            <li key={it.rank}>
-              <a href={it.href} className="focus-ring card group flex items-start gap-4 p-4 hover:border-brand">
-                <div className="grid size-9 shrink-0 place-items-center rounded-full bg-side text-sm font-semibold text-white">{it.rank}</div>
-                <div className="min-w-0 flex-1"><div className="font-semibold">{it.title}</div><div className="text-sm text-muted">{it.why}</div></div>
-                <ArrowRight className="mt-2 size-4 text-muted group-hover:text-brand" />
+          {data.items.map((it: any, i: number) => (
+            <Reveal as="li" key={it.rank} i={i}>
+              <a href={it.href} className="focus-ring card card-hover group flex items-start gap-4 p-4 hover:border-brand-line sm:p-5">
+                <div className={i === 0 ? "grid size-8 shrink-0 place-items-center rounded-full bg-brand text-[13px] font-semibold tabular-nums text-[var(--brand-ink)]" : "grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-[13px] font-semibold tabular-nums text-brand ring-1 ring-brand-line"}>{it.rank}</div>
+                <div className="min-w-0 flex-1"><div className="text-[15px] font-semibold text-ink">{tidyCount(it.title)}</div><div className="mt-0.5 text-[13.5px] text-muted">{tidyCount(it.why || "")}</div></div>
+                <ArrowRight className="mt-1.5 size-4 text-faint transition-[transform,color] group-hover:translate-x-0.5 group-hover:text-brand" />
               </a>
-            </li>
+            </Reveal>
           ))}
         </ol>
       )}

@@ -1,6 +1,7 @@
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { ApiError, post } from "../api";
-import { Badge, Button, Card, Citations, ErrorBox, Field, Input, PageHeader, Select, TextArea, TraceLink, useApp } from "../components/ui";
+import { Badge, Button, Card, Citations, Empty, ErrorBox, Field, Input, PageHeader, Select, TextArea, TraceLink, useApp } from "../components/ui";
 
 const SKILLS = [["offer", "Offer & USP"], ["dms", "DM setting"], ["sales", "Closing calls"], ["ads", "Ads testing"], ["webinars", "Webinars"], ["show_rate", "Show rate"]];
 
@@ -41,7 +42,7 @@ export default function Onboarding() {
           <ErrorBox error={err} retry={run} />
         </Card>
         <div className="space-y-4">
-          {!res && <Card><p className="text-sm text-muted">The gap analysis and plan appear here.</p></Card>}
+          {!res && <Empty icon={<UserPlus />} title="No plan yet" hint="Fill in the intake and the gap analysis and first-week plan appear here." />}
           {res && (
             <>
               <Card title="Gaps & lessons" actions={<TraceLink runId={res.run_id} />}>

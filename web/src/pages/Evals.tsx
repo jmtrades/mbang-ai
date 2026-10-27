@@ -51,15 +51,15 @@ export default function Evals() {
           <div className="h-64">
             <ResponsiveContainer>
               <LineChart data={series}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e4e3dd" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
                 <XAxis dataKey="i" />
                 <YAxis domain={[0, 1]} />
                 <Tooltip />
                 <Legend />
-                <Line dataKey="hit@5" stroke="#5b6cff" connectNulls />
-                <Line dataKey="hit@10" stroke="#16a34a" connectNulls />
-                <Line dataKey="honesty" stroke="#b45309" connectNulls />
-                <Line dataKey="reviewer" stroke="#7c3aed" connectNulls />
+                <Line dataKey="hit@5" stroke="var(--viz-1)" strokeWidth={2} dot={{ r: 3, fill: "var(--panel)" }} connectNulls />
+                <Line dataKey="hit@10" stroke="var(--viz-2)" strokeWidth={2} dot={{ r: 3, fill: "var(--panel)" }} connectNulls />
+                <Line dataKey="honesty" stroke="var(--viz-3)" strokeWidth={2} dot={{ r: 3, fill: "var(--panel)" }} connectNulls />
+                <Line dataKey="reviewer" stroke="var(--viz-4)" strokeWidth={2} dot={{ r: 3, fill: "var(--panel)" }} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>
