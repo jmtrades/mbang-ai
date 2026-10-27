@@ -170,6 +170,21 @@ def collect(tenant) -> dict:
             "dropped": dict(dropped), "files": sorted({t["file"] for t in turns}), "name_tokens": sorted(name_tokens)}
 
 
+# --------------------------------------------------------------------------- AI style excerpts
+def excerpt_candidates(collected: dict) -> list[str]:
+    """Subject turns of 15-80 words (names, numbers and flagged lines already removed by collect())."""
+    out = []
+    for t in collected["turns"]:
+        text = " ".join(x for _, x in t["lines"])
+        if 15 <= len(text.split()) <= 80:
+            out.append(text)
+    return out
+
+
+def excerpt_key(text: str) -> str:
+    return hashlib.sha256(" ".join(text.split()).encode()).hexdigest()[:16]
+
+
 # --------------------------------------------------------------------------- counting
 def _turn_units(turn: dict) -> list[dict]:
     """Sentences of one turn with their words, end punctuation, line number and turn offsets."""
@@ -379,9 +394,23 @@ def stylometrics(collected: dict) -> dict:
 
 def lexicon(collected: dict) -> list[dict]:
     c = Counter()
+    where: dict[str, dict[str, dict]] = defaultdict(dict)  # word -> file -> {count, first line}
     for t in collected["turns"]:
-        for _, text in t["lines"]:
-            c.update(_words(text.replace("-", "")))
+        for n, text in t["lines"]:
+            ws = _words(text.replace("-", ""))
+            c.update(ws)
+            for w in ws:
+                e = where[w].setdefault(t["file"], {"file": t["file"], "lines": f"{n}-{n}", "count": 0})
+                e["count"] += 1
+
+    def _evidence(word: str) -> list[dict]:
+        rows: dict[str, dict] = {}
+        for w in (word, word + "s"):
+            for f, e in where.get(w, {}).items():
+                r = rows.setdefault(f, {**e, "count": 0})
+                r["count"] += e["count"]
+        return sorted(rows.values(), key=lambda e: -e["count"])[:3]
+
     out = []
     # curated true synonyms only: textnorm.SYNONYMS is a retrieval expansion list (reminder ~ ladder), not word choices.
     # Both variants must appear at least once, so "prefers X" means he picked X over a word he also uses.
@@ -392,9 +421,9 @@ def lexicon(collected: dict) -> list[dict]:
         n = na + nb
         if n >= 10 and na and nb:
             if na / n >= 0.7:
-                out.append({"prefer": a, "over": b, "share": round(na / n, 2), "n": n})
+                out.append({"prefer": a, "over": b, "share": round(na / n, 2), "n": n, "evidence": _evidence(a_)})
             elif nb / n >= 0.7:
-                out.append({"prefer": b, "over": a, "share": round(nb / n, 2), "n": n})
+                out.append({"prefer": b, "over": a, "share": round(nb / n, 2), "n": n, "evidence": _evidence(b_)})
     return out
 
 
@@ -479,6 +508,8 @@ def _save(tenant, collected: dict, result: dict, actor: str) -> dict:
                "files": len(collected["files"]), "dropped_lines": collected["dropped"],
                "stylometrics": stylometrics(collected), "lexicon": lexicon(collected), "report": result["report"],
                "thresholds": {"draft": attribution.DRAFT_WORDS, "stable": attribution.STABLE_WORDS},
+               # fingerprints of the turns AI-mode excerpts may come from (only under external_ai_processing)
+               "excerpt_keys": sorted({excerpt_key(x) for x in excerpt_candidates(collected)}),
                "demo": bool(tenant.is_demo)}
     now = db.now()
     with tenant.db() as c, db.tx(c):

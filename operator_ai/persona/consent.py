@@ -104,6 +104,14 @@ def names(tenant) -> list[str]:
     return cached(tenant, "names", _f)
 
 
+LOCKED = ("The name and other names can't change while consent is active: they decide whose words count as the "
+          "subject's. Withdraw first; the subject then signs again.")
+
+
+def _same_aliases(a: list[str], b: list[str]) -> bool:
+    return sorted(x.lower() for x in a) == sorted(x.lower() for x in b)
+
+
 def _clean_aliases(aliases) -> list[str]:
     out: list[str] = []
     for a in aliases or []:
@@ -140,12 +148,12 @@ def designate_subject(tenant, user_id: int, actor: str, name: str | None = None,
         nm = u["display"] or u["username"]
     if len(nm) < 2:
         raise PersonaError(422, "The name needs at least two characters.")
-    if same and nm != cur["name"] and active(tenant) is not None:
-        raise PersonaError(409, "The name can't change while consent is active. Withdraw first; the subject signs again.")
+    new_aliases = _clean_aliases(aliases if aliases is not None else cur["aliases"])
+    if same and (nm != cur["name"] or not _same_aliases(new_aliases, cur["aliases"])) and active(tenant) is not None:
+        raise PersonaError(409, LOCKED)
     if cur["subject_user_id"] and not same:
         withdraw(tenant, actor, reason="subject changed")
-    tenant.set("persona_identity", {"subject_user_id": user_id, "name": nm,
-                                    "aliases": _clean_aliases(aliases if aliases is not None else cur["aliases"]),
+    tenant.set("persona_identity", {"subject_user_id": user_id, "name": nm, "aliases": new_aliases,
                                     "designated_by": actor, "designated_at": time.time()})
     cache_clear(tenant)
     audit.log(tenant, actor, "persona.subject", {"user_id": user_id})
@@ -161,9 +169,12 @@ def set_identity(tenant, actor: str, name: str | None = None, aliases=None) -> d
         new_name = " ".join(name.split())[:80]
         if len(new_name) < 2:
             raise PersonaError(422, "The name needs at least two characters.")
-        if new_name != cur["name"] and active(tenant) is not None:
-            raise PersonaError(409, "The name can't change while consent is active. Withdraw first; the subject signs again.")
-    new = {**cur, "name": new_name, "aliases": _clean_aliases(aliases) if aliases is not None else cur["aliases"]}
+    new_aliases = _clean_aliases(aliases) if aliases is not None else cur["aliases"]
+    # the name and the other names decide whose lines count as the subject's (boost, excerpts, guards): the subject
+    # consented to them as they were, so they can't change under an active consent
+    if (new_name != cur["name"] or not _same_aliases(new_aliases, cur["aliases"])) and active(tenant) is not None:
+        raise PersonaError(409, LOCKED)
+    new = {**cur, "name": new_name, "aliases": new_aliases}
     tenant.set("persona_identity", {k: new[k] for k in ("subject_user_id", "name", "aliases", "designated_by",
                                                           "designated_at")})
     cache_clear(tenant)
@@ -217,9 +228,13 @@ def never_use(tenant) -> list[str]:
 
 
 def compute_hash(tenant, prof: dict) -> str:
-    """What the subject consents to: this profile version as mined, plus their phrase decisions."""
+    """What the subject consents to: this profile version as mined, their phrase decisions, and whose words they are
+    (subject, name and other names)."""
     rows = phrases(tenant, prof["id"])
+    ident = identity(tenant)
     body = {"version": prof.get("version"), "profile": prof.get("profile") or {},
+            "identity": {"subject": ident["subject_user_id"], "name": ident["name"],
+                         "aliases": sorted(a.lower() for a in ident["aliases"])},
             "approved": sorted((r["cls"], r["phrase"]) for r in rows if r["decision"] == "approve"),
             "never": sorted(r["phrase"] for r in rows if r["decision"] == "never_use")}
     return hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode()).hexdigest()
@@ -286,6 +301,9 @@ def sign_consent(tenant, user: dict, statement: str, scopes: list[str], profile_
     ident = identity(tenant)
     if not ident["subject_user_id"] or ident["subject_user_id"] != user["id"]:
         raise PersonaError(403, "Only the designated subject can sign their own persona consent.")
+    me = _user(tenant, user["id"])
+    if me is None or not me["active"] or me["role"] != "owner":
+        raise PersonaError(403, "The persona subject signs on their own active owner login.")
     if not _verified:
         if _throttled(tenant, user["id"]):
             raise PersonaError(429, "Too many wrong passwords. Try again in 15 minutes.")
@@ -331,7 +349,8 @@ def sign_consent(tenant, user: dict, statement: str, scopes: list[str], profile_
 
 
 def _purge(c) -> int:
-    """Styled replays only ('coach-q:p<version>'); neutral 'coach-q' replays are never touched."""
+    """Styled replays only ('coach-q:p<version>'). Neutral 'coach-q' replays are never touched: they are never written
+    from persona-ranked retrieval (the +10% boost only applies to extractive answers, with the AI off)."""
     return c.execute("DELETE FROM ai_replays WHERE purpose LIKE 'coach-q:p%'").rowcount
 
 

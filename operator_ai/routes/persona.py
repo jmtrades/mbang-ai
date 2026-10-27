@@ -5,7 +5,7 @@ from __future__ import annotations
 import html
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,13 +16,16 @@ router = APIRouter()
 public_router = APIRouter()
 
 
+MAX_ID = 2**53  # ids beyond SQLite's integer range are refused with 422, never a 500
+
+
 class _Strict(BaseModel):
     # unknown fields (a "voice_sample", "avatar" or "photo" included) are refused with 422
     model_config = ConfigDict(extra="forbid")
 
 
 class SubjectBody(_Strict):
-    user_id: int = Field(ge=1)
+    user_id: int = Field(ge=1, le=MAX_ID)
     name: str | None = Field(None, max_length=80)
     aliases: list[str] | None = Field(None, max_length=12)
 
@@ -43,8 +46,8 @@ class PhraseBody(_Strict):
 class ConsentBody(_Strict):
     statement: str = Field(min_length=1, max_length=2000)
     scopes: list[str] = Field(min_length=1, max_length=10)
-    profile_version: int = Field(ge=1)
-    expires: float | None = Field(None, gt=0)
+    profile_version: int = Field(ge=1, le=MAX_ID)
+    expires: float | None = Field(None, gt=0, le=1e11, allow_inf_nan=False)
     password: str = Field(min_length=1, max_length=200)
 
 
@@ -189,7 +192,7 @@ def mine(b: MineBody, ctx: Ctx = Depends(_require_owner_or_subject)):
 
 
 @router.get("/persona/profiles/{v}")
-def profile(v: int, ctx: Ctx = Depends(_require_owner_or_subject)):
+def profile(v: int = Path(ge=1, le=MAX_ID), ctx: Ctx = Depends(_require_owner_or_subject)):
     p = persona.consent.profile_row(ctx.tenant, version=v)
     if p is None:
         raise HTTPException(404, "No profile with that version")
@@ -197,7 +200,7 @@ def profile(v: int, ctx: Ctx = Depends(_require_owner_or_subject)):
 
 
 @router.put("/persona/phrases/{pid}")
-def phrase(pid: int, b: PhraseBody, ctx: Ctx = Depends(_require_owner_or_subject)):
+def phrase(b: PhraseBody, pid: int = Path(ge=1, le=MAX_ID), ctx: Ctx = Depends(_require_owner_or_subject)):
     try:
         return persona.decide_phrase(ctx.tenant, pid, b.decision, ctx.user, ctx.actor)
     except persona.PersonaError as e:

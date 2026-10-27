@@ -210,7 +210,8 @@ CREATE TRIGGER IF NOT EXISTS persona_consents_no_delete BEFORE DELETE ON persona
   WHEN COALESCE((SELECT value FROM settings WHERE key='is_demo'), 'false') <> 'true'
   BEGIN SELECT RAISE(ABORT, 'persona_consents is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS persona_consents_append_only BEFORE UPDATE ON persona_consents
-  WHEN OLD.withdrawn_at IS NOT NULL OR NEW.subject_user_id IS NOT OLD.subject_user_id
+  WHEN OLD.withdrawn_at IS NOT NULL OR NEW.id IS NOT OLD.id OR NEW.demo IS NOT OLD.demo
+    OR NEW.subject_user_id IS NOT OLD.subject_user_id
     OR NEW.profile_id IS NOT OLD.profile_id OR NEW.profile_version IS NOT OLD.profile_version
     OR NEW.profile_hash IS NOT OLD.profile_hash OR NEW.statement IS NOT OLD.statement
     OR NEW.statement_sha IS NOT OLD.statement_sha OR NEW.scopes IS NOT OLD.scopes OR NEW.method IS NOT OLD.method

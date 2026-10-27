@@ -71,13 +71,23 @@ def current_surface(user: dict | None) -> str | None:
     return "coach_answers" if user else None
 
 
-def retrieval_boost(tenant, idx) -> dict[int, float] | None:
-    """+10% for chunks mostly said by the subject; only while active (or in an owner preview), never on a neutral
-    surface. None leaves retrieval exactly as it was."""
+def retrieval_boost(tenant, idx, query: str | None = None) -> dict[int, float] | None:
+    """+10% for chunks mostly said by the subject, so extractive answers reuse their own sentences (B3). Only while
+    active (or in an owner preview), never on a neutral surface, only on a surface the subject consented to (a caller
+    that sets no surface counts as coach answers), and only for answers that will be extractive: never with the AI on
+    (a neutral AI answer, and its saved replay, is always written from the plain ranking) and never when a neutral
+    replay exists for the question (its [S#] numbers belong to the plain ranking). None leaves retrieval unchanged."""
     try:
-        if _SURFACE.get() is None:
+        s = _SURFACE.get()
+        if s is None:
             return None
-        if _PREVIEW.get() is None and consent.active(tenant) is None:
+        if _PREVIEW.get() is None:
+            p = consent.active(tenant)
+            if p is None or ("coach_answers" if s is _UNSET else s) not in p["scopes"]:
+                return None
+        if llm.unavailable_reason(tenant) is None:
+            return None
+        if query and llm.replay(tenant, "coach-q", _normq(query)):
             return None
         shares = attribution.chunk_shares(tenant, idx)
         return {cid: 1.1 for cid, sh in shares.items() if sh >= 0.5} or None
@@ -91,6 +101,11 @@ def _patterns(names: list[str]) -> tuple[list[re.Pattern], list[re.Pattern]]:
     alt = "|".join(re.escape(n).replace(r"\ ", r"\s+") for n in names)
     ident = [
         re.compile(rf"\b(are|r)\s+(you|u)\s+(really\s+|actually\s+|the\s+real\s+)?({alt})\b", re.I),
+        re.compile(rf"\b(you'?re|you\s+are|ur)\s+(really\s+|actually\s+|the\s+real\s+)?({alt})\b(?!')", re.I),
+        re.compile(rf"\b({alt})\W{{0,3}}\s*(is\s+(that|this|it)\s+(you|u)|(are|r)\s+(you|u)\s+(there|real|human))\b", re.I),
+        re.compile(rf"\b(pretend|act|roleplay|role-play|role\s+play|speak|answer|talk|reply|respond|write|sign\s+off)"
+                   rf"(\s+to\s+be|\s+as\s+if\s+you\s+(are|were)|\s+as|\s+like)\s+({alt})\b", re.I),
+        re.compile(rf"\b(pretend|imagine)\s+(you'?re|you\s+are)\s+({alt})\b", re.I),
         re.compile(rf"\b(is\s+this|is\s+that|am\s+i\s+(talking|speaking|chatting)\s+(to|with))\s+(really\s+|actually\s+)?({alt})\b",
                    re.I),
         re.compile(r"\bwho\s+are\s+(you|u)\b", re.I),
@@ -104,7 +119,10 @@ def _patterns(names: list[str]) -> tuple[list[re.Pattern], list[re.Pattern]]:
                    r"\b(how|when)\s+did\s+(you|u)\s+(find|land|sign|get|build|scale|grow)\s+(your|ur)\b", re.I),
         re.compile(r"\bwhat\s+(was|were)\s+(your|ur)\s+(first|biggest|best|worst|own)\b", re.I),
         re.compile(r"\b(your|ur)\s+(personal\s+)?(story|journey|backstory|background|first\s+client)\b", re.I),
-        re.compile(r"\bhow\s+much\s+(do|did)\s+(you|u)\s+(make|earn)\b", re.I),
+        re.compile(r"\bhow\s+much\s+(money\s+|revenue\s+)?(do|did|have)\s+(you|u)\s+(make|made|earn|earned)\b", re.I),
+        re.compile(r"\bwhat\s+did\s+(you|u)\s+do\s+before\b", re.I),
+        re.compile(r"\bhave\s+(you|u)\s+(ever\s+)?(had|worked\s+with|coached|signed|landed|closed|built|run|ran|scaled|"
+                   r"grown|made|lost)\s+(a|an|any|your|ur)\b", re.I),
     ]
     return ident, auto
 
@@ -250,7 +268,14 @@ def style_card(p: dict) -> str:
     return "STYLE CARD\n" + "\n".join(lines or ["- Plain, direct and short."])
 
 
-def _excerpt_pool(tenant, version: int) -> list[str]:
+def _excerpt_pool(tenant, p: dict) -> list[str]:
+    """The subject's own turns that the signed profile was mined from, and nothing else: a turn qualifies only when its
+    fingerprint is in the profile the subject consented to (covered by the profile hash), so later material, a
+    re-marked document or a different speaker never reaches the provider as "their words"."""
+    allowed = set((p.get("profile") or {}).get("excerpt_keys") or [])
+    if not allowed:
+        return []
+
     def _f():
         from . import mine
 
@@ -258,15 +283,9 @@ def _excerpt_pool(tenant, version: int) -> list[str]:
             col = mine.collect(tenant)
         except consent.PersonaError:
             return []
-        pool = []
-        for t in col["turns"]:
-            text = " ".join(x for _, x in t["lines"])
-            n = len(text.split())
-            if 15 <= n <= 80:
-                pool.append(text)
-        return pool
+        return [x for x in mine.excerpt_candidates(col) if mine.excerpt_key(x) in allowed]
 
-    return consent.cached(tenant, f"excerpts:{version}", _f, ttl=300.0)
+    return consent.cached(tenant, f"excerpts:{p['version']}:{p.get('consent_id')}", _f, ttl=300.0)
 
 
 def excerpts(tenant, p: dict, question: str) -> list[str]:
@@ -274,7 +293,7 @@ def excerpts(tenant, p: dict, question: str) -> list[str]:
     at most 250 words in total. Only ever sent under the external_ai_processing scope."""
     q = set(textnorm.tokens(question))
     scored = []
-    for text in _excerpt_pool(tenant, p["version"]):
+    for text in _excerpt_pool(tenant, p):
         st = set(textnorm.tokens(text))
         scored.append((len(q & st) / (len(st) ** 0.5 or 1), text))
     scored.sort(key=lambda x: -x[0])
@@ -304,6 +323,10 @@ def verify(tenant, p: dict, text: str, cited: list[str], res: dict, passages: di
     if any(re.search(rf"(?<![\w']){re.escape(n)}(?![\w])", clean, re.I) for n in consent.names(tenant)):
         return False, "named the person", clean, kept, []
     # a sentence keeps the [S#] markers that follow it ("... goal. [S1] Next sentence.")
+    all_src = set()
+    for i in kept:
+        all_src |= set(textnorm.tokens(passages.get(i, "")))
+    framing = [a.get("display") or a["phrase"] for a in p.get("approved", [])]
     for sent in re.split(r"(?<=[.!?\]])\s+(?!\[S\d)|\n", clean):
         ids = CITE_RE.findall(sent)
         body = CITE_RE.sub("", sent)
@@ -314,6 +337,15 @@ def verify(tenant, p: dict, text: str, cited: list[str], res: dict, passages: di
                 src |= set(textnorm.tokens(passages.get(i, "")))
             if toks and len(toks & src) / len(toks) < 0.35:
                 return False, "a sentence isn't supported by its cited passage", clean, kept, []
+        else:
+            # an uncited sentence may only frame (an approved phrase, a short link) or restate the cited passages;
+            # new advice with no source is the invention the style card forbids
+            rest = body
+            for f in framing:
+                rest = re.sub(re.escape(f.strip(" .,:;!?")), " ", rest, flags=re.I)
+            toks = set(textnorm.tokens(rest))
+            if len(toks) > 3 and len(toks & all_src) / len(toks) < 0.5:
+                return False, "added a sentence the passages don't support", clean, kept, []
         for num in NUM_RE.findall(body):
             num = num.rstrip(".,")
             if num and not any(num in passages.get(i, "") for i in kept):
@@ -342,7 +374,22 @@ def verify(tenant, p: dict, text: str, cited: list[str], res: dict, passages: di
 
 
 # --------------------------------------------------------------------------- styling modes
+NOT_COVERED_TAIL = " (Not covered by the course material: "
+
+
+def _partly_tail(res: dict) -> str | None:
+    """The neutral answer's honest "(Not covered by the course material: ...)" notes for the parts it couldn't answer.
+    "" when fully covered; None when the notes can't be found (then AI styling is skipped, so they are never lost)."""
+    if res.get("covered") != "partly":
+        return ""
+    ans = res.get("answer") or ""
+    i = ans.find(NOT_COVERED_TAIL)
+    return ans[i:] if i >= 0 else None
+
+
 def _styled(tenant, res: dict, p: dict, text: str, kept: list[str] | None, mode: str, label: str) -> dict:
+    if mode in ("live", "replay"):
+        text = text + (_partly_tail(res) or "")  # a rewritten answer keeps the honest not-covered notes
     cites = res.get("citations", []) if kept is None else [c for c in res.get("citations", []) if c.get("id") in set(kept)]
     return {**res, "answer": guardrails.scrub(text, guardrails.tenant_banned_names(tenant)), "citations": cites,
             "mode": mode if mode != "rules" else res.get("mode"), "label": label,
@@ -392,21 +439,30 @@ def _ai(tenant, question: str, res: dict, p: dict, recent: set[str], run):
     if ex:
         system += "\n\nSTYLE EXAMPLES (wording only, never facts):\n" + "\n".join(f"- {e}" for e in ex)
     prompt = "Question: " + question + "\n\nCourse passages:\n" + "\n\n".join(f"[{i}] {t}" for i, t in passages.items())
+
+    def _drop():  # never keep an unverified styled output around for replay
+        with tenant.db() as c:
+            c.execute("DELETE FROM ai_replays WHERE key=?", (llm._key(f"coach-q:p{p['version']}", prompt),))
+
     try:
         out = llm.complete(tenant, system, prompt, purpose=f"coach-q:p{p['version']}", max_tokens=700,
                            run_id=run.id if run else None)
-        data = llm.parse_json(out["text"])
     except llm.AIUnavailable:
         return None
+    try:
+        data = llm.parse_json(out["text"])
+        if not isinstance(data, dict):
+            raise ValueError("not an object")
     except ValueError:
+        _drop()
         return "the AI reply wasn't readable"
     if str(data.get("covered", "")).lower() == "no":
+        _drop()
         return "the AI said the passages don't cover it"
     ok, why, clean, kept, used = verify(tenant, p, str(data.get("answer", "")), list(data.get("citations", []) or []), res,
                                         passages, ex, recent)
     if not ok:
-        with tenant.db() as c:  # never keep an unverified styled output around for replay
-            c.execute("DELETE FROM ai_replays WHERE key=?", (llm._key(f"coach-q:p{p['version']}", prompt),))
+        _drop()
         return why
     llm.save_replay(tenant, f"coach-q:p{p['version']}", _normq(question), out["text"], run.id if run else None)
     label = f"AI · styled after {p['name']} (consent v{p['version']})"
@@ -462,7 +518,7 @@ def _frame(tenant, question: str, res: dict, user: dict | None, run) -> dict:
         return res
     recent = set() if preview else _recent(tenant, user)
     outcome = None
-    if not preview:
+    if not preview and _partly_tail(res) is not None:
         outcome = _ai(tenant, question, res, p, recent, run)
         if isinstance(outcome, str):
             if run is not None:
@@ -493,6 +549,8 @@ def framing(tenant, surface_name: str, key: str, user: dict | None = None) -> di
     valid consent covers that surface or the user chose a neutral voice. Callers put these around their own template
     text and show `badge`; they never edit quoted course text with them."""
     try:
+        if _SURFACE.get() is None:  # inside persona.neutral() (channel replies, the phone line): never framed
+            return None
         p = consent.active(tenant)
         if p is None or surface_name not in p["scopes"] or surface_name in ("voice", "likeness", "outreach"):
             return None
@@ -511,11 +569,16 @@ def framing(tenant, surface_name: str, key: str, user: dict | None = None) -> di
 
 
 # --------------------------------------------------------------------------- template text (nudges, debriefs)
-def style_template(tenant, text: str, surface_name: str) -> str:
-    """Word preferences for text the system writes from templates (never quoted course text)."""
+def style_template(tenant, text: str, surface_name: str, user: dict | None = None) -> str:
+    """Word preferences for text the system writes from templates (never quoted course text). Unchanged on a neutral
+    surface, without consent for that surface, or for a user who chose a neutral voice."""
     try:
+        if _SURFACE.get() is None:
+            return text
         p = consent.active(tenant)
-        if p is None or surface_name not in p["scopes"]:
+        if p is None or surface_name not in p["scopes"] or surface_name in ("voice", "likeness", "outreach"):
+            return text
+        if user and consent.neutral_voice(tenant, user["id"]):
             return text
         out = text
         for lx in (p.get("profile") or {}).get("lexicon", []):
@@ -527,11 +590,29 @@ def style_template(tenant, text: str, surface_name: str) -> str:
 
 
 # --------------------------------------------------------------------------- owner/subject preview
+def _offline(tenant):
+    """The same workspace with the AI budget read as 0, so a preview never calls a provider, never spends budget and
+    never saves an AI replay (a replay written from the preview's re-ranked retrieval would reach students without
+    anyone's consent)."""
+    import dataclasses
+
+    from .. import tenancy
+
+    class _OfflineTenant(tenancy.Tenant):
+        def get(self, key: str, default=None):
+            if key in ("ai_token_budget", "critique_token_budget"):
+                return 0
+            return super().get(key, default)
+
+    return _OfflineTenant(**{f.name: getattr(tenant, f.name) for f in dataclasses.fields(tenant)})
+
+
 def preview(tenant, questions: list[str] | None = None) -> dict:
-    """Neutral vs styled on sample questions, rules mode only and offline (nothing is sent to an AI provider and
-    nothing is shown to students). Uses the latest profile's approved phrases, consent or not."""
+    """Neutral vs styled on sample questions, rules mode only and offline (nothing is sent to an AI provider, no AI
+    replay is saved and nothing is shown to students). Uses the latest profile's approved phrases, consent or not."""
     from ..agents import coach
 
+    tenant = _offline(tenant)
     prof = consent.latest_profile(tenant)
     if prof is None:
         raise consent.PersonaError(409, "Build a style profile first.")

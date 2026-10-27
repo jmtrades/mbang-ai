@@ -48,7 +48,14 @@ Client assets (VSL, webinar script, pages, that funnel's emails) may state the s
   or marks the item "ready to send manually". The only live path is an approved calendar invite with the tenant's
   live calendar switch on (`live/chain.deliver_calendar_invite`).
 - **No impersonation.** Banned names are scrubbed (generated text, traces, citations, the UI via a response
-  middleware) and block any queue item. A named persona needs recorded consent (Owner console → Personality).
+  middleware) and block any queue item. Framing answers in a real person's teaching phrasing needs that person's own
+  consent, signed on their own login with their password, scoped, expiring and withdrawable (Owner console → Persona;
+  the person signs from Business profile). Whenever a persona name is configured, `operator_ai/persona/guards.py`
+  blocks `impersonation` ("I'm X", "X here", "As X, I…", sign-offs), `persona_in_outreach` (the name or an approved
+  phrase of 3+ words in outreach, client assets or own-prospect items), `persona_autobio` (first-person stories in
+  styled output) and `speculative_attribution` ("X would say…", "according to X…" without an [S#]). "Are you X?" and
+  questions about "your clients" get "I'm an AI assistant trained on X's material, not X." The old owner-typed consent
+  is shown as invalid.
 - **Demo labelled and separate.** Fictional records carry "(DEMO)" and `example.invalid`; `data/demo.db` is separate;
   every reset checks the registry flag, the file path and an in-database marker, backs up first, and refuses the real DB.
 - **Secrets.** AES-256-GCM vault per tenant (fresh nonce per write, tenant id as AD, key file mode 600); APIs say

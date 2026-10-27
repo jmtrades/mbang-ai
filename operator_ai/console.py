@@ -222,8 +222,13 @@ def mini_ask(tenant, slug: str, token: str, question: str) -> dict:
         res = {"covered": "no", "answer": "That's outside what this assistant covers.", "citations": []}
     with tenant.db() as c:
         c.execute("UPDATE mini_sessions SET questions=questions+1 WHERE id=?", (s["id"],))
-    return {"covered": res["covered"], "answer": res["answer"], "citations": cites if res["covered"] != "no" else [],
-            "remaining": m["question_limit"] - s["questions"] - 1}
+    out = {"covered": res["covered"], "answer": res["answer"], "citations": cites if res["covered"] != "no" else [],
+           "remaining": m["question_limit"] - s["questions"] - 1}
+    styled = res.get("persona") or {}
+    if styled.get("styled"):  # [persona] a styled public answer always carries its disclosure, in the text itself too
+        out["persona"] = {"badge": styled["badge"], "disclosure": styled["disclosure"]}
+        out["answer"] = f"{res['answer']}\n\n({styled['badge']}. About this: {styled['disclosure']})"
+    return out
 
 
 def embed_snippet(tid: str, slug: str) -> str:

@@ -79,15 +79,15 @@ export function PersonaAdmin() {
                 <Field label="Person">
                   <Select value={pick} onChange={(e) => setPick(e.target.value)} options={data.candidates.map((u: any) => ({ value: String(u.id), label: `${u.display} (${u.username})` }))} />
                 </Field>
-                <Field label="Other names in transcripts" hint="Comma separated, e.g. a first name used in captions.">
-                  <Input value={aliases} onChange={(e) => setAliases(e.target.value)} placeholder="First name, initials" />
+                <Field label="Other names in transcripts" hint={data.active ? "Locked while consent is in force: they decide whose words count as the subject's." : "Comma separated, e.g. a first name used in captions."}>
+                  <Input value={aliases} disabled={!!data.active} onChange={(e) => setAliases(e.target.value)} placeholder="First name, initials" />
                 </Field>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button tone="primary" loading={busy === "subject"} disabled={!pick} onClick={() => act("subject", () => post("/persona/subject", { user_id: Number(pick), aliases: list(aliases) }), "Subject saved")}>
                   {ident.subject_user_id && String(ident.subject_user_id) !== pick ? "Change subject" : "Save subject"}
                 </Button>
-                {ident.subject_user_id && (
+                {ident.subject_user_id && !data.active && (
                   <Button loading={busy === "aliases"} onClick={() => act("aliases", () => put("/persona/identity", { aliases: list(aliases) }), "Names saved")}>Save other names only</Button>
                 )}
               </div>

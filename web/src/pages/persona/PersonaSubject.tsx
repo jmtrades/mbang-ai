@@ -143,7 +143,8 @@ export function PersonaSubject() {
               <Field label="Expires on" hint="Default 12 months. You'll get a reminder 30 days before."><Input type="date" value={expires} onChange={(e) => setExpires(e.target.value)} /></Field>
               <Field label="Your password" hint="Confirms it's really you."><Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
             </div>
-            <Button tone="primary" loading={busy === "sign"} disabled={tooShort || !password || scopes.length === 0} onClick={signNow}>Sign consent</Button>
+            {data.is_demo && <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900">Pitch demo: the sample person's password isn't shared, so signing can't be completed here. Reset the demo in Settings to bring back the sample consent.</p>}
+            <Button tone="primary" loading={busy === "sign"} disabled={tooShort || !password || scopes.length === 0 || data.is_demo} onClick={signNow}>Sign consent</Button>
           </div>
         </Card>
       )}
