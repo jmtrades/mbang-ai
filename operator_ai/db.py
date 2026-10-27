@@ -217,6 +217,16 @@ CREATE TABLE IF NOT EXISTS academy_reports (
 CREATE INDEX IF NOT EXISTS academy_attempts_item ON academy_attempts(quiz_item_id);
 CREATE INDEX IF NOT EXISTS academy_attempts_user ON academy_attempts(user_id, created);
 -- [roleplay] tables
+CREATE TABLE IF NOT EXISTS roleplay_turns (
+  id INTEGER PRIMARY KEY, roleplay_id INTEGER, idx INTEGER, speaker TEXT, text TEXT, acts TEXT, flags TEXT, meta TEXT,
+  created REAL);
+CREATE INDEX IF NOT EXISTS roleplay_turns_rp ON roleplay_turns(roleplay_id, idx);
+CREATE TABLE IF NOT EXISTS roleplay_scenarios (
+  id INTEGER PRIMARY KEY, key TEXT UNIQUE, title TEXT, data TEXT, source TEXT, active INTEGER DEFAULT 1,
+  version INTEGER DEFAULT 1, updated_by TEXT, created REAL, updated REAL);
+CREATE TABLE IF NOT EXISTS roleplay_rubrics (
+  id INTEGER PRIMARY KEY, rule_key TEXT UNIQUE, label TEXT, weight REAL, params TEXT, cite_file TEXT, cite_lines TEXT,
+  must_contain TEXT, kind TEXT, status TEXT, note TEXT, updated_by TEXT, updated REAL);
 -- [missions] tables
 CREATE TABLE IF NOT EXISTS mission_metrics (
   id INTEGER PRIMARY KEY, mission_id INTEGER, day TEXT, metrics TEXT, created REAL, UNIQUE(mission_id, day));
@@ -333,6 +343,13 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("certifications", "criteria_snapshot", "TEXT"),
     ("drills", "skill", "TEXT"), ("drills", "lines", "TEXT"),
     # [roleplay]
+    ("roleplays", "seed", "INTEGER"),
+    ("roleplays", "mode", "TEXT"),
+    ("roleplays", "exam", "INTEGER DEFAULT 0"),
+    ("roleplays", "hints", "INTEGER DEFAULT 1"),
+    ("roleplays", "demo", "INTEGER DEFAULT 0"),
+    ("roleplays", "run_id", "INTEGER"),
+    ("roleplays", "total", "INTEGER"),
     # [missions]
     ("missions", "parent_id", "INTEGER"),
     ("missions", "title", "TEXT"),
