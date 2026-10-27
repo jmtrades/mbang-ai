@@ -59,35 +59,54 @@ def test_followups_are_value_only():
 
 # ---------------------------------------------------------------- full lead processing
 def test_process_hot_lead_queues_everything_sends_nothing(tenant):
+    # Sales sequencing (2026-10 wave): the whole funnel is no longer queued up front. process_lead queues the reply
+    # only; follow-ups are a cadence that starts once the reply is confirmed sent; booking times are offered after
+    # a positive reply (fresh), the invite after they pick a time, and the reminder ladder when the invite is approved.
     lid = _lead(tenant, HOT)
     r = sales.process_lead(tenant, lid)
-    assert r["tier"] == "hot" and len(r["slots"]) == 3
+    assert r["tier"] == "hot" and "slots" not in r and r["cadence_id"]
     items = [queue.get(tenant, q) for q in r["queue_ids"]]
-    kinds = [i["kind"] for i in items]
-    assert kinds.count("reminder") == 3 and "calendar_invite" in kinds and "booking_dm" in kinds
-    assert all(i["status"] in ("pending", "needs_human") for i in items)
-    assert items[0]["kind"] == "setter_reply" and items[0]["status"] == "pending"
-    ladder = sorted(i["meta"]["ladder"] for i in items if i["kind"] == "reminder")
-    assert ladder == ["10min", "24h", "2h"]
+    assert [i["kind"] for i in items] == ["setter_reply"] and items[0]["status"] == "pending"
     with tenant.db() as c:
         assert c.execute("SELECT COUNT(*) FROM channel_messages").fetchone()[0] == 0  # nothing delivered
+    # positive reply -> booking DM with fresh times; pick -> invite; approve invite -> ladder with send_after
+    rep = sales.record_reply(tenant, lid, "Yes, keen to chat")
+    assert rep["classification"] == "positive" and len(rep["booking"]["slots"]) == 3
+    bdm = queue.get(tenant, rep["booking"]["booking_dm"])
+    assert bdm["kind"] == "booking_dm" and bdm["meta"]["slots_valid_until"] > time.time()
+    with pytest.raises(sales.BookingError):  # they can only pick from times they were actually sent
+        sales.pick_slot(tenant, lid, index=1)
+    queue.approve(tenant, bdm["id"], "owner(owner)")
+    inv = queue.get(tenant, sales.pick_slot(tenant, lid, index=1)["invite"])
+    assert inv["kind"] == "calendar_invite" and inv["meta"]["slot"] == rep["booking"]["slots"][1]
+    queue.approve(tenant, inv["id"], "owner(owner)")
+    ladder = [i for i in queue.list_items(tenant, kind="reminder") if i["meta"].get("lead_id") == lid]
+    assert sorted(i["meta"]["ladder"] for i in ladder) == ["10min", "24h", "2h"]
+    assert all(i["meta"]["send_after"] and i["meta"]["cancel_if"] == ["booking_cancelled"] for i in ladder)
+    assert all(i["recipient_ref"] == "@test_demo" for i in ladder)
 
 
 def test_cold_lead_goes_to_nurture_no_booking(tenant):
     r = sales.process_lead(tenant, _lead(tenant, COLD, source="instagram_dm"))
     assert r["route"] == "nurture" and "slots" not in r
-    assert len(r["queue_ids"]) == 3  # reply + 2 value follow-ups
+    # reply only; the two value follow-ups are drafted by the cadence at their due time (was 3 items up front)
+    assert len(r["queue_ids"]) == 1 and r["cadence_id"]
 
 
 def test_calendar_invite_owner_only_and_creates_local_event(tenant):
-    r = sales.process_lead(tenant, _lead(tenant, HOT))
-    inv = next(queue.get(tenant, q) for q in r["queue_ids"] if queue.get(tenant, q)["kind"] == "calendar_invite")
+    lid = _lead(tenant, HOT)
+    sales.process_lead(tenant, lid)
+    rep = sales.record_reply(tenant, lid, "Sounds good, send me the times")
+    queue.approve(tenant, rep["booking"]["booking_dm"], "owner(owner)")
+    inv = queue.get(tenant, sales.pick_slot(tenant, lid, index=0)["invite"])
     with pytest.raises(queue.QueueError):
         queue.approve(tenant, inv["id"], "s", role="setter")
     with pytest.raises(queue.QueueError):
         queue.approve(tenant, inv["id"], "c", role="closer")
     done = queue.approve(tenant, inv["id"], "owner(owner)")
-    assert done["delivered"] == "mock:calendar"
+    # real workspace, live calendar off: the call is on the local calendar and the owner sends the invite themself
+    # (mock transports are demo-only now; was delivered == "mock:calendar")
+    assert done["status"] == "awaiting_manual_send"
     with tenant.db() as c:
         ev = c.execute("SELECT * FROM calendar_events WHERE ext_id=?", (f"local-q{inv['id']}",)).fetchone()
     assert ev is not None

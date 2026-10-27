@@ -106,9 +106,12 @@ def test_chat_upload_ads_csv_and_screenshot(client):
 
 
 def test_chat_never_sends(client):
-    demo_login(client, "owner")
-    client.post("/t/demo/api/chat", json={"text": "Review this DM:\nWe guarantee results!"})
     from operator_ai import tenancy
 
+    demo_login(client, "owner")
+    # the demo seed includes a fictional, already-confirmed manual send (delivery wave), so compare before/after
     with tenancy.get("demo").db() as c:
-        assert c.execute("SELECT COUNT(*) FROM channel_messages WHERE direction='out'").fetchone()[0] == 0
+        before = c.execute("SELECT COUNT(*) FROM channel_messages WHERE direction='out'").fetchone()[0]
+    client.post("/t/demo/api/chat", json={"text": "Review this DM:\nWe guarantee results!"})
+    with tenancy.get("demo").db() as c:
+        assert c.execute("SELECT COUNT(*) FROM channel_messages WHERE direction='out'").fetchone()[0] == before

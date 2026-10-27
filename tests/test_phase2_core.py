@@ -150,11 +150,17 @@ def test_queue_block_edit_approve_never_sends(tenant):
     item = queue.edit(tenant, item["id"], "Here's a short video on fixing show rates. Want me to send it over?",
                       "owner(owner)")
     assert item["status"] == "pending" and item["flags"] == []
+    # Delivery truth (2026-10 wave): a real workspace never fakes a send. Instagram DMs can't be sent by any API,
+    # so approval hands the message to a person ("awaiting_manual_send"); it counts as sent only when they confirm.
     done = queue.approve(tenant, item["id"], "owner(owner)")
-    assert done["status"] == "approved" and done["delivered"] == "mock:instagram"
+    assert done["status"] == "awaiting_manual_send" and done["delivered"] is None and done["sent_at"] is None
+    with tenant.db() as c:
+        assert c.execute("SELECT COUNT(*) FROM channel_messages").fetchone()[0] == 0
+    done = queue.mark_sent(tenant, item["id"], "owner(owner)")
+    assert done["status"] == "sent" and done["delivered"] == "manual:instagram_dm" and done["sent_at"]
     with tenant.db() as c:
         msg = c.execute("SELECT * FROM channel_messages").fetchone()
-    assert msg["direction"] == "out" and '"mock": true' in msg["meta"]
+    assert msg["direction"] == "out" and '"manual": true' in msg["meta"]
 
 
 def test_queue_manual_channel_ready_to_send_manually(tenant):
@@ -165,7 +171,8 @@ def test_queue_manual_channel_ready_to_send_manually(tenant):
 def test_queue_needs_human_for_unreasoned_deadline(tenant):
     item = queue.add(tenant, "email", "Enrollment closes on Friday.", channel="email", meta={"client_asset": True})
     assert item["status"] == "needs_human"
-    assert queue.approve(tenant, item["id"], "o")["status"] == "approved"
+    # no live email sender in this workspace: approved, then waiting for a person to send it (was "approved")
+    assert queue.approve(tenant, item["id"], "o")["status"] == "awaiting_manual_send"
 
 
 def test_queue_approve_rechecks_after_edit(tenant):
@@ -184,7 +191,8 @@ def test_queue_role_permissions(tenant):
         queue.approve(tenant, inv["id"], "setter", role="setter")
     assert ei.value.status == 403
     dm = queue.add(tenant, "dm", "Want a quick video on show rates?", channel="instagram_dm", meta={"prospect_facing": True})
-    assert queue.approve(tenant, dm["id"], "setter", role="setter")["status"] == "approved"
+    # approved by the setter; Instagram is a manual channel, so it now waits for them to send it (was "approved")
+    assert queue.approve(tenant, dm["id"], "setter", role="setter")["status"] == "awaiting_manual_send"
 
 
 def test_reject_and_double_decide(tenant):
@@ -228,7 +236,8 @@ def test_queue_api_flow(owner):
     r = owner.put(f"/t/owner/api/queue/{item['id']}", json={"body": "Want the short checklist we use for reminders?"})
     assert r.status_code == 200 and r.json()["status"] == "pending"
     r = owner.post(f"/t/owner/api/queue/{item['id']}/approve")
-    assert r.json()["status"] == "approved"
+    # Instagram DMs are sent by a person, then confirmed (delivery truth); was "approved"
+    assert r.json()["status"] == "awaiting_manual_send"
 
 
 # ---------------------------------------------------------------- settings: BOX_ONLY (C8)

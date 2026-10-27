@@ -191,4 +191,7 @@ def test_student_queue_shows_only_own_outreach(client):
     ids = {i["id"] for i in client.get("/t/demo/api/queue").json()["items"]}
     assert mine["id"] in ids and other["id"] not in ids
     assert client.post(f"/t/demo/api/queue/{other['id']}/approve").status_code in (403, 404)
-    assert client.post(f"/t/demo/api/queue/{mine['id']}/approve").json()["status"] == "approved"
+    # Instagram DMs are sent by the student and then confirmed (delivery truth; was "approved")
+    assert client.post(f"/t/demo/api/queue/{mine['id']}/approve").json()["status"] == "awaiting_manual_send"
+    assert client.post(f"/t/demo/api/queue/{other['id']}/sent").status_code == 404
+    assert client.post(f"/t/demo/api/queue/{mine['id']}/sent").json()["status"] == "sent"

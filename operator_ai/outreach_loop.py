@@ -40,9 +40,12 @@ def _today_start() -> float:
 
 
 def sent_today(tenant, sender: str) -> int:
+    """Openers committed today by this sender: confirmed sends plus drafts still waiting to go. Rejected,
+    cancelled and failed drafts never count against the cap."""
     with tenant.db() as c:
-        return c.execute("SELECT COUNT(*) FROM outreach_loops WHERE sender=? AND step='opener' AND created>=?",
-                         (sender, _today_start())).fetchone()[0]
+        return c.execute("SELECT COUNT(*) FROM outreach_loops l LEFT JOIN queue q ON q.id=l.queue_id WHERE l.sender=? "
+                         "AND l.step='opener' AND l.created>=? AND COALESCE(q.status,'pending') NOT IN "
+                         "('rejected','cancelled','send_failed')", (sender, _today_start())).fetchone()[0]
 
 
 def prospects(tenant) -> list[dict]:
@@ -81,13 +84,14 @@ def queue_openers(tenant, sender: str | None = None, limit: int = 10, user: dict
     return {**out["result"], "run_id": out["run_id"]}
 
 
-@queue.on_approve("dm_opener")
-def _opener_approved(tenant, item: dict, actor: str) -> None:
+@queue.on_sent("dm_opener")
+def _opener_sent(tenant, item: dict, actor: str) -> None:
+    """Stage moves on a confirmed send (not on approval), so reply rates count real sends."""
     pid = item["meta"].get("prospect_id")
-    if pid:
+    if pid and item["meta"].get("practice"):
         with tenant.db() as c:
             c.execute("UPDATE outreach_practice_prospects SET stage='sent' WHERE id=? AND stage IN ('new','queued')", (pid,))
-            c.execute("UPDATE outreach_loops SET status='approved' WHERE queue_id=?", (item["id"],))
+            c.execute("UPDATE outreach_loops SET status='sent' WHERE queue_id=?", (item["id"],))
 
 
 def record_reply(tenant, prospect_id: int, text: str = "") -> dict:

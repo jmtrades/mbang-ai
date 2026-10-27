@@ -196,6 +196,25 @@ CREATE INDEX IF NOT EXISTS app_events_name ON app_events(name, created);
 -- [missions] tables
 -- [prospects] tables
 -- [delivery] tables
+CREATE TABLE IF NOT EXISTS contact_points (
+  id INTEGER PRIMARY KEY, party_type TEXT NOT NULL, party_id INTEGER NOT NULL, channel TEXT NOT NULL, address TEXT NOT NULL,
+  verified INTEGER DEFAULT 0, opted_in INTEGER DEFAULT 0, source TEXT, demo INTEGER DEFAULT 0, created REAL, updated REAL,
+  UNIQUE(party_type, party_id, channel, address));
+CREATE TABLE IF NOT EXISTS suppressions (
+  id INTEGER PRIMARY KEY, address_key TEXT UNIQUE, channel TEXT, reason TEXT, party_type TEXT, party_id INTEGER,
+  demo INTEGER DEFAULT 0, created REAL);
+CREATE TABLE IF NOT EXISTS unsubscribe_tokens (
+  token_hash TEXT PRIMARY KEY, party_type TEXT, party_id INTEGER, channel TEXT, address TEXT, queue_id INTEGER,
+  created REAL, used REAL);
+CREATE TABLE IF NOT EXISTS cadences (
+  id INTEGER PRIMARY KEY, party_type TEXT, party_id INTEGER, owner_user_id INTEGER, channel TEXT, recipient_ref TEXT,
+  template TEXT, lead_tier TEXT, step INTEGER DEFAULT 0, status TEXT, due_at REAL, queue_id INTEGER,
+  first_queue_id INTEGER, first_sent_at REAL, last_outbound_at REAL, context TEXT, reason TEXT, demo INTEGER DEFAULT 0,
+  created REAL, updated REAL);
+CREATE INDEX IF NOT EXISTS cadences_due ON cadences(status, due_at);
+CREATE TABLE IF NOT EXISTS draft_feedback (
+  id INTEGER PRIMARY KEY, queue_id INTEGER, kind TEXT, template_key TEXT, persona TEXT, reason_code TEXT, reason TEXT,
+  edit_diff TEXT, actor TEXT, created REAL);
 -- [inbound] tables
 -- [client_ops] tables
 -- [webinars] tables
@@ -219,6 +238,17 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # [missions]
     # [prospects]
     # [delivery]
+    ("queue", "send_after", "REAL"),          # approved items wait as 'scheduled' until this time
+    ("queue", "sent_at", "REAL"),             # when it really went out (live, demo mock, or confirmed by a person)
+    ("queue", "status_reason", "TEXT"),       # plain-English why: scheduled for, cancelled because, failed because
+    ("queue", "original_body", "TEXT"),       # the first draft, kept when a person edits it (learning signal)
+    ("queue", "reject_code", "TEXT"),         # tone | wrong_fact | too_long | off_brand | compliance | timing | ...
+    ("queue", "claimed_at", "REAL"),          # when an approval/dispatch claimed it ('sending'): stuck sends are recovered
+    ("leads", "do_not_contact", "INTEGER DEFAULT 0"),
+    ("chain_leads", "do_not_contact", "INTEGER DEFAULT 0"),  # set by a STOP reply or the unsubscribe link
+    ("calendar_events", "party_type", "TEXT"),
+    ("calendar_events", "party_id", "INTEGER"),
+    ("calendar_events", "queue_id", "INTEGER"),
     # [inbound]
     # [client_ops]
     # [webinars]

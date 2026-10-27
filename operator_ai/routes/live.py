@@ -1,7 +1,9 @@
 """Live layer endpoints: the signed Meta lead webhook (public) and the chain controls."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import PlainTextResponse
 
 from .. import tenancy
@@ -10,6 +12,7 @@ from ..live import chain, meta
 
 router = APIRouter()
 public_router = APIRouter()
+LeadId = Annotated[int, Path(ge=1, le=2 ** 53)]  # beyond this: malformed input (422), never a DB overflow (500)
 
 
 @public_router.get("/t/{tid}/hooks/meta")
@@ -57,12 +60,14 @@ from pydantic import BaseModel, Field  # noqa: E402
 
 class ReplyBody(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
+    # a person's reading of the reply; omitted -> classified by rules
+    classification: str | None = Field(None, pattern="^(positive|negative|question|neutral|stop)$")
 
 
 @router.post("/chain/leads/{lead_id}/reply")
-def reply(lead_id: int, b: ReplyBody, ctx: Ctx = Depends(require("sales"))):
+def reply(lead_id: LeadId, b: ReplyBody, ctx: Ctx = Depends(require("sales"))):
     try:
-        return chain.record_reply(ctx.tenant, lead_id, b.text)
+        return chain.record_reply(ctx.tenant, lead_id, b.text, b.classification)
     except KeyError:
         raise HTTPException(404, "Lead not found")
 
@@ -72,7 +77,7 @@ class OutcomeBody(BaseModel):
 
 
 @router.post("/chain/leads/{lead_id}/outcome")
-def outcome(lead_id: int, b: OutcomeBody, ctx: Ctx = Depends(require("sales"))):
+def outcome(lead_id: LeadId, b: OutcomeBody, ctx: Ctx = Depends(require("sales"))):
     try:
         return chain.record_outcome(ctx.tenant, lead_id, b.outcome)
     except KeyError:

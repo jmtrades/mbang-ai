@@ -64,8 +64,13 @@ A negator only counts when it governs the match: in the same clause and within a
 | "Re:" / "Fwd:" subject or "following up" on a first touch | `deceptive_subject` | block | allowed when `prior_contact` |
 | Banned names (and persona banned words) | `banned_name` | block | names are also scrubbed from every API response (see below) |
 | Never-invite list (Gmail canonicalised) | `never_invite` | block | checked on propose and again at send |
-| SMS / phone without opt-in | `not_opted_in` | block | |
+| SMS / phone without opt-in | `not_opted_in` | block | any number formatting; the latest START/STOP wins |
 | Outreach range without a current proof record | `unsubstantiated_claim` | block | plug-in `operator_ai.claims:guard_rules` |
+| Contact marked do-not-contact | `do_not_contact` | block | prospects and leads; a scheduled send is cancelled instead |
+| Address on the suppression list (unsubscribed, asked to stop) | `unsubscribed` | block | emails, @handles, phone numbers |
+| Live channel on but no usable address | `no_address` | block | e.g. a Telegram nudge with no linked chat and no email |
+| Prospect email without an unsubscribe line | `missing_unsubscribe` | block | `delivery.guard_rules`; the footer is added automatically |
+| Prospect email without the business postal address | `missing_postal_address` | block | Business profile, Identity |
 
 ### Outreach money rule (prospect-facing only)
 
@@ -122,9 +127,22 @@ address per day (canonical form, so `a+1@…` is the same address), 3 sessions p
 
 ## Other enforced guardrails
 
-- **Approval for everything outgoing.** `queue.approve` re-runs the guardrails, then delivers to a mock transport
-  or marks the item "ready to send manually". The only live path is an approved calendar invite with the tenant's
-  live calendar switch on (`live/chain.deliver_calendar_invite`).
+- **Approval for everything outgoing, and delivery truth.** `queue.approve` claims the item atomically (one approval
+  ever wins), re-runs the guardrails, then: holds it as `scheduled` until `meta.send_after`; hands it to a person as
+  `awaiting_manual_send` (Instagram/LinkedIn DMs and phone always; any channel without a live sender in a real
+  workspace) until they confirm "I sent it"; or sends it through a live sender behind the server-only switch
+  (`sent` / `send_failed`). Mock transports run only in the demo workspace. The scheduled dispatcher re-runs the
+  guardrails and the never-invite check and evaluates `meta.cancel_if` before anything goes. Stage moves, caps and
+  stats count `sent`, never `approved`. Prospect email carries a postal-address footer, an unsubscribe link and
+  List-Unsubscribe headers; `/u/{token}` (guessing is throttled, a real link always works, applied once) sets
+  do-not-contact and suppresses the address.
+  In a real workspace a prospect email cannot be approved (live or copy-and-send) until `OPERATOR_PUBLIC_URL` is set,
+  so the link never points at localhost. A send interrupted mid-way becomes `send_failed` after 15 minutes and is
+  never retried by itself.
+- **Your drafts stay yours.** A queue item carrying `meta.owner_user_id` (outreach a person drafted for their own
+  prospects/clients) is visible to and decided by that person and the owner only, never by other staff through
+  their role; queue counts cover only what the viewer may see. Only the owner can record SMS/phone opt-in collected
+  outside the app (audited as consent); everyone else's contacts opt in by replying START.
 - **No impersonation.** Banned names are scrubbed (generated text, traces, citations, and every tenant API response
   via a middleware) and block any queue item. The response scrub walks the decoded JSON and rewrites string values
   only, so a banned word equal to a key or literal (`status`, `false`, `id`) can't corrupt a response; it skips the

@@ -1,15 +1,16 @@
 """Approval queue, runs/traces, audit log, guardrail check, settings."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
-from .. import audit, auth, guardrails, queue, runtime, settings
+from .. import audit, guardrails, queue, runtime, settings
 from ..deps import Ctx, get_ctx, require, require_owner
 
 router = APIRouter()
+QueueId = Annotated[int, Path(ge=1, le=2 ** 53)]  # beyond this: malformed input (422), never a DB overflow (500)
 
 
 def _qerr(e: queue.QueueError):
@@ -18,22 +19,22 @@ def _qerr(e: queue.QueueError):
 
 @router.get("/queue")
 def list_queue(status: str | None = Query(None, max_length=20), kind: str | None = Query(None, max_length=40),
-               run_id: int | None = None, chain_id: str | None = Query(None, max_length=80),
+               run_id: int | None = Query(None, ge=1, le=2 ** 53), chain_id: str | None = Query(None, max_length=80),
                ids: str | None = Query(None, max_length=2000), tag: str | None = Query(None, max_length=80),
                ctx: Ctx = Depends(require("queue"))):
-    id_list = [int(x) for x in ids.split(",") if x.strip().isdigit()] if ids else None
+    id_list = [int(x) for x in ids.split(",") if x.strip().isdigit() and len(x.strip()) <= 15] if ids else None
+    kinds = queue.decidable_kinds(ctx.role)
+    own = None if ctx.role == "owner" else ctx.user["id"]
     items = queue.list_items(ctx.tenant, status=status, kind=kind, run_id=run_id, chain_id=chain_id, ids=id_list,
-                             kinds=queue.decidable_kinds(ctx.role), tag=tag,
-                             own_user_id=None if ctx.role == "owner" else ctx.user["id"])
-    return {"items": items, "counts": queue.counts(ctx.tenant)}
+                             kinds=kinds, tag=tag, own_user_id=own)
+    # counts cover only what this person may see (never other people's drafts)
+    return {"items": items, "counts": queue.counts(ctx.tenant, kinds, own)}
 
 
 @router.get("/queue/{qid}")
-def get_item(qid: int, ctx: Ctx = Depends(require("queue"))):
+def get_item(qid: QueueId, ctx: Ctx = Depends(require("queue"))):
     item = queue.get(ctx.tenant, qid)
-    kinds = queue.decidable_kinds(ctx.role)
-    own = item is not None and item["meta"].get("owner_user_id") == ctx.user["id"] and item["kind"] in auth.OWN_DECIDE
-    if item is None or (kinds is not None and item["kind"] not in kinds and not own):
+    if not queue.visible(ctx.role, item, ctx.user["id"]):
         raise HTTPException(404, "Not found")
     return item
 
@@ -43,7 +44,7 @@ class EditBody(BaseModel):
 
 
 @router.put("/queue/{qid}")
-def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
+def edit_item(qid: QueueId, b: EditBody, ctx: Ctx = Depends(require("queue"))):
     try:
         return queue.edit(ctx.tenant, qid, b.body, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
@@ -51,7 +52,7 @@ def edit_item(qid: int, b: EditBody, ctx: Ctx = Depends(require("queue"))):
 
 
 @router.post("/queue/{qid}/approve")
-def approve(qid: int, ctx: Ctx = Depends(require("queue"))):
+def approve(qid: QueueId, ctx: Ctx = Depends(require("queue"))):
     try:
         return queue.approve(ctx.tenant, qid, ctx.actor, ctx.role, user_id=ctx.user["id"])
     except queue.QueueError as e:
@@ -60,12 +61,15 @@ def approve(qid: int, ctx: Ctx = Depends(require("queue"))):
 
 class RejectBody(BaseModel):
     reason: str = Field("", max_length=500)
+    # why it was rejected (feeds the learning loop); omitted -> "other"
+    reason_code: str | None = Field(None, pattern="^(" + "|".join(queue.REJECT_CODES) + ")$")
 
 
 @router.post("/queue/{qid}/reject")
-def reject(qid: int, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
+def reject(qid: QueueId, b: RejectBody | None = None, ctx: Ctx = Depends(require("queue"))):
     try:
-        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"])
+        return queue.reject(ctx.tenant, qid, ctx.actor, ctx.role, (b.reason if b else ""), user_id=ctx.user["id"],
+                            reason_code=b.reason_code if b else None)
     except queue.QueueError as e:
         _qerr(e)
 
@@ -81,7 +85,7 @@ def runs(agent: str | None = Query(None, max_length=40), limit: int = Query(50, 
 
 
 @router.get("/runs/{run_id}")
-def run(run_id: int, ctx: Ctx = Depends(get_ctx)):
+def run(run_id: Annotated[int, Path(ge=1, le=2 ** 53)], ctx: Ctx = Depends(get_ctx)):
     r = runtime.get(ctx.tenant, run_id)
     if r is None:
         raise HTTPException(404, "Not found")

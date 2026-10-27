@@ -830,6 +830,8 @@ NO_SESSION_OK = {
     "/health", "/ready", "/", "/t/{tid}", "/t/{tid}/", "/{path:path}", "/embed.js",
     "/t/{tid}/api/public", "/t/{tid}/api/auth/login", "/t/{tid}/api/auth/demo-login", "/t/{tid}/api/auth/logout",
     "/t/{tid}/api/auth/session", "/mcp", "/t/{tid}/mcp", "/m/{tid}/{slug}", "/m/{tid}/{slug}/start", "/m/{tid}/{slug}/ask",
+    # delivery: RFC 8058 one-click unsubscribe (GET only shows a confirm page; the token is the credential, guessing throttled)
+    "/u/{token}",
 }
 
 
