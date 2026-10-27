@@ -2,6 +2,7 @@
 Each test was written against a real hole and fails on the code before the fix."""
 from __future__ import annotations
 
+import re
 import time
 
 from operator_ai import db, queue, tenancy
@@ -164,7 +165,16 @@ def test_signoff_queue_is_blind_so_calibration_means_something(client):
                                                    db.now(), db.now())).lastrowid
     row = next(x for x in client.get("/t/demo/api/academy/team/signoffs").json()["items"] if x["id"] == rp)
     assert row.get("total") is None and all("points" not in c for c in row["criteria"])
-    assert "63" not in str(row)
+    def leaks(v) -> bool:  # the rules score anywhere in the row (not a substring of a timestamp, which made this flaky)
+        if isinstance(v, dict):
+            return any(leaks(x) for k, x in v.items() if k not in ("created", "updated"))
+        if isinstance(v, list):
+            return any(leaks(x) for x in v)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return v == 63
+        return isinstance(v, str) and bool(re.search(r"(?<!\d)63(?!\d)", v))
+
+    assert not leaks(row)
     r = client.post(f"/t/demo/api/academy/team/roleplays/{rp}/signoff", json={"score": 90}).json()
     assert r["rules_score"] == 63 and r["agreement"] is False  # revealed after grading
 
