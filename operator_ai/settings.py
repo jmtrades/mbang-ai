@@ -82,7 +82,7 @@ def _brand(key: str, v) -> dict:
                 _bad(key, f"{k} must be a colour like #5b6cff")
             out[k] = x
         elif k == "logo":
-            if not isinstance(x, str) or len(x) > 500 or (x and not re.match(r"^(https://|/)", x)):
+            if not isinstance(x, str) or len(x) > 500 or (x and not re.match(r"^(https://|/(?!/))", x)):
                 _bad(key, "logo must be empty, an https:// address or a path on this site")
             out[k] = x
         elif k in _BRAND_TEXT:

@@ -399,6 +399,20 @@ def test_the_coach_reads_what_the_person_told_it(client, tenant):
     assert "remembered" not in coach.answer(tenant, "How should I follow up after a no-show?", record=False)
 
 
+def test_logo_rules_agree_between_setup_and_settings(tenant):
+    """The brand logo (shown in the shell and on sign-in) passes the same rule in the Setup editor and the settings
+    shape check: an https:// link or a path on this site, never //host, data: or javascript:."""
+    from operator_ai import setup
+
+    assert setup.save_brand(tenant, {"logo": "/icon.svg"}, "owner")
+    assert setup.save_brand(tenant, {"logo": "https://cdn.example.com/l.png"}, "owner")
+    for bad in ("//evil.example/x.png", "data:image/png;base64,AAAA", "javascript:alert(1)"):
+        with pytest.raises(setup.SetupError):
+            setup.save_brand(tenant, {"logo": bad}, "owner")
+        with pytest.raises(settings.InvalidSetting):
+            settings.update_from_api(tenant, "brand", {**(tenant.get("brand") or {}), "logo": bad}, "owner")
+
+
 # ================================================================ setup reads every feature's real state
 def test_setup_checklist_reads_the_real_tables(client, tenant):
     from operator_ai import setup

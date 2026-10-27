@@ -73,7 +73,7 @@ const initial = (s: string) => (s.trim()[0] || "O").toUpperCase();
 /** The brand's logo (saved in Setup: an https image link or a small uploaded image), else its monogram. */
 function BrandMark({ name, logo, className }: { name: string; logo?: string | null; className?: string }) {
   const [broken, setBroken] = useState(false);
-  const ok = typeof logo === "string" && /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/i.test(logo) && !broken;
+  const ok = typeof logo === "string" && /^(https:\/\/|\/(?!\/))/i.test(logo) && !broken;
   if (ok) {
     return <img src={logo as string} alt="" aria-hidden data-testid="brand-logo" onError={() => setBroken(true)}
       className={cx("size-8 shrink-0 rounded-[9px] bg-panel object-contain ring-1 ring-line", className)} />;

@@ -18,7 +18,7 @@ from . import audit, config, llm, settings
 DEFAULT_PRIMARY = "#5b6cff"
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 _LOGO_URL = re.compile(r"^https://[^\s\"'<>]{4,490}$")
-_LOGO_DATA = re.compile(r"^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")
+_LOGO_PATH = re.compile(r"^/(?!/)[A-Za-z0-9._~/-]{1,300}$")
 _SPEAKER = re.compile(r"^\s*(?:\[?\(?\d{1,2}:\d{2}(?::\d{2})?\)?\]?\s*[-–]?\s*)?([A-Z][A-Za-z.'\-]{0,20}(?: [A-Z][A-Za-z.'\-]{0,20}){0,2}|Speaker \d+)\s*:\s+\S")
 LABEL = "Checked from your workspace's own state by rules (AI not used)"
 DECISIONS = {"persona": ("use", "not_now"), "backups": ("configured_elsewhere", "not_yet")}
@@ -356,8 +356,10 @@ def save_brand(tenant, data: dict, actor: str) -> dict:
             new[k] = str(data[k]).lower()
     if "logo" in data and data["logo"] is not None:
         logo = str(data["logo"]).strip()
-        if logo and not (_LOGO_URL.match(logo) or (_LOGO_DATA.match(logo) and len(logo) <= 200_000)):
-            raise SetupError(422, "The logo must be an https:// image link, or a PNG, JPEG or WebP under 150 KB.")
+        # the same rule as the settings shape check (hardening): an https:// link or a path on this site (never a
+        # protocol-relative "//host" address); the shell shows it in the menu, the header and on sign-in
+        if logo and not (_LOGO_URL.match(logo) or _LOGO_PATH.match(logo)):
+            raise SetupError(422, "The logo must be an https:// image link or a path on this site (for example /logo.png).")
         new["logo"] = logo
     settings.update_from_api(tenant, "brand", new, actor)
     return new
