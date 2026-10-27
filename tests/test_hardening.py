@@ -832,6 +832,8 @@ NO_SESSION_OK = {
     "/t/{tid}/api/auth/session", "/mcp", "/t/{tid}/mcp", "/m/{tid}/{slug}", "/m/{tid}/{slug}/start", "/m/{tid}/{slug}/ask",
     # delivery: RFC 8058 one-click unsubscribe (GET only shows a confirm page; the token is the credential, guessing throttled)
     "/u/{token}",
+    # prospects: the public proposal page and its accept button (live only after approval; throttled; noindex)
+    "/t/{tid}/p/{token}", "/t/{tid}/p/{token}/accept",
 }
 
 

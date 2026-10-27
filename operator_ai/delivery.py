@@ -394,11 +394,36 @@ def brand_name(tenant) -> str:
     return name or ((tenant.get("brand", {}) or {}).get("name") or "").strip() or "Our team"
 
 
-def with_footer(tenant, body: str) -> str:
-    """Prospect email body with the compliance footer (replacing any earlier one)."""
+def sender_identity(tenant, meta: dict | None = None) -> dict:
+    """Who a prospect email is legally from, for its compliance footer. A person emailing their OWN prospects
+    (meta.prospect_id + meta.owner_user_id: the prospects feature's sender details) is the sender, with their own
+    business and postal address, never the programme's. The owner's own outreach uses their sender details when
+    set, else the Business profile; everything else is the business itself."""
+    meta = meta or {}
+    biz = {"name": brand_name(tenant), "postal_address": postal_address(tenant), "own": False}
+    uid = _int(meta.get("owner_user_id"))
+    if tenant is None or uid is None or not meta.get("prospect_id"):
+        return biz
+    try:
+        from . import prospects
+
+        s = prospects.sender_of(tenant, uid)
+        with tenant.db() as c:
+            r = c.execute("SELECT role FROM users WHERE id=?", (uid,)).fetchone()
+    except Exception:  # noqa: BLE001 - no sender details: the business is the sender
+        return biz
+    name = str(s.get("business") or s.get("name") or "").strip()
+    addr = " ".join(str(s.get("postal_address") or "").split())
+    if r is None or r["role"] == "owner":
+        return {"name": name or biz["name"], "postal_address": addr or biz["postal_address"], "own": False}
+    return {"name": name or "Sent by", "postal_address": addr, "own": True}
+
+
+def with_footer(tenant, body: str, meta: dict | None = None) -> str:
+    """Prospect email body with the compliance footer (replacing any earlier one), naming the real sender."""
     base = (body or "").split(FOOTER_MARK)[0].rstrip()
-    first = brand_name(tenant)
-    addr = postal_address(tenant)
+    who = sender_identity(tenant, meta)
+    first, addr = who["name"], who["postal_address"]
     if addr:
         first = f"{first} · {addr}"
     return f"{base}{FOOTER_MARK}{first}\nDon't want these emails? Unsubscribe here: {UNSUB_PLACEHOLDER}"
@@ -421,9 +446,12 @@ def guard_rules(text: str, mode: str, meta: dict, tenant) -> list[dict]:
     if queued and ("unsubscribe" not in low or (UNSUB_PLACEHOLDER not in text and "/u/" not in text)):
         flags.append(guardrails._flag("missing_unsubscribe", "block",
                                       "Prospect emails need an unsubscribe line with a working link", ""))
-    addr = postal_address(tenant) if tenant is not None else ""
+    who = sender_identity(tenant, meta) if tenant is not None else {"postal_address": "", "own": False}
+    addr = who["postal_address"]
     if not addr:
         flags.append(guardrails._flag("missing_postal_address", "block",
+                                      "Add your postal address (Prospects, Ideal client, Sender details) before emailing "
+                                      "your prospects" if who["own"] else
                                       "Add your business postal address (Business profile, Identity) before emailing "
                                       "prospects", ""))
     elif queued and _norm_space(addr) not in _norm_space(text):

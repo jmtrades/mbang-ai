@@ -643,34 +643,20 @@ def update_stage(tenant, party: dict, label: str) -> str | None:
 
 
 def _set_prospect_stage(tenant, pid: int, stage: str, owner_user_id: int | None) -> None:
-    """Prefer the prospects feature's own stage function; fall back to the row when it is not there."""
+    """The prospects feature owns its pipeline: stage moves go through prospects.set_stage (which records the
+    timeline and emits prospect_stage) and do-not-contact through prospects.set_dnc. dnc_set is emitted once, by
+    apply_dnc below, so set_dnc runs with emit=False."""
+    from . import prospects
+
     try:
-        from . import prospects as _p  # noqa: PLC0415 - built in parallel; may not exist yet
+        if stage == "dnc":
+            prospects.set_dnc(tenant, pid, "inbound", "Asked not to be contacted (reply)", emit=False)
+        else:
+            prospects.set_stage(tenant, pid, stage, "inbound")
+    except prospects.ProspectError as e:  # their rules refused the move (e.g. already do-not-contact): leave it
+        from .redact import redact
 
-        fn = getattr(_p, "set_stage", None) or getattr(_p, "move_stage", None)
-    except ImportError:
-        fn = None
-    if fn is not None:
-        try:
-            fn(tenant, pid, stage, actor="inbound")
-            return
-        except TypeError:
-            try:
-                fn(tenant, pid, stage)
-                return
-            except TypeError:
-                pass
-        except Exception:  # noqa: BLE001 - their rules refused the move; leave the stage alone
-            from .redact import redact
-
-            log.warning("prospect stage move refused: %s", redact(f"{pid} -> {stage}"))
-            return
-    with tenant.db() as c:
-        cols = _cols(c, "prospects")
-        extra = ", do_not_contact=1" if stage == "dnc" else ""
-        c.execute(f"UPDATE prospects SET stage=?{', updated=?' if 'updated' in cols else ''}{extra} WHERE id=?",
-                  (stage, db.now(), pid) if "updated" in cols else (stage, pid))
-    events.emit(tenant, "prospect_stage", {"prospect_id": pid, "stage": stage, "owner_user_id": owner_user_id})
+        log.info("prospect stage move refused: %s", redact(f"{pid} -> {stage}: {e}"))
 
 
 # --------------------------------------------------------------------------- do-not-contact

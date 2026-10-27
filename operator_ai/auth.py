@@ -64,9 +64,20 @@ def has_tab(role: str, tab: str) -> bool:
 def can_decide(role: str, kind: str, item_owner: int | None = None, user_id: int | None = None) -> bool:
     if role == "owner":
         return True
-    if item_owner is not None and user_id is not None and item_owner == user_id and kind in OWN_DECIDE:
-        return True
+    if item_owner is not None and user_id is not None:
+        # An item someone drafted for their OWN prospects/clients belongs to them (and the owner): a setter's
+        # "followup" rights cover the programme's leads, never a student's own outreach.
+        if item_owner != user_id:
+            return False
+        if kind in OWN_DECIDE:
+            return True
     return kind in ROLE_DECIDE.get(role, set())
+
+
+def owns_or_shared(role: str, item_owner: int | None, user_id: int | None) -> bool:
+    """May this user see a queue item at all? Personal items (meta.owner_user_id set) only to their author and the
+    owner; everything else is governed by the role's kinds."""
+    return role == "owner" or item_owner is None or (user_id is not None and item_owner == user_id)
 
 
 def hash_pw(pw: str, salt: bytes | None = None) -> str:

@@ -37,6 +37,12 @@ def _user(t, username, role="student", student_email=None, coach_id=None):
 
 
 def _prospect(t, owner_id, name="Pat Prospect", email=None, handle=None, stage="contacted", demo=0):
+    from operator_ai import prospects
+
+    # the operator emails their own prospects, so their sender details carry their postal address (delivery's footer)
+    if not prospects.sender_of(t, owner_id).get("postal_address"):
+        prospects.save_icp(t, {"id": owner_id, "username": f"user{owner_id}", "role": "student"},
+                           {"sender": {"name": "Op Sender", "business": "Op Growth", "postal_address": "2 Test Lane, Testville"}})
     with t.db() as c:
         return c.execute("INSERT INTO prospects(owner_user_id,name,email,handle,stage,demo,created,updated) VALUES(?,?,?,?,?,?,?,?)",
                          (owner_id, name, email, handle, stage, demo, time.time(), time.time())).lastrowid

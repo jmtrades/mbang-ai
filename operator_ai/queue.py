@@ -207,7 +207,7 @@ def add(tenant, kind: str, body: str, *, channel: str = "manual", recipient_ref:
     if _wants_footer(channel, meta):
         from . import delivery
 
-        body = delivery.with_footer(tenant, body)
+        body = delivery.with_footer(tenant, body, meta)
     flags = _check(tenant, title, body, meta, recipient_ref, channel)
     status = _status_for(flags)
     names = guardrails.tenant_banned_names(tenant)
@@ -421,7 +421,7 @@ def edit(tenant, qid: int, body: str, actor: str, role: str = "owner", meta_patc
     if _wants_footer(item["channel"] or "manual", meta):
         from . import delivery
 
-        body = delivery.with_footer(tenant, body)
+        body = delivery.with_footer(tenant, body, meta)
     flags = _check(tenant, item["title"] or "", body, meta, item["recipient_ref"], item["channel"] or "manual")
     status = _status_for(flags)
     with tenant.db() as c:
