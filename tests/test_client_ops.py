@@ -15,7 +15,7 @@ import types
 
 import pytest
 
-from operator_ai import (auth, brief, client_ops, db, events, guardrails, outreach_loop, queue, settings, studio,
+from operator_ai import (auth, brief, client_ops, db, events, guardrails, outreach_loop, queue, settings, skills, studio,
                          webinar_chain, webinars)
 from operator_ai.agents import fulfilment, sales
 from tests.conftest import demo_login, login
@@ -127,7 +127,7 @@ def test_live_verify_needs_switch_and_allowlist(tenant):
     assert client_ops.verify_task(tenant, cid, "crm", "owner")["verified"] is False
     settings.set_box(tenant, "live_meta_enabled", True, "test yes")
     client_ops.update(tenant, cid, {"access": {"ad_account_id": "act_123"}}, "owner")
-    r = client_ops.verify_task(tenant, cid, "pixel_capi", "owner")
+    r = client_ops.verify_task(tenant, cid, "meta_partner_access", "owner")
     assert r["verified"] is False and "allowlist" in r["reason"]  # never calls out without the allowlist
     assert client_ops.meta_metrics(tenant, client_ops.get_client(tenant, cid)) is None
     settings.set_box(tenant, "live_meta_enabled", False, "")
@@ -487,7 +487,7 @@ def test_registration_consent_honeypot_rate_limit(client, tenant):
     ok = client.post(url, json={"name": "Ana Lee", "email": "Ana@X.example.com", "consent": True, "source": "paid_social"})
     assert ok.status_code == 200 and "registered" in ok.json()["message"]
     again = client.post(url, json={"name": "Ana Lee", "email": "ana@x.example.com", "consent": True})
-    assert "already" in again.json()["message"]
+    assert again.json()["message"] == ok.json()["message"]  # no hint about who already signed up
     regs = webinars.registrants(tenant, w["id"])
     assert len(regs) == 1 and regs[0]["source"] == "paid_social" and regs[0]["consent"] == 1
     webinars._rl.clear()
@@ -496,7 +496,14 @@ def test_registration_consent_honeypot_rate_limit(client, tenant):
     assert codes == [200] * 5 + [429]
 
 
-def test_approve_template_once_fans_out_per_registrant(tenant):
+@pytest.fixture
+def delivery_holds(monkeypatch):
+    """Simulate the delivery feature: queue.approve holds items whose send_after is in the future, so the fan-out
+    creates every per-registrant item at once. (Without it, webinars holds them itself: tests/test_client_ops_review.py.)"""
+    monkeypatch.setattr(webinars, "queue_holds_timed", lambda: True)
+
+
+def test_approve_template_once_fans_out_per_registrant(tenant, delivery_holds):
     w = _webinar(tenant)
     wd = _approve_page(tenant, w)
     for i in range(3):
@@ -520,7 +527,7 @@ def test_approve_template_once_fans_out_per_registrant(tenant):
     assert len(queue.list_items(tenant, kind="webinar_email")) == 4  # new registrants get approved emails too
 
 
-def test_big_lists_fan_out_in_the_job_queue(tenant, monkeypatch):
+def test_big_lists_fan_out_in_the_job_queue(tenant, monkeypatch, delivery_holds):
     from operator_ai import jobs
 
     monkeypatch.setattr(webinars, "FAN_INLINE_MAX", 1)
@@ -544,7 +551,7 @@ def test_flagged_fan_out_waits_for_a_person(tenant):
     assert it["status"] == "held" and any(f["code"] == "banned_name" for f in it["flags"])
 
 
-def test_late_registrant_skips_reminders_already_past(tenant):
+def test_late_registrant_skips_reminders_already_past(tenant, delivery_holds):
     w = _webinar(tenant, starts_in=20 * 60)  # starts in 20 minutes
     wd = _approve_page(tenant, w)
     for key in ("confirm", "day_before", "hour_before", "live"):
@@ -589,7 +596,7 @@ Yes,Walk In,Walk,walkin@x.example.com,11/05/2026 07:00:00 PM,11/05/2026 08:00:00
 """
 
 
-def test_attendance_import_post_event_followups_and_replays(tenant):
+def test_attendance_import_post_event_followups_and_replays(tenant, delivery_holds):
     w = _webinar(tenant, starts_in=-2 * 3600, client_id=None)
     wd = _approve_page(tenant, w)
     with tenant.db() as c:
@@ -791,6 +798,7 @@ def _render_everything(t, key: str) -> list[str]:
     lead = {"answers": {"business": b["business"], "niche": b["niche"], "goal": b["outcome"]}}
     texts += sales.followups(lead) + [sales.reply_line(lead, "warm"), sales.reply_line(lead, "cold")]
     texts += fulfilment._hooks(b, fulfilment.HOOK_TEMPLATES + fulfilment.HOOK_RETRY)
+    texts += [sk.fn({}, skills.get_profile(t)) for sk in skills.SKILLS.values()]  # the skills library (workers, chat)
     cid = _client(t, name=b["business"], niche=b["niche"], offer=b["offer"], price=2000,
                   brief_json={k: b[k] for k in ("audience", "outcome", "mechanism", "pain", "timeframe")})
     f = fulfilment.fulfil(t, cid)
@@ -844,5 +852,6 @@ def test_defaults_are_niche_neutral(tenant):
     assert set(b["missing"]) >= {"niche", "audience", "outcome", "mechanism", "pain"}
     texts = [d["body"] for line in studio.LINES for d in studio._drafts(line, b["brief"])]
     texts += fulfilment._hooks({}, fulfilment.HOOK_TEMPLATES)
+    texts += [sk.fn({}, skills.get_profile(tenant)) for sk in skills.SKILLS.values()]  # empty profile: neutral fallbacks
     for text in texts:
         assert not re.search(r"clinic|diary|patient|physio|booking", text, re.I), text

@@ -140,9 +140,15 @@ def _end(w: dict) -> float:
     return float(w["starts_at"]) + 60 * int(w.get("duration_min") or 60)
 
 
+_FIRST_OK = re.compile(r"[^\W\d_]+(?:['\u2019\-][^\W\d_]+)*\.?")
+
+
 def _first(name: str) -> str:
+    """The first name merged into an email. Names come from a public form, and these emails go out on the template's
+    approval, so anything that isn't plainly a name (a link, a domain, digits, symbols) becomes "there"."""
     n = (name or "").replace(" (DEMO)", "").strip()
-    return n.split(" ")[0] if n else "there"
+    first = n.split()[0] if n else ""
+    return first if len(first) <= 30 and _FIRST_OK.fullmatch(first) else "there"
 
 
 def _row(r) -> dict | None:
@@ -229,6 +235,13 @@ def create(tenant, data: dict, user: dict | None = None) -> dict:
     if not 15 <= dur <= 240 or not 1 <= offer_at < dur:
         raise WebinarError(422, "Length must be 15-240 minutes and the offer must start before the end")
     chain_id = data.get("chain_id") or None
+    if chain_id:
+        try:
+            from . import webinar_chain
+
+            webinar_chain.state(tenant, str(chain_id))
+        except KeyError:
+            raise WebinarError(404, "Webinar chain not found")
     client_id = data.get("client_id") or None
     if client_id is not None:
         with tenant.db() as c:
@@ -307,6 +320,8 @@ def update(tenant, wid: int, patch: dict, actor: str) -> dict:
         c.execute(f"UPDATE webinars SET {', '.join(f'{k}=?' for k in sets)} WHERE id=?", (*sets.values(), wid))
     if sets.get("status") == "cancelled":
         _cancel_sends(tenant, wid, None, actor, "webinar cancelled")
+    elif any(sets.get(k, w.get(k)) != w.get(k) for k in ("starts_at", "tz", "join_url", "replay_url")):
+        _refresh_unsent(tenant, wid, actor)
     audit.log(tenant, actor, "action", {"webinar_update": wid, "fields": sorted(sets)})
     return get(tenant, wid)
 
@@ -363,11 +378,21 @@ def _template(tenant, wid: int, key: str) -> dict | None:
         return db.row(c.execute("SELECT * FROM webinar_templates WHERE webinar_id=? AND key=?", (wid, key)).fetchone())
 
 
+def _absolute(link: str) -> str:
+    """Links in emails must be complete; without OPERATOR_PUBLIC_URL the address part is a visible placeholder."""
+    return link if link.startswith("http") else "[your workspace address]" + link
+
+
+def with_unsubscribe(body: str) -> str:
+    """Every per-registrant email carries the unsubscribe line, even if it was edited out of the template."""
+    return body if "{unsubscribe_link}" in body else body.rstrip() + "\n" + UNSUB_LINE
+
+
 def render(body: str, w: dict, reg: dict, tenant) -> str:
     fields = {"first_name": _first(reg["name"]), "title": w["title"], "when": when_label(w["starts_at"], w["tz"]),
               "join_link": w.get("join_url") or "(the join link will follow)",
               "replay_link": w.get("replay_url") or "(the replay link will follow)",
-              "unsubscribe_link": f"{page_url(tenant, w)}/unsubscribe?r={reg.get('token') or ''}"}
+              "unsubscribe_link": _absolute(f"{page_url(tenant, w)}/unsubscribe?r={reg.get('token') or ''}")}
     out = body
     for k, v in fields.items():
         out = out.replace("{" + k + "}", str(v))
@@ -381,6 +406,16 @@ def _send_after(w: dict, key: str, registered_at: float) -> float:
     return (float(w["starts_at"]) if phase == "showup" else _end(w)) + off
 
 
+HOLD_SLACK = 60  # a send due within a minute goes now
+
+
+def queue_holds_timed() -> bool:
+    """True once the delivery feature makes queue.approve hold items whose meta.send_after is still in the future
+    (status "scheduled"). Until then an approved email would go out the moment it is approved, so timed sends wait
+    here (webinar_sends.due_at) and webinars.tick creates and approves each one when it is due."""
+    return "scheduled" in getattr(queue, "STATUSES", ())
+
+
 def _fan_one(tenant, w: dict, reg: dict, tpl: dict, actor: str, now: float) -> int | None:
     key = tpl["key"]
     if reg.get("unsubscribed") or not reg.get("consent") or w["status"] == "cancelled":
@@ -389,10 +424,17 @@ def _fan_one(tenant, w: dict, reg: dict, tpl: dict, actor: str, now: float) -> i
     if TPL[key][1] == "showup" and key != "confirm" and send_after < now - SHOWUP_GRACE:
         return None  # e.g. the one-hour reminder for someone who registered ten minutes before the start
     with tenant.db() as c:
-        claimed = c.execute("INSERT OR IGNORE INTO webinar_sends(webinar_id,registrant_id,template_key,created) "
-                            "VALUES(?,?,?,?)", (w["id"], reg["id"], key, now)).rowcount
+        claimed = c.execute("INSERT OR IGNORE INTO webinar_sends(webinar_id,registrant_id,template_key,created,due_at) "
+                            "VALUES(?,?,?,?,?)", (w["id"], reg["id"], key, now, send_after)).rowcount
     if not claimed:
         return None
+    if send_after > now + HOLD_SLACK and not queue_holds_timed():
+        return None  # held here until it is due (webinars.tick); nothing exists to send early
+    return _create_send(tenant, w, reg, tpl, actor, send_after)
+
+
+def _create_send(tenant, w: dict, reg: dict, tpl: dict, actor: str, send_after: float, run_id: int | None = None) -> int:
+    key = tpl["key"]
     label = TPL[key][3]
     meta = {"webinar_id": w["id"], "registrant_id": reg["id"], "template_key": key, "client_asset": True,
             "prior_contact": True, "send_after": send_after, "cancel_if": ["unsubscribed"],
@@ -400,13 +442,13 @@ def _fan_one(tenant, w: dict, reg: dict, tpl: dict, actor: str, now: float) -> i
     if w.get("owner_user_id"):
         meta["owner_user_id"] = w["owner_user_id"]
     subject = next((l.split(":", 1)[1].strip() for l in tpl["body"].splitlines() if l.lower().startswith("subject:")), None)
-    body = render(tpl["body"], w, reg, tenant)
+    body = render(with_unsubscribe(tpl["body"]), w, reg, tenant)
     if subject:
         meta["subject"] = render(subject, w, reg, tenant)
         body = "\n".join(l for l in body.splitlines() if not l.lower().startswith("subject:"))
     item = queue.add(tenant, "webinar_email", body, channel="email", recipient_ref=reg["email"],
                      title=f"[{label}] {w['title']} → {_first(reg['name'])}"[:200], meta=meta, actor=actor,
-                     demo=bool(w.get("demo")) or tenant.is_demo)
+                     demo=bool(w.get("demo")) or tenant.is_demo, run_id=run_id)
     with tenant.db() as c:
         c.execute("UPDATE webinar_sends SET queue_id=? WHERE webinar_id=? AND registrant_id=? AND template_key=?",
                   (item["id"], w["id"], reg["id"], key))
@@ -442,39 +484,136 @@ def fan_out(tenant, wid: int, key: str, actor: str = "system", registrant_ids: l
     return out
 
 
+def release_due(tenant, now: float | None = None, limit: int = 500) -> list[int]:
+    """Timed sends held here (see queue_holds_timed) whose time has come: create each per-registrant item and approve
+    it on the template's behalf, re-checking everything first (template still approved, webinar not cancelled,
+    registrant still subscribed and consenting, a reminder not hours stale, a replay not for someone who saw the offer).
+    Runs as one traced run per tick that has something due."""
+    now = now or time.time()
+    with tenant.db() as c:
+        rows = db.rows(c.execute("SELECT * FROM webinar_sends WHERE queue_id IS NULL AND due_at IS NOT NULL AND due_at<=? "
+                                 "ORDER BY due_at LIMIT ?", (now + HOLD_SLACK, limit)))
+    if not rows:
+        return []
+
+    def fn(run: runtime.Run) -> list[int]:
+        out: list[int] = []
+        dropped = 0
+        webs: dict[int, dict | None] = {}
+        for s in rows:
+            wid, key = s["webinar_id"], s["template_key"]
+            if wid not in webs:
+                webs[wid] = get(tenant, wid)
+            w = webs[wid]
+            tpl = _template(tenant, wid, key)
+            with tenant.db() as c:
+                reg = db.row(c.execute("SELECT * FROM webinar_registrants WHERE id=?", (s["registrant_id"],)).fetchone())
+            phase = TPL[key][1] if key in TPL else None
+            ok = (w is not None and tpl is not None and reg is not None and phase is not None
+                  and tpl["status"] == "approved" and w["status"] != "cancelled" and reg["consent"] and not reg["unsubscribed"]
+                  and not (phase == "showup" and key != "confirm" and s["due_at"] < now - SHOWUP_GRACE)
+                  and not (phase == "replay" and reg["stayed_past_offer"]))
+            with tenant.db() as c:
+                if not ok:
+                    dropped += c.execute("DELETE FROM webinar_sends WHERE id=? AND queue_id IS NULL", (s["id"],)).rowcount
+                    continue
+                # claim the row first so two ticks can never create the same email twice
+                if not c.execute("UPDATE webinar_sends SET queue_id=-1 WHERE id=? AND queue_id IS NULL", (s["id"],)).rowcount:
+                    continue
+            try:
+                out.append(_create_send(tenant, w, reg, tpl, "system(webinar schedule)", s["due_at"], run.id))
+            except Exception as e:  # noqa: BLE001 - give the row back so the next tick tries again
+                with tenant.db() as c:
+                    c.execute("UPDATE webinar_sends SET queue_id=NULL WHERE id=? AND queue_id=-1", (s["id"],))
+                log.warning("scheduled webinar email %s failed: %s", s["id"], redact(e))
+        run.note("release", {"due": len(rows)}, {"queued": out, "dropped": dropped},
+                 label="Emails whose time has come (approved templates)")
+        return out
+
+    return runtime.execute(tenant, "webinars", "Scheduled webinar emails", ["Emails whose time has come (approved templates)"],
+                           fn, "system(webinar schedule)")["result"]
+
+
+def _cancel_item(tenant, it: dict, actor: str, reason: str) -> bool:
+    """Withdraw one per-registrant email that hasn't gone out. Open items are rejected; items the delivery feature
+    holds (scheduled, waiting for a manual send, failed) are cancelled through it."""
+    if it["status"] in queue.OPEN:
+        try:
+            queue.reject(tenant, it["id"], actor, reason=reason)
+            return True
+        except queue.QueueError:
+            return False
+    if it["status"] not in ("scheduled", "awaiting_manual_send", "send_failed", "awaiting_send"):
+        return False  # already sent, approved, rejected or cancelled
+    fn = getattr(queue, "cancel_system", None)
+    if fn is not None:
+        try:
+            return bool(fn(tenant, it["id"], reason, actor))
+        except Exception as e:  # noqa: BLE001 - fall back to the direct status change below
+            log.info("cancel_system failed for %s: %s", it["id"], redact(e))
+    try:
+        from . import delivery
+
+        dfn = getattr(delivery, "cancel", None)
+        if dfn is not None:
+            dfn(tenant, it["id"], reason)
+            return True
+    except ImportError:
+        pass
+    with tenant.db() as c:
+        n = c.execute("UPDATE queue SET status='rejected', decided_by=?, decided_at=? WHERE id=? AND status=?",
+                      (actor, db.now(), it["id"], it["status"])).rowcount
+    if n:
+        audit.log(tenant, actor, "queue.reject", {"id": it["id"], "reason": reason})
+    return bool(n)
+
+
 def _cancel_sends(tenant, wid: int, registrant_id: int | None, actor: str, reason: str) -> int:
-    q = "SELECT queue_id FROM webinar_sends WHERE webinar_id=? AND queue_id IS NOT NULL"
-    args: list = [wid]
+    where, args = "webinar_id=?", [wid]
     if registrant_id is not None:
-        q += " AND registrant_id=?"
+        where += " AND registrant_id=?"
         args.append(registrant_id)
     with tenant.db() as c:
-        qids = [r["queue_id"] for r in c.execute(q, args)]
-    n = 0
+        held = c.execute(f"DELETE FROM webinar_sends WHERE {where} AND queue_id IS NULL", args).rowcount
+        qids = [r["queue_id"] for r in c.execute(f"SELECT queue_id FROM webinar_sends WHERE {where} AND queue_id>0", args)]
+    n = held
     for qid in qids:
         it = queue.get(tenant, qid, scrub=False)
-        if it is None:
-            continue
-        if it["status"] in queue.OPEN:
-            queue.reject(tenant, qid, actor, reason=reason)
+        if it is not None and _cancel_item(tenant, it, actor, reason):
             n += 1
-        elif it["status"] in ("scheduled", "awaiting_send"):  # held by the delivery feature until due
-            cancelled = False
-            try:
-                from . import delivery
+    return n
 
-                fn = getattr(delivery, "cancel", None)
-                if fn is not None:
-                    fn(tenant, qid, reason)
-                    cancelled = True
-            except ImportError:
-                pass
-            if not cancelled:
-                with tenant.db() as c:
-                    c.execute("UPDATE queue SET status='rejected', decided_by=?, decided_at=? WHERE id=? AND status=?",
-                              (actor, db.now(), qid, it["status"]))
-                audit.log(tenant, actor, "queue.reject", {"id": qid, "reason": reason})
-            n += 1
+
+def _refresh_unsent(tenant, wid: int, actor: str) -> int:
+    """The time, time zone or a link changed: every email that hasn't gone out yet is withdrawn and drafted again
+    with the new details (and the new send time). Emails already sent are left alone."""
+    with tenant.db() as c:
+        rows = db.rows(c.execute("SELECT * FROM webinar_sends WHERE webinar_id=?", (wid,)))
+    redo = []
+    for s in rows:
+        if s["queue_id"] is None:
+            redo.append(s)
+        elif s["queue_id"] > 0:
+            it = queue.get(tenant, s["queue_id"], scrub=False)
+            if it is not None and _cancel_item(tenant, it, actor, "the webinar's details changed; redrafted"):
+                redo.append(s)
+    if not redo:
+        return 0
+    with tenant.db() as c:
+        c.execute(f"DELETE FROM webinar_sends WHERE id IN ({','.join('?' * len(redo))})", [s["id"] for s in redo])
+    w = get(tenant, wid)
+    now = db.now()
+    n = 0
+    for s in redo:
+        tpl = _template(tenant, wid, s["template_key"])
+        with tenant.db() as c:
+            reg = db.row(c.execute("SELECT * FROM webinar_registrants WHERE id=?", (s["registrant_id"],)).fetchone())
+        if w is None or tpl is None or reg is None or tpl["status"] != "approved" or s["template_key"] not in TPL:
+            continue
+        if TPL[s["template_key"]][1] == "replay" and reg["stayed_past_offer"]:
+            continue
+        _fan_one(tenant, w, reg, tpl, actor, now)
+        n += 1
     return n
 
 
@@ -547,8 +686,9 @@ def register(tenant, slug: str, name, email, consent, honeypot="", source="", ip
             _fan_one(tenant, w, reg, t, "system(registration)", db.now())
         audit.log(tenant, "public(registration)", "consent", {"webinar_id": w["id"], "registrant_id": reg["id"],
                                                                "source": source})
-    return {"ok": True, "message": "You're registered. Check your inbox for the details." if new
-            else "You're already registered. Check your inbox for the details.",
+    # the same answer whether or not the address was already registered, so the form can't be used to find out
+    # who signed up
+    return {"ok": True, "message": "You're registered. Check your inbox for the details.",
             "when": when_label(w["starts_at"], w["tz"]), "join_url": w.get("join_url") or None}
 
 
@@ -568,8 +708,12 @@ def unsubscribe(tenant, slug: str, token: str) -> dict:
         fn = getattr(delivery, "mark_unsubscribed", None)
         if fn is not None:
             fn(tenant, "email", reg["email"])
+        elif getattr(delivery, "suppress", None) is not None:
+            delivery.suppress(tenant, reg["email"], "email", "unsubscribed from webinar emails")
     except ImportError:
         pass
+    except Exception as e:  # noqa: BLE001 - the registrant is unsubscribed here whatever the other feature does
+        log.warning("delivery unsubscribe hook failed: %s", redact(e))
     audit.log(tenant, "public(unsubscribe)", "consent", {"webinar_id": w["id"], "registrant_id": reg["id"],
                                                           "unsubscribed": True, "cancelled": n})
     return {"ok": True, "cancelled": n}
@@ -658,7 +802,10 @@ def parse_attendance(text: str) -> list[dict]:
         raise WebinarError(422, "Couldn't find an email column. Export the attendee report as CSV from your webinar tool.")
     body = "\n".join(lines[start:])
     dialect = "excel-tab" if "\t" in lines[start] else "excel"
-    rows = list(csv.reader(io.StringIO(body), dialect=dialect))
+    try:
+        rows = list(csv.reader(io.StringIO(body), dialect=dialect))
+    except csv.Error:
+        raise WebinarError(422, "That file couldn't be read as a CSV (a cell is too long or broken). Export it again.")
     header = [h.strip().lower() for h in rows[0]]
     idx: dict[str, int] = {}
     for key, pats in _COLS.items():
@@ -756,9 +903,15 @@ def post_event(tenant, wid: int, actor: str = "system", now: float | None = None
             c.execute("UPDATE webinars SET status='done', post_event_at=COALESCE(post_event_at, ?), updated=? WHERE id=?",
                       (now, now, wid))
             regs = db.rows(c.execute("SELECT * FROM webinar_registrants WHERE webinar_id=? AND post_done=0", (wid,)))
+            # attendance that arrived after the follow-up ran: people now known to have stayed for the offer and who
+            # have no setter follow-up yet get one, and their replay emails that haven't gone out are withdrawn
+            late = db.rows(c.execute(
+                "SELECT * FROM webinar_registrants r WHERE webinar_id=? AND post_done=1 AND stayed_past_offer=1 AND consent=1 "
+                "AND unsubscribed=0 AND NOT EXISTS (SELECT 1 FROM queue q WHERE q.kind='followup' AND "
+                "json_extract(q.meta,'$.webinar_id')=r.webinar_id AND json_extract(q.meta,'$.registrant_id')=r.id)", (wid,)))
         w2 = get(tenant, wid)
         drafts, replay_for = [], []
-        for reg in regs:
+        for reg in regs + late:
             if reg["stayed_past_offer"] and reg["consent"] and not reg["unsubscribed"]:
                 meta = {"prospect_facing": True, "lead_tier": "warm", "prior_contact": True, "webinar_id": wid,
                         "registrant_id": reg["id"], "source": "webinar"}
@@ -770,6 +923,8 @@ def post_event(tenant, wid: int, actor: str = "system", now: float | None = None
                                meta={**meta, "subject": f"Your question about {w2['title']}"[:120]}, run_id=run.id,
                                actor=actor, demo=bool(w2.get("demo")) or tenant.is_demo)
                 drafts.append(it["id"])
+                if reg["post_done"]:
+                    _cancel_replays(tenant, wid, reg["id"], actor)
             elif not reg["stayed_past_offer"]:
                 replay_for.append(reg["id"])
         run.note("followups", {}, {"setter_drafts": drafts}, label="Setter follow-ups (for approval)")
@@ -798,9 +953,27 @@ def post_event(tenant, wid: int, actor: str = "system", now: float | None = None
     return {**out["result"], "run_id": out["run_id"]}
 
 
+def _cancel_replays(tenant, wid: int, registrant_id: int, actor: str) -> int:
+    """Withdraw replay emails that haven't gone out for someone who, it turns out, stayed for the offer."""
+    keys = [k for k, phase, *_ in TEMPLATES if phase == "replay"]
+    marks = ",".join("?" * len(keys))
+    with tenant.db() as c:
+        n = c.execute(f"DELETE FROM webinar_sends WHERE webinar_id=? AND registrant_id=? AND queue_id IS NULL "
+                      f"AND template_key IN ({marks})", (wid, registrant_id, *keys)).rowcount
+        qids = [r["queue_id"] for r in c.execute(
+            f"SELECT queue_id FROM webinar_sends WHERE webinar_id=? AND registrant_id=? AND queue_id>0 "
+            f"AND template_key IN ({marks})", (wid, registrant_id, *keys))]
+    for qid in qids:
+        it = queue.get(tenant, qid, scrub=False)
+        if it is not None and _cancel_item(tenant, it, actor, "they stayed for the offer: a setter follows up instead"):
+            n += 1
+    return n
+
+
 def tick(tenant, now: float | None = None) -> dict:
     """Per-tenant tick: close registration when an event ends, then follow up once the attendance window passes."""
     now = now or time.time()
+    released = release_due(tenant, now)
     with tenant.db() as c:
         rows = [_row(r) for r in c.execute("SELECT * FROM webinars WHERE status IN ('open','ended')")]
     done = []
@@ -817,7 +990,7 @@ def tick(tenant, now: float | None = None) -> dict:
                 done.append(w["id"])
             except Exception as e:  # noqa: BLE001 - one webinar must not stop the others
                 log.warning("post-event failed for webinar %s: %s", w["id"], redact(e))
-    return {"post_event": done}
+    return {"post_event": done, "released": released}
 
 
 tick.demo_too = True
@@ -918,10 +1091,13 @@ def detail(tenant, wid: int) -> dict:
         tpls = db.rows(c.execute("SELECT * FROM webinar_templates WHERE webinar_id=? ORDER BY id", (wid,)))
         sends = {r["template_key"]: r["n"] for r in c.execute(
             "SELECT template_key, COUNT(*) n FROM webinar_sends WHERE webinar_id=? GROUP BY template_key", (wid,))}
+        waiting = {r["template_key"]: r["n"] for r in c.execute(
+            "SELECT template_key, COUNT(*) n FROM webinar_sends WHERE webinar_id=? AND queue_id IS NULL GROUP BY template_key",
+            (wid,))}
     for t in tpls:
         it = queue.get(tenant, t["queue_id"]) if t["queue_id"] else None
         t.update(label=TPL[t["key"]][3] if t["key"] in TPL else t["key"], queue_status=it["status"] if it else None,
-                 fanned_out=sends.get(t["key"], 0))
+                 fanned_out=sends.get(t["key"], 0), waiting=waiting.get(t["key"], 0))
         off = TPL.get(t["key"], (None, None, None))[2]
         t["timing"] = ("At registration" if off is None else
                        ("When we go live" if off == 0 else

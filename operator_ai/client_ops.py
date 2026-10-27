@@ -42,7 +42,9 @@ CHECKLIST = [
     ("kickoff_call", "Kickoff call held", "Scope, deliverables and the first milestone read back and agreed on the call."),
 ]
 CHECK_KEYS = [k for k, _, _ in CHECKLIST]
-LIVE_VERIFIABLE = {"meta_partner_access", "pixel_capi"}
+# Only what an API read really proves: the client's ad account is visible to your business (partner access granted).
+# Pixel / Conversions API stays a manual tick: seeing the ad account says nothing about the pixel.
+LIVE_VERIFIABLE = {"meta_partner_access"}
 
 # numbers a client report can track (the diagnostic reads the same keys)
 METRIC_KEYS = {
@@ -223,8 +225,9 @@ def kickoff_body(tenant, cl: dict, link: str | None) -> str:
     from . import calendar
 
     first = (cl.get("contact_name") or "").replace(" (DEMO)", "").split(" ")[0] or "there"
-    slots = calendar.free_slots(tenant, 3)
-    times = ", ".join(s["label"] for s in slots) or "any time that suits you this week"
+    # the workspace calendar is the owner's: a student's own client is asked for times instead of offered the owner's
+    slots = [] if cl.get("owner_user_id") else calendar.free_slots(tenant, 3)
+    times = ", ".join(s["label"] for s in slots) or "reply with two or three times that suit you this week"
     intake = absolute(link) if link else "(the intake link will follow)"
     return (f"Subject: Welcome aboard: next steps for {cl['name']}\n"
             f"Hi {first},\n"
@@ -353,12 +356,13 @@ def verify_task(tenant, client_id: int, key: str, actor: str) -> dict:
     if not tenant.get("live_meta_enabled", False):
         return {"verified": False, "reason": "Automatic checks are off for this workspace. Tick it by hand once it's done."}
     if not acct or acct not in (tenant.get("meta_allowlist", []) or []):
-        return {"verified": False, "reason": "Add the client's ad account ID and ask the owner to allowlist it first."}
+        return {"verified": False, "reason": "The workspace owner needs to link the client's ad account and add it to the "
+                                             "allowlist first."}
     from .live import meta as live_meta
 
     try:
         ad = live_meta.MetaAdsAdapter(tenant, acct)
-        ok = ad.get(acct) is not None
+        ok = ad.read_account(acct) is not None
     except Exception as e:  # noqa: BLE001 - a failed check never ticks the item; the reason is redacted
         return {"verified": False, "reason": redact(f"The check didn't go through ({type(e).__name__}). Try again or tick by hand.")}
     if ok:
@@ -404,12 +408,16 @@ def submit_intake(tenant, token: str, data: dict, actor: str = "client(intake)")
     proof_text = data.get("proof") or ""
     if not isinstance(proof_text, str) or len(proof_text) > 2000:
         raise ClientOpsError(422, "Proof must be text (max 2,000 characters)")
+    if redact(proof_text) != proof_text:
+        raise ClientOpsError(422, "Please don't paste passwords or access tokens into this form.")
     permission = data.get("proof_permission") is True
     assets = data.get("assets") or []
     if isinstance(assets, str):
         assets = [a.strip() for a in assets.splitlines() if a.strip()]
     if not isinstance(assets, list) or len(assets) > 10 or not all(isinstance(a, str) and _URL.match(a.strip()) for a in assets):
         raise ClientOpsError(422, "Asset links must be up to 10 web addresses starting with http:// or https://")
+    if any(redact(a) != a for a in assets):
+        raise ClientOpsError(422, "Please don't paste passwords or access tokens into this form (a link carries one).")
     email = data.get("email") or ""
     if email and (not isinstance(email, str) or not _EMAIL.match(email.strip()) or len(email) > 200):
         raise ClientOpsError(422, "That email address doesn't look right")
@@ -457,7 +465,9 @@ def refresh_fulfilment(tenant, client_id: int, actor: str = "system") -> dict:
 
 
 # --------------------------------------------------------------------------- updates
-def update(tenant, client_id: int, patch: dict, actor: str) -> dict:
+def update(tenant, client_id: int, patch: dict, actor: str, role: str = "owner") -> dict:
+    """`role` is the caller's role: only the owner may link or change a client's ad account, because the weekly loop
+    reads that account (and, with the live switch on, the Meta API) and proposes changes to it."""
     cl = get_client(tenant, client_id)
     if cl is None:
         raise ClientOpsError(404, "Client not found")
@@ -478,11 +488,16 @@ def update(tenant, client_id: int, patch: dict, actor: str) -> dict:
     if patch.get("price") is not None:
         sets["price"] = float(patch["price"])
     if patch.get("report_weekday") is not None:
-        sets["report_weekday"] = int(patch["report_weekday"])
+        wd = patch["report_weekday"]
+        if isinstance(wd, bool) or not isinstance(wd, int) or not 0 <= wd <= 6:
+            raise ClientOpsError(422, "Report day must be 0 (Monday) to 6 (Sunday)")
+        sets["report_weekday"] = wd
     if patch.get("kpi_targets") is not None:
-        kt = {k: float(v) for k, v in patch["kpi_targets"].items() if k in METRIC_KEYS}
-        sets["kpi_targets"] = db.jdump(kt)
+        kt = finite_numbers(patch["kpi_targets"], "Targets")
+        sets["kpi_targets"] = db.jdump({k: v for k, v in kt.items() if k in METRIC_KEYS})
     if patch.get("access") is not None:
+        if not isinstance(patch["access"], dict):
+            raise ClientOpsError(422, "Access must be a list of fields")
         acc = {}
         for k, v in patch["access"].items():
             if k not in ACCESS_KEYS:
@@ -490,9 +505,13 @@ def update(tenant, client_id: int, patch: dict, actor: str) -> dict:
             v = str(v or "").strip()[:300]
             if redact(v) != v or re.search(r"\b(password|passwd|secret)\b", v, re.I):
                 raise ClientOpsError(422, "Don't store passwords or tokens here. Keep logins in the client's own tools.")
+            if k == "ad_account_id" and role != "owner" and v != str((cl["access"] or {}).get(k) or "").strip():
+                raise ClientOpsError(403, "Only the workspace owner can link an ad account to a client. Ask them to add it.")
             acc[k] = v
         sets["access"] = db.jdump({**(cl["access"] or {}), **acc})
     if patch.get("brief") is not None:
+        if not isinstance(patch["brief"], dict):
+            raise ClientOpsError(422, "The brief must be a list of fields")
         b = dict(cl["brief"] or {})
         for k, v in patch["brief"].items():
             if k in brief_mod.FIELDS and k not in ("date", "faq"):
@@ -519,6 +538,37 @@ def log_call(tenant, client_id: int, outcome: str, note: str, actor: str) -> dic
 
 
 # --------------------------------------------------------------------------- metrics
+def _period(ts) -> float:
+    """A week's start time must be a real date: from five years ago to about a year ahead (no 500 on 1e300 or inf)."""
+    try:
+        f = float(ts)
+    except (TypeError, ValueError):
+        raise ClientOpsError(422, "The week must be a date")
+    now = time.time()
+    if not math.isfinite(f) or not now - 5 * 365 * 86400 <= f <= now + 400 * 86400:
+        raise ClientOpsError(422, "The week must be within the last five years")
+    return f
+
+
+def finite_numbers(values: dict, label: str = "Numbers", allow_empty: bool = True, max_keys: int = 40) -> dict:
+    """Numbers stored on a client (starting metrics, targets) must be finite and in range: NaN or infinity would
+    break every later read (JSON responses refuse them) with a 500."""
+    if not isinstance(values, dict) or (not values and not allow_empty) or len(values) > max_keys:
+        raise ClientOpsError(422, f"{label} must be a short list of numbers")
+    out = {}
+    for k, v in values.items():
+        if not isinstance(k, str) or not 0 < len(k) <= 40:
+            raise ClientOpsError(422, f"{label}: unknown name")
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            raise ClientOpsError(422, f"{label}: {k} must be a number")
+        if isinstance(v, bool) or not math.isfinite(f) or not 0 <= f <= 1e9:
+            raise ClientOpsError(422, f"{label}: {k} must be between 0 and 1,000,000,000")
+        out[k] = f
+    return out
+
+
 def _clean_metrics(metrics: dict) -> dict:
     if not isinstance(metrics, dict) or not metrics:
         raise ClientOpsError(422, "Add at least one number")
@@ -541,7 +591,7 @@ def record_metrics(tenant, client_id: int, metrics: dict, period_start: float | 
     m = _clean_metrics(metrics)
     if get_client(tenant, client_id) is None:
         raise ClientOpsError(404, "Client not found")
-    ps = _week_start(period_start) if period_start else _week_start()
+    ps = _week_start(_period(period_start)) if period_start else _week_start()
     with tenant.db() as c:
         prev = c.execute("SELECT id, metrics FROM client_metrics WHERE client_id=? AND period_start=? AND source=?",
                          (client_id, ps, source)).fetchone()
@@ -585,14 +635,14 @@ def import_ads_csv(tenant, client_id: int, text: str, period_start: float | None
 
 
 def meta_metrics(tenant, client: dict) -> dict | None:
-    """Read this week's totals from the Meta API: only with the live switch on and the account allowlisted."""
+    """Read the last 7 days' totals from the Meta API: only with the live switch on and the account allowlisted."""
     acct = (client.get("access") or {}).get("ad_account_id")
     if not acct or not tenant.get("live_meta_enabled", False) or acct not in (tenant.get("meta_allowlist", []) or []):
         return None
     from .live import meta as live_meta
 
     try:
-        ads = live_meta.MetaAdsAdapter(tenant, acct).tree(acct)
+        ads = live_meta.MetaAdsAdapter(tenant, acct).tree(acct, date_preset="last_7d")
     except Exception as e:  # noqa: BLE001
         log.warning("meta read failed: %s", redact(e))
         return None
@@ -725,7 +775,8 @@ def report_body(cl: dict, b: dict, latest: dict, prev: dict, targets: dict, anal
     insight = (f"The stage to fix first is {bn['label'].lower()}." if bn else
                "No stage is below its benchmark with enough data to call it; next week we keep volume up.")
     acts = actions_done[:3] or ["Reviewed this week's numbers"]
-    window = "Ad results use a 7-day click and 1-day view attribution window." if source in ("meta", "ads_csv") else ""
+    window = ("Ad results use your ad account's attribution setting (Meta's default is 7-day click, 1-day view)."
+              if source in ("meta", "ads_csv") else "")
     src = {"meta": "the Meta Ads read connection", "ads_csv": "your Ads Manager export", "manual": "the numbers entered by hand",
            "webinar": "the webinar attendance report"}.get(source, "the numbers on file")
     lines = [f"Subject: {b['business']}: your weekly numbers",
@@ -751,9 +802,15 @@ def _actions_done(tenant, client_id: int, since: float) -> list[str]:
         done = [r["title"] for r in c.execute(
             "SELECT title FROM client_tasks WHERE client_id=? AND kind='check' AND status='done' AND done_at>=?",
             (client_id, since))]
-    approved = [i["title"] for i in client_items(tenant, client_id, status="approved", limit=50)
-                if (i.get("decided_at") or 0) >= since]
-    return [f"Completed: {t}" for t in done] + [f"Approved: {t}" for t in approved]
+    # in the client's words: what was produced for them, not the internal approval queue (reports and invites
+    # are the messages themselves, so they are not listed as work done)
+    plain = {"ad_hooks": "Wrote and reviewed new ad hooks", "vsl_outline": "Outlined the video sales letter",
+             "launch_plan": "Planned the next four weeks", "page": "Drafted a page", "webinar_page": "Drafted a registration page"}
+    made = []
+    for i in client_items(tenant, client_id, status="approved", limit=50):
+        if (i.get("decided_at") or 0) >= since and i["kind"] in plain and plain[i["kind"]] not in made:
+            made.append(plain[i["kind"]])
+    return [f"Completed: {t}" for t in done] + made
 
 
 def weekly_ops(tenant, client_id: int, user: dict | None = None, now: float | None = None) -> dict:

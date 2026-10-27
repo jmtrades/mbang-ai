@@ -84,10 +84,13 @@ class MetaAdsAdapter:
             raise net.LiveError("Meta login missing")
         return {"access_token": token, "appsecret_proof": appsecret_proof(token, secret)}
 
-    def tree(self, account_id: str) -> list[dict]:
+    def tree(self, account_id: str, date_preset: str | None = None) -> list[dict]:
+        """`date_preset` (e.g. "last_7d") limits the insights window; without it Meta's default window applies."""
+        insights_field = ("insights" + (f".date_preset({date_preset})" if date_preset else "")
+                          + "{spend,actions,impressions,clicks}")
         r = net.request(self.tenant.id, "GET", f"{GRAPH}/{account_id}/ads",
                         params={**self._auth(), "fields": "id,name,status,adset{id,name,daily_budget},campaign{id,name},"
-                                                          "insights{spend,actions,impressions,clicks}"})
+                                                          + insights_field})
         out = []
         for a in net.ok_json(r).get("data", []):
             ins = ((a.get("insights") or {}).get("data") or [{}])[0]
@@ -106,6 +109,21 @@ class MetaAdsAdapter:
         d = net.ok_json(r)
         return {"id": d["id"], "name": d.get("name"), "status": d.get("status"),
                 "daily_budget": float(d.get("daily_budget") or 0) / 100}
+
+    def read_account(self, account_id: str) -> dict | None:
+        """Read an ad account. None when it isn't visible to this business (no partner access yet): Graph answers
+        that with error 100 / 10 / 200; anything else (a bad login, an outage) raises."""
+        r = net.request(self.tenant.id, "GET", f"{GRAPH}/{account_id}",
+                        params={**self._auth(), "fields": "id,name,account_status"})
+        if r.status_code in (400, 403, 404):
+            try:
+                code = int(((r.json() or {}).get("error") or {}).get("code"))
+            except (ValueError, TypeError, AttributeError):
+                code = None
+            if r.status_code == 404 or code in (10, 100, 200):
+                return None
+        d = net.ok_json(r)
+        return {"id": d["id"], "name": d.get("name"), "account_status": d.get("account_status")}
 
     def snapshot(self, obj_id: str) -> dict | None:
         return self.get(obj_id)

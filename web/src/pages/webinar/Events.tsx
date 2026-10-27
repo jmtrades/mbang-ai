@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ApiError, post, put } from "../../api";
-import { Badge, Button, Card, CopyButton, DemoBadge, Empty, ErrorBox, Field, Input, Loading, Select, Stat, Table, TextArea, TraceLink, isDemo, useApi, useApp } from "../../components/ui";
+import { Badge, Button, Card, CopyButton, DemoBadge, Empty, ErrorBox, Field, Input, Loading, Modal, Select, Stat, Table, TextArea, TraceLink, isDemo, useApi, useApp } from "../../components/ui";
 
 const Q_STATUS: Record<string, string> = {
   pending: "Waiting for approval", needs_human: "Needs a person", held: "Blocked by a guardrail", approved: "Approved",
@@ -54,6 +54,80 @@ function NewWebinar({ chains, clients, onCreated }: { chains: any[]; clients: an
   );
 }
 
+// datetime-local value for an epoch in the webinar's own time zone
+function localInput(ts: number, tz: string): string {
+  try {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ts * 1000)).map((p) => [p.type, p.value]));
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  } catch {
+    return "";
+  }
+}
+
+function EditEvent({ data, onSaved }: { data: any; onSaved: () => void }) {
+  const { toast } = useApp();
+  const [open, setOpen] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [f, setF] = useState<any>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<ApiError | null>(null);
+  const start = () => {
+    setF({ join_url: data.join_url || "", replay_url: data.replay_url || "", starts_at: localInput(data.starts_at, data.tz) });
+    setErr(null);
+    setOpen(true);
+  };
+  const save = async (body: any, key: string, msg: string) => {
+    setBusy(key);
+    setErr(null);
+    try {
+      await put(`/webinars/${data.id}`, body);
+      toast(msg, "good");
+      setOpen(false);
+      setConfirmCancel(false);
+      onSaved();
+    } catch (e) {
+      setErr(e as ApiError);
+    } finally {
+      setBusy(null);
+    }
+  };
+  if (data.status === "cancelled") return null;
+  const changed = open && (f.join_url !== (data.join_url || "") || f.replay_url !== (data.replay_url || "") || f.starts_at !== localInput(data.starts_at, data.tz));
+  return (
+    <div className="mt-3">
+      {!open ? (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={start}>Change time or links</Button>
+          <Button size="sm" tone="danger" onClick={() => setConfirmCancel(true)}>Cancel this webinar</Button>
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-lg border border-line p-3">
+          <ErrorBox error={err} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={`Starts at (${data.tz})`}><Input type="datetime-local" value={f.starts_at} onChange={(e) => setF({ ...f, starts_at: e.target.value })} /></Field>
+            <Field label="Join link"><Input value={f.join_url} placeholder="https://..." onChange={(e) => setF({ ...f, join_url: e.target.value })} /></Field>
+            <div className="sm:col-span-2"><Field label="Replay link" hint="Replay emails use it from the next one that goes out."><Input value={f.replay_url} placeholder="https://..." onChange={(e) => setF({ ...f, replay_url: e.target.value })} /></Field></div>
+          </div>
+          <p className="text-xs text-muted">Emails that haven't gone out yet are redrafted with the new details and time. Emails already sent are not changed.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button tone="primary" size="sm" loading={busy === "save"} disabled={!changed || !f.starts_at}
+              onClick={() => save({ join_url: f.join_url, replay_url: f.replay_url, ...(f.starts_at !== localInput(data.starts_at, data.tz) ? { starts_at: f.starts_at, tz: data.tz } : {}) }, "save", "Webinar updated")}>Save changes</Button>
+            <Button size="sm" tone="ghost" onClick={() => setOpen(false)}>Close</Button>
+          </div>
+        </div>
+      )}
+      <Modal open={confirmCancel} onClose={() => setConfirmCancel(false)} title="Cancel this webinar?">
+        <p className="text-sm">The registration page closes and every email that hasn't gone out yet is withdrawn. Registrants are not told automatically; send them a note yourself if needed.</p>
+        <ErrorBox error={err} />
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button tone="danger" loading={busy === "cancel"} onClick={() => save({ status: "cancelled" }, "cancel", "Webinar cancelled")}>Cancel the webinar</Button>
+          <Button tone="ghost" onClick={() => setConfirmCancel(false)}>Keep it</Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
 function WebinarDetail({ id, onBack }: { id: number; onBack: () => void }) {
   const { go, toast } = useApp();
   const { data, error, loading, reload } = useApi<any>(`/webinars/${id}`, [id]);
@@ -104,6 +178,7 @@ function WebinarDetail({ id, onBack }: { id: number; onBack: () => void }) {
             <p>Join link: {data.join_url ? <span className="break-all">{data.join_url}</span> : <span className="text-muted">not set</span>}</p>
             <p>Replay link: {data.replay_url ? <span className="break-all">{data.replay_url}</span> : <span className="text-muted">not set yet</span>}</p>
             <p className="text-muted">{data.duration_min} minutes · offer from minute {data.offer_at_min}</p>
+            <EditEvent data={data} onSaved={reload} />
           </div>
         </div>
       </Card>
@@ -117,7 +192,7 @@ function WebinarDetail({ id, onBack }: { id: number; onBack: () => void }) {
         <Table rows={data.templates} cols={[
           { key: "label", label: "Email" }, { key: "timing", label: "When" },
           { key: "status", label: "Approval", render: (t) => <Badge tone={t.status === "approved" ? "good" : "info"}>{t.status === "approved" ? "Approved" : Q_STATUS[t.queue_status] || "Waiting for approval"}</Badge> },
-          { key: "fanned_out", label: "Queued for people", render: (t) => t.fanned_out },
+          { key: "fanned_out", label: "Queued for people", render: (t) => (t.waiting ? `${t.fanned_out} (${t.waiting} waiting for their time)` : t.fanned_out) },
           { key: "go", label: "", render: (t) => (t.status !== "approved" && t.queue_id ? <Button size="sm" onClick={() => go(`/queue?ids=${t.queue_id}`)}>Review</Button> : null) },
         ]} />
       </Card>
@@ -127,10 +202,10 @@ function WebinarDetail({ id, onBack }: { id: number; onBack: () => void }) {
           <TextArea rows={4} value={csv} onChange={(e) => setCsv(e.target.value)} placeholder="Or paste the CSV here" aria-label="Attendance CSV" />
           <div className="mt-2 flex flex-wrap gap-2">
             <Button loading={busy === "csv"} disabled={csv.length < 10} onClick={() => act("csv", () => post(`/webinars/${id}/attendance`, { csv }), (res) => { setCsv(""); toast(`${res.matched} matched, ${res.added_without_consent} attended without registering (they won't be emailed)`, "good"); })}>Import attendance</Button>
-            <Button loading={busy === "post"} disabled={!ended || data.status === "done"} onClick={() => act("post", () => post(`/webinars/${id}/post-event`), (res) => toast(`${res.setter_drafts.length} setter follow-ups drafted, ${res.replay_items.length} replay emails queued`, "good"))}>Follow up now</Button>
+            <Button loading={busy === "post"} disabled={!ended || data.status === "cancelled"} onClick={() => act("post", () => post(`/webinars/${id}/post-event`), (res) => toast(`${res.setter_drafts.length} setter follow-ups drafted, ${res.replay_items.length} replay emails queued`, "good"))}>{data.status === "done" ? "Follow up anyone new" : "Follow up now"}</Button>
           </div>
           {!ended && <p className="mt-2 text-xs text-muted">Follow-ups unlock when the webinar ends. They also run on their own two hours after the end.</p>}
-          {data.status === "done" && <p className="mt-2 text-xs text-muted">Followed up: people who stayed for the offer have setter follow-ups waiting for approval; everyone else is on the replay emails.</p>}
+          {data.status === "done" && <p className="mt-2 text-xs text-muted">Followed up: people who stayed for the offer have setter follow-ups waiting for approval; everyone else is on the replay emails. If you import attendance or tick "Stayed for offer" later, follow up again to reach the people added.</p>}
         </Card>
         <Card title="Diagnosis" subtitle="Registration and show rates against the SOP benchmarks.">
           <Button loading={busy === "diag"} onClick={() => act("diag", () => post(`/webinars/${id}/diagnose`), setDiag)}>Diagnose this webinar</Button>

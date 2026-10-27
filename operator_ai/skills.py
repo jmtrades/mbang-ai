@@ -61,6 +61,7 @@ def _p(profile: dict, s: str, f: str, default: str) -> str:
 
 
 SKILLS: dict[str, Skill] = {}
+_D = brief_mod.DEFAULTS  # niche-neutral fallbacks: an empty profile must never put another niche's words in a draft
 
 
 def _reg(key, name, desc, asset, kind, fn, needs=None, meta=None):
@@ -69,18 +70,18 @@ def _reg(key, name, desc, asset, kind, fn, needs=None, meta=None):
 
 _reg("dm_opener", "DM opener", "A question-led opener for a prospect (no price).", "dm_script", "dm_opener",
      lambda i, p: f"Saw your post about {i.get('topic') or _p(p, 'audience', 'pain', 'growth')}. "
-                  f"What's the main thing holding new bookings back right now?",
+                  f"What's the main thing holding back {_p(p, 'offer', 'outcome', _D['outcome'])} for you right now?",
      meta={"prospect_facing": True, "lead_tier": "cold"})
 _reg("value_followup", "Value follow-up", "A follow-up that gives value: tip, video or question.", "followup", "followup",
      lambda i, p: f"Here's a quick tip on {_p(p, 'offer', 'mechanism', 'our method')}: start with one change this week. "
                   f"Want the 2-minute video?", meta={"prospect_facing": True, "lead_tier": "cold", "prior_contact": True})
 _reg("usp_builder", "USP builder", "The USP formula filled from the profile.", "usp", "usp",
-     lambda i, p: f"I help {_p(p, 'audience', 'who', 'clinic owners')} get {_p(p, 'offer', 'outcome', 'more bookings')} in "
-                  f"{_p(p, 'offer', 'timeframe', '90 days')} through {_p(p, 'offer', 'mechanism', 'our system')} without "
-                  f"{_p(p, 'audience', 'pain', 'discounting')}.")
+     lambda i, p: f"I help {_p(p, 'audience', 'who', _D['audience'])} get {_p(p, 'offer', 'outcome', _D['outcome'])} in "
+                  f"{_p(p, 'offer', 'timeframe', _D['timeframe'])} through {_p(p, 'offer', 'mechanism', 'our ' + _D['mechanism'])} "
+                  f"without {_p(p, 'audience', 'pain', _D['pain'])}.")
 _reg("ad_hooks", "Ad hooks", "Three short hooks for a Thunder Dome test.", "ad", "ad_hooks",
-     lambda i, p: "\n".join([f"Stop relying on {_p(p, 'audience', 'pain', 'discounting')}.",
-                            f"{_p(p, 'offer', 'outcome', 'More bookings')} in {_p(p, 'offer', 'timeframe', '90 days')}.",
+     lambda i, p: "\n".join([f"Stop relying on {_p(p, 'audience', 'pain', _D['pain'])}.",
+                            f"{_p(p, 'offer', 'outcome', _D['outcome']).capitalize()} in {_p(p, 'offer', 'timeframe', _D['timeframe'])}.",
                             f"The {_p(p, 'offer', 'mechanism', 'system')}, explained. Book a call."]), meta={"client_asset": True})
 _reg("webinar_outline", "Webinar outline", "Seven segments with SOP timings.", "webinar", "webinar_outline",
      lambda i, p: "\n".join(f"Segment {n}: {t} ({m} min)" for n, (t, m) in enumerate(

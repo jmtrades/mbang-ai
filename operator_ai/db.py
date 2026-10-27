@@ -222,7 +222,8 @@ CREATE TABLE IF NOT EXISTS webinar_templates (
   approved_by TEXT, approved_at REAL, created REAL, UNIQUE(webinar_id, key));
 CREATE TABLE IF NOT EXISTS webinar_sends (
   id INTEGER PRIMARY KEY, webinar_id INTEGER, registrant_id INTEGER, template_key TEXT, queue_id INTEGER, created REAL,
-  UNIQUE(webinar_id, registrant_id, template_key));
+  due_at REAL, UNIQUE(webinar_id, registrant_id, template_key));
+CREATE INDEX IF NOT EXISTS webinar_sends_q ON webinar_sends(queue_id);
 -- [persona] tables
 -- [team] tables
 -- [playbooks] tables
@@ -257,6 +258,7 @@ COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("clients", "risk", "TEXT"),
     ("clients", "prospect_id", "INTEGER"),
     # [webinars]
+    ("webinar_sends", "due_at", "REAL"),
     # [persona]
     # [team]
     # [playbooks]

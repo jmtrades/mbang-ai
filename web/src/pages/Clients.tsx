@@ -22,6 +22,12 @@ const ACCESS_KEYS: [string, string, string][] = [
   ["ad_account_id", "Ad account ID", "act_1234567890"], ["pixel_id", "Pixel ID", "1234567890"], ["crm", "CRM", "e.g. their pipeline tool"],
   ["calendar_url", "Calendar link", "https://..."], ["domain", "Domain", "example.com"], ["notes", "Notes", "Who granted access and when"],
 ];
+const BRIEF_LABEL: Record<string, string> = {
+  business: "business name", niche: "their market", audience: "who it's for", offer: "what they sell", price: "price",
+  outcome: "the result customers want", timeframe: "timeframe", mechanism: "their method", pain: "what customers are tired of",
+  channels: "channels",
+};
+const missingList = (keys: string[] = []) => keys.map((k) => BRIEF_LABEL[k] || k.replace(/_/g, " ")).join(", ");
 const fmt = (k: string, v: any) => (v === null || v === undefined ? "Not recorded" : MONEY.has(k) ? `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : Number(v).toLocaleString());
 const day = (ts: number) => new Date(ts * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 const clean = (s: string) => (s || "").replace(" (DEMO)", "");
@@ -33,12 +39,12 @@ function StatusBadge({ c }: { c: any }) {
 }
 
 function FulfilmentResult({ res }: { res: any }) {
-  const { go } = useApp();
+  const { go, me } = useApp();
   return (
     <div className="grid gap-4 xl:grid-cols-2" data-testid="fulfilment">
       {res.brief_missing?.length > 0 && (
         <div className="xl:col-span-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Written with neutral wording for: {res.brief_missing.join(", ")}. Fill in the client's brief (or wait for their intake form) for copy in their own words.
+          Written with neutral wording for: {missingList(res.brief_missing)}. Fill in the client's brief (or wait for their intake form) for copy in their own words.
         </div>
       )}
       <Card title={`Money model: ${clean(res.client.name)}`} actions={<TraceLink runId={res.run_id} />}>
@@ -56,7 +62,8 @@ function FulfilmentResult({ res }: { res: any }) {
       </Card>
       <Card title="Client report" actions={<CopyButton text={res.report} />}>
         <pre className="prose-pre text-sm">{res.report}</pre>
-        <Button size="sm" className="mt-2" onClick={() => go(`/queue?ids=${res.queue_ids.join(",")}`)}>Review {res.queue_ids.length} items waiting for approval</Button>
+        <Button size="sm" className="mt-2" onClick={() => go(`/queue?ids=${res.queue_ids.join(",")}`)}>{me.user.role === "owner" ? `Review ${res.queue_ids.length} items waiting for approval` : "Review the report"}</Button>
+        {me.user.role !== "owner" && <p className="mt-2 text-xs text-muted">You approve the client report. The ad hooks, VSL outline and launch plan wait for the owner's approval.</p>}
       </Card>
       <Card title="VSL outline"><ol className="list-decimal pl-5 text-sm">{res.vsl_outline.map((v: string) => <li key={v}>{v}</li>)}</ol></Card>
     </div>
@@ -283,7 +290,8 @@ function Weekly({ c, reload }: { c: any; reload: () => void }) {
 }
 
 function BriefAccess({ c, reload }: { c: any; reload: () => void }) {
-  const { toast } = useApp();
+  const { toast, me } = useApp();
+  const owner = me.user.role === "owner";
   const [b, setB] = useState<Record<string, string>>({});
   const [a, setA] = useState<Record<string, string>>({});
   const [f, setF] = useState<any>({});
@@ -312,13 +320,16 @@ function BriefAccess({ c, reload }: { c: any; reload: () => void }) {
     <div className="space-y-4">
       <ErrorBox error={err} />
       <Card title="The client's brief" subtitle="Every ad, page, report and email for this client is written from these words. The intake form fills them in too.">
-        {c.brief_missing?.length > 0 && <p className="mb-3 text-xs text-muted">Still using neutral wording for: {c.brief_missing.join(", ")}.</p>}
+        {c.brief_missing?.length > 0 && <p className="mb-3 text-xs text-muted">Still using neutral wording for: {missingList(c.brief_missing)}.</p>}
         <div className="grid gap-3 sm:grid-cols-2">{BRIEF_KEYS.map(([k, label, ph]) => <Field key={k} label={label}><Input value={b[k] || ""} placeholder={ph} onChange={(e) => setB({ ...b, [k]: e.target.value })} aria-label={label} /></Field>)}</div>
         {c.proof && <p className="mt-3 text-xs text-muted">Proof on file: {c.proof.permission ? "the client confirmed permission to use it" : "no permission given, so it isn't used in any asset"}.</p>}
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Access" subtitle="IDs and links only. Never store passwords or tokens here.">
-          <div className="grid gap-3 sm:grid-cols-2">{ACCESS_KEYS.map(([k, label, ph]) => <Field key={k} label={label}><Input value={a[k] || ""} placeholder={ph} onChange={(e) => setA({ ...a, [k]: e.target.value })} aria-label={label} /></Field>)}</div>
+          <div className="grid gap-3 sm:grid-cols-2">{ACCESS_KEYS.map(([k, label, ph]) => {
+            const locked = k === "ad_account_id" && !owner;
+            return <Field key={k} label={label} hint={locked ? "The workspace owner links the ad account, because ad reads and change proposals run on it." : undefined}><Input value={a[k] || ""} placeholder={locked ? "Linked by the owner" : ph} disabled={locked} onChange={(e) => setA({ ...a, [k]: e.target.value })} aria-label={label} /></Field>;
+          })}</div>
         </Card>
         <Card title="Contact and schedule">
           <div className="grid gap-3 sm:grid-cols-2">

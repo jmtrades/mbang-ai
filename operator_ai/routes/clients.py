@@ -53,11 +53,15 @@ class ClientBody(BaseModel):
 def add_client(b: ClientBody, ctx: Ctx = Depends(require("clients"))):
     if b.email and not re.match(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$", b.email):
         raise HTTPException(422, "That email address doesn't look right")
+    try:
+        metrics = client_ops.finite_numbers(b.metrics, "Starting numbers")
+    except client_ops.ClientOpsError as e:
+        _err(e)
     owner_uid = None if ctx.role == "owner" else ctx.user["id"]
     with ctx.tenant.db() as c:
         cid = c.execute("INSERT INTO clients(name,niche,offer,price,metrics,demo,created,email,contact_name,owner_user_id,status) "
                         "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                        (b.name, b.niche, b.offer, b.price, db.jdump(b.metrics), 1 if ctx.tenant.is_demo else 0, db.now(),
+                        (b.name, b.niche, b.offer, b.price, db.jdump(metrics), 1 if ctx.tenant.is_demo else 0, db.now(),
                          b.email or None, b.contact_name or None, owner_uid, None if b.onboard else "active")).lastrowid
     out: dict[str, Any] = {"id": cid}
     if b.onboard:
@@ -90,10 +94,8 @@ class ClientPatch(BaseModel):
 @router.put("/clients/{client_id}")
 def update_client(client_id: int, b: ClientPatch, ctx: Ctx = Depends(require("clients"))):
     _mine(ctx, client_id)
-    if b.kpi_targets and any(v < 0 or v > 1e9 for v in b.kpi_targets.values()):
-        raise HTTPException(422, "Targets must be between 0 and 1,000,000,000")
     try:
-        client_ops.update(ctx.tenant, client_id, b.model_dump(exclude_none=True), ctx.actor)
+        client_ops.update(ctx.tenant, client_id, b.model_dump(exclude_none=True), ctx.actor, ctx.role)
         return client_ops.detail(ctx.tenant, ctx.user, client_id)
     except client_ops.ClientOpsError as e:
         _err(e)
