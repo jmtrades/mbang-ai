@@ -1,0 +1,11 @@
+<!-- @dsCard group="Status" height=60 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Badge — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-row"},
+  h(O.Badge, null, "Rules"), h(O.Badge, {tone:"good"}, "AI"), h(O.Badge, {tone:"info"}, "Replayed AI"), h(O.Badge, {tone:"warn"}, "Needs a person"), h(O.Badge, {tone:"bad", dot:true}, "Blocked"), h(O.Badge, {tone:"brand"}, "Owner"), h(O.Badge, {tone:"good", dot:true}, "REAL_OK"), h(O.Badge, {tone:"demo", caps:true, title:"Fictional demo data"}, "DEMO"), h(O.Badge, {tone:"demo", caps:true}, "PITCH DEMO"), h(O.Badge, {title:"Written from a template; AI was not used"}, "Template (AI off)")
+));
+</script></body></html>

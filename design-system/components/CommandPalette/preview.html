@@ -1,0 +1,13 @@
+<!-- @dsCard group="Overlays" height=420 width=680 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>CommandPalette — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.CommandPalette, {active:1, sections:[
+  {name:"Recent", items:[{id:"queue", label:"Approvals", icon:"inbox", hint:"Today"},{id:"coach", label:"Coach", icon:"message-circle", hint:"Learn"}]},
+  {name:"Actions", items:[{id:"theme", label:"Switch to dark theme", icon:"gauge", shortcut:"⇧D"},{id:"out", label:"Sign out", icon:"log-out"}]},
+  {name:"Pages", items:[{id:"home", label:"Day One", icon:"house", hint:"Today"},{id:"students", label:"Accountability", icon:"users", hint:"Students"},{id:"outreach", label:"Outreach", icon:"send", hint:"Pipeline"}]}
+]}));
+</script></body></html>

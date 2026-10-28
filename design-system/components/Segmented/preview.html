@@ -1,0 +1,11 @@
+<!-- @dsCard group="Navigation" height=70 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Segmented — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(function(){ var s = React.useState("system"); var v = React.useState("all"); return h("div", {className:"op-row", style:{gap:16}},
+  h(O.Segmented, {label:"Theme", value:s[0], onChange:s[1], options:[{value:"system",label:"System"},{value:"light",label:"Light"},{value:"dark",label:"Dark"}]}),
+  h(O.Segmented, {label:"Scope", value:v[0], onChange:v[1], options:[{value:"all",label:"All",icon:h(O.Icon,{name:"inbox"})},{value:"mine",label:"Mine",icon:h(O.Icon,{name:"users"})}]})); }));
+</script></body></html>

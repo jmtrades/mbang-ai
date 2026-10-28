@@ -1,0 +1,14 @@
+<!-- @dsCard group="Layout" height=130 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Stat — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {style:{display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12}},
+  h(O.Stat, {label:"Drafts waiting", value:"7", hint:"Items you can decide", icon:h(O.Icon,{name:"inbox"})}),
+  h(O.Stat, {label:"Students on track", value:"1,284", tone:"good", hint:"of 1,402 active", demo:true, icon:h(O.Icon,{name:"users"})}),
+  h(O.Stat, {label:"At risk", value:"38", tone:"warn", hint:"No check-in for 7 days"}),
+  h(O.Stat, {label:"Show-up rate", value:"61%", tone:"bad", hint:"Target 75%", demo:true})
+));
+</script></body></html>

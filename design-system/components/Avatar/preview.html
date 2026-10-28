@@ -1,0 +1,12 @@
+<!-- @dsCard group="Marks" height=56 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Avatar — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-row"},
+  h(O.Avatar, {name:"Maya Okafor"}), h(O.Avatar, {name:"Owner (DEMO)"}), h(O.Avatar, {name:"Setter", small:true}), h(O.Avatar, {name:"Luis Fernández Peña", small:true}),
+  h("span", {style:{display:"inline-flex", alignItems:"center", gap:8}}, h(O.Avatar, {name:"Dana Weiss", small:true}), h("span", {style:{fontSize:13, fontWeight:500}}, "Dana Weiss"), h("span", {style:{fontSize:11, color:"var(--muted)"}}, "Closer · PITCH DEMO"))
+));
+</script></body></html>

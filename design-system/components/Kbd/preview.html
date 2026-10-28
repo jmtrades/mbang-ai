@@ -1,0 +1,12 @@
+<!-- @dsCard group="Marks" height=56 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Kbd — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-row"},
+  h(O.Kbd, null, "⌘K"), h(O.Kbd, null, "Ctrl K"), h(O.Kbd, null, "Esc"), h(O.Kbd, null, "↑"), h(O.Kbd, null, "↓"), h(O.Kbd, null, "↵"),
+  h("span", {style:{fontSize:13, color:"var(--muted)", display:"inline-flex", alignItems:"center", gap:6}}, h(O.Kbd, null, "↵"), " to open")
+));
+</script></body></html>

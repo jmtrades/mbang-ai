@@ -1,0 +1,9 @@
+<!-- @dsCard group="Feedback" height=170 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Toaster — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.Toaster, {toasts:[{id:1, msg:"Approved — now send it yourself and mark it sent", tone:"good"},{id:2, msg:"Link code ready. It works for an hour.", tone:"info"},{id:3, msg:"Couldn't change that. Try again.", tone:"bad"}]}));
+</script></body></html>

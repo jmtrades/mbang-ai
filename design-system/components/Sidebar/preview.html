@@ -1,0 +1,16 @@
+<!-- @dsCard group="Navigation" height=560 width=300 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Sidebar — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {style:{height:520, display:"flex"}}, h(O.Sidebar, {
+  brand:"Operator AI", tenant:"Pitch demo", page:"queue", user:"Owner", role:"Owner (DEMO) · PITCH DEMO",
+  sections:[
+    {group:"Today", items:[{key:"home",label:"Day One",icon:"house"},{key:"missions",label:"Missions",icon:"rocket"},{key:"command",label:"Command centre",icon:"gauge"},{key:"queue",label:"Approvals",icon:"inbox"}]},
+    {group:"Learn", items:[{key:"coach",label:"Coach",icon:"message-circle"},{key:"students",label:"Accountability",icon:"users"}]},
+    {group:"Pipeline", items:[{key:"outreach",label:"Outreach",icon:"send"}]}
+  ]
+})));
+</script></body></html>

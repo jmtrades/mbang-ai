@@ -1,0 +1,14 @@
+<!-- @dsCard group="Overlays" height=380 width=760 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Drawer — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.Drawer, {title:"Run #418 trace"}, h("div", {className:"op-col", style:{gap:20}},
+  h("div", {className:"op-row", style:{fontSize:14}}, h(O.Badge, null, "DM setter"), h(O.Badge, {tone:"good"}, "AI"), h(O.Badge, {tone:"good", dot:true}, "done"), h("span", {style:{color:"var(--muted)", fontVariantNumeric:"tabular-nums"}}, "312 ms")),
+  h("p", {className:"op-h3", style:{margin:0}}, "Reply to Priya N. (DEMO)"),
+  h("div", null, h("div", {className:"op-overline", style:{marginBottom:6}}, "Plan"), h("ol", {style:{margin:0, paddingLeft:20, fontSize:14, color:"var(--ink-2)"}}, h("li", null, "Read the inbound DM and the lead's tier"), h("li", null, "Draft one reply with one question"), h("li", null, "Run the guardrails and queue for approval"))),
+  h("div", null, h("div", {className:"op-overline", style:{marginBottom:6}}, "Tool calls"), h(O.RunSteps, {compact:true, steps:[{tool:"load_input", label:"Load input", status:"done", ms:12},{tool:"rules_draft", label:"Rules draft", status:"done", ms:48},{tool:"review", label:"Guardrail review", status:"done", ms:91},{tool:"queue", label:"Queue for approval", status:"done", ms:7}]}))
+)));
+</script></body></html>

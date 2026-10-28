@@ -1,0 +1,12 @@
+<!-- @dsCard group="Layout" height=230 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Card — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {style:{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}},
+  h(O.Card, {title:"Follow-up sequences", subtitle:"A sequence starts only once the first message is confirmed sent. Each next step still needs your approval.", actions: h(O.Button, {size:"sm"}, h(O.Icon,{name:"rotate-cw",size:14}), "Check due items now")}, h("p", {style:{margin:0, fontSize:13.5, color:"var(--ink-2)"}}, "3 sequences running · next step drafts tomorrow at 09:00.")),
+  h(O.Card, {title:"Threads", actions: h(O.Button, {size:"sm"}, h(O.Icon,{name:"plus",size:14}), "New"), pad:false}, h("div", {style:{padding:"4px 8px"}}, ["How do I set up a Thunder Dome test?", "Review my VSL outline", "Pricing objection on the Lopez call"].map(function(t,i){ return h("div", {key:i, style:{padding:"8px 12px", borderRadius:8, fontSize:13.5, background: i===0 ? "var(--brand-soft)" : "transparent", color: i===0 ? "var(--ink)" : "var(--ink-2)"}}, t); })))
+));
+</script></body></html>

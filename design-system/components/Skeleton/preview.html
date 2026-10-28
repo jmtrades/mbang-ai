@@ -1,0 +1,12 @@
+<!-- @dsCard group="Feedback" height=110 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Skeleton — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {style:{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}},
+  h(O.Skeleton, {rows:4}),
+  h("div", {className:"op-col", style:{gap:8}}, h(O.Skeleton, {style:{width:120, height:20}}), h(O.Skeleton, {style:{width:72, height:26}}), h(O.Skeleton, {style:{width:"80%", height:12}}))
+));
+</script></body></html>

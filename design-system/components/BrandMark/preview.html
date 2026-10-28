@@ -1,0 +1,13 @@
+<!-- @dsCard group="Marks" height=60 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>BrandMark — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-row", style:{gap:16}},
+  h("span", {style:{display:"inline-flex", alignItems:"center", gap:10}}, h(O.BrandMark, {name:"Operator AI"}), h("span", null, h("div", {style:{fontSize:14, fontWeight:600, lineHeight:1.2}}, "Operator AI"), h("div", {style:{fontSize:12, color:"var(--muted)", lineHeight:1.2}}, "Pitch demo"))),
+  h("span", {style:{display:"inline-flex", alignItems:"center", gap:10}}, h(O.BrandMark, {name:"Kinetic Physio Coaching"}), h("span", null, h("div", {style:{fontSize:14, fontWeight:600, lineHeight:1.2}}, "Kinetic Physio Coaching"), h("div", {style:{fontSize:12, color:"var(--muted)", lineHeight:1.2}}, "Owner workspace"))),
+  h(O.BrandMark, {name:"Operator AI", small:true})
+));
+</script></body></html>

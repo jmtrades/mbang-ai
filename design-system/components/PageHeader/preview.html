@@ -1,0 +1,13 @@
+<!-- @dsCard group="Layout" height=120 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>PageHeader — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.PageHeader, {
+  eyebrow:"Today", title:"Approval queue", badge:h(O.Badge, {tone:"demo", caps:true}, "DEMO"),
+  subtitle:"Everything outbound waits here for a person. After approval a message goes out at its scheduled time through a connected channel, or you send it yourself and mark it sent — nothing counts as sent until it really is.",
+  right:[h(O.Select, {key:"s", options:["All channels","Instagram DM","Email","SMS"], defaultValue:"All channels", style:{width:"auto", minWidth:"9rem"}}), h(O.Button, {key:"b", tone:"primary"}, "Approve all clean")]
+}));
+</script></body></html>

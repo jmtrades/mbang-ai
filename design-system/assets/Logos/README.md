@@ -1,0 +1,1 @@
+The app icon from `web/public`: a ring and a centre dot in `#8b96ff` on a `#14161b` rounded square (radius 14/64). It is the PWA and favicon mark, not a logo; in the shell each tenant is represented by their own uploaded logo or by `BrandMark`, a monogram on the brand gradient. Use `operator-icon.svg` at any size; the PNGs are the 192 and 512 manifest icons.

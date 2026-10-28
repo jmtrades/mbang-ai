@@ -1,0 +1,61 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operator AI</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .brand { fill:var(--brand-solid); }
+  .deep { fill:var(--ink); }
+  .tint { fill:var(--brand-soft-2); }
+  .signal { fill:var(--good); }
+  .slab { rx:var(--radius-xl); }
+  .chip { rx:var(--radius-sm); }
+  .dot-on-ink { fill:var(--bg); }
+  .dot-on-ground { fill:var(--brand-line); }
+  .words { position:absolute; left:28px; bottom:24px; max-width:440px; }
+  .name { margin:0; font-size:88px; line-height:.92; font-weight:640; letter-spacing:-.034em; color:var(--ink); text-wrap:balance; }
+  .tag { margin:12px 0 0 4px; font-size:14px; line-height:20px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      brand-solid 176×232 bleeding off the top (the one colour every tenant chooses) · ink 288→ wide, 216 tall, bleeding off the right edge (the console's dark chrome) · brand-soft-2 176×40 (the tint under selected rows) · good 64×20 once (approved / AI connected: the only status colour that means "it really went out") — ≈38% of 960×288
+  arrangement one tall brand slab with its tint beneath, a deep ink block beside it running off the right, bottoms on one line space-6 above the edge, space-4 gutters
+  pattern     a dot grid at the space-7 (28px) pitch of .hero-surface's quiet grid, from "precise, dense console on a grid": 6×6 dots cut from the ink block in bg, a 2×6 spill onto the ground in brand-line
+  scales      slab 176 = 11×space-4, heights 232/216 = 58×4/54×4, tint 40 = space-10, chip 64×20 = space-4×4 × badge; corners radius-xl 16 on blocks, radius-sm 6 on the chip; pitch space-7
+-->
+<rect class="brand slab" x="16" y="-16" width="176" height="232" rx="16"/>
+<rect class="tint slab" x="16" y="224" width="176" height="40" rx="16"/>
+<rect class="deep slab" x="208" y="48" width="288" height="216" rx="16"/>
+<rect class="signal chip" x="208" y="12" width="64" height="20" rx="6"/>
+<g class="dot-on-ink">
+  <circle cx="264" cy="96" r="3"/><circle cx="292" cy="96" r="3"/><circle cx="320" cy="96" r="3"/><circle cx="348" cy="96" r="3"/><circle cx="376" cy="96" r="3"/><circle cx="404" cy="96" r="3"/>
+  <circle cx="264" cy="124" r="3"/><circle cx="292" cy="124" r="3"/><circle cx="320" cy="124" r="3"/><circle cx="348" cy="124" r="3"/><circle cx="376" cy="124" r="3"/><circle cx="404" cy="124" r="3"/>
+  <circle cx="264" cy="152" r="3"/><circle cx="292" cy="152" r="3"/><circle cx="320" cy="152" r="3"/><circle cx="348" cy="152" r="3"/><circle cx="376" cy="152" r="3"/><circle cx="404" cy="152" r="3"/>
+  <circle cx="264" cy="180" r="3"/><circle cx="292" cy="180" r="3"/><circle cx="320" cy="180" r="3"/><circle cx="348" cy="180" r="3"/><circle cx="376" cy="180" r="3"/><circle cx="404" cy="180" r="3"/>
+  <circle cx="264" cy="208" r="3"/><circle cx="292" cy="208" r="3"/><circle cx="320" cy="208" r="3"/><circle cx="348" cy="208" r="3"/><circle cx="376" cy="208" r="3"/><circle cx="404" cy="208" r="3"/>
+  <circle cx="264" cy="236" r="3"/><circle cx="292" cy="236" r="3"/><circle cx="320" cy="236" r="3"/><circle cx="348" cy="236" r="3"/><circle cx="376" cy="236" r="3"/><circle cx="404" cy="236" r="3"/>
+</g>
+<g class="dot-on-ground">
+  <circle cx="432" cy="12" r="3"/><circle cx="460" cy="12" r="3"/>
+  <circle cx="432" cy="40" r="3"/><circle cx="460" cy="40" r="3"/>
+  <circle cx="208" cy="276" r="3"/><circle cx="236" cy="276" r="3"/><circle cx="264" cy="276" r="3"/><circle cx="292" cy="276" r="3"/><circle cx="320" cy="276" r="3"/><circle cx="348" cy="276" r="3"/>
+</g>
+</svg>
+</div>
+<div class="words">
+  <h1 class="name">Operator<br>AI</h1>
+  <p class="tag">Your programme's AI. Nothing goes out without your approval.</p>
+</div>
+</div>
+</body>
+</html>

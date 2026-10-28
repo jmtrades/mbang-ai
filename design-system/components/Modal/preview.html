@@ -1,0 +1,12 @@
+<!-- @dsCard group="Overlays" height=300 width=760 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Modal — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.Modal, {title:"Edit before approving"}, h("div", {className:"op-col"},
+  h(O.Field, {label:"Message to Priya N. (DEMO)", hint:"“Guaranteed” was removed: no guarantees in outbound copy."}, h(O.TextArea, {rows:4, defaultValue:"Hey Priya — saw your question about the launch timeline. Happy to walk you through what the first 30 days look like if you want to grab 15 minutes this week?"})),
+  h("div", {className:"op-row", style:{justifyContent:"flex-end"}}, h(O.Button, {tone:"ghost"}, "Cancel"), h(O.Button, {tone:"primary"}, h(O.Icon,{name:"check"}), "Approve"))
+)));
+</script></body></html>

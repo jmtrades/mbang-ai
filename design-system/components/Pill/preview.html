@@ -1,0 +1,13 @@
+<!-- @dsCard group="Status" height=60 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Pill — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-row"},
+  h(O.Pill, {tone:"good"}, h("span", {className:"op-dot op-dot-good"}), "AI connected"),
+  h(O.Pill, null, h("span", {className:"op-dot"}), "AI offline: saved AI runs replay (labelled)"),
+  h(O.Pill, null, "Owner · 12")
+));
+</script></body></html>

@@ -1,0 +1,15 @@
+<!-- @dsCard group="Evidence" height=260 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>RunSteps — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.RunSteps, {defaultOpen:1, steps:[
+  {tool:"load_input", label:"Load input", status:"done", ms:12, input:{source:"inbound_dms", limit:3}, output:{items:3}},
+  {tool:"rules_draft", label:"Rules draft", status:"done", ms:48, input:{template:"dm_setter_v2"}, output:{drafts:3, questions_per_message:1}},
+  {tool:"ai_pass", label:"AI pass", status:"running", ms:null},
+  {tool:"review", label:"Guardrail review", status:"pending"},
+  {tool:"queue", label:"Queue for approval", status:"pending"}
+]}));
+</script></body></html>

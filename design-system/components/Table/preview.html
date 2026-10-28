@@ -1,0 +1,13 @@
+<!-- @dsCard group="Data" height=230 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Table — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(O.Card, {title:"Held drafts", pad:false}, h(O.Table, {
+  cols:[{key:"to",label:"To"},{key:"channel",label:"Channel"},{key:"status",label:"Status", render:function(r){ return h(O.Badge, {tone:r.tone, dot:true}, r.status); }},{key:"age",label:"Waiting", className:"", render:function(r){ return h("span", {style:{color:"var(--muted)", fontVariantNumeric:"tabular-nums"}}, r.age); }}],
+  rows:[{id:1,to:"Priya N. (DEMO)",channel:"Instagram DM",status:"Needs a person",tone:"warn",age:"3m ago"},{id:2,to:"Marcus T. (DEMO)",channel:"Email",status:"Blocked",tone:"bad",age:"41m ago"},{id:3,to:"Ana L. (DEMO)",channel:"Instagram DM",status:"Pending",tone:"neutral",age:"5h ago"}],
+  onRow:function(){}, selected:function(r){ return r.id===1; }
+})));
+</script></body></html>

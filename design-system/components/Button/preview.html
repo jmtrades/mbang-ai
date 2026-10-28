@@ -1,0 +1,13 @@
+<!-- @dsCard group="Actions" height=150 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Button — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h("div", {className:"op-col"},
+  h("div", {className:"op-row"}, h(O.Button, {tone:"good"}, h(O.Icon,{name:"check"}), "Approve"), h(O.Button, null, h(O.Icon,{name:"pencil"}), "Edit"), h(O.Button, {tone:"danger"}, h(O.Icon,{name:"x"}), "Reject"), h(O.Button, {tone:"ghost"}, "Dismiss"), h(O.Button, {tone:"subtle"}, h(O.Icon,{name:"copy"}), "Copy message"), h(O.Button, {tone:"primary"}, h(O.Icon,{name:"send"}), "I sent it")),
+  h("div", {className:"op-row"}, h(O.Button, {tone:"primary", size:"lg"}, h(O.Icon,{name:"rocket",size:18}), "Start today's mission", h(O.Icon,{name:"arrow-right"})), h(O.Button, {size:"lg"}, h(O.Icon,{name:"message-circle",size:18}), "Ask the coach"), h(O.Button, {size:"sm"}, h(O.Icon,{name:"rotate-cw",size:14}), "Retry"), h(O.Button, {loading:true}, "Checking due items"), h(O.IconButton, {label:"Close"}, h(O.Icon,{name:"x"})), h(O.IconButton, {label:"Search", size:"icon-sm", tone:"secondary"}, h(O.Icon,{name:"search",size:14}))),
+  h("div", {className:"op-row"}, h(O.Button, {tone:"good", disabled:true}, h(O.Icon,{name:"check"}), "Approve"), h(O.Button, {disabled:true}, h(O.Icon,{name:"pencil"}), "Edit"))
+));
+</script></body></html>

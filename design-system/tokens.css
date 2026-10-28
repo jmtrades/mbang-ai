@@ -1,0 +1,199 @@
+/* Operator AI — generated from tokens.json */
+:root, [data-theme="light"] {
+  --brand: #5b6cff;
+  --brand-2: #16a34a;
+  --brand-ink: #ffffff;
+  --brand-solid: #5160e4;
+  --brand-hover: #414ebe;
+  --brand-fg: #3d49b1;
+  --brand-soft: #f0f4ff;
+  --brand-soft-2: #e4eaff;
+  --brand-line: #b4c1f4;
+  --brand-ring: #5b6cff42;
+  --focus: var(--brand-fg);
+  --side: #f2f2f4;
+  --bg: #fbfbfc;
+  --panel: #ffffff;
+  --panel-2: #f8f8fa;
+  --hover: rgba(24,24,27,0.045);
+  --press: rgba(24,24,27,0.08);
+  --side-ink: #4f4f58;
+  --side-active: rgba(24,24,27,0.07);
+  --overlay: rgba(9,9,11,0.42);
+  --ink: #17171a;
+  --ink-2: #3a3a42;
+  --muted: #64646e;
+  --faint: #9d9da7;
+  --placeholder: #74747e;
+  --line: #e4e4e8;
+  --line-2: #ededf0;
+  --line-strong: #d0d0d6;
+  --good: #15803d;
+  --good-soft: #effcf3;
+  --good-ink: #166534;
+  --good-line: #c4ecd2;
+  --good-solid: #16803c;
+  --bad: #c42323;
+  --bad-soft: #fef3f2;
+  --bad-ink: #9f1c1c;
+  --bad-line: #fbd0cc;
+  --bad-solid: #c42323;
+  --warn: #b45309;
+  --warn-soft: #fffaeb;
+  --warn-ink: #8a3c0b;
+  --warn-line: #fbe2a8;
+  --info: #0369a1;
+  --info-soft: #f0f8ff;
+  --info-ink: #075985;
+  --info-line: #c4e3f8;
+  --demo: #7c3aed;
+  --demo-soft: #f6f3ff;
+  --demo-ink: #6125c9;
+  --demo-line: #e0d6fe;
+  --neutral-soft: #f3f3f5;
+  --neutral-line: #e4e4e8;
+  --viz-1: var(--brand-solid);
+  --viz-2: #0d9488;
+  --viz-3: #d97706;
+  --viz-4: #9333ea;
+  --viz-5: #e11d48;
+  --ramp-1: #cdd8ff;
+  --ramp-2: #b8c8ff;
+  --ramp-3: #a3b6ff;
+  --ramp-4: #90a5ff;
+  --ramp-5: #7d93ff;
+  --ramp-6: #6b80ff;
+  --ramp-7: var(--brand-solid);
+  --sh-xs: 0 1px 2px rgba(16,16,20,0.05);
+  --sh-sm: 0 1px 2px rgba(16,16,20,0.05), 0 1px 3px rgba(16,16,20,0.03);
+  --sh-md: 0 6px 16px -4px rgba(16,16,20,0.08), 0 2px 4px -2px rgba(16,16,20,0.05);
+  --sh-lg: 0 16px 36px -10px rgba(16,16,20,0.16), 0 4px 10px -4px rgba(16,16,20,0.06);
+  --sh-xl: 0 28px 70px -14px rgba(16,16,20,0.3), 0 10px 20px -10px rgba(16,16,20,0.12);
+  --shadow-btn: 0 1px 2px rgba(16,16,20,0.06), inset 0 -1px 0 rgba(16,16,20,0.04);
+  --shadow-primary: 0 1px 2px rgba(16,16,20,0.14), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.1);
+  --card-highlight: 0 0 #0000;
+}
+[data-theme="dark"] {
+  --brand: #5b6cff;
+  --brand-2: #16a34a;
+  --brand-ink: #ffffff;
+  --brand-solid: #4b5ad7;
+  --brand-hover: #6e83ff;
+  --brand-fg: #9aaeff;
+  --brand-soft: #1d2134;
+  --brand-soft-2: #242a48;
+  --brand-line: #39437a;
+  --brand-ring: #5b6cff66;
+  --focus: var(--brand-fg);
+  --side: #0a0a0c;
+  --bg: #0e0e11;
+  --panel: #151518;
+  --panel-2: #1a1a1e;
+  --hover: rgba(255,255,255,0.055);
+  --press: rgba(255,255,255,0.09);
+  --side-ink: #a6a6b0;
+  --side-active: rgba(255,255,255,0.075);
+  --overlay: rgba(0,0,0,0.62);
+  --ink: #ececef;
+  --ink-2: #c6c6cd;
+  --muted: #9696a1;
+  --faint: #72727c;
+  --placeholder: #8a8a94;
+  --line: #26262b;
+  --line-2: #1f1f23;
+  --line-strong: #36363d;
+  --good: #4ade80;
+  --good-soft: rgba(34,197,94,0.12);
+  --good-ink: #86efac;
+  --good-line: rgba(34,197,94,0.26);
+  --good-solid: #15803d;
+  --bad: #f87171;
+  --bad-soft: rgba(239,68,68,0.13);
+  --bad-ink: #fca5a5;
+  --bad-line: rgba(239,68,68,0.3);
+  --bad-solid: #b91c1c;
+  --warn: #fbbf24;
+  --warn-soft: rgba(245,158,11,0.12);
+  --warn-ink: #fcd34d;
+  --warn-line: rgba(245,158,11,0.28);
+  --info: #38bdf8;
+  --info-soft: rgba(14,165,233,0.13);
+  --info-ink: #7dd3fc;
+  --info-line: rgba(14,165,233,0.3);
+  --demo: #a78bfa;
+  --demo-soft: rgba(139,92,246,0.16);
+  --demo-ink: #c4b5fd;
+  --demo-line: rgba(139,92,246,0.34);
+  --neutral-soft: rgba(255,255,255,0.06);
+  --neutral-line: rgba(255,255,255,0.1);
+  --viz-1: #778dff;
+  --viz-2: #2dd4bf;
+  --viz-3: #fbbf24;
+  --viz-4: #c084fc;
+  --viz-5: #fb7185;
+  --ramp-1: #282f55;
+  --ramp-2: #303970;
+  --ramp-3: #38448c;
+  --ramp-4: #414ea9;
+  --ramp-5: #4a59c6;
+  --ramp-6: #5363e5;
+  --ramp-7: #778dff;
+  --sh-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --sh-sm: 0 1px 2px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3);
+  --sh-md: 0 8px 20px -6px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.4);
+  --sh-lg: 0 18px 40px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+  --sh-xl: 0 30px 80px -16px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-btn: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  --shadow-primary: 0 1px 2px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18);
+  --card-highlight: inset 0 1px 0 rgba(255,255,255,0.035);
+}
+:root {
+  --space-0\.5: 2px;
+  --space-1: 4px;
+  --space-1\.5: 6px;
+  --space-2: 8px;
+  --space-2\.5: 10px;
+  --space-3: 12px;
+  --space-3\.5: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-10: 40px;
+  --space-14: 56px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --sidebar: 260px;
+  --header: 56px;
+  --tabbar: 58px;
+  --control-sm: 28px;
+  --control-md: 36px;
+  --control-lg: 44px;
+  --badge: 20px;
+  --nav-item: 32px;
+  --palette-input: 52px;
+  --icon: 16px;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+@font-face { font-family: "Inter Variable"; src: url("fonts/inter-latin-opsz-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: "Inter Variable"; src: url("fonts/inter-latin-ext-opsz-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+.t-display { font-family: var(--font-sans); font-size: 44px; line-height: 1.04; font-weight: 640; letter-spacing: -0.034em; }
+.t-h1 { font-family: var(--font-sans); font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -0.021em; }
+.t-h2 { font-family: var(--font-sans); font-size: 18px; line-height: 1.3; font-weight: 600; letter-spacing: -0.016em; }
+.t-h3 { font-family: var(--font-sans); font-size: 15px; line-height: 1.35; font-weight: 600; letter-spacing: -0.011em; }
+.t-lead { font-family: var(--font-sans); font-size: 15.5px; line-height: 1.6; font-weight: 400; letter-spacing: -0.009em; }
+.t-body { font-family: var(--font-sans); font-size: 14px; line-height: 1.55; font-weight: 400; }
+.t-small { font-family: var(--font-sans); font-size: 13px; line-height: 1.5; font-weight: 400; }
+.t-caption { font-family: var(--font-sans); font-size: 12px; line-height: 1.45; font-weight: 400; }
+.t-overline { font-family: var(--font-sans); font-size: 11px; line-height: 1.3; font-weight: 600; letter-spacing: 0.07em; }
+.ui-button-sm { font-family: var(--font-sans); font-size: 12.5px; line-height: 1; font-weight: 500; }
+.ui-button-md { font-family: var(--font-sans); font-size: 13.5px; line-height: 1; font-weight: 500; }
+.ui-button-lg { font-family: var(--font-sans); font-size: 14.5px; line-height: 1; font-weight: 500; }
+.ui-label { font-family: var(--font-sans); font-size: 12.5px; line-height: 1.3; font-weight: 500; }
+.ui-badge { font-family: var(--font-sans); font-size: 11.5px; line-height: 1; font-weight: 500; }
+.ui-kbd { font-family: var(--font-sans); font-size: 11px; line-height: 1; font-weight: 500; }
+.ui-stat { font-family: var(--font-sans); font-size: 26px; line-height: 1; font-weight: 600; letter-spacing: -0.02em; }
+.ui-mono { font-family: var(--font-mono); font-size: 12px; line-height: 1.625; font-weight: 400; }

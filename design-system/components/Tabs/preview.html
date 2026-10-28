@@ -1,0 +1,9 @@
+<!-- @dsCard group="Navigation" height=110 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Tabs — preview</title>
+<style>html,body{margin:0;background:var(--bg);color:var(--ink)} body{padding:16px} .op-root{font-family:var(--font-sans)}</style></head>
+<body><div id="root" class="op-root"></div>
+<script>
+var O = window.Operator, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(function(){ var s = React.useState("lessons"); return h("div", null, h(O.Tabs, {tabs:[{key:"lessons",label:"Lessons"},{key:"practice",label:"Practice"},{key:"roleplay",label:"Role-play"},{key:"inbox",label:"Inbox"}], value:s[0], onChange:s[1]}), h("p", {style:{margin:0, fontSize:13.5, color:"var(--muted)"}}, "Showing: " + s[0])); }));
+</script></body></html>
