@@ -1,0 +1,4 @@
+# Development and CI tools, pinned. Runtime dependencies are in requirements.lock.
+ruff==0.17.3
+mypy==2.4.0
+pytest-xdist==3.8.0

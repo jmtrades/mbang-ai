@@ -1,0 +1,20 @@
+# Mirrors CI (ENTERPRISE_STANDARD QE-2). Install once: pip install pre-commit && pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-hard-rules
+        name: ruff (undefined names, syntax)
+        entry: .venv/bin/ruff check --select F821,F822,F823,E9
+        language: system
+        types: [python]
+      - id: arch-gates
+        name: architecture gates (tests/test_arch.py)
+        entry: .venv/bin/python -m pytest -q tests/test_arch.py
+        language: system
+        pass_filenames: false
+        types_or: [python, ts, tsx, toml, json]
+      - id: no-course-material
+        name: no course material or data in the repo
+        entry: bash -c 'git diff --cached --name-only | grep -E "^(inputs|data|backups|backup-keys)/" && exit 1 || exit 0'
+        language: system
+        pass_filenames: false

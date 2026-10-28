@@ -16,7 +16,7 @@ from dataclasses import asdict
 from .. import audit, auth, db, events, jobs, queue, runtime
 from ..redact import redact
 from . import registry, templates
-from .registry import DAY, STATUS_LABEL, TERMINAL, WAITING, StepResult, add_event, clock, events_of, q_states
+from .registry import STATUS_LABEL, TERMINAL, WAITING, StepResult, add_event, clock, events_of, q_states
 
 log = logging.getLogger("operator.missions")
 JOB = "missions.step"

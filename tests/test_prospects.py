@@ -12,7 +12,6 @@ import httpx
 import pytest
 
 from operator_ai import auth, db, events, guardrails, llm, queue, runtime, settings
-from operator_ai import proposals as PR
 from operator_ai import prospects as P
 from tests.conftest import demo_login, owner_password
 from tests.fakes import FakeModel

@@ -337,11 +337,11 @@ _MONEY_RX = [
     re.compile(r"\b\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?(?!\d)(?!\s*[A-Za-z])"),      # a bare "2,997." with nothing counted
     re.compile(rf"{_EARN}\s+(?:you\s+|them\s+|your\s+\w+\s+)?{_EARN_QUAL}{_BARE}{_BARE_FOLLOW}", re.I),  # "made 40000 last month"
     # a bare price: "the program is 2997", "it's 1997 today", "join for 997 today", "1997 gets you in"
-    re.compile(rf"\b(?:program(?:me)?|course|coaching|offer|package|membership|mentorship|enrol+ment|access|it|that|this|"
-               rf"investment|call)(?:'s|\s+(?:is|costs?|runs?|comes\s+to|will\s+be|would\s+be))\s+(?:just\s+|only\s+|about\s+|"
-               rf"around\s+|roughly\s+)?(?!(?:19|20)\d\d\b)\d{{3,}}(?:[.,]\d{{2}})?(?![\d%])"
-               rf"(?=\s*(?:[.!?,;)\n]|$|\b(?:today|now|upfront|up\s+front|total|flat|one[- ]time|all[- ]in|in\s+full|to\s+join|"
-               rf"to\s+start|a\s+month|per|monthly|for|and|plus|with)\b))", re.I),
+    re.compile(r"\b(?:program(?:me)?|course|coaching|offer|package|membership|mentorship|enrol+ment|access|it|that|this|"
+               r"investment|call)(?:'s|\s+(?:is|costs?|runs?|comes\s+to|will\s+be|would\s+be))\s+(?:just\s+|only\s+|about\s+|"
+               r"around\s+|roughly\s+)?(?!(?:19|20)\d\d\b)\d{3,}(?:[.,]\d{2})?(?![\d%])"
+               r"(?=\s*(?:[.!?,;)\n]|$|\b(?:today|now|upfront|up\s+front|total|flat|one[- ]time|all[- ]in|in\s+full|to\s+join|"
+               r"to\s+start|a\s+month|per|monthly|for|and|plus|with)\b))", re.I),
     re.compile(r"\bfor\s+(?:just\s+|only\s+)?\d{3,}(?:[.,]\d{2})?\s+(?:today|now|upfront|up\s+front|total|flat|one[- ]time|"
                r"all[- ]in|in\s+full)\b", re.I),
     re.compile(r"\b\d{3,}(?:[.,]\d{2})?\s+gets\s+you\b", re.I),

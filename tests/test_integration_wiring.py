@@ -175,7 +175,7 @@ def test_hard_bounces_and_spam_complaints_set_do_not_contact(client, tenant):
 
 # ================================================================ missions run the real feature modules
 def test_missions_use_the_real_prospects_proposals_client_ops_and_academy(tenant, monkeypatch):
-    from operator_ai.missions import engine, evaluator, registry
+    from operator_ai.missions import engine, evaluator
 
     monkeypatch.setenv("OPERATOR_PUBLIC_URL", "https://ops.example.invalid")
     o = _user(tenant, "mission-owner", role="owner")

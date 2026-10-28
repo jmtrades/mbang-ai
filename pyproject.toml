@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = { find = { include = ["operator_ai*"] } }
+
+[project]
+name = "operator-ai"
+dynamic = ["version"]
+description = "A white-label, approval-gated agentic operating system for coaching programmes."
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+# runtime dependencies are pinned in requirements.lock (requirements.in lists the top level)
+
+[project.optional-dependencies]
+# pinned in requirements-dev.txt; installed by CI and `make dev`
+dev = ["ruff", "mypy", "pytest-xdist"]
+
+[tool.setuptools.dynamic]
+version = { attr = "operator_ai.__version__" }
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+extend-exclude = ["web", "data", "inputs", ".claude", "design-system"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = [
+    "B008",  # FastAPI's Depends()/Query() in argument defaults is the framework's idiom
+]
+# Every other finding is gated by the ratchet in tests/test_arch.py::test_ruff_ratchet: no file may gain a finding,
+# and the baseline (tests/arch_baselines/ruff.json) only shrinks. Rules move to hard gates as their baseline empties.
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+# Error counts per file are ratcheted by tests/test_arch.py::test_mypy_ratchet (ENTERPRISE_STANDARD QE-10).
+

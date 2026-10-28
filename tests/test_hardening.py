@@ -875,18 +875,19 @@ def test_review_pass_personality_survives_a_malformed_stored_persona(owner):
 def test_review_pass_guardrails_stay_fast_on_hostile_input(text):
     # anyone (even an anonymous demo visitor) can send 20,000 characters to /guardrails/check; "1,1,1,..." used to
     # take over a minute of CPU in outreach mode (number patterns rescanned the whole run from every digit)
-    t0 = time.time()
+    # CPU time, not wall-clock: the guard is against a CPU blow-up, and a busy parallel run must not flake it (QE-6)
+    t0 = time.process_time()
     for mode, meta in (("outreach", {"lead_tier": "warm"}), ("plain", None), ("client_asset", {"client_asset": True})):
         guardrails.check(text[:20000], mode, meta)
-    assert time.time() - t0 < 5, round(time.time() - t0, 2)
+    assert time.process_time() - t0 < 5, round(time.process_time() - t0, 2)
 
 
 def test_review_pass_guardrail_endpoint_answers_hostile_input_quickly(client):
     demo_login(client, "student")
-    t0 = time.time()
+    t0 = time.process_time()  # CPU time across the app's threads in this process (QE-6)
     r = client.post("/t/demo/api/guardrails/check", json={"text": "1," * 10000, "mode": "outreach",
                                                           "meta": {"lead_tier": "warm"}})
-    assert r.status_code == 200 and time.time() - t0 < 5
+    assert r.status_code == 200 and time.process_time() - t0 < 5
 
 
 def test_review_pass_demo_reset_clears_anything_added_to_the_demo_kb_folder(demo_tenant):

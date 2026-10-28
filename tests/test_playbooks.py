@@ -670,7 +670,6 @@ def test_startup_warm_up_also_builds_the_playbooks_index(env, monkeypatch):
 
 
 def test_external_refs_never_put_a_blocked_title_into_a_queued_draft(on):
-    from operator_ai import channels
 
     ext = [{"id": "X1", "title": "Refund and guarantee design: objective conditions", "domain_title": "Compliance 2026",
             "as_of": "2026-10", "confidence": "high", "url": "https://example.org/r"}]

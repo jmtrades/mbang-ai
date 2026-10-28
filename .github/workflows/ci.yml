@@ -1,0 +1,85 @@
+# Operator AI CI (ENTERPRISE_STANDARD QE-1). Runs on every push and pull request.
+# The architecture gates (tests/test_arch.py) run inside the Python suite; they fail on any new lint finding,
+# type error, oversized module or `any`, and on voice-cloning dependencies (INV-3).
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPERATOR_DISABLE_LLM: "1"
+      OPERATOR_EMBEDDINGS: hash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: |
+            requirements.lock
+            requirements-dev.txt
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock -r requirements-dev.txt
+      - name: Lint (hard rules)
+        run: ruff check operator_ai scripts tests --select F821,F822,F823,E9
+      - name: Tests and architecture gates
+        run: pytest -n auto -m "not ui" --durations=25
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Typecheck and build
+        run: npm run build
+      - name: Dependency audit (high and critical)
+        run: npm audit --audit-level=high --omit=dev
+
+  ui:
+    # Playwright: every page x every role (tests marked `ui`). Needs the built web app.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [python, web]
+    env:
+      OPERATOR_DISABLE_LLM: "1"
+      OPERATOR_EMBEDDINGS: hash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: pip install -r requirements.lock -r requirements-dev.txt
+      - run: npm ci --no-audit --no-fund && npm run build
+        working-directory: web
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -m ui

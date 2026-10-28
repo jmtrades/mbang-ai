@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from operator_ai import auth, channels, config, console, corpus, db, guardrails, llm, persona, queue, retrieval, settings, \
+from operator_ai import auth, channels, config, console, corpus, guardrails, llm, persona, queue, retrieval, settings, \
     tenancy, translate, uploads
 from operator_ai.agents import coach
 from operator_ai.persona import apply as papply

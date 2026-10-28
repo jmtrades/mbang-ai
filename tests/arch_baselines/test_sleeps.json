@@ -1,0 +1,9 @@
+{
+ "tests/fakes.py": 1,
+ "tests/server.py": 1,
+ "tests/test_academy.py": 1,
+ "tests/test_delivery.py": 3,
+ "tests/test_e2e_first_client.py": 1,
+ "tests/test_phase10_ops.py": 2,
+ "tests/test_phase5_ops_agents.py": 1
+}

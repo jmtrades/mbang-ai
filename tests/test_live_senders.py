@@ -2,7 +2,7 @@
 only for approved items, never blindly retried, opt-in still enforced for SMS."""
 import pytest
 
-from operator_ai import channels, queue, settings, tenancy, vault
+from operator_ai import queue, settings, vault
 from operator_ai.live import net, senders
 from tests.fakes import FakeWorld
 

@@ -3,7 +3,6 @@ Results are stored in eval_runs so the Evals tab can show a trend."""
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from . import config, db, retrieval
 

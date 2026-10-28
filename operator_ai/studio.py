@@ -60,8 +60,8 @@ def _drafts(line: str, b: dict, tenant=None) -> list[dict]:
                  "meta": {}}]
     if line == "delivery":
         return [{"title": "Client weekly report email", "asset": "email", "kind": "client_report", "channel": "email",
-                 "body": f"Subject: Your weekly numbers\nHere's this week's funnel, the one bottleneck we're fixing, and next week's plan. "
-                         f"Reply with any questions.", "meta": {"client_asset": True}}]
+                 "body": "Subject: Your weekly numbers\nHere's this week's funnel, the one bottleneck we're fixing, and next week's plan. "
+                         "Reply with any questions.", "meta": {"client_asset": True}}]
     raise KeyError(line)
 
 

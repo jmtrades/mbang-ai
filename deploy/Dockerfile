@@ -7,9 +7,11 @@ RUN npm ci --no-audit --no-fund
 COPY web/ ./
 RUN npm run build
 
-FROM python:3.12-slim
+FROM python:3.14-slim
+# the git commit, shown on /health: docker build --build-arg OPERATOR_COMMIT=$(git rev-parse HEAD) ...
+ARG OPERATOR_COMMIT=unknown
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OPERATOR_PORT=8850 OPERATOR_DATA_DIR=/app/data \
-    OPERATOR_CORPUS_DIR=/app/inputs OPERATOR_COOKIE_SECURE=1
+    OPERATOR_CORPUS_DIR=/app/inputs OPERATOR_COOKIE_SECURE=1 OPERATOR_COMMIT=${OPERATOR_COMMIT}
 RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr curl sqlite3 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 operator

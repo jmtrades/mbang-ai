@@ -11,7 +11,7 @@ import math
 import time
 from collections import defaultdict
 
-from . import db, guardrails, queue, runtime
+from . import db, queue, runtime
 
 STAGES = ["new", "sent", "replied", "quality_conversation", "link_sent", "booked", "showed", "closed"]
 DAILY_CAP = 5

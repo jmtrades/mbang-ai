@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """One-time, online: download the local embedding model (BAAI/bge-small-en-v1.5) into the
 model cache. After this the app embeds locally with no network access."""
-import os
 import sys
 from pathlib import Path
 

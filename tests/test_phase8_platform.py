@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import io
 import json
 import os
@@ -8,7 +6,7 @@ import time
 
 import pytest
 
-from operator_ai import (call_review, channels, console, crm, index, mcp_server, queue, skills, threads, uploads,
+from operator_ai import (call_review, channels, console, crm, mcp_server, queue, skills, threads, uploads,
                          vault)
 from tests.conftest import demo_login
 
@@ -470,7 +468,6 @@ def test_personality_banned_words_always_enforced(owner):
 
 
 def test_daily_question_limit(client):
-    from operator_ai import tenancy
 
     demo_login(client, "owner")
     client.put("/t/demo/api/personality", json={"daily_question_limit": 14})

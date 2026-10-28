@@ -54,7 +54,7 @@ DISFLUENT = {"um", "uh", "er", "erm", "uhh", "umm", "hmm"}
 IMPERATIVE = {"ask", "write", "send", "pick", "track", "read", "stop", "start", "keep", "make", "do", "don't", "go", "try",
               "use", "be", "show", "spend", "plan", "find", "change", "cut", "let's", "focus", "get", "take", "book",
               "confirm", "qualify", "follow", "listen", "never", "always", "check", "look", "think", "remember", "protect",
-              "offer", "tell", "give", "build", "fix", "test", "write", "stay", "drop", "call"}
+              "offer", "tell", "give", "build", "fix", "test", "stay", "drop", "call"}
 NUMBER_WORDS = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
                 "fifteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred",
                 "thousand", "million", "billion", "percent", "k", "grand", "dollars", "bucks", "half", "double", "triple"}

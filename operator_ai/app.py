@@ -195,7 +195,11 @@ def create_app(start_workers: bool = True) -> FastAPI:
 
     @app.get("/health")
     def health():
-        return {"ok": True, "uptime_s": round(time.time() - STARTED, 1)}
+        from . import __version__
+
+        # the commit is stamped at build time (deploy/Dockerfile, CI); "unknown" in a plain checkout
+        return {"ok": True, "version": __version__, "commit": os.environ.get("OPERATOR_COMMIT", "unknown")[:40],
+                "uptime_s": round(time.time() - STARTED, 1)}
 
     @app.get("/ready")
     def ready():

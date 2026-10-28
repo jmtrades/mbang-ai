@@ -4,7 +4,6 @@ import shutil
 import pytest
 
 from operator_ai import config, corpus, index, textnorm
-from tests.conftest import login
 
 
 def test_fixture_fallback_when_inputs_empty(env):

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from . import brief as brief_mod
-from . import db, guardrails, queue, retrieval, runtime, tenancy, vault
+from . import db, guardrails, queue, runtime, tenancy, vault
 
 log = logging.getLogger("operator.skills")
 

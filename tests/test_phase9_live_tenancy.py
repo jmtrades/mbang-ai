@@ -5,10 +5,9 @@ import subprocess
 import sys
 import time
 
-import httpx
 import pytest
 
-from operator_ai import config, index, jobs, queue, retrieval, settings, skills, tenancy, uploads, vault
+from operator_ai import config, jobs, queue, retrieval, settings, skills, tenancy, uploads, vault
 from operator_ai.live import chain, gcal, meta, net
 from tests.conftest import login, owner_password
 from tests.fakes import FakeWorld
