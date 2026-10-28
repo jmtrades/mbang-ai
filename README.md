@@ -24,7 +24,12 @@ scripts/run.sh                                                        # http://1
   database (`data/demo.db`); everything there is labelled DEMO.
 - **Real workspace:** `http://127.0.0.1:8850/t/owner/`. The owner password is written to
   `data/tenants/owner/owner_password.txt` (mode 600) on first start; it is never printed.
-- **Course material:** copy the course folders into `inputs/` (read-only; see the layout in `docs/ARCHITECTURE.md`).
+- **Course material:** copy the course folders into `inputs/` (read-only; see the layout in `docs/ARCHITECTURE.md`),
+  or import the owner's own export with `scripts/import_course.py <folder> --rights owner|licensed`. It turns captions
+  and videos into timestamped transcripts (videos without captions are transcribed locally once you
+  `pip install faster-whisper`), PDFs and Word files into SOP text, and records the rights statement in
+  `inputs/import_log.json`. Re-runs only process new or changed files. `inputs/` is git-ignored: course material never
+  goes into the repository.
   Until then the app uses a small fictional corpus from `tests/fixtures/corpus/`.
 - **AI is optional.** With no key, no budget or `OPERATOR_DISABLE_LLM=1`, every feature runs on rules, templates,
   retrieval and labelled replays of saved AI output. The AI budget defaults to 0 and changes only on the server:
