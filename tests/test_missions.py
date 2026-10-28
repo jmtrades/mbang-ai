@@ -1162,7 +1162,8 @@ def test_timed_reminders_are_drafted_close_to_their_time_without_the_dispatcher(
     events.emit(tenant, "booking_made", {"party_type": "prospect", "party_id": pid, "starts_at": starts})
     rem = S(engine.get(tenant, m["id"]))["reminders"]
     ladder = [queue.get(tenant, q)["meta"]["ladder"] for q in rem["queue_ids"]]
-    assert ladder == ["confirmation"] and rem["due"] == pytest.approx(starts - registry.DAY - registry.TIMED_LEAD, abs=1e-3)
+    assert ladder == ["confirmation"]
+    assert rem["due"] == pytest.approx(starts - registry.DAY - registry.TIMED_LEAD, abs=1e-3)  # float subtraction order
     clock[0] = starts - registry.DAY - registry.TIMED_LEAD + 60
     engine.tick(tenant, clock[0])
     rem = S(engine.get(tenant, m["id"]))["reminders"]
