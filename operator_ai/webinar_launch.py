@@ -25,6 +25,49 @@ DEFAULT_TZ = "America/New_York"
 DEFAULT_HOUR = 19
 
 
+# A growth operator's client sells to consumers (traders, gym-goers, singles...), so the webinar speaks to THOSE
+# people. When the client's brief has no audience/outcome yet, these fill the gaps by niche keyword. Explicit brief
+# fields always win; B2B niches (agency, coaching businesses) keep the business-growth defaults.
+AUDIENCE_PRESETS: list[tuple[tuple[str, ...], dict]] = [
+    (("trad", "forex", "crypto", "stock", "futures", "options", "day trad"),
+     {"audience": "new traders", "outcome": "consistent results", "mechanism": "3-step trade plan",
+      "pain": "blowing up their account", "timeframe": "90 days"}),
+    (("fitness", "gym", "fat loss", "weight", "personal train", "nutrition"),
+     {"audience": "busy professionals", "outcome": "lean and strong", "mechanism": "3-day training plan",
+      "pain": "giving up the food they love", "timeframe": "12 weeks"}),
+    (("dating", "relationship", "attraction"),
+     {"audience": "single men", "outcome": "a calendar full of great dates", "mechanism": "attraction framework",
+      "pain": "swiping endlessly", "timeframe": "60 days"}),
+    (("real estate", "property", "airbnb", "rental"),
+     {"audience": "first-time investors", "outcome": "their first cash-flowing deal",
+      "mechanism": "deal-finding system", "pain": "draining their savings", "timeframe": "6 months"}),
+    (("ecom", "e-com", "amazon", "shopify", "dropship"),
+     {"audience": "new store owners", "outcome": "their first profitable product",
+      "mechanism": "product-testing method", "pain": "burning cash on ads", "timeframe": "90 days"}),
+]
+_PRESET_FIELDS = ("audience", "outcome", "mechanism", "pain", "timeframe")
+
+
+def audience_preset(niche: str) -> dict:
+    low = (niche or "").lower()
+    for keys, preset in AUDIENCE_PRESETS:
+        if any(k in low for k in keys):
+            return preset
+    return {}
+
+
+def _fill_audience(partial: dict, for_client: bool) -> dict:
+    """Fill the audience-side fields the brief left empty: by niche preset, else (for a client) a neutral
+    consumer-facing fallback so the copy never reads as 'business owners get more enquiries'."""
+    preset = audience_preset(str(partial.get("niche") or "")) or audience_preset(str(partial.get("offer") or ""))
+    if not preset and for_client:
+        niche = str(partial.get("niche") or "this").strip()
+        preset = {"audience": f"people serious about {niche}", "outcome": "real, measurable progress",
+                  "mechanism": "step-by-step method", "pain": "wasting months on trial and error",
+                  "timeframe": "90 days"}
+    return {**{k: preset[k] for k in _PRESET_FIELDS if k in preset and not partial.get(k)}, **partial}
+
+
 class LaunchError(Exception):
     def __init__(self, status: int, msg: str):
         super().__init__(msg)
@@ -57,12 +100,16 @@ def launch(tenant, data: dict, user: dict | None = None) -> dict:
     client = None
     if data.get("client_id"):
         client = _client(tenant, int(data["client_id"]), user)
-        partial.update({k: v for k, v in brief_mod.for_client(client)["brief"].items() if v not in (None, "")})
+        cb = brief_mod.for_client(client)
+        # only what the client actually told us: build() back-fills business-growth defaults we must not keep
+        partial.update({k: v for k, v in cb["brief"].items() if v not in (None, "") and k not in cb["missing"]})
     partial.update({k: data[k] for k in brief_mod.FIELDS if data.get(k) not in (None, "")})
+    partial = _fill_audience(partial, for_client=client is not None)
     try:
         starts = webinars.parse_start(data["starts_at"], tz)
     except webinars.WebinarError as e:
         raise LaunchError(e.status, str(e)) from None
+    partial["date"] = webinars.when_label(starts, tz)  # emails and pages name the real date, not a placeholder
     chain = webinar_chain.run_chain(tenant, partial, user)
     try:
         w = webinars.create(tenant, {"chain_id": chain["chain_id"], "starts_at": starts, "tz": tz,
@@ -171,59 +218,213 @@ def _pack_approved(tenant, item: dict, actor: str) -> None:
 
 
 # --------------------------------------------------------------------------- slide deck
-def deck(tenant, wid: int, user: dict | None = None) -> tuple[str, bytes]:
-    """The slide script as a real PowerPoint deck: title, agenda, one slide per segment, the offer, next steps."""
-    from pptx import Presentation
-    from pptx.util import Inches, Pt
+def _host(tenant, w: dict) -> str:
+    """Whose webinar it is: the client's name when launched for a client, else this workspace's brand."""
+    if w.get("client_id"):
+        with tenant.db() as c:
+            found = db.rows(c.execute("SELECT name FROM clients WHERE id=?", (int(w["client_id"]),)))
+        if found and found[0].get("name"):
+            return str(found[0]["name"])
+    return config.get().brand
 
+
+_SMALL = {"a", "an", "and", "as", "at", "but", "by", "for", "in", "of", "on", "or", "the", "to", "with"}
+
+
+def headline(text: str) -> str:
+    """Headline case for covers and pages: capitalise each word except short joining words (never the first)."""
+    words = text.split()
+    return " ".join(w if (i and w.lower() in _SMALL) else (w[:1].upper() + w[1:]) for i, w in enumerate(words))
+
+
+# deck palette: deep ink for statement slides, warm accent, soft paper for teaching slides
+_INK, _ACCENT, _PAPER, _TEXT, _MUTED, _PANEL = "0F172A", "F59E0B", "F8FAFC", "0F172A", "64748B", "1E293B"
+_EMU_IN = 914400
+
+
+def _rgb(h: str):
+    from pptx.dml.color import RGBColor
+
+    return RGBColor.from_string(h)
+
+
+def _in(x: float) -> int:
+    return int(x * _EMU_IN)
+
+
+class _Deck:
+    """A 16:9 deck painted on blank slides: statement slides in ink, teaching slides on paper, one accent."""
+
+    def __init__(self, host: str):
+        from pptx import Presentation
+
+        self.prs = Presentation()
+        from pptx.util import Emu
+
+        self.prs.slide_width, self.prs.slide_height = Emu(_in(13.333)), Emu(_in(7.5))
+        self.W, self.H = _in(13.333), _in(7.5)
+        self.host, self.n = host, 0
+
+    def rect(self, s, x: int, y: int, cx: int, cy: int, color: str, rounded: bool = False):
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
+
+        r = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE if rounded else MSO_SHAPE.RECTANGLE, x, y, cx, cy)
+        r.fill.solid()
+        r.fill.fore_color.rgb = RGBColor.from_string(color)
+        r.line.fill.background()
+        r.shadow.inherit = False
+        return r
+
+    def dot(self, s, x: int, y: int, size: int, color: str):
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
+
+        r = s.shapes.add_shape(MSO_SHAPE.OVAL, x, y, size, size)
+        r.fill.solid()
+        r.fill.fore_color.rgb = RGBColor.from_string(color)
+        r.line.fill.background()
+
+    def text(self, s, box: tuple[float, float, float, float], value: str | list[str], size: int, color: str,
+             bold: bool = False, align: str = "left", spacing: float = 1.1):
+        from pptx.dml.color import RGBColor
+        from pptx.enum.text import PP_ALIGN
+        from pptx.util import Pt
+
+        x, y, cx, cy = box
+        tf = s.shapes.add_textbox(_in(x), _in(y), _in(cx), _in(cy)).text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+        for i, ln in enumerate(value if isinstance(value, list) else [value]):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.alignment = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}[align]
+            p.line_spacing = spacing
+            run = p.add_run()
+            run.text = ln
+            run.font.size, run.font.bold, run.font.name = Pt(size), bold, "Calibri"
+            run.font.color.rgb = RGBColor.from_string(color)
+
+    def slide(self, dark: bool, note: str = ""):
+        s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
+        self.n += 1
+        self.rect(s, 0, 0, self.W, self.H, _INK if dark else _PAPER)
+        if not dark:
+            self.rect(s, 0, 0, _in(0.18), self.H, _ACCENT)
+        if note:
+            s.notes_slide.notes_text_frame.text = note
+        return s
+
+    def footer(self, s, dark: bool) -> None:
+        col = "94A3B8" if dark else _MUTED
+        self.text(s, (0.8, 6.9, 8, 0.3), self.host.upper(), 11, col, bold=True)
+        self.text(s, (11.53, 6.9, 1, 0.3), str(self.n), 11, col, align="right")
+
+    def kicker(self, s, label: str, y: float = 0.8) -> None:
+        self.rect(s, _in(0.8), _in(y + 0.08), _in(0.5), 45720, _ACCENT)
+        self.text(s, (1.45, y, 8, 0.35), label.upper(), 13, _ACCENT, bold=True)
+
+    def bullets(self, title: str, label: str, items: list[str], note: str = "") -> None:
+        s = self.slide(False, note)
+        self.kicker(s, label)
+        self.text(s, (0.8, 1.3, 11.5, 1.1), title, 38, _TEXT, bold=True)
+        y = 2.7
+        for it in [i for i in items if i][:6]:
+            self.dot(s, _in(0.85), _in(y + 0.13), _in(0.16), _ACCENT)
+            self.text(s, (1.3, y, 10.8, 0.7), it, 22, _TEXT)
+            y += 0.78
+        self.footer(s, False)
+
+    def save(self) -> bytes:
+        buf = io.BytesIO()
+        self.prs.save(buf)
+        return buf.getvalue()
+
+
+def _deck_cover(d: _Deck, title: str, when: str, usp: str) -> None:
+    s = d.slide(True, f"Welcome everyone in. Say who this is for and what they'll walk away with. {usp}".strip())
+    d.rect(s, d.W - _in(4.2), 0, _in(4.2), d.H, _PANEL)
+    d.rect(s, d.W - _in(4.2), 0, _in(0.12), d.H, _ACCENT)
+    d.kicker(s, "Free live training", 1.2)
+    d.text(s, (0.8, 1.8, 8.0, 3.2), headline(title), 44, "FFFFFF", bold=True, spacing=1.0)
+    d.text(s, (0.8, 5.3, 8.0, 0.5), when, 20, _ACCENT, bold=True)
+    d.text(s, (0.8, 5.85, 8.0, 0.5), f"Hosted by {d.host}", 16, "CBD5E1")
+    total = sum(m for _, m in webinar_chain.SEGMENTS)
+    d.text(s, (9.63, 2.2, 3.2, 1.4), str(total), 88, "FFFFFF", bold=True, align="center", spacing=0.9)
+    d.text(s, (9.63, 3.6, 3.2, 0.5), "MINUTES, LIVE", 14, _ACCENT, bold=True, align="center")
+    d.text(s, (9.63, 4.4, 3.2, 1.0), ["Stay to the end", "for live Q&A"], 18, "CBD5E1", align="center")
+
+
+def _deck_agenda(d: _Deck) -> None:
+    s = d.slide(False, "Walk the agenda in 20 seconds so people know to stay for the offer and the Q&A.")
+    d.kicker(s, "Agenda")
+    d.text(s, (0.8, 1.3, 11.5, 1.0), "Here's how the next hour goes", 38, _TEXT, bold=True)
+    for i, (name, mins) in enumerate(webinar_chain.SEGMENTS):
+        x, y = 0.8 + 2.95 * (i % 4), 2.65 + 1.95 * (i // 4)
+        tile = d.rect(s, _in(x), _in(y), _in(2.75), _in(1.75), "FFFFFF", rounded=True)
+        tile.line.color.rgb = _rgb("E2E8F0")
+        d.text(s, (x + 0.25, y + 0.2, 1.0, 0.5), f"{i + 1:02d}", 22, _ACCENT, bold=True)
+        d.text(s, (x + 0.25, y + 0.7, 2.25, 0.6), name, 17, _TEXT, bold=True)
+        d.text(s, (x + 0.25, y + 1.25, 2.25, 0.35), f"{mins} min", 13, _MUTED)
+    d.footer(s, False)
+
+
+def _deck_segments(d: _Deck, notes: dict[int, str]) -> None:
+    for i, (name, mins) in enumerate(webinar_chain.SEGMENTS, start=1):
+        point = re.sub(r"^[A-Za-z ]+:\s*", "", notes.get(i, "")).strip().rstrip(".")
+        dark = i in (1, 4)  # the promise and the mechanism get the statement treatment
+        s = d.slide(dark, f"Segment {i}: {name}, {mins} min. {notes.get(i, '')}".strip())
+        d.text(s, (0.8, 0.9, 3, 1.6), f"{i:02d}", 96, _ACCENT, bold=True, spacing=0.9)
+        d.kicker(s, f"Part {i} · {mins} min", 2.7)
+        d.text(s, (0.8, 3.2, 11.5, 1.0), name, 44, "FFFFFF" if dark else _TEXT, bold=True)
+        if point:
+            d.text(s, (0.8, 4.4, 11.0, 1.6), point[:1].upper() + point[1:], 24, "CBD5E1" if dark else "334155")
+        d.footer(s, dark)
+
+
+def _deck_close(d: _Deck, offer: str, usp: str, price: float) -> None:
+    s = d.slide(True, "Who it is for and who it is not for. Only verified results, with permission.")
+    d.kicker(s, "The offer")
+    d.text(s, (0.8, 1.4, 7.6, 1.6), offer[:1].upper() + offer[1:], 44, "FFFFFF", bold=True)
+    d.text(s, (0.8, 3.2, 7.4, 2.6), usp, 22, "CBD5E1")
+    card = d.rect(s, _in(9.0), _in(1.6), _in(3.5), _in(3.6), _PANEL, rounded=True)
+    card.line.color.rgb = _rgb(_ACCENT)
+    d.text(s, (9.0, 2.1, 3.5, 0.4), "INVESTMENT", 13, _ACCENT, bold=True, align="center")
+    d.text(s, (9.0, 2.6, 3.5, 1.0), f"${price:,.0f}" if price else "Ask on the call", 40 if price else 24, "FFFFFF",
+           bold=True, align="center")
+    d.text(s, (9.2, 3.8, 3.1, 1.0), "Book a call to see if it's a fit", 16, "CBD5E1", align="center")
+    d.footer(s, True)
+    s = d.slide(True, "Stay on for live questions. Drop the booking link in the chat twice.")
+    d.rect(s, 0, d.H - _in(1.2), d.W, _in(1.2), _PANEL)
+    d.kicker(s, "Next step", 2.0)
+    d.text(s, (0.8, 2.6, 11.5, 1.4), "Book your call", 60, "FFFFFF", bold=True)
+    d.text(s, (0.8, 4.1, 11.0, 1.0), "We'll map out your plan together and see if it's a fit. Questions? Ask in the "
+           "chat now.", 22, "CBD5E1")
+    d.footer(s, True)
+
+
+def deck(tenant, wid: int, user: dict | None = None) -> tuple[str, bytes]:
+    """The slide script as a designed 16:9 PowerPoint: cover, promise, agenda, one slide per segment, the offer and
+    the next step, each with speaker notes."""
     w = _webinar(tenant, wid, user)
     st = webinar_chain.state(tenant, w["chain_id"])
     b = st.get("brief") or {}
     outs = {s["step"]: (s.get("output") or {}) for s in st["steps"]}
     hooks = ((outs.get("title_hooks") or {}).get("data") or {}).get("hooks") or []
     usp = ((outs.get("offer") or {}).get("data") or {}).get("usp") or ""
-    script = (outs.get("slide_script") or {}).get("body") or ""
     notes = {}
-    for line in script.splitlines():
+    for line in ((outs.get("slide_script") or {}).get("body") or "").splitlines():
         mm = re.match(r"Segment (\d+): .*?—\s*(.+)$", line)
         if mm:
             notes[int(mm.group(1))] = mm.group(2).strip()
-    brand = config.get().brand
-    prs = Presentation()  # the default 4:3 template keeps every placeholder where its layout expects it
-
-    def slide(title: str, bullets: list[str], note: str = ""):
-        s = prs.slides.add_slide(prs.slide_layouts[1])
-        s.shapes.title.text = title
-        tf = s.placeholders[1].text_frame
-        tf.clear()
-        for i, t in enumerate(bullets):
-            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-            p.text = t
-            p.font.size = Pt(24)
-        if note:
-            s.notes_slide.notes_text_frame.text = note
-        return s
-
-    t = prs.slides.add_slide(prs.slide_layouts[0])
-    t.shapes.title.text = w["title"]
-    for p in t.shapes.title.text_frame.paragraphs:
-        p.font.size = Pt(34)
-    for shp, top, h in ((t.shapes.title, 1.2, 3.0), (t.placeholders[1], 4.6, 1.6)):  # set all four or width becomes 0
-        shp.left, shp.top, shp.width, shp.height = Inches(0.75), Inches(top), Inches(8.5), Inches(h)
-    t.placeholders[1].text = f"{brand} · Free live training · {webinars.when_label(w['starts_at'], w['tz'])}"
-    slide("What you'll learn today", hooks[:4] or [usp], "Open with the promise. Keep it under a minute.")
-    slide("Agenda", [f"{name} ({mins} min)" for name, mins in webinar_chain.SEGMENTS])
-    for i, (name, mins) in enumerate(webinar_chain.SEGMENTS, start=1):
-        point = notes.get(i, "")
-        slide(f"{i}. {name}", [point or name, f"{mins} minutes"], f"Segment {i}: {name}, {mins} min. {point}".strip())
-    slide("The offer", [(b.get("offer") or "").capitalize(), usp, f"Investment: ${float(b.get('price') or 0):,.0f}"],
-          "Who it is for and who it is not for. Only verified results, with permission.")
-    slide("Next step", ["Book a call to see if it's a fit", "Questions? Ask in the chat now"],
-          "Stay on for live questions.")
-    buf = io.BytesIO()
-    prs.save(buf)
+    d = _Deck(_host(tenant, w))
+    _deck_cover(d, w["title"], webinars.when_label(w["starts_at"], w["tz"]), usp)
+    d.bullets("What you'll learn today", "The promise", hooks[:4] or [usp],
+              "Open with the promise. Keep it under a minute, then ask them to type where they are from.")
+    _deck_agenda(d)
+    _deck_segments(d, notes)
+    _deck_close(d, str(b.get("offer") or "The programme"), usp, float(b.get("price") or 0))
     name = re.sub(r"[^A-Za-z0-9]+", "-", w["title"]).strip("-")[:60] or "webinar"
-    return f"{name}.pptx", buf.getvalue()
+    return f"{name}.pptx", d.save()
 
 
 # --------------------------------------------------------------------------- chat: "launch a webinar ... on Nov 12"
@@ -317,8 +518,7 @@ def from_chat(tenant, text: str, user: dict) -> tuple[str, dict]:
     if client:
         data["client_id"] = client["id"]
     elif req.get("client_hint"):
-        hint = req["client_hint"]
-        data["niche"] = hint if hint.lower().endswith("s") else f"{hint} businesses"
+        data["niche"] = req["client_hint"]
     try:
         res = launch(tenant, data, user)
     except LaunchError as e:

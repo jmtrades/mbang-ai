@@ -66,16 +66,21 @@ def _make(step: str, b: dict, outs: dict) -> dict:
                f"without {b['pain']}.")
         return {"title": "Offer (USP)", "body": usp, "data": {"usp": usp}}
     if step == "title_hooks":
-        title = f"How {b['niche']} get {b['outcome']} without {b['pain']}"
-        hooks = [f"The {b['mechanism']} in 60 minutes.", f"Why most {b['niche']} stay stuck (and the fix).",
-                 f"{b['outcome'].capitalize()} in {b['timeframe']}: the plan."]
+        # the people the client serves, never the niche label ("How new traders get", not "How trading education get")
+        title = f"How {b['audience']} get {b['outcome']} without {b['pain']}"
+        hooks = [f"The {b['mechanism']}, step by step, in 60 minutes.",
+                 f"Why most {b['audience']} stay stuck (and the simple fix).",
+                 f"How to get {b['outcome']} in {b['timeframe']}: the exact plan.",
+                 "Live Q&A: bring your questions."]
         return {"title": title, "body": title + "\n" + "\n".join(f"- {h}" for h in hooks), "data": {"title": title, "hooks": hooks}}
     if step == "slide_script":
         t = outs["title_hooks"]["data"]["title"]
         lines = [f"Segment {i + 1}: {name} ({mins} min)" for i, (name, mins) in enumerate(SEGMENTS)]
         notes = {
-            1: f"Promise: by the end you'll know exactly how {b['niche']} get {b['outcome']}.",
-            3: f"The big mistake: relying on {b['pain']}.", 4: f"Teach the {b['mechanism']} step by step.",
+            1: f"Promise: by the end you'll know exactly how {b['audience']} get {b['outcome']}.",
+            2: "Your story: where you started, what changed, and why you teach this.",
+            3: f"The big mistake most {b['audience']} make, and what it costs them.",
+            4: f"Teach the {b['mechanism']} step by step.",
             5: "Proof: show how to check the method works; only verified results with permission.",
             6: f"The offer: {b['offer']}; who it is for and who it is not for.", 7: "Answer real questions from the chat.",
         }
@@ -109,14 +114,14 @@ def _make(step: str, b: dict, outs: dict) -> dict:
             t += mins
         return {"title": "Run-of-show", "body": "\n".join(rows) + f"\nTotal: {t} min", "data": {"total": t}}
     if step == "chat_prompts":
-        prompts = ["First 2 minutes: type one word that describes your week.", "Segment 3: type 'me' if you've relied on "
-                   + b["pain"] + ".", "Segment 4: what's the first step you'd try?",
+        prompts = ["First 2 minutes: type one word that describes your week.",
+                   "Segment 3: type 'me' if you've made this mistake.", "Segment 4: what's the first step you'd try?",
                    "Offer moment: 'Would it be useful if I showed you how we can help you do this?' (ask permission first)"]
         return {"title": "Chat and offer-moment prompts", "body": "\n".join(f"- {p}" for p in prompts), "data": {"prompts": prompts}}
     if step == "sales_handoff":
         # written to the attendee about their own business, never naming the operator's business as theirs
         dm = (f"Thanks for joining the training. What stood out most for you? If it's useful, I can show you how the "
-              f"{b['mechanism']} could apply to your business.")
+              f"{b['mechanism']} could work for you.")
         return {"title": "Hand-off to sales (setter DM)", "body": dm,
                 "data": {"rule": "Anyone who asks about the offer gets a setter DM within one hour."}}
     raise KeyError(step)

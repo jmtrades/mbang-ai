@@ -195,7 +195,7 @@ def _page_copy(tenant, title: str, when: str, chain_id: str | None) -> str:
         b = brief_mod.build(tenant, {})["brief"]
         hooks = [f"What most {b['niche']} get wrong about {b['outcome']}", f"The {b['mechanism']}, step by step",
                  "Live questions at the end"]
-    return "\n".join([f"Headline: {title}", f"Subhead: A free live training on {when}.", *[f"- {h}" for h in hooks[:5]],
+    return "\n".join([f"Headline: {title}", "Subhead: A free live training with Q&A.", *[f"- {h}" for h in hooks[:5]],
                       "Button: Save my seat",
                       "Consent: I agree to get emails about this training and its replay. I can unsubscribe at any time."])
 
