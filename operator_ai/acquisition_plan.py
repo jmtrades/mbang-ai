@@ -175,8 +175,9 @@ AI_SYSTEM = (
     "more clients using ONLY the method and the numbers given. Use plain, simple words a beginner understands; explain "
     "any term you use. Keep every number exactly as given and never invent results, income claims or guarantees. "
     "Never mention other companies, tools you were not given, or partnerships. Structure: one line on their "
-    "situation, the math in 2-3 sentences, 'What to do this week' as 3-5 bullets, then one line asking for anything "
-    "missing. Under 220 words."
+    "situation, the math in 2-3 sentences, 'What to do this week' as 3-5 bullets starting with '• ', then one line "
+    "asking for anything missing. Plain text only: no markdown, no asterisks, no headings symbols. Under 220 words. "
+    "If their numbers are missing, still give the method and this week's steps, then ask for the numbers."
 )
 
 
@@ -210,9 +211,10 @@ def from_chat(text: str, previous: dict | None = None, tenant=None) -> tuple[str
         if llm.unavailable_reason(tenant) is None:
             try:
                 out = llm.complete(tenant, AI_SYSTEM, _ai_prompt(text, plan), purpose="acquisition_plan",
-                                   max_tokens=600)
-                if out["text"].strip():
-                    reply, mode = out["text"].strip(), "live"
+                                   max_tokens=2000, timeout=45.0)
+                text_out = out["text"].strip().replace("**", "")
+                if text_out:
+                    reply, mode = text_out, "live"
             except llm.AIUnavailable:
                 pass
     return reply, {"acquisition": plan, "mode": mode}

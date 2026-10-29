@@ -271,7 +271,7 @@ def _external_ai(tenant, run: runtime.Run, question: str, ext: list[dict]) -> di
         return None
 
     def _ai():
-        out = llm.complete_or_replay(tenant, X_SYSTEM, prompt, X_PURPOSE, run_id=run.id, max_tokens=500)
+        out = llm.complete_or_replay(tenant, X_SYSTEM, prompt, X_PURPOSE, run_id=run.id, max_tokens=1000)
         data = llm.parse_json(out["text"])
         raw = data.get("bullets") if isinstance(data, dict) else None
         if isinstance(raw, str):
@@ -485,7 +485,7 @@ def _answer(tenant, question: str, run: runtime.Run, k: int, context: str | None
     reason = llm.unavailable_reason(tenant)
 
     def _ai():
-        out = llm.complete(tenant, SYSTEM, prompt, purpose="coach", run_id=run.id, max_tokens=700)
+        out = llm.complete(tenant, SYSTEM, prompt, purpose="coach", run_id=run.id, max_tokens=1500)
         data = llm.parse_json(out["text"])
         if not about:  # an answer shaped by one person's notes is never replayed to someone else
             llm.save_replay(tenant, "coach-q", _norm_q(question), out["text"], run.id)
