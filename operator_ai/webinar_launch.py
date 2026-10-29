@@ -29,8 +29,8 @@ DEFAULT_HOUR = 19
 # people. When the client's brief has no audience/outcome yet, these fill the gaps by niche keyword. Explicit brief
 # fields always win; B2B niches (agency, coaching businesses) keep the business-growth defaults.
 AUDIENCE_PRESETS: list[tuple[tuple[str, ...], dict]] = [
-    (("trad", "forex", "crypto", "stock", "futures", "options", "day trad"),
-     {"audience": "new traders", "outcome": "consistent results", "mechanism": "3-step trade plan",
+    (("trad", "forex", "crypto", "stock", "futures", "options"),
+     {"audience": "new {market}traders", "outcome": "consistent results", "mechanism": "3-step trade plan",
       "pain": "blowing up their account", "timeframe": "90 days"}),
     (("fitness", "gym", "fat loss", "weight", "personal train", "nutrition"),
      {"audience": "busy professionals", "outcome": "lean and strong", "mechanism": "3-day training plan",
@@ -38,14 +38,26 @@ AUDIENCE_PRESETS: list[tuple[tuple[str, ...], dict]] = [
     (("dating", "relationship", "attraction"),
      {"audience": "single men", "outcome": "a calendar full of great dates", "mechanism": "attraction framework",
       "pain": "swiping endlessly", "timeframe": "60 days"}),
-    (("real estate", "property", "airbnb", "rental"),
-     {"audience": "first-time investors", "outcome": "their first cash-flowing deal",
-      "mechanism": "deal-finding system", "pain": "draining their savings", "timeframe": "6 months"}),
+    (("real estate", "property", "section 8", "airbnb", "rental", "wholesal", "flip"),
+     {"audience": "first-time investors", "outcome": "their first {topic} deal",
+      "mechanism": "{topic} deal-finding system", "pain": "draining their savings", "timeframe": "6 months"}),
     (("ecom", "e-com", "amazon", "shopify", "dropship"),
-     {"audience": "new store owners", "outcome": "their first profitable product",
+     {"audience": "new sellers", "outcome": "their first profitable {topic} product",
       "mechanism": "product-testing method", "pain": "burning cash on ads", "timeframe": "90 days"}),
 ]
+# the generic shape for any other niche, still in the client's own words
+GENERIC_PRESET = {"audience": "beginners", "outcome": "real results with {topic}",
+                  "mechanism": "step-by-step {topic} method", "pain": "wasting months on trial and error",
+                  "timeframe": "90 days"}
 _PRESET_FIELDS = ("audience", "outcome", "mechanism", "pain", "timeframe")
+_NOISE = re.compile(r"\b(education|educator|coaching|coach(es)?|course|courses|program(me)?|academy|training|"
+                    r"mentorship|info(\s+offer|\s+product)?|offer|business(es)?|niche|creator|client)\b", re.I)
+
+
+def topic_of(niche: str) -> str:
+    """The subject the client teaches, from their niche: 'Section 8 real estate coaching' -> 'Section 8 real estate'."""
+    t = re.sub(r"\s+", " ", _NOISE.sub(" ", niche or "")).strip(" ,-/&")
+    return t or (niche or "").strip()
 
 
 def audience_preset(niche: str) -> dict:
@@ -57,15 +69,22 @@ def audience_preset(niche: str) -> dict:
 
 
 def _fill_audience(partial: dict, for_client: bool) -> dict:
-    """Fill the audience-side fields the brief left empty: by niche preset, else (for a client) a neutral
-    consumer-facing fallback so the copy never reads as 'business owners get more enquiries'."""
-    preset = audience_preset(str(partial.get("niche") or "")) or audience_preset(str(partial.get("offer") or ""))
-    if not preset and for_client:
-        niche = str(partial.get("niche") or "this").strip()
-        preset = {"audience": f"people serious about {niche}", "outcome": "real, measurable progress",
-                  "mechanism": "step-by-step method", "pain": "wasting months on trial and error",
-                  "timeframe": "90 days"}
-    return {**{k: preset[k] for k in _PRESET_FIELDS if k in preset and not partial.get(k)}, **partial}
+    """Fill the audience-side fields the client's brief left empty, worded around the client's own topic (their
+    niche, else their offer). Whatever the student entered for the client always wins."""
+    source = str(partial.get("niche") or partial.get("offer") or "")
+    preset = audience_preset(source) or audience_preset(str(partial.get("offer") or ""))
+    if not preset and not for_client:
+        return partial
+    preset = preset or GENERIC_PRESET
+    topic = topic_of(source) or "this"
+    market = re.sub(r"\btrad(ing|ers?)\b", "", topic, flags=re.I).strip()  # "forex trading" -> "new forex traders"
+    market = f"{market} " if market and len(market) < 25 else ""
+    filled = {k: preset[k].replace("{topic}", topic).replace("{market}", market) for k in _PRESET_FIELDS
+              if not partial.get(k)}
+    for k in ("outcome", "mechanism"):  # never "with trading trading": drop a doubled word from the template
+        if k in filled:
+            filled[k] = re.sub(r"\b(\w+) \1\b", r"\1", filled[k], flags=re.I)
+    return {**filled, **partial}
 
 
 class LaunchError(Exception):

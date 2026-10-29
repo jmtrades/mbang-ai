@@ -70,3 +70,26 @@ def test_student_launches_and_approves_their_own_and_sees_only_theirs(client, en
     demo_login(client, "student")
     assert client.get(f"/t/demo/api/launches/{other['webinar_id']}").status_code == 404
     assert other["webinar_id"] not in {x["webinar_id"] for x in client.get("/t/demo/api/launches").json()["items"]}
+
+
+def test_webinar_is_about_each_clients_own_topic_and_audience(owner):
+    """A growth operator's client webinar teaches that client's customers, in the client's own words."""
+    def launch_for(name, niche, offer, brief=None):
+        cid = owner.post("/t/owner/api/clients", json={"name": name, "niche": niche, "offer": offer}).json()["id"]
+        if brief:
+            assert owner.put(f"/t/owner/api/clients/{cid}", json={"brief": brief}).status_code == 200
+        return owner.post("/t/owner/api/launches", json={"starts_at": _when(), "client_id": cid}).json()
+
+    s8 = launch_for("Keys To Cashflow", "Section 8 real estate", "Section 8 investor mentorship")
+    assert "Section 8 real estate" in s8["title"] and "first-time investors" in s8["title"]
+    usp = next(a["body"] for a in s8["assets"] if a["step"] == "offer")
+    assert "business owners" not in usp and "enquiries" not in usp
+
+    fx = launch_for("Pip Masters", "forex trading education", "forex mentorship")
+    assert fx["title"].startswith("How new forex traders get")
+
+    own = launch_for("Rent Ready", "Section 8 real estate", "mentorship",
+                     {"audience": "nurses", "outcome": "$2,000 a month in rent", "pain": "quitting their job"})
+    assert own["title"] == "How nurses get $2,000 a month in rent without quitting their job"
+    showup = next(a["body"] for a in own["assets"] if a["step"] == "showup_sequence")
+    assert "next Thursday" not in showup and own["when"].split(",")[0] in showup  # the real date, not a placeholder

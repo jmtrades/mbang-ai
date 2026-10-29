@@ -70,7 +70,7 @@ def _make(step: str, b: dict, outs: dict) -> dict:
         title = f"How {b['audience']} get {b['outcome']} without {b['pain']}"
         hooks = [f"The {b['mechanism']}, step by step, in 60 minutes.",
                  f"Why most {b['audience']} stay stuck (and the simple fix).",
-                 f"How to get {b['outcome']} in {b['timeframe']}: the exact plan.",
+                 f"How to get {b['outcome'].replace('their ', 'your ')} in {b['timeframe']}: the exact plan.",
                  "Live Q&A: bring your questions."]
         return {"title": title, "body": title + "\n" + "\n".join(f"- {h}" for h in hooks), "data": {"title": title, "hooks": hooks}}
     if step == "slide_script":
