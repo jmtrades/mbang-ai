@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import os
 import re
 import secrets
@@ -73,24 +74,43 @@ WRITER_SYSTEM = (
 _LIMITS = {"headline": 70, "line": 120, "cta": 28, "scene": 240}
 
 
-def ai_concepts(tenant, b: dict) -> list[dict] | None:
-    """Three angles written by the text AI from the brief; None when it is off or replies with something unusable
-    (the template angles are used then)."""
-    if llm.unavailable_reason(tenant) is not None:
-        return None
+def ai_concepts(tenant, b: dict) -> tuple[list[dict] | None, str | None]:
+    """Three angles written by the text AI from the brief, as (concepts, None); (None, why) when it is off or its reply
+    can't be used, and the template angles are used then. Forgiving about shape: a bare list, any key case, and a
+    missing scene or call to action is filled from the template for that angle."""
+    reason = llm.unavailable_reason(tenant)
+    if reason is not None:
+        return None, reason
     keys = ("business", "niche", "audience", "offer", "outcome", "mechanism", "pain", "timeframe")
     facts = {k: b.get(k) for k in keys}
     try:
-        out = llm.complete(tenant, WRITER_SYSTEM, f"Brief: {facts}", purpose="static_ads", max_tokens=1200)
-        ads = llm.parse_json(out["text"]).get("ads") or []
-    except (llm.AIUnavailable, ValueError, AttributeError):
-        return None
+        out = llm.complete(tenant, WRITER_SYSTEM, f"Brief: {facts}", purpose="static_ads", max_tokens=1500,
+                           timeout=45.0)
+    except llm.AIUnavailable as e:
+        return None, e.reason
+    text = out["text"].strip()
+    try:
+        start = min(i for i in (text.find("{"), text.find("[")) if i >= 0)
+        data = json.loads(text[start:max(text.rfind("}"), text.rfind("]")) + 1])
+    except (ValueError, json.JSONDecodeError):
+        return None, "the AI's reply wasn't in the expected format"
+    if isinstance(data, dict):
+        data = data.get("ads") or data.get("Ads") or next((v for v in data.values() if isinstance(v, list)), [])
+    rows = [{str(k).lower(): v for k, v in a.items()} for a in (data or []) if isinstance(a, dict)]
+    if len(rows) < 3:
+        return None, f"the AI wrote {len(rows)} ads instead of 3"
+    base = concepts(b)
     good = []
-    for a, angle in zip(ads[:3], ("outcome", "problem", "mechanism"), strict=False):
-        if not isinstance(a, dict) or not all(isinstance(a.get(k), str) and a[k].strip() for k in _LIMITS):
-            return None
-        good.append({"angle": angle, **{k: a[k].strip().replace("**", "")[:n] for k, n in _LIMITS.items()}})
-    return good if len(good) == 3 else None
+    for row, tpl in zip(rows[:3], base, strict=False):
+        c = dict(tpl)
+        for k, n in _LIMITS.items():
+            v = row.get(k)
+            if isinstance(v, str) and v.strip():
+                c[k] = v.strip().replace("**", "")[:n]
+        if c["headline"] == tpl["headline"]:
+            return None, "the AI's reply had no headline"
+        good.append(c)
+    return good, None
 
 
 def _font(paths: list[str], size: int):
@@ -230,7 +250,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
     b = built["brief"]
     brand = str(b.get("business") or config.get().brand)
     ads, reason = [], None
-    written = ai_concepts(tenant, b)
+    written, words_note = ai_concepts(tenant, b)
     for i, c in enumerate(written or concepts(b)):
         background, mode = None, "design"
         if reason is None:
@@ -250,7 +270,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
         ads.append({"queue_id": item["id"], "status": item["status"], "image": url, "angle": c["angle"],
                     "headline": c["headline"], "mode": mode})
     return {"ads": ads, "queue_ids": [a["queue_id"] for a in ads], "image_ai": reason is None, "note": reason,
-            "words": "ai" if written else "template",
+            "words": "ai" if written else "template", "words_note": words_note,
             "defaults_used": built["missing"]}
 
 
