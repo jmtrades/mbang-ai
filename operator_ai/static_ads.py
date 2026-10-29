@@ -11,9 +11,11 @@ import base64
 import io
 import json
 import os
+import random
 import re
 import secrets
 import textwrap
+import time
 from pathlib import Path
 
 import httpx
@@ -32,7 +34,9 @@ FONT_REG = ["C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/arial.ttf",
             "/System/Library/Fonts/Supplemental/Arial.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans.ttf"]
 # three looks, so a test has real variety: (background top, background bottom, accent)
-PALETTES = [("0F172A", "1E293B", "F59E0B"), ("111827", "312E81", "34D399"), ("1F2937", "7C2D12", "FBBF24")]
+PALETTES = [("0F172A", "1E293B", "F59E0B"), ("111827", "312E81", "34D399"), ("1F2937", "7C2D12", "FBBF24"),
+            ("052E16", "14532D", "A3E635"), ("1E1B4B", "581C87", "F472B6"), ("0C4A6E", "082F49", "38BDF8"),
+            ("3F0D12", "1C1917", "FB923C"), ("18181B", "27272A", "FDE047")]
 
 
 class AdError(Exception):
@@ -153,7 +157,24 @@ def _wrap(draw, text: str, font, width: int) -> list[str]:
     return textwrap.wrap(text, 10)
 
 
-def compose(c: dict, brand: str, palette: tuple[str, str, str], background: bytes | None = None) -> bytes:
+def _decorate(d, deco: int, acc: tuple[int, int, int]) -> None:
+    """One of four background motifs, so designed ads don't all look alike."""
+    if deco == 0:  # rings
+        d.ellipse([SIZE - 420, -180, SIZE + 180, 420], outline=acc, width=6)
+        d.ellipse([SIZE - 330, -90, SIZE + 90, 330], outline=acc, width=2)
+    elif deco == 1:  # diagonal band
+        d.polygon([(SIZE - 360, 0), (SIZE - 250, 0), (SIZE, 250), (SIZE, 360)], fill=acc)
+    elif deco == 2:  # dot grid
+        for gx in range(SIZE - 330, SIZE - 40, 48):
+            for gy in range(60, 360, 48):
+                d.ellipse([gx, gy, gx + 9, gy + 9], fill=acc)
+    else:  # corner block with a bar
+        d.rectangle([SIZE - 240, 0, SIZE, 240], outline=acc, width=6)
+        d.rectangle([SIZE - 170, 70, SIZE - 70, 82], fill=acc)
+
+
+def compose(c: dict, brand: str, palette: tuple[str, str, str], background: bytes | None = None,
+            deco: int = 0) -> bytes:
     """The finished ad as PNG bytes: background (AI picture or designed gradient), headline, line, CTA, brand."""
     from PIL import Image, ImageDraw
 
@@ -169,9 +190,7 @@ def compose(c: dict, brand: str, palette: tuple[str, str, str], background: byte
         img = Image.alpha_composite(bg.convert("RGBA"), shade).convert("RGB")
     else:
         img = _gradient(top, bottom)
-        deco = ImageDraw.Draw(img)
-        deco.ellipse([SIZE - 420, -180, SIZE + 180, 420], outline=_rgb(accent), width=6)
-        deco.ellipse([SIZE - 330, -90, SIZE + 90, 330], outline=_rgb(accent), width=2)
+        _decorate(ImageDraw.Draw(img), deco, _rgb(accent))
     d = ImageDraw.Draw(img)
     pad = 80
     d.rectangle([pad, pad, pad + 70, pad + 8], fill=_rgb(accent))
@@ -201,39 +220,100 @@ def compose(c: dict, brand: str, palette: tuple[str, str, str], background: byte
     return buf.getvalue()
 
 
+STYLES = ["editorial magazine photography", "cinematic, moody lighting", "bright lifestyle photography",
+          "minimal studio shot with bold colour", "documentary, candid and real", "luxury brand campaign look"]
+
+
+def _hf_key() -> tuple[str, str] | None:
+    kid, sec = os.environ.get("HF_API_KEY_ID", ""), os.environ.get("HF_API_KEY_SECRET", "")
+    if not (kid and sec) and ":" in os.environ.get("HIGGSFIELD_API_KEY", ""):
+        kid, sec = os.environ["HIGGSFIELD_API_KEY"].split(":", 1)
+    return (kid.strip(), sec.strip()) if kid.strip() and sec.strip() else None
+
+
+def image_provider() -> str | None:
+    """Which image AI paints backgrounds: Higgsfield when its key is set, else OpenAI, else none."""
+    want = os.environ.get("OPERATOR_IMAGE_PROVIDER", "").lower()
+    if want in ("higgsfield", "openai"):
+        return want if (want == "openai" and os.environ.get("OPENAI_API_KEY")) or (want == "higgsfield" and _hf_key()) \
+            else None
+    return "higgsfield" if _hf_key() else "openai" if os.environ.get("OPENAI_API_KEY") else None
+
+
 def image_ai_reason(tenant) -> str | None:
-    """Why the image AI is off (None when it can be used): it needs an OpenAI key and the AI gate open."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        return "no image AI key (OPENAI_API_KEY)"
+    """Why the image AI is off (None when it can be used): it needs a Higgsfield or OpenAI key and the AI gate open."""
+    if image_provider() is None:
+        return "no image AI key (Higgsfield or OpenAI)"
     return llm.unavailable_reason(tenant)
 
 
+def _prompt(c: dict, b: dict, style: str) -> str:
+    return (f"Photorealistic advertising photograph for {b['niche']}: {c['scene']}. Style: {style}. Modern and "
+            "aspirational, with calm space in the lower half. Absolutely no text, letters, numbers, logos or "
+            "watermarks.")
+
+
+def _openai(prompt: str) -> bytes:
+    body = {"model": os.environ.get("OPERATOR_IMAGE_MODEL", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
+            "n": 1}
+    with httpx.Client(transport=llm._transport, timeout=120.0) as client:
+        r = client.post("https://api.openai.com/v1/images/generations", json=body,
+                        headers={"authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"})
+        if r.status_code >= 400:
+            raise llm.AIUnavailable(f"OpenAI image error HTTP {r.status_code}")
+        item = (r.json().get("data") or [{}])[0]
+        if item.get("b64_json"):
+            return base64.b64decode(item["b64_json"])
+        if item.get("url"):
+            return client.get(item["url"]).content
+    raise llm.AIUnavailable("OpenAI returned no image")
+
+
+HF_BASE = "https://api.higgsfield.ai"
+
+
+def _higgsfield(prompt: str, wait: float = 150.0) -> bytes:
+    key = _hf_key()
+    if not key:
+        raise llm.AIUnavailable("no Higgsfield key")
+    head = {"Authorization": f"Key {key[0]}:{key[1]}", "Content-Type": "application/json",
+            "Idempotency-Key": secrets.token_hex(12)}
+    path = os.environ.get("HIGGSFIELD_IMAGE_PATH", "/higgsfield-ai/soul/v2/standard")
+    with httpx.Client(transport=llm._transport, timeout=60.0) as client:
+        r = client.post(HF_BASE + path, json={"prompt": prompt, "aspect_ratio": "1:1"}, headers=head)
+        if r.status_code >= 400:
+            raise llm.AIUnavailable(f"Higgsfield error HTTP {r.status_code}")
+        job = r.json()
+        status_url = job.get("status_url") or f"{HF_BASE}/requests/{job.get('request_id')}/status"
+        deadline = time.monotonic() + wait
+        while True:
+            if job.get("status") == "completed":
+                imgs = job.get("images") or []
+                if not imgs or not imgs[0].get("url"):
+                    raise llm.AIUnavailable("Higgsfield returned no image")
+                return client.get(imgs[0]["url"]).content
+            if job.get("status") in ("failed", "nsfw", "canceled"):
+                raise llm.AIUnavailable(f"Higgsfield job {job.get('status')}")
+            if time.monotonic() > deadline:
+                raise llm.AIUnavailable("Higgsfield took too long")
+            time.sleep(2.0)
+            g = client.get(status_url, headers={"Authorization": head["Authorization"]})
+            if g.status_code >= 400:
+                raise llm.AIUnavailable(f"Higgsfield status error HTTP {g.status_code}")
+            job = g.json()
+
+
 def _paint(tenant, c: dict, b: dict) -> bytes:
-    """One text-free background picture from the image model. Raises llm.AIUnavailable when it can't."""
+    """One text-free background picture from the image AI (a different photographic style each time). Raises
+    llm.AIUnavailable when it can't."""
     reason = image_ai_reason(tenant)
     if reason:
         raise llm.AIUnavailable(reason)
-    prompt = (f"Photorealistic, premium advertising photograph for {b['niche']}: {c['scene']}. Natural light, shallow "
-              "depth of field, modern and aspirational, plenty of calm space in the lower half. Absolutely no text, "
-              "letters, numbers, logos or watermarks.")
-    body = {"model": os.environ.get("OPERATOR_IMAGE_MODEL", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
-            "n": 1}
+    prompt = _prompt(c, b, random.choice(STYLES))
     try:
-        with httpx.Client(transport=llm._transport, timeout=120.0) as client:
-            r = client.post("https://api.openai.com/v1/images/generations", json=body,
-                            headers={"authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"})
+        data = _higgsfield(prompt) if image_provider() == "higgsfield" else _openai(prompt)
     except httpx.HTTPError as e:
         raise llm.AIUnavailable(f"image AI call failed ({type(e).__name__})") from None
-    if r.status_code >= 400:
-        raise llm.AIUnavailable(f"image AI error HTTP {r.status_code}")
-    item = (r.json().get("data") or [{}])[0]
-    if item.get("b64_json"):
-        data = base64.b64decode(item["b64_json"])
-    elif item.get("url"):
-        with httpx.Client(transport=llm._transport, timeout=60.0) as client:
-            data = client.get(item["url"]).content
-    else:
-        raise llm.AIUnavailable("image AI returned no image")
     llm._charge(tenant, "ai_token_budget", IMAGE_TOKENS)
     return data
 
@@ -251,6 +331,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
     brand = str(b.get("business") or config.get().brand)
     ads, reason = [], None
     written, words_note = ai_concepts(tenant, b)
+    looks, decos = random.sample(PALETTES, 3), random.sample(range(4), 3)  # a fresh look every batch
     for i, c in enumerate(written or concepts(b)):
         background, mode = None, "design"
         if reason is None:
@@ -258,7 +339,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
                 background, mode = _paint(tenant, c, b), "ai"
             except llm.AIUnavailable as e:
                 reason = e.reason
-        png = compose(c, brand, PALETTES[i % len(PALETTES)], background)
+        png = compose(c, brand, looks[i], background, deco=decos[i])
         name = f"{secrets.token_hex(8)}.png"
         (_dir(tenant) / name).write_bytes(png)
         url = f"/t/{tenant.id}/api/static-ads/{name}"
@@ -270,6 +351,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
         ads.append({"queue_id": item["id"], "status": item["status"], "image": url, "angle": c["angle"],
                     "headline": c["headline"], "mode": mode})
     return {"ads": ads, "queue_ids": [a["queue_id"] for a in ads], "image_ai": reason is None, "note": reason,
+            "image_provider": image_provider() if reason is None else None,
             "words": "ai" if written else "template", "words_note": words_note,
             "defaults_used": built["missing"]}
 

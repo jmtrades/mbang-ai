@@ -41,6 +41,8 @@ def test_image_ai_paints_the_background(tenant, monkeypatch):
 
     llm.set_transport(httpx.MockTransport(handler))
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-123456789")
+    monkeypatch.delenv("HF_API_KEY_ID", raising=False)
+    monkeypatch.delenv("HIGGSFIELD_API_KEY", raising=False)
     monkeypatch.setenv("OPERATOR_DISABLE_LLM", "0")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
     tenant.set("ai_token_budget", 50_000)
@@ -80,3 +82,38 @@ def test_text_ai_writes_the_words_and_bad_replies_fall_back(tenant, monkeypatch)
         assert static_ads.make(tenant, BRIEF)["words"] == "template"
     finally:
         llm.set_transport(None)
+
+
+def test_higgsfield_paints_when_its_key_is_set(tenant, monkeypatch):
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (80, 80), (200, 60, 90)).save(buf, "PNG")
+    seen = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(f"{req.method} {req.url.host}{req.url.path}")
+        if req.method == "POST" and req.url.host == "api.higgsfield.ai":
+            assert req.headers["authorization"] == "Key kid:secret" and "no text" in req.content.decode().lower()
+            return httpx.Response(200, json={"status": "queued", "request_id": "r1",
+                                             "status_url": "https://api.higgsfield.ai/requests/r1/status"})
+        if req.url.path.endswith("/status"):
+            return httpx.Response(200, json={"status": "completed", "images": [{"url": "https://cdn.test/a.png"}]})
+        if req.url.host == "cdn.test":
+            return httpx.Response(200, content=buf.getvalue())
+        return httpx.Response(500, json={"error": "text AI not used here"})
+
+    llm.set_transport(httpx.MockTransport(handler))
+    monkeypatch.setattr(static_ads.time, "sleep", lambda s: None)
+    monkeypatch.setenv("HF_API_KEY_ID", "kid")
+    monkeypatch.setenv("HF_API_KEY_SECRET", "secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-also-set")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
+    monkeypatch.setenv("OPERATOR_DISABLE_LLM", "0")
+    tenant.set("ai_token_budget", 50_000)
+    try:
+        d = static_ads.make(tenant, BRIEF)
+    finally:
+        llm.set_transport(None)
+    assert d["image_provider"] == "higgsfield" and [a["mode"] for a in d["ads"]] == ["ai", "ai", "ai"]
+    assert sum(s.startswith("POST api.higgsfield.ai") for s in seen) == 3
