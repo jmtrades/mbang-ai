@@ -15,7 +15,7 @@ import csv
 import math
 import re
 
-from .. import ads_import, diagnostic, guardrails, runtime, threads, webinar_launch
+from .. import acquisition_plan, ads_import, diagnostic, guardrails, runtime, threads, webinar_launch
 from . import coach, reviewer
 
 REVIEW_ASK = re.compile(r"\b(review|feedback|critique|roast|rate (this|my)|thoughts on|fix (this|my)|improve (this|my)|"
@@ -158,6 +158,8 @@ def classify(text: str, filename: str | None = None) -> str:
         return "launch"
     if is_goal(text):
         return "goal"
+    if acquisition_plan.wants_plan(text):
+        return "acquisition"
     words = len(text.split())
     metrics = parse_metrics(text)
     if is_metrics(text, metrics):
@@ -201,13 +203,12 @@ def _strip_instruction(text: str) -> str:
     return m.group(2).strip() if m else text.strip()
 
 
-def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename: str | None = None,
-           extracted: dict | None = None) -> dict:
-    """Route one chat message. Returns {intent, thread_id, answer, ...agent payload}."""
-    text = (text or "").strip()
-    intent = classify(text, filename)
+def _thread_context(tenant, thread_id, user: dict, intent: str, text: str, filename):
+    """What the thread so far changes about this message: the previous question (for follow-ups), a mission intake
+    being answered, or numbers sent to sharpen an acquisition plan."""
     previous = None
     draft = None
+    prev_plan: dict | None = None
     if thread_id:
         t = threads.get(tenant, thread_id, user["id"])
         if t:
@@ -219,6 +220,19 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
                     (lm.get("mission_draft") or {}).get("missing") and not looks_like_question(text):
                 # the answer to the question the mission intake asked; a new question still goes to the coach
                 intent, draft = "goal", lm["mission_draft"]
+            elif intent in ("question", "metrics") and not filename and lm.get("intent") == "acquisition" and \
+                    not looks_like_question(text):
+                # numbers sent after a plan sharpen that plan
+                intent, prev_plan = "acquisition", ((lm.get("acquisition") or {}).get("situation") or {})
+    return intent, previous, draft, prev_plan
+
+
+def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename: str | None = None,
+           extracted: dict | None = None) -> dict:
+    """Route one chat message. Returns {intent, thread_id, answer, ...agent payload}."""
+    text = (text or "").strip()
+    intent = classify(text, filename)
+    intent, previous, draft, prev_plan = _thread_context(tenant, thread_id, user, intent, text, filename)
     shown = text if not filename else (f"[{filename}] " + (text[:200] + ("…" if len(text) > 200 else "")))
     if intent == "question":
         res = coach.answer(tenant, text, user=user, record=True, thread=False, context=previous)
@@ -255,6 +269,9 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
         meta = {"citations": res["citations"], "run_id": res["run_id"], "review": {k: res[k] for k in ("asset_type", "score", "passes",
                                                                                                       "fixes", "flags", "label")}}
         payload = res
+    elif intent == "acquisition":
+        reply, meta = acquisition_plan.from_chat(text, prev_plan)
+        payload = {"acquisition": meta["acquisition"]}
     elif intent == "launch":
         reply, meta = webinar_launch.from_chat(tenant, text, user)
         payload = {"launch": meta.get("launch")}

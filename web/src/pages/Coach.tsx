@@ -6,7 +6,7 @@ import { NeutralVoiceNote, StyledBadge, isStyledLabel } from "./persona/StyledBa
 
 type Msg = { role: string; content: string; meta?: any };
 
-const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission", launch: "Webinar launch" };
+const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission", launch: "Webinar launch", acquisition: "Client acquisition plan" };
 
 function StartMission({ draft }: { draft: any }) {
   const { go, toast } = useApp();
@@ -169,9 +169,25 @@ function LaunchCard({ launch }: { launch: Launch }) {
   );
 }
 
+type Plan = { follow_up: string[]; close: string[]; assumed: string[]; sources: { title: string; section: string }[] };
+
+function AcquisitionCard({ plan }: { plan: Plan }) {
+  return (
+    <div className="mt-2 space-y-2 rounded-[10px] border border-line-2 bg-panel p-3 text-xs">
+      <div><div className="font-semibold">Follow-up: the washing machine</div>
+        <ul className="list-disc space-y-0.5 pl-4">{plan.follow_up.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
+      <div><div className="font-semibold">On the call</div>
+        <ul className="list-disc space-y-0.5 pl-4">{plan.close.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
+      <div className="text-muted">From the lessons: {plan.sources.map((s) => `${s.title} (${s.section})`).join("; ")}
+        {plan.assumed.length > 0 && <> · Assumed: {plan.assumed.map((a) => a.replace(/_/g, " ")).join(", ")}</>}</div>
+    </div>
+  );
+}
+
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
   if (meta.intent === "launch" && meta.launch) return <LaunchCard launch={meta.launch} />;
+  if (meta.intent === "acquisition" && meta.acquisition) return <AcquisitionCard plan={meta.acquisition as Plan} />;
   if (meta.intent === "goal" && meta.mission_draft) return <StartMission draft={meta.mission_draft} />;
   if (meta.intent === "metrics" && meta.bottleneck) {
     const b = meta.bottleneck;
