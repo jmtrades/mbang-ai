@@ -63,6 +63,36 @@ def concepts(b: dict) -> list[dict]:
     ]
 
 
+WRITER_SYSTEM = (
+    "You write static image ads for a high-ticket coaching or info business. Return ONLY JSON: {\"ads\": [3 objects "
+    "with keys angle, headline, line, cta, scene]}. angle is outcome, problem and mechanism, in that order. headline: "
+    "max 8 words, speaks to the reader as 'you', punchy, no hype words. line: max 14 words, plain and specific. "
+    "cta: max 4 words. scene: one sentence describing a photo with no text in it. No income claims, guarantees or "
+    "fake results. Use only the brief's facts."
+)
+_LIMITS = {"headline": 70, "line": 120, "cta": 28, "scene": 240}
+
+
+def ai_concepts(tenant, b: dict) -> list[dict] | None:
+    """Three angles written by the text AI from the brief; None when it is off or replies with something unusable
+    (the template angles are used then)."""
+    if llm.unavailable_reason(tenant) is not None:
+        return None
+    keys = ("business", "niche", "audience", "offer", "outcome", "mechanism", "pain", "timeframe")
+    facts = {k: b.get(k) for k in keys}
+    try:
+        out = llm.complete(tenant, WRITER_SYSTEM, f"Brief: {facts}", purpose="static_ads", max_tokens=1200)
+        ads = llm.parse_json(out["text"]).get("ads") or []
+    except (llm.AIUnavailable, ValueError, AttributeError):
+        return None
+    good = []
+    for a, angle in zip(ads[:3], ("outcome", "problem", "mechanism"), strict=False):
+        if not isinstance(a, dict) or not all(isinstance(a.get(k), str) and a[k].strip() for k in _LIMITS):
+            return None
+        good.append({"angle": angle, **{k: a[k].strip().replace("**", "")[:n] for k, n in _LIMITS.items()}})
+    return good if len(good) == 3 else None
+
+
 def _font(paths: list[str], size: int):
     from PIL import ImageFont
 
@@ -200,7 +230,8 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
     b = built["brief"]
     brand = str(b.get("business") or config.get().brand)
     ads, reason = [], None
-    for i, c in enumerate(concepts(b)):
+    written = ai_concepts(tenant, b)
+    for i, c in enumerate(written or concepts(b)):
         background, mode = None, "design"
         if reason is None:
             try:
@@ -219,6 +250,7 @@ def make(tenant, partial: dict | None = None, user: dict | None = None) -> dict:
         ads.append({"queue_id": item["id"], "status": item["status"], "image": url, "angle": c["angle"],
                     "headline": c["headline"], "mode": mode})
     return {"ads": ads, "queue_ids": [a["queue_id"] for a in ads], "image_ai": reason is None, "note": reason,
+            "words": "ai" if written else "template",
             "defaults_used": built["missing"]}
 
 

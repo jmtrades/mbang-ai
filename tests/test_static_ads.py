@@ -48,10 +48,35 @@ def test_image_ai_paints_the_background(tenant, monkeypatch):
         d = static_ads.make(tenant, BRIEF)
     finally:
         llm.set_transport(None)
-    assert d["image_ai"] and [a["mode"] for a in d["ads"]] == ["ai", "ai", "ai"] and len(calls) == 3
-    assert "no text" in calls[0].content.decode().lower()
+    images = [c for c in calls if "images/generations" in str(c.url)]
+    assert d["image_ai"] and [a["mode"] for a in d["ads"]] == ["ai", "ai", "ai"] and len(images) == 3
+    assert "no text" in images[0].content.decode().lower()
 
 
 def test_students_cannot_make_static_ads(client, env):
     demo_login(client, "student")
     assert client.post("/t/demo/api/static-ads", json={"brief": BRIEF}).status_code in (401, 403)
+
+
+def test_text_ai_writes_the_words_and_bad_replies_fall_back(tenant, monkeypatch):
+    import json
+
+    from tests.fakes import FakeModel
+
+    ads = [{"headline": h, "line": "Plain words for new traders.", "cta": "Book a call",
+            "scene": "A calm desk at dawn."}
+           for h in ("Trade with a plan.", "Done guessing?", "Three steps. One plan.")]
+    fm = FakeModel(reply=json.dumps({"ads": ads}))
+    llm.set_transport(fm.transport)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
+    monkeypatch.setenv("OPERATOR_DISABLE_LLM", "0")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    tenant.set("ai_token_budget", 50_000)
+    try:
+        d = static_ads.make(tenant, BRIEF)
+        assert d["words"] == "ai" and [a["headline"] for a in d["ads"]] == ["Trade with a plan.", "Done guessing?",
+                                                                           "Three steps. One plan."]
+        fm.reply = "sorry, no JSON here"
+        assert static_ads.make(tenant, BRIEF)["words"] == "template"
+    finally:
+        llm.set_transport(None)

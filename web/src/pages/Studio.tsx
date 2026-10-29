@@ -16,12 +16,12 @@ const LINES: [string, string, string][] = [
 ];
 
 type StaticAd = { queue_id: number; status: string; image: string; angle: string; headline: string; mode: string };
-type StaticRes = { ads: StaticAd[]; queue_ids: number[]; image_ai: boolean; note: string | null };
+type StaticRes = { ads: StaticAd[]; queue_ids: number[]; image_ai: boolean; note: string | null; words?: string };
 
 function StaticAds({ res }: { res: StaticRes }) {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted">{res.image_ai ? "Backgrounds painted by the image AI; words set by the app." : `Designed by the app${res.note ? ` (image AI off: ${res.note})` : ""}.`}</p>
+      <p className="text-xs text-muted">{res.words === "ai" ? "Words written by the AI. " : ""}{res.image_ai ? "Backgrounds painted by the image AI." : `Designed by the app${res.note ? ` (image AI off: ${res.note})` : ""}.`}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {res.ads.map((a) => (
           <figure key={a.queue_id} className="space-y-1.5">
