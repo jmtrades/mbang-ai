@@ -6,7 +6,7 @@ import { NeutralVoiceNote, StyledBadge, isStyledLabel } from "./persona/StyledBa
 
 type Msg = { role: string; content: string; meta?: any };
 
-const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission" };
+const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission", launch: "Webinar launch" };
 
 function StartMission({ draft }: { draft: any }) {
   const { go, toast } = useApp();
@@ -110,8 +110,68 @@ function Remembered({ r }: { r: { facts: { label: string; value: unknown }[]; la
   );
 }
 
+/** One-click webinar launch: everything built, one approval puts it live. */
+type Launch = {
+  webinar_id: number; title: string; when: string; live: boolean; page_url: string; deck_url: string; registrants: number;
+  pack: { id: number; status: string } | null; emails: { on: number; total: number };
+  assets?: { step: string; label: string; body: string }[];
+};
+
+function LaunchCard({ launch }: { launch: Launch }) {
+  const { go, toast } = useApp();
+  const [s, setS] = useState<Launch>(launch);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<ApiError | null>(null);
+  const approve = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await post(`/queue/${s.pack!.id}/approve`);
+      setS(await get<Launch>(`/launches/${s.webinar_id}`));
+      toast("Webinar launched", "good");
+    } catch (e) {
+      setErr(e as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const live = s.live;
+  return (
+    <div className="mt-2 rounded-[12px] border border-line bg-panel p-3" data-testid="launch-card">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-ink">{s.title}</span>
+        <Badge tone={live ? "good" : "warn"}>{live ? "Live" : "Waiting for your approval"}</Badge>
+      </div>
+      <div className="text-[12.5px] text-muted">{s.when}</div>
+      <ul className="mt-2 space-y-0.5 text-[12.5px] text-ink-2">
+        <li>Registration page: {live ? "published" : "ready to publish"}</li>
+        <li>Show-up and replay emails: {s.emails.on} of {s.emails.total} on{s.registrants ? ` · ${s.registrants} registered` : ""}</li>
+        <li>Slide deck: ready to download</li>
+        <li>Offer, hooks, run-of-show, chat prompts, sales hand-off: drafted</li>
+      </ul>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {!live && s.pack && <Button size="sm" tone="primary" onClick={approve} disabled={busy}>{busy ? "Launching…" : "Approve and launch"} <ArrowRight className="size-3.5" /></Button>}
+        <a href={s.deck_url} download><Button size="sm" tone="secondary">Download slides (.pptx)</Button></a>
+        {live && <a href={s.page_url} target="_blank" rel="noreferrer"><Button size="sm" tone="secondary">Open registration page</Button></a>}
+        <Button size="sm" tone="ghost" onClick={() => go("/queue")}>See in Approvals</Button>
+      </div>
+      {err && <ErrorBox error={err} />}
+      {(s.assets?.length ?? 0) > 0 && (
+        <details className="mt-2 text-[12.5px]">
+          <summary className="cursor-pointer text-muted">See everything it built ({s.assets!.length})</summary>
+          {s.assets!.map((a) => (
+            <div key={a.step} className="mt-2"><div className="font-medium text-ink-2">{a.label}</div>
+              <pre className="whitespace-pre-wrap font-sans text-[12px] text-muted">{a.body}</pre></div>
+          ))}
+        </details>
+      )}
+    </div>
+  );
+}
+
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
+  if (meta.intent === "launch" && meta.launch) return <LaunchCard launch={meta.launch} />;
   if (meta.intent === "goal" && meta.mission_draft) return <StartMission draft={meta.mission_draft} />;
   if (meta.intent === "metrics" && meta.bottleneck) {
     const b = meta.bottleneck;

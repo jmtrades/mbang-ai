@@ -52,7 +52,8 @@ ROLE_DECIDE: dict[str, set[str]] = {
 # any role may decide these — a student running their growth-operator business approves their own
 # DMs and emails. Guardrails still run on every approval.
 OWN_DECIDE: set[str] = {"dm_opener", "followup", "prospect_dm", "prospect_email", "booking_dm", "proposal",
-                        "reminder", "client_report", "channel_reply", "mission_draft"}
+                        "reminder", "client_report", "channel_reply", "mission_draft",
+                        "webinar_launch"}
 
 LOGIN_WINDOW = 15 * 60
 LOGIN_MAX_FAILS = 8

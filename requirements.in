@@ -12,3 +12,4 @@ pytest-timeout
 playwright
 pillow
 tzdata; sys_platform == "win32"  # Windows has no system time-zone database
+python-pptx  # webinar launch: the slide script as a .pptx deck

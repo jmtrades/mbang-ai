@@ -15,7 +15,7 @@ import csv
 import math
 import re
 
-from .. import ads_import, diagnostic, guardrails, runtime, threads
+from .. import ads_import, diagnostic, guardrails, runtime, threads, webinar_launch
 from . import coach, reviewer
 
 REVIEW_ASK = re.compile(r"\b(review|feedback|critique|roast|rate (this|my)|thoughts on|fix (this|my)|improve (this|my)|"
@@ -154,6 +154,8 @@ def is_goal(text: str) -> bool:
 def classify(text: str, filename: str | None = None) -> str:
     if looks_like_ads_export(text):
         return "ads_csv"
+    if webinar_launch.wants_launch(text):
+        return "launch"
     if is_goal(text):
         return "goal"
     words = len(text.split())
@@ -253,6 +255,9 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
         meta = {"citations": res["citations"], "run_id": res["run_id"], "review": {k: res[k] for k in ("asset_type", "score", "passes",
                                                                                                       "fixes", "flags", "label")}}
         payload = res
+    elif intent == "launch":
+        reply, meta = webinar_launch.from_chat(tenant, text, user)
+        payload = {"launch": meta.get("launch")}
     elif intent == "goal":
         reply, meta = goal_reply(tenant, text, user, draft)
         payload = {"mission_draft": meta["mission_draft"]}
