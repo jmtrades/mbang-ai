@@ -43,6 +43,7 @@ class Config:
     port: int
     llm_provider: str
     llm_model: str
+    llm_base_url: str
     disable_llm: bool
     ai_token_budget_default: int
     critique_token_budget_default: int
@@ -93,6 +94,7 @@ def get() -> Config:
         port=_int("OPERATOR_PORT", 8850),
         llm_provider=_env("OPERATOR_LLM_PROVIDER", "anthropic"),
         llm_model=_env("OPERATOR_LLM_MODEL", "claude-sonnet-5-5"),
+        llm_base_url=_env("OPERATOR_LLM_BASE_URL", ""),
         disable_llm=_env("OPERATOR_DISABLE_LLM", "0") == "1",
         ai_token_budget_default=_int("OPERATOR_AI_TOKEN_BUDGET", 0),
         critique_token_budget_default=_int("OPERATOR_CRITIQUE_TOKEN_BUDGET", 0),
