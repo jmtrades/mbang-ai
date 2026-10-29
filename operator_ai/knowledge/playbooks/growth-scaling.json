@@ -1,0 +1,2010 @@
+{
+ "domain": "growth-scaling",
+ "title": "Growth & scaling playbook",
+ "researched": "2026-10-28",
+ "entries": [
+  {
+   "id": "bn-data-hierarchy",
+   "title": "Diagnose a funnel top-down: start with ROAS, then break it into the stats that make it up",
+   "category": "kpis",
+   "sources": [
+    {
+     "title": "Bottleneck analysis: find the one stat that's limiting your funnel",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+bottleneck+analysis",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Look at one or two headline numbers first, usually return on ad spend and cash collected per booked call. Only when the headline is weak do you open up the stats underneath it (CPM, link CTR, opt-in rate, show rate, booking rate, close rate, average order value). Each of those has its own sub-stats (for a weak opt-in rate: VSL play rate, engagement, time on page, session recordings) that only matter once that parent stat is out of range. Working this way stops you from obsessing over secondary metrics that aren't the problem.",
+   "steps": [
+    "Check the headline number (ROAS or cash per booked call)",
+    "If it's weak, list every stage stat for that funnel type",
+    "Compare each stage to its benchmark range",
+    "Only for the stage that's out of range, open its sub-metrics"
+   ],
+   "do": [
+    "Write down the benchmark range for every stage before reviewing results",
+    "Keep sub-metrics (thumb-stop rate, VSL play rate, heatmaps) for when their parent stat is broken"
+   ],
+   "dont": [
+    "Don't dig into secondary metrics when every stage stat is inside its range"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "bn-play-the-doubles-game",
+   "title": "Fix the stage that's easiest to double, not the one you have a hunch about",
+   "category": "kpis",
+   "sources": [
+    {
+     "title": "Bottleneck analysis: find the one stat that's limiting your funnel",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+bottleneck+analysis",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Once you've compared each stage to its benchmark, several may look weak. Ask which one could most realistically be doubled (or for CPM, halved). A show rate sitting at half its target is usually far more leverage than a close rate two points under target. Decisions should come from where the funnel is actually constricted, not from gut feel or a pet project. If you don't know how to fix the constricted stage, that's a knowledge gap: go find best practices for that one stat rather than switching attention elsewhere.",
+   "steps": [
+    "Mark every stage that's below its range",
+    "For each, ask how hard it would be to double it",
+    "Pick the stage with the biggest realistic upside",
+    "Dig into that stage's inputs (emails, texts, confirmation page, setter behaviour) and audit what's actually being sent"
+   ],
+   "do": [
+    "Secret-shop your own reminders, emails and setter messages when show rate is the bottleneck",
+    "Check deliverability (primary inbox, 40-60% open rates) before rewriting copy"
+   ],
+   "dont": [
+    "Don't chase a 2-point close-rate gain while a stage upstream is at half its target",
+    "Don't trust the team's description of what's being sent; look at the actual messages"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "bn-webinar-benchmarks",
+   "title": "Webinar funnel stage benchmarks for paid traffic",
+   "category": "benchmarks",
+   "sources": [
+    {
+     "title": "Bottleneck analysis: find the one stat that's limiting your funnel",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+bottleneck+analysis",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Use these ranges to spot the constricted stage in a paid-traffic webinar funnel that books calls. Opt-in rate depends on market breadth: a narrow, tightly targeted niche can be healthy near 20%, a broad market with cheap leads should aim toward 50%. Retention is measured from peak concurrent viewers to the moment the pitch starts. A webinar should lead to a single closing call, not a two-call close.",
+   "benchmarks": [
+    {
+     "metric": "CPM",
+     "value": "$30-$80",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Unique link click-through rate",
+     "value": "2%+",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Opt-in rate",
+     "value": "20-50%",
+     "context": "lower end for narrow niches, higher for broad markets"
+    },
+    {
+     "metric": "Webinar show rate",
+     "value": "30% target (20% average, 10-15% below average)",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Retention to pitch",
+     "value": "80% of peak concurrent viewers",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Booking rate (of those present at pitch)",
+     "value": "30%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Call show rate",
+     "value": "70%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Close rate",
+     "value": "35%+",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    }
+   ],
+   "steps": [],
+   "do": [],
+   "dont": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "bn-call-funnel-benchmarks",
+   "title": "Call funnel benchmarks for one-call and two-call closes",
+   "category": "benchmarks",
+   "sources": [
+    {
+     "title": "Bottleneck analysis: find the one stat that's limiting your funnel",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+bottleneck+analysis",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "In call funnels the key conversion is clicks to qualified booked calls on the page itself, and it's the stage most often below range. Call-funnel leads arrive colder than webinar leads and need more education and framing, which is why show rates run lower. In a two-call close, the second call should show and close far better than the first because those people chose to continue.",
+   "benchmarks": [
+    {
+     "metric": "CPM",
+     "value": "$30-$80",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Unique link click-through rate",
+     "value": "2%+",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Clicks to qualified booked calls",
+     "value": "3-5%",
+     "context": "most commonly the bottleneck"
+    },
+    {
+     "metric": "First call show rate",
+     "value": "~60%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Close rate (one-call close)",
+     "value": "~25%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Second call booking rate (two-call close)",
+     "value": "65%+",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Second call show rate",
+     "value": "80%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Second call close rate",
+     "value": "40%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    }
+   ],
+   "steps": [],
+   "do": [],
+   "dont": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-breakout-offer",
+   "title": "Build the low-ticket offer by breaking a piece out of your main high-ticket offer",
+   "category": "offer-design",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Start by defining the main high-ticket offer and listing every component that comes with it (group call library, tools, one-on-ones, events, courses, community). Then pick one component, or a small bundle, to sell on its own as the low-ticket product. Because it's a slice of the main thing, a buyer who gets value from it is a natural fit for the full offer. Low ticket is relative: against a six-figure annual offer, a four-figure product still counts as the entry point. The low-ticket product should feel like far more value than its price.",
+   "steps": [
+    "Write a clear definition of the main offer",
+    "List everything that makes it up",
+    "Choose the component that solves one specific, urgent problem fastest",
+    "Package it as a standalone product priced well below the main offer"
+   ],
+   "do": [
+    "Pick components that solve a single, concrete problem in a short time",
+    "Price high enough to filter for people who can afford the next step"
+   ],
+   "dont": [
+    "Don't invent a separate low-ticket product unrelated to the main offer"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-upsell-timeline",
+   "title": "Choose the low-ticket product with the shortest path to a result",
+   "category": "offer-design",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Map how long it takes a buyer to receive, consume and get a result from the low-ticket product, because that sets how long you wait before an upsell is likely. Slow-to-consume products such as books can stretch the cash cycle to months, which most paid-traffic businesses can't fund. When choosing between options, pick the one most likely to produce a result quickly. There are two upsell windows: right after the buyer has had a few 'aha' moments while consuming, and after they get a real-world result.",
+   "steps": [
+    "Estimate time to access, time to consume, and time to first result for each option",
+    "Pick the shortest",
+    "Plan upsell touchpoints for after ~3 aha moments and after the first result"
+   ],
+   "do": [
+    "Track activation rate (bought vs logged in) and consumption rate separately"
+   ],
+   "dont": [
+    "Don't build a paid funnel whose upsell needs months of consumption before anyone is ready to buy"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-funnel-structure-aov",
+   "title": "Low-ticket funnel layout: sales page, checkout, 2-3 upsells, confirmation with a final pitch",
+   "category": "funnel",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "A dependable layout is a sales page (headline, VSL, button, then copy and visuals of what's included), a checkout, two or three one-click upsells, optional application steps for higher-ticket offers, and a confirmation page that also pitches the next step. Every post-purchase page should first confirm the order went through, then pitch one thing that naturally complements what was just bought. Keep upsell pages short: buyers rarely want to read much right after paying. Showing the price on application steps respects wealthier buyers' time and reduces unqualified calls.",
+   "steps": [
+    "Sales page: headline, VSL, button, what's included",
+    "Checkout",
+    "Upsell 1: the most natural complement",
+    "Upsell 2-3: 'one last thing' offers or an application step",
+    "Confirmation page with a pitch for the next offer"
+   ],
+   "do": [
+    "Confirm the purchase at the top of every upsell page",
+    "Give a clear 'no thanks' path on each upsell"
+   ],
+   "dont": [
+    "Don't make upsell pages long unless testing shows it helps"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-speed-to-results",
+   "title": "Shrink the time to value with emails, setters and remarketing that deliver the key insights",
+   "category": "onboarding",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Most buyers won't consume a large product end to end. Pull out the handful of insights that create 'aha' moments and push them to the buyer through a value-dense email sequence, setter outreach that sends a short relevant clip, and content remarketing in their feed. For a book, for example, email an executive summary of each chapter instead of waiting for them to read it. If the product can be loaded into an AI agent, consider releasing those instructions a few days after purchase so the buyer first credits the product, not the AI, with the value. An onboarding call that teaches how to use the product and then pitches the next step can convert very well.",
+   "do": [
+    "Clip the 5-10 minute segment most relevant to each buyer and send it personally",
+    "Run a remarketing ad set to buyers with 20-50 pieces of helpful content"
+   ],
+   "dont": [
+    "Don't rely on the buyer to self-consume hours of material before you follow up"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-setter-double-role",
+   "title": "Setters on low-ticket buyers: act as accountability partner first, then switch to setting",
+   "category": "sales-process",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "After a low-ticket purchase, the setter's first job is support: check the buyer has opened the product, offer to help them pick the right strategy, and ask when they plan to go through it so they can follow up. Only once the buyer has consumed it or started getting results does the setter move to recommending the next offer and booking a call. Done well, about half of connected buyers book a call, those calls show at 70%+, and a good closer converts around 40% because these are warm, second-purchase buyers.",
+   "benchmarks": [
+    {
+     "metric": "Sales page to purchase",
+     "value": "3-5%",
+     "context": "click to purchase, sales page plus order form combined"
+    },
+    {
+     "metric": "One-click upsell take rate",
+     "value": "10-20%",
+     "context": "per upsell step; depends on price and fit"
+    },
+    {
+     "metric": "Connected buyers who book a call",
+     "value": "~50%",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Show rate on those calls",
+     "value": "70%+",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    },
+    {
+     "metric": "Close rate on those calls",
+     "value": "~40% (25-30% floor)",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    }
+   ],
+   "do": [
+    "Track connection rate: how many buyers the setter actually reaches"
+   ],
+   "dont": [
+    "Don't pitch the high-ticket offer in the first setter message"
+   ],
+   "steps": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "lt-where-to-fix",
+   "title": "When a low-ticket funnel underperforms, fix it in this order",
+   "category": "optimization",
+   "sources": [
+    {
+     "title": "Low ticket to high ticket master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+low+ticket+to+high+ticket+master+class",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Most of the work in low-ticket funnels is conversion-rate optimisation. In practice the problem is usually, in order: the ads are sending the wrong people, then the sales page isn't converting at 3-5%, then the upsell steps are offering the wrong thing or presenting it badly, then setters aren't connecting with buyers. Show rate, close rate and order value on the back-end calls are rarely the issue. Expect these pages to change a lot over time; there's no single template beyond headline, VSL and button.",
+   "steps": [
+    "Check ad targeting and messaging",
+    "Test the sales page until it converts 3-5%",
+    "Rework upsell offers and pages",
+    "Tighten setter connection and follow-up"
+   ],
+   "do": [
+    "Scale with a cost-per-result goal (cost cap) to expose messaging ceilings safely",
+    "Use 10-30% daily budget increases as the safer scaling method"
+   ],
+   "dont": [
+    "Don't make big jumps in spend without a cost-per-result goal"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "cp-justification-mode",
+   "title": "Treat the confirmation page as the start of the sales process",
+   "category": "show-rate",
+   "sources": [
+    {
+     "title": "Confirmation page best practices master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+confirmation+page+best+practices",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Before opting in or booking, people scan and judge in seconds. Right after, they switch into justifying whether to actually spend the time or money. The confirmation page's job is to help them justify showing up, with real reasons, and to build trust fast. Paid-traffic businesses can't wait months for trust to build organically, so the page needs to compress that into minutes. It's one of several back-end systems (value-dense emails, setter pre-call outreach, remarketing content) that should all carry the same message.",
+   "do": [
+    "Acknowledge the action in the headline ('You're in')",
+    "Use the page to answer what the sales team wishes leads already knew"
+   ],
+   "dont": [
+    "Don't settle for 'thanks, check your email and accept the invite'"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "cp-main-video-choice",
+   "title": "Pick the main confirmation video: urgency or due diligence",
+   "category": "show-rate",
+   "sources": [
+    {
+     "title": "Confirmation page best practices master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+confirmation+page+best+practices",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "The main video should be one of two types. Use a due diligence video when the buyer has to believe in you personally because you're the source of the ideas: walk them through searching your name, reviews, average and bad results, and refund or dispute data, and frame how to think about it. Use an urgency video when you're a vessel for a bigger opportunity (an investment vehicle, a market shift): present a verifiable, dated outside fact that makes now the time to act. A real, checkable reason why now can lift show rate sharply and also lifts consumption of the other videos on the page.",
+   "do": [
+    "Show proof the viewer can verify themselves (dates, headlines, data)",
+    "Be transparent about worst-case outcomes"
+   ],
+   "dont": [
+    "Don't invent urgency or scarcity that isn't true"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "cp-breakout-videos",
+   "title": "Add short breakout videos that answer the questions sales calls keep getting",
+   "category": "show-rate",
+   "sources": [
+    {
+     "title": "Confirmation page best practices master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+confirmation+page+best+practices",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Below the main video, add short (about 1-3 minute) videos, each titled with the exact question it answers. Choose topics from two sources: what the sales team is tired of answering or struggles to explain, and what you want people framed on before the call. Separate videos let you measure which topics get watched; anything important that isn't watched should be repackaged or pushed through email, setters or remarketing. Load the page up in niches that watch video; in niches that don't (e.g. many blue-collar trades) lean on email and phone instead. Chapter longer videos so viewers can jump to the part they care about.",
+   "benchmarks": [
+    {
+     "metric": "Play rate per video",
+     "value": "50%+",
+     "context": "below that, change the thumbnail or the topic"
+    },
+    {
+     "metric": "Engagement (portion watched)",
+     "value": "80%+",
+     "context": "below that, the content isn't what people care about"
+    },
+    {
+     "metric": "Email open rate",
+     "value": "40-60%",
+     "context": "for the matching email sequence"
+    }
+   ],
+   "do": [
+    "Use image thumbnails with clear question titles when there are many videos",
+    "Repeat the same messaging in emails and setter outreach"
+   ],
+   "dont": [
+    "Don't merge everything into one long video; you lose per-topic data"
+   ],
+   "steps": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "cp-testimonials-trust",
+   "title": "Use testimonials sparingly and answer 'how bad could it get' directly",
+   "category": "show-rate",
+   "sources": [
+    {
+     "title": "Confirmation page best practices master class",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+confirmation+page+best+practices",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Prospects tend to assume testimonials are cherry-picked, so a page full of them can reduce trust. If you use them, make sure they're believable and representative. Highlighting review-site ratings tends to send people looking for the one-star reviews. It usually works better to answer the worst-case question yourself in a breakout video. If you change messaging and see no lift across confirmation page, emails and setters, check consumption first (play rates, open rates, connection rate); if consumption is fine, the messaging itself is the problem.",
+   "dont": [
+    "Don't present only best-case results",
+    "Don't link out to review platforms from the page"
+   ],
+   "steps": [],
+   "do": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "ceo-dollar-value-per-hour",
+   "title": "Calculate your dollar value per hour and use it to decide what you personally do",
+   "category": "business-model",
+   "sources": [
+    {
+     "title": "What is your job as CEO? Dollar value per hour",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+what+is+your+job+as+CEO",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Take average monthly gross over the last 90 days (or 45 if you're scaling fast) and divide it by the hours you honestly work per month, from a day-by-day audit. That's the organisation's value per hour; ideally break it down into what you personally produce versus your team. Then list every action you could take and estimate what each pays per hour. Your schedule should be built backwards from that list, and the list changes as the business grows: content, sales calls or client calls can each be the top activity at different stages.",
+   "steps": [
+    "Average monthly gross over 45-90 days",
+    "Audit actual hours worked per day and per month",
+    "Divide to get value per hour",
+    "List possible actions and estimate value per hour for each",
+    "Build a weekly routine around the highest-value actions, and revisit it"
+   ],
+   "do": [
+    "Keep blocks for unplanned high-value work (e.g. a large invoice or a churn-risk call)",
+    "Batch scheduled calls into fixed days and use travel time for messages"
+   ],
+   "dont": [
+    "Don't let low-value tasks fill time just because they feel justifiable"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "ceo-3x-hiring-rule",
+   "title": "Hire for a task when it's below your value per hour and the role can return 3x its cost",
+   "category": "hiring-training",
+   "sources": [
+    {
+     "title": "What is your job as CEO? Dollar value per hour",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+what+is+your+job+as+CEO",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Work out the hire's cost per hour (monthly pay divided by hours worked, e.g. 160 for full time). Multiply by at least three to get the revenue per hour the role should produce, then by monthly hours to get a monthly revenue target. Turn that into units (how many sales at your price points) and ask whether that's easily achievable. If even half the target would still be worthwhile, the hire is low-risk. Make the role a defined trial (e.g. 45 days) with clear KPIs.",
+   "steps": [
+    "Monthly pay / monthly hours = cost per hour",
+    "Cost per hour x 3 = target revenue per hour",
+    "Target per hour x monthly hours = monthly revenue target",
+    "Convert to number of sales needed and sanity-check",
+    "Hire on a defined trial with KPIs"
+   ],
+   "dont": [
+    "Don't keep doing tasks yourself that are a small fraction of your value per hour"
+   ],
+   "do": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "ceo-reality-vs-words",
+   "title": "Measure progress in actions taken, not conversations had",
+   "category": "business-model",
+   "sources": [
+    {
+     "title": "What is your job as CEO? Dollar value per hour",
+     "url": "https://www.youtube.com/results?search_query=Jeremy+Haynes+what+is+your+job+as+CEO",
+     "publisher": "YouTube"
+    }
+   ],
+   "guidance": "Meetings and calls feel like progress but produce nothing until the ideas are acted on. Audit how much of your week is spent in talk versus execution, and make talk time pay twice: calls with customers can double as retention work, content research and training material. After any planning conversation, leave with a specific action and a date.",
+   "do": [
+    "Track the share of your hours spent in meetings",
+    "Turn customer conversations into content and sales-team talking points"
+   ],
+   "dont": [
+    "Don't treat a good call as a finished task"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  {
+   "id": "cf-sales-team-alignment",
+   "title": "Match the call funnel to what your closers can actually close, and shift education into marketing",
+   "category": "sales-process",
+   "guidance": "A call funnel fed by cold paid traffic produces education calls, not the pre-sold layups that organic content or webinars deliver. Leads arrive anywhere from merely curious to convicted, and in a standard setup the closer carries the whole burden of educating them. If your closers have only ever closed warm, pre-educated buyers, expect them to struggle when paid leads hit their calendars. The architect's core job is to make the sales team's work easier by moving as much education as possible out of the call and into marketing. The main tool is a sales or trust asset: proof material sent between booking and the call, such as a page listing real past deals, actual financial breakdowns, and short video walkthroughs. Distribute that asset by setter outreach, email, and retargeting so the prospect arrives more trusting and better framed. If you skip this, you must staff closers who are genuinely skilled at education calls.",
+   "steps": [
+    "Assess whether your closers are used to warm layup deals or can run education calls",
+    "List what prospects are skeptical about between booking and the call",
+    "Build one or more trust assets that answer those doubts with verifiable proof",
+    "Deliver the assets through setters, email and retargeting before the call",
+    "Keep asking what else would make the closer's job easier"
+   ],
+   "do": [
+    "Treat paid-traffic call funnels as education-call funnels",
+    "Build a proof asset (real case breakdowns, actual numbers) and send it pre-call",
+    "Push education into marketing so closers mainly close"
+   ],
+   "dont": [
+    "Assume results from an organic call funnel will carry over to paid traffic",
+    "Leave all education to closers who are only used to warm leads"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-budget-financial-model",
+   "title": "Set your call-funnel budget from a conservative financial model, not hope",
+   "category": "budgets",
+   "guidance": "Every budget decision should come from a simple row-by-row financial model: ad spend, cost per call, show rate, close rate (plus second-call booking and show rates for a two-call close), and cash-collected average order value. Use cash actually collected per sale, not headline revenue, since financing fees and partial payments shrink it. Then subtract fixed costs, team costs and commissions to get net profit and net ROAS. Plug in deliberately pessimistic values at the weak end of each range to see whether the funnel still makes money. AOV sets how much pain the funnel can absorb: high cash per sale tolerates expensive calls and weaker show rates, while low AOV demands cheap calls and strong conversion everywhere. Treat the initial test budget as a gambling budget you can afford to lose while you learn, and stack the odds by putting your best closer (possibly yourself) on the calls during the test. Also check how many calls the budget actually yields per closer per working day; a small test may only give each closer one or two calls a day.",
+   "steps": [
+    "Pick one-call or two-call close and lay out the model rows",
+    "Enter a conservative cost per call, show rate, close rate and cash-collected AOV",
+    "Add fixed costs, team costs and commissions to get net profit and net ROAS",
+    "Divide expected calls by about 22 working days to see calls per closer per day",
+    "Set a test budget you can lose without being knocked out",
+    "Put your strongest closer on the test and feed sales feedback back to ads"
+   ],
+   "do": [
+    "Model with cash collected, not booked revenue",
+    "Use the pessimistic end of each benchmark range",
+    "Prefer a one-call close unless you can justify the extra friction of two calls",
+    "Prove the funnel at a small scale before trying to fill every closer"
+   ],
+   "dont": [
+    "Overleverage the business just to fill closer calendars during a test",
+    "Use optimistic stats to justify a budget"
+   ],
+   "benchmarks": [
+    {
+     "metric": "CPM (cold paid traffic)",
+     "value": "$30-$80",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Link click-through rate",
+     "value": "about 2%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Click to qualified booked call",
+     "value": "3-5%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Conservative cost per call",
+     "value": "$100-$300; $500-$1,000 can be fine for long sales cycles, small TAM or very high AOV",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "First-call show rate, cold paid traffic",
+     "value": "60%+ ideal; 40-50% as a conservative planning value; below 30% suggests tech problems",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Second-call booking rate (two-call close)",
+     "value": "60%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Second-call show rate",
+     "value": "75%+ ideal, at least 70%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "One-call close rate",
+     "value": "20-25% typical; 10-15% weak; 30%+ above average",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Two-call close rate",
+     "value": "35%+ minimum",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-closer-math",
+   "title": "Reverse-engineer how many closers you need, and hire before you hit the ceiling",
+   "category": "benchmarks",
+   "guidance": "Closer math works backward from a monthly cash goal to the number of closers required. Divide the goal by cash collected per sale to get closes needed, divide by close rate to get calls taken, and divide by show rate to get calls booked. Multiply booked calls by cost per call to get the required ad spend. Then divide booked calls by roughly 22 weekday working days to get calls per day, and divide that by about eight one-hour calls per closer per day to get the headcount, rounding up. Run the same math for each step-up target (for example, the next revenue milestone) to see whether current closers have capacity or a new hire is needed. Because recruiting, hiring and training a closer usually takes four to six weeks (one to two weeks at best), you must hire ahead of demand rather than reacting after calendars are full.",
+   "steps": [
+    "Set the monthly cash target",
+    "Closes needed = target / cash collected per sale",
+    "Calls taken = closes / close rate",
+    "Calls booked = calls taken / show rate",
+    "Ad spend = calls booked x cost per call",
+    "Calls per day = calls booked / ~22 working days",
+    "Closers = calls per day / ~8, rounded up",
+    "Compare to current headcount and start hiring early enough to cover your hiring lead time"
+   ],
+   "do": [
+    "Re-run the math for each next revenue milestone",
+    "Know your average time to recruit, train and ramp a closer",
+    "Hire proactively so you never stall at a capacity ceiling"
+   ],
+   "dont": [
+    "Wait until closer calendars are maxed out before starting to hire",
+    "Try to fill several closers' calendars before the funnel has positive ROAS"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Working days per month for weekday closers",
+     "value": "about 22",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Calls per closer per day (1-hour slots)",
+     "value": "about 8 at full capacity",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Time to hire and ramp a new closer",
+     "value": "4-6 weeks average; 1-2 weeks best case",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-page-structure-friction-intent",
+   "title": "Keep the opt-in page minimal and use friction deliberately to control lead intent",
+   "category": "funnel",
+   "guidance": "Start with the simplest page: a headline, the VSL, and either an embedded application or a button that leads to it. The goal is to force attention onto the video, because people conserve effort and will skim extra page sections instead of watching, and a well-made VSL sells far better than skimmed blocks. Requiring the video to get information also filters out low-interest visitors who would otherwise hurt show rate, close rate and AOV. Friction and intent move together: more friction gives fewer, more committed leads at a higher cost per call, while less friction gives cheaper, lower-intent volume. Embedding the application on the page removes a step (lower friction); a button to a separate page adds one. Add testimonials or written sections only if VSL play rate is too low, or in niches that rarely watch video (for example, some blue-collar audiences), where an embedded slide deck or longer page can replace the video. Adjust friction based on data: raise it when lead quality is poor, lower it when costs are too high or quality is already strong.",
+   "steps": [
+    "Launch with headline + VSL + embedded application or button",
+    "Use a short 5-10 second clip as the autoplay thumbnail",
+    "Check play rate and lead quality",
+    "If quality is poor, add friction; if cost is too high and quality is good, reduce it",
+    "Only add page sections if play rate stays low or the niche avoids video"
+   ],
+   "do": [
+    "Make the VSL the only way to get the key information",
+    "Treat each extra step or typed question as a lever that raises intent and cost",
+    "Use a deck or longer page in niches with very low video consumption"
+   ],
+   "dont": [
+    "Pad the page with sections that let visitors skip the video",
+    "Invite low-interest bookings with a low-friction, information-rich page"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-vsl-best-practices",
+   "title": "Build the VSL on real reasons and a unique mechanism, then optimize it from retention data",
+   "category": "offer",
+   "guidance": "A strong VSL is built on real reasons: facts, trends and conversations already happening in the market that the prospect already believes, rather than claims the seller invented. Research where the target audience actually talks and what they want before writing; if nobody in the market is discussing the problem, the offer is likely a weak bet. Ad platforms quickly saturate interested users with similar offers, so prospects are highly sophisticated and every VSL needs a distinct mechanism and should show the process on display. Sometimes the strongest angle is a category the business already embodies but has never named; leading with a narrow feature only appeals to a small slice of the market. Host the video on a platform with engagement analytics (for example Wistia or Vidalytics) and watch play rate and engagement rate. Add chapter markers so viewers can jump to the parts they care about, since they are deciding whether this is for them, not following your sequence. Read the retention curve: a cliff in the opening seconds means rework the hook; a modest early drop then a flat line is healthy.",
+   "steps": [
+    "Research live market conversations to find agreeable real reasons",
+    "Define a unique mechanism and show the process",
+    "Lead with the biggest market-wide idea, not a narrow feature",
+    "Host on an analytics-enabled video platform",
+    "Add chapters to the video",
+    "Review play rate, engagement rate and the retention curve, and fix the steepest drop first (usually the hook)"
+   ],
+   "do": [
+    "Ground claims in what the market already believes",
+    "Use chaptering so viewers can self-navigate",
+    "Optimize the opening hook first when early drop-off is steep"
+   ],
+   "dont": [
+    "Invent reasons the audience does not already accept",
+    "Force viewers to watch in strict sequence"
+   ],
+   "benchmarks": [
+    {
+     "metric": "VSL play rate",
+     "value": "50%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "VSL engagement rate",
+     "value": "50%+; around 9% signals a broken video",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-application-questions-and-scheduler",
+   "title": "Order application questions for intent without bloating cost, and integrate the scheduler",
+   "category": "qualification",
+   "guidance": "Choose application questions with both sales and marketing: ask sales what data helps them confirm and close calls, ask marketing what qualifies leads for the pixel, and keep mainly the questions both sides agree on, since one-sided questions inflate cost. Typed answers add friction and raise intent; about three typed questions is the usual sweet spot before cost per call balloons. Order matters: open with an easy multiple-choice question that also signals the offer is for the right person (it can carry conditional logic or lead scoring). Put the financial qualifier second, choosing a point on the spectrum from very direct (state the price and make them acknowledge it, plus income or time-commitment qualifiers) to none at all; most applicants admit they would lie about income, so the middle ground is an indirect question that correlates with buying, such as a simple business-math question validated against past show and close data. Then ask the third key question, any remaining multiple-choice items, and leave contact details for last as separate steps (name, phone, email), since that is where abandonment peaks. Finally, integrate the application and scheduler in one flow; separating them roughly triples qualified drop-off.",
+   "steps": [
+    "Gather desired questions from sales and from marketing; keep the overlap",
+    "Q1: easy multiple-choice question that signals who the offer is for",
+    "Q2: financial or other key qualifier, direct or indirect depending on desired volume",
+    "Q3: the remaining most important typed question",
+    "Optional extra multiple-choice questions",
+    "Contact info last: name, then phone, then email as separate steps",
+    "Route straight into an embedded scheduler within the same flow",
+    "Periodically correlate answers with show and close rates and drop questions that predict nothing"
+   ],
+   "do": [
+    "Cap typed questions at about three",
+    "Disclose price, income or time commitments up front if you want fewer, better calls",
+    "Use an integrated application and scheduler tool (or a custom-built one)",
+    "Only send qualified leads back to the ad pixel"
+   ],
+   "dont": [
+    "Open with a hard financial question or a typed answer",
+    "Rely on self-reported income, which many applicants admit they would misstate",
+    "Put the scheduler on a separate page unless you deliberately want extra friction"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Typed application questions",
+     "value": "about 3 is the sweet spot",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Qualified applicant drop-off, separate application and scheduler",
+     "value": "about 50%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Qualified applicant drop-off, integrated application and scheduler",
+     "value": "about 16%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Applicants who say they would misreport income",
+     "value": "roughly 70-80%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-backend-selling-systems",
+   "title": "Run five back-end selling systems between booking and the call to lift show and close rates",
+   "category": "show-rate",
+   "guidance": "Before booking, prospects are in scanner mode, skimming to decide whether this is for them; after booking they switch to justification mode and need reasons to show up, which is when they are most willing to consume material. Do not assume a booked lead is sold on attending. Feed them five channels of information so they can justify the call to themselves and to spouses or decision makers: (1) the confirmation page, led by an urgency or due-diligence video giving real reasons to act now, with breakout videos below covering topics closers are tired of repeating, plus testimonials; (2) value-dense email sequences that educate and weave in reminders, starting at two or three useful emails a day and increasing only if quality is high; (3) a retargeting campaign aimed only at booked leads with short and long-form content covering questions, follow-up questions, objections and expectations; (4) setters, human or AI, whose job is to educate and add value, not just qualify; and (5) making sure the information AI assistants find about your brand is positive. Different prospects consume different channels, which is why all five matter.",
+   "steps": [
+    "Confirmation page: urgency or due-diligence video first, then breakout videos and testimonials",
+    "Start value-dense emails right after booking, 2-3 per day, with reminders built in",
+    "Launch retargeting to booked leads covering the four content quadrants",
+    "Have setters or an AI setter reach out to educate and share trust assets",
+    "Make sure positive, accurate information about you ranks where AI tools search"
+   ],
+   "do": [
+    "Use proven organic content in the retargeting campaign",
+    "Arm the prospect to sell the decision maker or spouse",
+    "Cover questions, second-layer questions, objections and expectations"
+   ],
+   "dont": [
+    "Send only bare reminder emails",
+    "Treat setters purely as qualifiers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Minimum retargeting audience size to serve",
+     "value": "about 150 people",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Typical booking-to-call window for retargeting",
+     "value": "about 72 hours; widen to 30 days until volume allows",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Pre-call value emails",
+     "value": "start at 2-3 per day; up to about 6 per day only if genuinely valuable",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-sales-ops-and-team-expectations",
+   "title": "Add a sales-ops layer and hold the sales team to clear stats and capacity rules",
+   "category": "sales-process",
+   "guidance": "Sales ops is the layer between marketing and the sales call where software and AI agents handle work such as enriching each lead as soon as they book (using data-enrichment tools), researching the person, and generating personalized value-dense emails from a knowledge base of your content and voice. Agents can also confirm calls conversationally, score applications in real time (including typed answers), route leads to the closer best suited to them, and move unresponsive leads from a closer's calendar to a setter's. On the team side, hold each department accountable for the stats it controls: show rate, second-call booking and show rates, and close rates. Keep closers at about 80% of calendar capacity so they have time for CRM work, admin and follow-up. Keep the booking window to roughly 72 hours, schedule around the audience (outside 9-to-5 or at lunch for employees, mid-day for B2B), and watch for weaker weekend performance. Add two specialist roles: an educator who can be brought into calls to lift low-interest leads and turn education calls into closing calls, and a cleaner who takes over aging leads once closers can no longer follow up with everyone.",
+   "steps": [
+    "Set up automatic lead enrichment and research on booking",
+    "Feed an agent your content library and voice to write personalized pre-call emails",
+    "Use scoring and routing to match leads to closers and move no-responders to setters",
+    "Publish stat targets and assign ownership by department",
+    "Cap closer calendars near 80% and booking windows near 72 hours",
+    "Create educator and cleaner roles and define hand-off rules"
+   ],
+   "do": [
+    "Give closers education assets and question sets, not just a script",
+    "Schedule call hours around when the audience can actually attend",
+    "Reassign stale leads to a cleaner on a set timeline"
+   ],
+   "dont": [
+    "Book closers at 100% capacity",
+    "Offer booking slots far beyond about three days out"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Closer calendar utilization",
+     "value": "about 80%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Booking window",
+     "value": "72 hours or less",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "One-call close rate target",
+     "value": "25%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Two-call close rate target",
+     "value": "35%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Show rate target",
+     "value": "60%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Second-call show rate target",
+     "value": "70%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-bottleneck-analysis",
+   "title": "When the funnel underperforms, find the single most contracted stat and fix that first",
+   "category": "funnel",
+   "guidance": "Usually only one or two stats are dragging returns down, so map every step against its benchmark before changing anything. For a one-call close the chain is CPM, link click-through rate, click-to-qualified-booking rate, show rate, close rate and AOV; a two-call close adds first-call show, second-call booking rate and second-call show before the close rate. The first three stats determine cost per call, so a problem there points to either the ads or the page, whichever is further from its range. A weak close rate with healthy earlier stats can still be an ad problem, since the ads may be attracting the wrong people. Prioritize the stat that is easiest to double: for example, lifting page conversion from 1.5% to 3% halves cost per call and roughly doubles bookings, shows, sales and ROAS when everything else holds. If you have exhausted your own ideas on a step, seek new information rather than repeating the same fixes.",
+   "steps": [
+    "List each funnel stat in order",
+    "Compare each to its benchmark range",
+    "Identify the most contracted stat",
+    "Decide whether it is an ads, page, setter, or closer problem (and whether lead quality is the root cause)",
+    "Focus on the stat easiest to double",
+    "Re-measure and repeat"
+   ],
+   "do": [
+    "Fix one bottleneck at a time",
+    "Check whether poor downstream stats come from the wrong audience upstream"
+   ],
+   "dont": [
+    "Change many variables at once without a diagnosis",
+    "Blame closers before ruling out lead quality"
+   ],
+   "benchmarks": [
+    {
+     "metric": "CPM",
+     "value": "$30-$80",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Link CTR",
+     "value": "about 2%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Click to qualified booked call",
+     "value": "3-5%",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "First-call show rate",
+     "value": "60%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "One-call close rate",
+     "value": "25%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Second-call booking rate",
+     "value": "60%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Second-call show rate",
+     "value": "70%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    },
+    {
+     "metric": "Two-call close rate",
+     "value": "35%+",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "cf-scaling",
+   "title": "Scale spend in measured steps and alternate between filling calendars and hiring closers",
+   "category": "budgets",
+   "guidance": "Once the funnel is profitable, scale ad spend with a known method: raise budgets 10-30% per day (several times a day if cost and volume hold), use a cost-per-result approach where you add spend equal to extra calls wanted times cost per call (for example, 10 more calls at $100 means $1,000 more tomorrow), lean on cost caps for more aggressive scaling, or scale every few days when using automated bidding. Model the compounding in a spreadsheet first, because steady daily increases add up to large daily spend within a month. Convert that projected spend into calls per day and then into closer headcount using closer math, and start hiring early enough to cover your hiring lead time. Scaling is a repeating cycle: fill closer calendars, then hire more closers, then fill again. Whichever side you are stuck on, fix it fast and flip to the other side.",
+   "steps": [
+    "Confirm positive ROAS at current spend",
+    "Choose a scaling method (10-30% steps, cost per X, cost caps, or slower steps under automated bidding)",
+    "Project daily spend at 7, 14, 21 and 30 days",
+    "Convert projected spend into calls per day and required closers",
+    "Start recruiting ahead based on hiring lead time",
+    "Alternate: fill calendars, hire, fill again"
+   ],
+   "do": [
+    "Do the scaling math and the closer math together",
+    "Scale only while cost per call holds and volume keeps coming"
+   ],
+   "dont": [
+    "Scale spend without checking closer capacity",
+    "Stay stuck on either calendar-filling or hiring for long"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Daily budget increase",
+     "value": "10-30% per step",
+     "context": "practitioner benchmark from a call-funnel operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-test-budget-financial-model",
+   "title": "Set a per-webinar test budget from a funnel financial model before spending",
+   "category": "budgets",
+   "guidance": "Size the test budget by working the math, not by gut feel. Pick an amount you could lose entirely and still be willing to run again next week, then multiply by four to see your monthly exposure on a weekly cadence. Model the full chain: ad spend divided by cost per lead gives registrants, then apply show rate, booking rate, call show rate and close rate, and multiply closes by average cash collected (not contracted revenue). Using conservative inputs ($5K spend, $20 CPL, 20% show, 30% booking, 70% call show, 35% close, $3,500 cash AOV) the model yields roughly 250 registrants, 50 attendees, 15 booked calls, 11 taken, 4 closes and about 2.5-2.6x ROAS. Weekly webinars give only four improvement cycles a month; add a second weekly session if budget and time allow. Even if traffic will be organic, build the webinar for cold viewers, because cold-optimized content still converts with warm audiences but not the reverse.",
+   "steps": [
+    "Choose a per-webinar spend you can afford to lose and repeat weekly",
+    "Multiply by 4 to confirm monthly exposure",
+    "Plug conservative CPL, show, booking, call-show and close rates into the model",
+    "Use cash-collected AOV to compute expected ROAS",
+    "Decide cadence (1-2 live sessions per week) and schedule Tue-Thu"
+   ],
+   "do": [
+    "Optimize and report on cash collected, not booked revenue",
+    "Use conservative assumptions (e.g. $20-30 CPL) when modeling",
+    "Run on Tuesday, Wednesday or Thursday; around 7pm ET for B2C, late morning or early afternoon ET for B2B",
+    "Use cost-per-result goals to keep CPL inside your modeled range"
+   ],
+   "dont": [
+    "Do not size the budget by feel or by what competitors spend",
+    "Do not build a warm-audience-optimized webinar and send cold traffic to it"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Test spend per webinar",
+     "value": "$5,000-$7,500",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Monthly test budget (weekly cadence)",
+     "value": "~$20,000-$35,000",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Cost per lead",
+     "value": "~$20 conservative; $5-12 strong; up to ~$40 weak",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Live webinar show rate (cold)",
+     "value": "~20% average; 30%+ good; 10-15% signals problems",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Model ROAS at conservative inputs",
+     "value": "~2.5-2.6x",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-majority-hook-messaging",
+   "title": "Build the webinar theme around a majority hook and a unique mechanism",
+   "category": "messaging",
+   "guidance": "Frame messaging as two cliffs and a bridge: the prospect's current problems and circumstances on one side, the desired outcomes on the other, and your offer as the bridge they only care about once they feel understood. Ad and organic algorithms quickly flood an interested user with similar competitors, so leads arrive highly aware and heavily pitched; message them with market awareness and sophistication in mind. Lead with a majority hook, the big problems or outcomes that most financially qualified buyers share, rather than a minority hook that only a niche slice cares about. Pair that with a clearly named unique mechanism so you stand out among the competitors they will see next. Condense this into a headline-style theme (e.g. a named blueprint promising three big outcomes) and then satisfy that headline everywhere: ads, opt-in page, emails, texts, the presentation, the offer and sales talking points.",
+   "steps": [
+    "List the shared problems, circumstances and desired outcomes of your most financially qualified buyers",
+    "Pick the biggest, most widely felt ones (majority hook)",
+    "Name your unique mechanism that delivers those outcomes",
+    "Write the theme as a headline: mechanism name plus 2-3 major outcomes",
+    "Back into ads, pages, emails and slides that each fulfill the headline claim"
+   ],
+   "do": [
+    "Voice the thoughts prospects already have in their own words",
+    "Assume leads are already aware of and pitched by competitors",
+    "Think in headlines first, then derive every asset from them"
+   ],
+   "dont": [
+    "Do not lead with a narrow feature-level benefit only a minority cares about",
+    "Do not pitch the solution before the prospect feels understood"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-optin-page-layout",
+   "title": "Keep the webinar opt-in page simple, fast and headline-led",
+   "category": "opt-in-page",
+   "guidance": "Most visitors skim: they read the headline, maybe glance at bullets, and decide. The headline alone should tell them exactly what they will learn so they can register with confidence; if they must read more to decide, conversion suffers. Use a consistent brand palette of about three colors, a headline, a short video (or a strong image or AI-generated UGC if you are not comfortable on camera) with a curiosity-driven thumbnail, the date, and a countdown. Collect first name, last name, email and phone with a TCPA-compliant double opt-in checkbox for SMS, and validate entries. On desktop use a floating opt-in box beside the content; on mobile fix the form in place and add CTA buttons in the supporting text that jump back to it. Keep it to two or three scrolls, and use modern custom-built pages on fast hosting with page-speed optimization, since load speed noticeably lifts opt-in rate.",
+   "steps": [
+    "Write a headline that fully explains the payoff",
+    "Add a short video with a curiosity thumbnail, the date and a countdown",
+    "Add a name/email/phone form with SMS consent and validation",
+    "Add 2-3 scrolls of supporting text and visuals mirroring the video",
+    "Host on a fast CDN and test page speed on mobile and desktop"
+   ],
+   "do": [
+    "Always collect phone numbers to enable SMS reminders",
+    "Show a countdown even for scheduled automated webinars",
+    "Keep the opt-in box visible at all times"
+   ],
+   "dont": [
+    "Do not rely on old drag-and-drop template builders when a faster custom page is possible",
+    "Do not make visitors read paragraphs to understand the offer"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Opt-in rate",
+     "value": "20-50% typical range; ~30% strong",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-confirmation-page-justification",
+   "title": "Use the confirmation page to re-sell attendance with a research or urgency video",
+   "category": "show-up",
+   "guidance": "Treat a new registrant as not yet sold: on the back end they shift from scanning to justifying whether the session deserves their time. Acknowledge the action in the headline (you are registered, here is what to do next) and put one primary video front and center. That video is either a due-diligence research video that builds trust fast through radical transparency (real averages, refunds, dispute rate, typical and top results) or an urgency video that gives a fact-based reason to act now. Research real-world, recent facts (for example a regulatory change opening a market) to script the urgency video; one such video lifted show rate by about 19 points in one case. Below it, add short breakout videos answering the questions that, left unanswered, make people show up colder, then testimonials.",
+   "steps": [
+    "Headline that confirms the registration and states the next step",
+    "Primary video: research/due-diligence or urgency",
+    "Breakout videos on common pre-webinar questions and aha moments",
+    "Testimonials last",
+    "Brief instructions (check email, add to calendar)"
+   ],
+   "do": [
+    "Base urgency on verifiable recent facts, not opinion",
+    "Pull breakout topics from questions sales reps hate answering",
+    "Keep the page order: primary video, breakout videos, testimonials"
+   ],
+   "dont": [
+    "Do not use a bare thank-you page that only lists reminders",
+    "Do not assume an opt-in means the person will attend"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Live show rate achievable with strong confirmation pages",
+     "value": "30%+ up to ~44%",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Show-rate lift from one urgency video",
+     "value": "~19 points in one test",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-backend-selling-systems",
+   "title": "Stack the five back-end selling systems to warm leads between opt-in and call",
+   "category": "show-up",
+   "guidance": "Leads from paid traffic need to be warmed within days, so manufacture the aha moments that organic content would normally create over months. Five systems do this: an optimized confirmation page; a hammer-them retargeting push of roughly 12-20 short and long-form videos shown to registrants in the feed before the event; setters who reach out to provide value about the topic rather than qualify; value-dense email sequences that start teaching the promised content immediately; and shaping what AI assistants say about your brand. Sometimes deploying just one of these moves the numbers significantly. Of the five, confirmation pages and email are usually the biggest show-rate levers. Aim to recover ad spend and profit within roughly 10-14 days of the first dollar spent.",
+   "steps": [
+    "Launch the optimized confirmation page",
+    "Retarget registrants with 12-20 content videos before the webinar",
+    "Have setters send value-first outreach",
+    "Send value-dense emails that teach the headline topic",
+    "Audit and improve how AI tools describe your brand"
+   ],
+   "do": [
+    "Lead setter outreach with value about the topic, not qualification questions",
+    "Prioritize confirmation page and email when show rate is low"
+   ],
+   "dont": [
+    "Do not wait until the live session to start delivering value"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Retargeting videos per registrant before webinar",
+     "value": "~12-20",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Target payback window from first ad dollar",
+     "value": "~10-14 days",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-reminder-email-sms-cadence",
+   "title": "Run value-led email plus a six-text SMS reminder cadence",
+   "category": "email",
+   "guidance": "Emails carry value and reminders; texts carry reminders only. Each email should mostly teach something tied to the headline claim, with the reminder tucked near the end, so registrants arrive excited and closer to buying. Send about six emails total (roughly two per promo day), plus the webinar platform's own reminder emails, which tend to land in the primary inbox. Send six texts: at opt-in, about 24 hours out, the morning of, one hour out, ten minutes out, and at start time, then about ten minutes after start ask non-joiners if they are having trouble and have someone (or an agent) staffing replies. Late registrants simply enter the sequence at their point in time. Push the join link through email or calendar rather than SMS, because phone viewers tend to retain and convert worse. An open rate below 40% usually means a deliverability problem even if the deliverability score looks fine.",
+   "steps": [
+    "Text 1: immediately at opt-in",
+    "Text 2: ~24 hours before",
+    "Text 3: morning of",
+    "Text 4: 1 hour before",
+    "Text 5: 10 minutes before",
+    "Text 6: at start time",
+    "Follow-up text ~10 minutes after start to non-joiners offering tech help"
+   ],
+   "do": [
+    "Make each email teach part of the promised content",
+    "Use a stable mainstream webinar platform",
+    "Staff the SMS reply line during the event"
+   ],
+   "dont": [
+    "Do not send the join URL by SMS",
+    "Do not ignore sub-40% open rates; fix deliverability first"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Email open rate",
+     "value": "40-60%",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "SMS open rate",
+     "value": "80-90%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Total reminder emails",
+     "value": "~6",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Show rate when deliverability is broken",
+     "value": "often 10-15% with ~20% opens",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-promo-window-and-ad-structure",
+   "title": "Promote within a short window and build 5 angles x 5 variations of ads",
+   "category": "ads",
+   "guidance": "Show rate falls the further ahead someone registers: same-day registrants can show at 40%+, while those signing up three or more days out often show at 10% or less. Promote cold traffic for about three days including the event day (ideally two days plus the day of), and warm audiences no more than about five days out; front-loading everything on day zero is risky because spend may not deliver. Plan warm promotion across stories, comment CTAs, other organic platforms, updated video descriptions and email. For paid, create about five distinct angles (genuinely different reasons to convert, drawn from majority problems and outcomes) times five variations (e.g. environments) for up to ~25 ads. Script each as hook, body and CTA; 30-90 second videos with jump cuts and captions tend to bring higher-intent leads and slightly better show rates than images, which are cheaper but lower intent. Structure options: all ads in one ad set (typically 1-3 win spend; align the page to the winning angle), one ad set per angle, or one ad per ad set with a 3-second-view exclusion to force spend on every creative; use ad set budgets and lifetime budgets with start/end times that cut ads about two hours before a once-or-twice-weekly webinar, switching to daily budgets for 3x weekly or scheduled automated events.",
+   "steps": [
+    "Define 5 unique angles from core problems and outcomes",
+    "Write 5 hook-body-CTA scripts or settings per angle",
+    "Shoot 30-90s videos, add captions and jump cuts; derive image versions",
+    "Choose ad set structure and use ad set budgets",
+    "Set lifetime budget ending ~2 hours before the live event",
+    "Launch ~2-3 days out for cold, up to ~5 days for warm"
+   ],
+   "do": [
+    "Make angles truly different reasons to buy, not rewordings",
+    "Match landing page messaging to the angle getting spend",
+    "Use daily budgets for frequent or automated webinars",
+    "Optimize for lead/registration first; test schedule or purchase events only once frequent or automated webinars supply steady conversion volume"
+   ],
+   "dont": [
+    "Do not promote cold webinars more than ~3 days out unless spending very large budgets",
+    "Do not mix in warm-optimized messaging for cold traffic"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Show rate by registration timing",
+     "value": "40%+ same day; ~10% or less for 3+ days out",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Ad count",
+     "value": "5 angles, up to ~25 ads",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Video ad length",
+     "value": "30-90 seconds",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Winners when all ads share one ad set",
+     "value": "~1-3 creatives take most spend",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-presentation-and-close",
+   "title": "Hold 80% retention to the pitch, then close with a bridge, a woven stack and cycles",
+   "category": "webinar-structure",
+   "guidance": "A webinar has two halves of roughly an hour each: the teaching presentation and the close, and you keep closing as long as a meaningful number of people remain. The key presentation metric is retention, the share of peak concurrent viewers still present when the pitch begins; aim for 80% or more. Transition with a permission-based bridge: acknowledge the value delivered, say you can accelerate results further, and ask the chat for a quick yes before making the offer. Build the offer stack by pairing each component with a specific problem, circumstance or outcome, using a 'you are dealing with X, so we include Y, so you can Z' pattern, then show a full stack summary slide. Decide whether to reveal price: revealing it yields fewer but more qualified calls; withholding it yields more calls with weaker qualification. Then cycle through objection handling, risk reversals, Q&A and a repitch, repeating (risk reversals often run out, leaving objections, Q&A, repitch) before an outro. Remember objections are reasons not to buy, while risk reversals move risk off the buyer, such as pay-per-result terms.",
+   "steps": [
+    "Teach for ~60 minutes, tracking retention to the pitch",
+    "Bridge: ask permission to make an offer and get chat engagement",
+    "Present each stack item tied to a problem and outcome",
+    "Show the full stack summary",
+    "Choose to reveal or withhold price",
+    "Cycle objections, risk reversals, Q&A, repitch",
+    "Outro when attendance thins"
+   ],
+   "do": [
+    "Use the 'so you can' phrasing for every stack element",
+    "Keep closing while enough viewers remain",
+    "Separate objection handling from risk reversal content"
+   ],
+   "dont": [
+    "Do not jump straight from teaching to a list of deliverables",
+    "Do not confuse risk reversals with objection answers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Retention to start of pitch",
+     "value": "80%+ goal; 95%+ for exceptional presenters",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Booking rate of pitch attendees",
+     "value": "~30% target; 20% below average; 10-15% well below",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Presentation and close length",
+     "value": "~1 hour each",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-sales-calls-and-cleanup",
+   "title": "Frame booked calls as onboarding and run a 10-day setter cleanup cycle",
+   "category": "sales-calls",
+   "guidance": "Webinar-booked calls should be easy closes because prospects arrive educated and framed, so frame them as onboarding calls where questions are answered, payment is collected and next steps begin. Webinar funnels have more steps than application funnels, so each call is expensive; anything below a 70% call show rate or 35% close rate means retraining or replacing reps, or checking for reputation problems on review sites, forums and AI answers. Expect the risk timeline to run about 10 days: spend starts ~72 hours before, cash begins on webinar day, and setters clean up in the following days. Cleanup goes in two passes: first attendees who did not book, then registrants who did not attend, using the replay as an asset and combining calls, texts and email. Texting from real phones assigned to reps lands better than bulk SMS services, and cleanup can roughly double ROAS.",
+   "steps": [
+    "Frame the CTA as booking an onboarding call",
+    "Take calls on and after webinar day",
+    "Days after the event: dial attendees who did not book",
+    "Then dial registrants who did not show",
+    "Send the replay and follow up by text and email, not calls alone"
+   ],
+   "do": [
+    "Text from reps' real phones",
+    "Hold reps to 70% show and 35% close minimums"
+   ],
+   "dont": [
+    "Do not rely solely on dialing for cleanup",
+    "Do not accept sub-35% close rates on webinar calls"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Booked call show rate",
+     "value": "70%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Close rate on shown calls",
+     "value": "35%+ floor",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "ROAS impact of cleanup",
+     "value": "can roughly double",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Full risk-to-cash cycle",
+     "value": "~10 days",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "wb-bottleneck-analysis-and-scaling",
+   "title": "Diagnose with a bottleneck analysis, then scale until you hit a scale ceiling",
+   "category": "kpis",
+   "guidance": "Most losing test webinars break even or make a little, so treat a miss as a diagnosis exercise. Walk the chain of metrics (CPM, link CTR, opt-in rate, webinar show rate, retention, booking rate, call show rate, close rate, AOV) against benchmark ranges and play the doubles game: find the metric furthest below range that would be easiest to double (or for CPM, halve) and focus only there. A sudden opt-in drop with unchanged pages often means ad fatigue, so relaunching ads may fix it faster than page tests; also align the page to whichever ads get distribution. Once it works, scale by raising daily budgets 10-30% per day, raising the next lifetime budget, adding webinar frequency (2-3x per week), and later moving to scheduled automated sessions, never just-in-time replays. Early small-spend ROAS is often inflated; expect it to dip as spend rises, and keep cost-per-result goals plus an updated financial model to see how far numbers can degrade. When you hit a scale ceiling where extra dollars become inefficient, hold that campaign steady and grow via new messaging angles or a new funnel type.",
+   "steps": [
+    "Record each funnel metric for the webinar",
+    "Compare each to its benchmark range",
+    "Pick the most-contracted metric that is easiest to double",
+    "Fix only that, rerun, repeat",
+    "Scale via budget increases, frequency, then automation",
+    "At the scale ceiling, maintain and develop new angles or funnels"
+   ],
+   "do": [
+    "Isolate one bottleneck at a time",
+    "Update the financial model in real time as you scale",
+    "Use cost-per-result goals rather than pure automated bidding"
+   ],
+   "dont": [
+    "Do not run just-in-time automated webinars",
+    "Do not automate before the live version is proven and profitable",
+    "Do not keep pushing budget past a scale ceiling"
+   ],
+   "benchmarks": [
+    {
+     "metric": "CPM",
+     "value": "$30-$80",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Link CTR",
+     "value": "2%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Opt-in rate",
+     "value": "20-50%",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Webinar show rate",
+     "value": "30%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Retention to pitch",
+     "value": "80%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Booking rate",
+     "value": "30%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Call show rate",
+     "value": "70%+",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Close rate",
+     "value": "35%",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    },
+    {
+     "metric": "Daily budget scaling step",
+     "value": "10-30% per day",
+     "context": "practitioner benchmark from a webinar operator; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-organic-as-a-funnel",
+   "title": "Treat organic content as a three-stage funnel and match each stage to the right format",
+   "category": "creative-strategy",
+   "guidance": "Posting for raw eyeballs and hoping money follows rarely works; plan organic content as a funnel. Awareness pieces introduce strangers, nurture pieces teach your model and credibility, and conversion pieces turn warm followers into buyers, with most of the persuasion happening before the CTA so prospects book to buy rather than evaluate. Choose the mix based on your bottleneck: small audience means more awareness, high views with low sales means more conversion content, and leads that don't close call for education and objection handling. B2C usually needs more awareness volume, while B2B and recurring-revenue offers can lean on nurture, conversion, and word of mouth. Package each stage in the format the platform distributes to that group: on Instagram, reels reach non-followers and suit awareness and tactical nurture, while carousels and stories go mainly to followers and suit direct CTAs. Once someone engages, the platform tends to serve them more of your older posts, so publishing all three stages lets it walk people from stranger to buyer.",
+   "steps": [
+    "Diagnose the bottleneck: audience size, lead flow, or close rate",
+    "Map each planned piece to awareness, nurture, or conversion",
+    "Publish reels for awareness and tactical nurture, routing their CTAs to a nurture asset",
+    "Put direct sales CTAs on carousels and stories",
+    "Pick a conversion mechanism that fits your stage (DM flow if no tech stack, or mirror a paid funnel that already converts)",
+    "Rebalance the mix as the bottleneck moves"
+   ],
+   "do": [
+    "Tag every content idea with its funnel stage before producing it",
+    "Use objection-handling and education content when leads arrive but don't buy",
+    "Watch story engagement to spot the warmest segment before a direct offer"
+   ],
+   "dont": [
+    "Don't treat a single CTA as the whole conversion strategy",
+    "Don't chase broad virality for a high-ticket B2B offer; it attracts unqualified viewers",
+    "Don't load reels mainly with hard-sell conversion CTAs"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Reel CTAs on tactical reels",
+     "value": "about 2 per reel, pointing to a nurture asset",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Carousel CTAs",
+     "value": "direct CTA on each carousel",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-3x3-content-strategy",
+   "title": "Build a 3x3 plan: three formats by three topic tiers, anchored in proven niche demand",
+   "category": "creative-strategy",
+   "guidance": "Rather than guessing what to post, research what the niche already engages with and overlap it with what you can say uniquely; that overlap is brand-market fit. Pick three formats and three topic tiers, one per funnel stage. Awareness typically uses a broad, high-reach format such as silent B-roll with on-screen text, carrying broad topics like a personal transformation story or a funny recurring angle. Nurture uses a second reel style such as talking head or green screen, carrying tactical topics like breakdowns, rule changes, and how-tos. Conversion uses deep text carousels (screenshot-style tweet threads work well) carrying detailed financial breakdowns or client stories framed so readers picture their own result before the CTA. Sort competitors' posts by performance to see which formats and topics win before you commit.",
+   "steps": [
+    "Sort competitor and creator profiles by top performance to find winning formats and topics",
+    "List the topics where you have a unique angle and cross them with that research",
+    "Assign one format and topic tier each to awareness, nurture, and conversion",
+    "Rotate in new formats periodically so the pattern doesn't get predictable"
+   ],
+   "do": [
+    "Bet on formats already proven in your niche",
+    "Frame case studies as a client's story rather than a brag",
+    "Keep some creative variation inside the system"
+   ],
+   "dont": [
+    "Don't run the exact same template every week; once the audience can predict the pattern, engagement falls",
+    "Don't copy competitors verbatim; add your own take"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-posting-cadence",
+   "title": "Set posting volume by stage: quality first, then scale frequency once content is proven",
+   "category": "short-form-video",
+   "guidance": "Content creation is a skill, and low-effort volume rarely produces sales; one well-angled piece with a strong hook beats many forgettable ones. Before content reliably drives revenue, keep cadence modest and invest heavily in each piece. Once you have proof that a given volume yields predictable views and leads, scale frequency and add trial-reel variations. Long-form-first creators can follow a weekly rhythm of separate videos for conversion, nurture or demonstration, and awareness. For a B2B creator starting out, one simple sustainable commitment, such as two long-form videos a week handed off to an editor who handles thumbnails, titles, and descriptions, is enough to get moving; native content made for each platform outperforms lazy cross-posting of repurposed clips.",
+   "steps": [
+    "Commit to one primary channel where your buyers already spend time",
+    "Start with a low, sustainable cadence and high effort per piece",
+    "Prove that volume reliably drives leads before increasing it",
+    "Scale frequency and add trial reels once proven"
+   ],
+   "do": [
+    "Budget real prep time per piece",
+    "Prefer YouTube first for B2B; prefer short-form for B2C because YouTube ramps slowly",
+    "Make native content per platform once you expand"
+   ],
+   "dont": [
+    "Don't mass-post low-effort content",
+    "Don't spread across every platform at once before one works"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Short-form cadence before content drives about $100k/month",
+     "value": "about 1 post per day",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Cadence once proven",
+     "value": "about 2 per day plus trial reels, capped near 3 per day plus trial reels",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Time per high-effort reel or carousel",
+     "value": "about 1 to 1.5 hours; carousels can run 2+ hours",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Minimal long-form starting load",
+     "value": "2 videos a week, about 2 hours of filming per week",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-audience-targeting-signals",
+   "title": "Control who the algorithm shows you to through words, visuals, and on-camera style",
+   "category": "distribution",
+   "guidance": "Algorithms read your captions, spoken words, B-roll, and even appearance to decide who sees a post, and they are as sensitive organically as in paid ads. A single niche term repeated in a post can flood your inbox with that exact profession, and an offhand reference to the wrong category can attract the wrong buyers. Deliberately sprinkle in vocabulary, brands, and job references your ideal buyer identifies with, and choose B-roll that signals their world. Dress and speak like your buyer, since image and video models pick up tone, emotion, and style. For high-ticket offers, more views is not always better: when a video escapes the target pocket, the wrong viewers' watch time can redirect distribution toward a general audience, so consider limiting comments or narrowing messaging when that happens.",
+   "steps": [
+    "Write down the words, brands, and job titles your ideal buyer uses",
+    "Work those terms naturally into scripts, captions, and on-screen text",
+    "Pick B-roll and wardrobe that mirror the buyer's environment",
+    "Run sample frames through an image-analysis tool to see what a model infers",
+    "Watch comment quality to detect when a video drifts beyond the target audience"
+   ],
+   "do": [
+    "Use buyer-specific vocabulary on purpose",
+    "Keep appearance and setting consistent with your buyer's world"
+   ],
+   "dont": [
+    "Don't drop unrelated keywords or names that attract the wrong audience",
+    "Don't assume more views always means more qualified reach"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-ideation-system",
+   "title": "Generate ideas from buyer problems and a swipe file, then frame and outline rather than fully script",
+   "category": "creative-strategy",
+   "guidance": "Skip generic advice like documenting everything or making your whole life the niche; random content confuses the algorithm and reaches the wrong people. Source ideas in two ways: the recurring problems your clients and prospects bring up each week, and a swipe file built by studying your niche, adjacent niches, and unrelated creative niches for hooks you can adapt. Hijack attention on trending news or a hot narrative, ideally with a contrarian take relevant to your ICP, but always build a logical bridge back to your offer, typically in the second half or final third of the piece. Then frame the idea for its funnel goal and outline it: hook, context to hold attention, build to the main point, deliver, CTA. Use bullet points rather than a verbatim script so delivery sounds natural, unless the format is B-roll-with-text, which is fully scripted, and compare the outline to proven winners for rehooks and flow.",
+   "steps": [
+    "Collect weekly patterns from client calls, DMs, and community questions",
+    "Maintain a swipe file from your niche, adjacent niches, and random creative niches",
+    "Pick an idea that is both trending or proven and something you can add value on",
+    "Frame it for awareness, nurture, or conversion",
+    "Outline: hook, context, build-up, main point, CTA",
+    "Check the outline against proven winners before filming"
+   ],
+   "do": [
+    "Tie trending topics back to your offer with a logical argument",
+    "Use contrarian takes on hot topics relevant to your buyer",
+    "After 100-200 posts, catalog the topics and triggers that reliably perform"
+   ],
+   "dont": [
+    "Don't attach unrelated viral stats to your offer with no real connection",
+    "Don't rely on a teleprompter reading a full script for talking-head content"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Posts needed before patterns become clear",
+     "value": "about 100-200",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-comment-vs-dm-keyword-ctas",
+   "title": "Capture leads in-platform with comment and DM keyword CTAs plus a conversion-ready profile",
+   "category": "content-to-call",
+   "guidance": "Keep the first steps of lead capture inside DMs rather than linking off-platform immediately, since platforms want users to stay. Use a comment-keyword CTA on less-aware content that triggers an automated DM delivering a resource, opening a short conversation before the link; use a DM-keyword CTA on direct-response content for high-intent viewers, who get a real conversation instead. Comment leads respond less and DM leads respond much more, so mixing both balances volume and quality. Have the automation ask for an email, then a phone number for a bonus, and call fast while interest peaks. Because many prospects check your profile after one post, set it up to convert: a free-resource CTA on the third bio line, story highlights for your story, behind-the-scenes proof, and case studies (each with a CTA), and three pinned posts that handle the main objection, prove the model with a result, and show a client case study.",
+   "steps": [
+    "Add a contextual comment keyword to awareness and tactical posts",
+    "Add a DM keyword to direct-response posts",
+    "Have the DM automation open a conversation before sending the resource",
+    "Ask for email, then phone number, inside the DM flow",
+    "Follow up only with people who actually opened or consumed the resource, then route them to a setter",
+    "Add a bio CTA, highlights, and three objection-handling pinned posts to the profile"
+   ],
+   "do": [
+    "Use a double opt-in button so you can see who actually claimed the resource",
+    "Send a check-in message asking what they thought after delivery",
+    "Call phone opt-ins within minutes",
+    "Pin the posts that prove they drive revenue"
+   ],
+   "dont": [
+    "Don't push everyone off-platform in the first message",
+    "Don't treat comment leads as equally warm as DM leads"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Leads from optimized profile setups",
+     "value": "up to about 1,000 per month on client accounts",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-dm-setting-conversion",
+   "title": "Run human DM setting that sells the creator, the vehicle, and the prospect's own ability",
+   "category": "content-to-call",
+   "guidance": "Inbound DMs should be worked by trained human setters, not left to automation alone. The goal of the conversation is to get the prospect to affirm three beliefs: this person can help me, this vehicle or model works, and I am capable of doing it; the third is the one most often missing and it drives no-shows. A good conversation surfaces pain and desires the closer can use. Hire setters with high emotional intelligence and cultural fluency with the buyer, train them to be self-sufficient, and treat breakdowns past a few setters as a management problem. If your team is stronger at webinars than DMs, route skeptical or slow responders to a webinar happening within 24-48 hours. For long-form YouTube, a call-booking application in the description works because long viewing already pre-sells, and it lets you screen out bad-fit buyers.",
+   "steps": [
+    "Respond fast once a DM comes in",
+    "Build belief in the creator, then the vehicle, then the prospect's ability",
+    "Send nurture assets between messages so prospects consume material before booking",
+    "Book the call, or route to an imminent webinar if that converts better",
+    "Add an in-account setter for follow-up and strategic outbound once volume reaches a few hundred leads a day"
+   ],
+   "do": [
+    "Hire setters with strong EQ",
+    "Use a structured multi-step DM script",
+    "Use a VPN or consistent location when setters log in to protect the account"
+   ],
+   "dont": [
+    "Don't let low-EQ setters miss buying cues",
+    "Don't share account logins from unpredictable locations"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Messages per set conversation",
+     "value": "about 12-15+ across a 7-9 step process",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Open/response rate on the first automated DM",
+     "value": "about 60% (down from 80-90% in earlier years)",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Booked calls from responders",
+     "value": "about 10% (roughly 600 calls per 10,000 inbound conversations)",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Time from first DM to booking",
+     "value": "about 24-48 hours",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Setters per account before management strain",
+     "value": "problems often start above about 3",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-per-post-revenue-tracking",
+   "title": "Track revenue per post by passing the DM chat ID through to the booking form",
+   "category": "content-to-call",
+   "guidance": "Organic revenue can be attributed to individual posts. Give each post its own contextual comment keyword so every DM subscriber is tagged with the post that brought them in. When a setter sends the booking link, have an automation append the DM platform's unique chat ID as a URL parameter, captured by a hidden field on the booking form. Joined with call outcomes and payments, this shows the first keyword, the keyword that led to the booking, which setter booked, the time from outreach to booking, and ultimately revenue per post. Separately, use the platform's insights to sort posts by new followers to find your best awareness pieces. Use the data to pick which posts to scale and which topics to repeat, but don't make revenue-per-post the only creative input, since money posts often work because of the other content the buyer saw first.",
+   "steps": [
+    "Assign a unique contextual keyword per post",
+    "Tag DM subscribers with the keyword that triggered them",
+    "Append the chat ID to the booking link automatically",
+    "Capture it in a hidden field on the booking form",
+    "Join bookings with show, close, and payment data",
+    "Review revenue per post and new followers per post on a set cadence"
+   ],
+   "do": [
+    "Keep keywords tied to the post's topic",
+    "Tie viral topics into your actual offer so views translate into buyers"
+   ],
+   "dont": [
+    "Don't judge posts by views alone; a huge-view post can produce almost no buyers",
+    "Don't only remake the posts that made money and abandon the awareness and nurture content that feeds them"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-scale-winning-content",
+   "title": "Scale proven posts with three levers: paid collabs and shout-outs, trial-reel variations, then paid ads",
+   "category": "distribution",
+   "guidance": "A winning post shouldn't be a one-off; amplify it in layers. Lever one: pay niche theme pages to add your post as a collaboration or reshare it, which buys qualified profile visits cheaply when the messaging is targeted. Lever two: repost the winner as trial reels in three or four variations, such as changing talking head to B-roll or adjusting speed, music, font, or color, rather than just testing hooks on unproven content; recycle the winners again after a few weeks. Lever three: put about ten proven posts into one paid campaign with three cold ad sets (a 1% lookalike, an interest stack, and broad), using DM ads and optimizing on a qualified-booking event rather than raw leads. For B2B audiences skip theme pages and consider follower ads, podcasts, and guest appearances instead.",
+   "steps": [
+    "Wait 24-48 hours to identify a winner by leads or revenue",
+    "Add a collab or shout-out on relevant theme pages, and keep spending while cost per lead stays low",
+    "Create 3-4 format or edit variations and post them as trial reels",
+    "Bundle about 10 proven posts into one cold campaign with three ad sets",
+    "Optimize the campaign on a qualified-call or booking conversion event"
+   ],
+   "do": [
+    "Scale only content that already proved it resonates",
+    "Match the scaling lever to your sales team's strength"
+   ],
+   "dont": [
+    "Don't use trial reels mainly to test hooks on unproven posts",
+    "Don't optimize paid distribution for cheap raw leads"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Monthly spend on collabs and shout-outs",
+     "value": "about $4k at the low end up to about $50k",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Cost-per-lead threshold to keep scaling collabs",
+     "value": "under about $10",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Inbound DM cost from proven-content DM ads",
+     "value": "about $4 per lead at $1-2k per day spend",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Trial-reel lift on a winner",
+     "value": "roughly 3-4x the original effect",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "oc-recovery-and-longevity",
+   "title": "Recover stalls and protect longevity by evolving formats and staying close to customers",
+   "category": "creative-strategy",
+   "guidance": "Content stalls usually come from repetition: saying the same things in the same formats while the audience's problems have moved on. When results dip, introduce new formats, talk directly to paying customers or listen to sales calls to learn their current problems and knowledge gaps, and consume more content in your market to see what has shifted. Stop reaching: if you're out of real ideas, pause and recalibrate rather than producing filler. Aim for small momentum wins first, such as positive comments and an uptrend, not an instant return to peak. For the long term, evolve your topics as your audience grows, build a brand foundation (story and values) that survives pivots, and don't churn an audience with a sharp pivot. Avoid flooding followers with retargeting ads; people buy organically because they conclude for themselves you can help, and heavy retargeting burns goodwill.",
+   "steps": [
+    "Audit recent content for repeated topics and formats",
+    "Talk to customers or review sales calls for new problems",
+    "Add at least one new format",
+    "Target quick momentum wins before big goals",
+    "Update topics and sophistication as the audience matures"
+   ],
+   "do": [
+    "Treat yourself as a student of your market",
+    "Keep a steady stream of content reaching followers so they remember you"
+   ],
+   "dont": [
+    "Don't push out filler to hit a quota",
+    "Don't make a sharp pivot and try to sell the old audience something unrelated",
+    "Don't rely on heavy retargeting spend aimed at your own followers"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Time before a new follower forgets you without fresh exposure",
+     "value": "about 30 days",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  }
+ ],
+ "open_questions": [],
+ "note": "Funnel, sales and content frameworks from practitioner YouTube material, used with permission and written in our own words. Benchmarks are practitioner ranges; check against your own data."
+}
