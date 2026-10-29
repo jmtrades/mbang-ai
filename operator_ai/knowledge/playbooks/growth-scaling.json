@@ -2003,6 +2003,734 @@
      "publisher": "YouTube"
     }
    ]
+  },
+  {
+   "id": "ads-optimisation-event-depth",
+   "title": "Optimise ads for the deepest funnel event you have volume for",
+   "category": "campaign-structure",
+   "guidance": "Choose the conversion event your campaign optimises for based on how many of them you can generate. Starting out, optimise for a qualified application plus booked call fired from the web pixel; with too little volume, move one step up to the application submit. Larger advertisers send deeper events back through the conversions API (a qualified call that actually showed up, or a closed deal) so the platform finds better buyers. Prefer the platform's standard events over custom conversions, because standard events carry far more cross-advertiser data.",
+   "benchmarks": [
+    {
+     "metric": "Conversions needed to exit learning",
+     "value": "~50 per ad set per week",
+     "context": "platform guideline; varies with audience size"
+    }
+   ],
+   "do": [
+    "Send post-call outcomes (showed, qualified, closed) back via the conversions API once you have volume",
+    "Use standard events where one fits"
+   ],
+   "dont": [
+    "Don't optimise for an event you can't hit about 50 times a week per ad set"
+   ],
+   "steps": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-cyclic-campaigns",
+   "title": "Scale past a ceiling with cyclic campaigns optimised for different events",
+   "category": "scaling",
+   "guidance": "Each campaign only reaches the slice of your market likely to perform the event it's optimised for. Duplicating a working campaign and optimising the copy for a different event (one step up or down the funnel) reaches a different slice of the same market with the same messaging. Pick event pairs with little audience overlap (e.g. a top-of-funnel lead event and a purchase event) rather than near-identical ones (application and scheduled call). Use this as a scaling tool, not during early testing, because the campaigns will differ in lead quality and ROAS and muddy test results.",
+   "do": [
+    "Run the same funnel and messaging across 2-3 campaigns with different optimisation events"
+   ],
+   "dont": [
+    "Don't launch cyclic campaigns during test budgets"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-messaging-before-pixel",
+   "title": "Fix messaging before leaning on pixel conditioning",
+   "category": "messaging",
+   "guidance": "Targeting is driven first by your messaging and the event you optimise for, and only then by pixel history. If cheap lead-optimised campaigns bring the wrong people while purchase-optimised campaigns only work because the pixel filters for buyers, the root problem is messaging. Pixel conditioning hits a ceiling; strong messaging plus good optimisation is what keeps lead quality consistent at scale. If you suspect a polluted pixel, try a fresh pixel or withhold data from it while you work on messaging. Pixels only use recent data (roughly the last 180 days, weighted to the last two weeks).",
+   "dont": [
+    "Don't treat a purchase-optimised campaign that only works on deep events as proof your messaging is fine"
+   ],
+   "steps": [],
+   "do": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-sequenced-content-funnel",
+   "title": "Sequence content before direct-response ads to send warmer, better-educated leads",
+   "category": "creative-strategy",
+   "guidance": "Replicate the organic sales process with paid content. Target the same cold audience you'd target with direct-response ads, but serve plain content (no call to action) first. When someone watches about 10 seconds of a step-one video, move them to step two, then step three, and only then show the direct-response ads. Use 5 or so videos per step rather than one, so the algorithm can match different people to different videos. Order the steps the way your best organic buyers typically learn: introduce the person or brand, then the hook that resonates with most of the market, then the content that tips people into buying. Expect a higher cost per call but better show rate, close rate and sales-team feedback.",
+   "steps": [
+    "Pick 3 stages of content from what converts organically",
+    "Load ~5 videos per stage",
+    "Advance viewers who watch ~10 seconds to the next stage",
+    "Show direct-response ads only after stage three"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Average attention per feed post",
+     "value": "under 2 seconds",
+     "context": "platform-reported average; a 10-second view is ~5x that"
+    }
+   ],
+   "dont": [
+    "Don't use this if direct response alone is already delivering well-qualified leads; it adds friction and cost"
+   ],
+   "do": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-cheap-reach-content-bin",
+   "title": "Lower CPMs by warming cold audiences with a large bin of content",
+   "category": "budgets",
+   "guidance": "Run an engagement or video-view campaign with 10-50 pieces of content to your cold target audience. Anyone who watches 3 seconds becomes retargetable. Point your direct-response ads at that warm audience instead of cold, which typically lowers CPM and the cost per conversion. At the same time, keep serving the warm audience a second, larger bin of content (case studies, podcasts clips, how-tos, demos, proven organic posts) alongside the direct-response ads so they arrive better informed. Much larger bins (50-200 pieces) and multiple stages suit advertisers already selling beyond people actively in the market.",
+   "do": [
+    "Exclude buyers from the warm content audience",
+    "Keep adding fresh content to the bins"
+   ],
+   "steps": [],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-hammer-them",
+   "title": "After someone books or opts in, hit them with 15-20 different pieces of content before the call",
+   "category": "show-rate",
+   "guidance": "Between a key action (booked call, webinar opt-in, low-ticket purchase, DM conversation) and the next step, retarget that audience with a mix of 20-50 short-form and 15-50 long-form pieces. Put each piece in its own ad set with a 3-second-view exclusion, so once someone watches any piece they never see it again and rotate through others. The goal is 15-20 unique pieces seen per person in that window, not one ad seen 15 times. If one piece shows high frequency, people are skipping it without watching; remove it. Audiences need roughly 150+ people to run.",
+   "benchmarks": [
+    {
+     "metric": "Unique pieces seen per person",
+     "value": "15-20",
+     "context": "in the window before the call or webinar"
+    }
+   ],
+   "do": [
+    "Pair it with confirmation-page videos, value-dense emails and setter outreach carrying the same messages"
+   ],
+   "dont": [
+    "Don't put many creatives in one ad set; you lose the per-piece exclusion"
+   ],
+   "steps": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-creative-format-tiers",
+   "title": "Ad creative formats ranked by how much spend they can absorb",
+   "category": "creative-strategy",
+   "guidance": "Rank formats by whether they keep performing as spend increases, not by small-budget ROAS. Top tier: talking-head videos under two minutes (ideally 30-60 seconds, with jump cuts and captions; needs a confident speaker) and static reels (B-roll with on-screen text that makes one point at a time). Strong: static images (very stable at scale and great for webinar opt-ins, but they send less-educated leads to call funnels without back-end nurture), carousels (including screenshot thread carousels) and AI-generated creative when done well. Middle: repurposed organic posts, paid UGC (often sounds scripted for high-ticket offers), green-screen formats and testimonials (good at small scale, bottom of funnel). Lower: full-length VSLs or podcasts as ads, meme ads (cheap curiosity clicks, low intent) and retargeting ads (high ROAS but little spend). Completely unedited ads perform worst.",
+   "do": [
+    "Cut VSLs to 2-5 minutes before running them as ads",
+    "Edit podcast clips down to back-to-back key insights"
+   ],
+   "dont": [
+    "Don't judge a format by one ad that worked at $100 a day"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-creative-hit-rate",
+   "title": "Track your creative hit rate and test in volume",
+   "category": "testing",
+   "guidance": "Only a single-digit percentage of creatives become true winners: positive ROAS, consistent over time, and able to take serious spend. Because of that, volume matters more than polish. Favour formats you can produce in quantity (talking heads, static reels, images, carousels) over ones you can only make a few of (long VSLs, produced testimonials). Record how many ads you launched versus how many met the winner definition.",
+   "benchmarks": [
+    {
+     "metric": "Creatives that become scalable winners",
+     "value": "single-digit %",
+     "context": "practitioner benchmark; varies by niche and traffic source"
+    }
+   ],
+   "steps": [],
+   "do": [],
+   "dont": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-fatigue-vs-ceiling",
+   "title": "When costs rise while scaling, tell ad fatigue from a messaging ceiling",
+   "category": "scaling",
+   "guidance": "Ad fatigue shows up as cost per result climbing while volume falls, or as stable costs with worse lead quality. A messaging ceiling means only a finite share of the market responds to your angle; above that spend level extra dollars buy almost nothing. Test it: lower spend. If cost per result stays high, treat it as fatigue; if it drops back, you've found a ceiling. Treat it as fatigue first since that's more common.",
+   "steps": [
+    "Notice rising cost per result or fewer results for more spend",
+    "Run the fatigue protocol first",
+    "If costs stay high, reduce spend until cost per result normalises; that's the ceiling",
+    "Leave that campaign at its ceiling as a 'foundational' campaign",
+    "Find new reach: a new optimisation event, a new messaging angle, or a new funnel type"
+   ],
+   "do": [
+    "Check whether more spend actually produced more calls before blaming the sales team"
+   ],
+   "dont": [
+    "Don't stop scaling forever after one ceiling; add new campaigns instead"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-fatigue-protocol",
+   "title": "Ad fatigue protocol: duplicate the campaign and replace the ads that got the spend",
+   "category": "creative-strategy",
+   "guidance": "Duplicate the fatigued campaign at the same budget. At the ad level, remove the handful of ads that took most of the spend and add fresh versions. If you like the lead quality, recreate the winners as closely as possible (same script, different shirt, angle or setting). Keep the untested ads in so they get another chance. Publish, then turn off the original once the new one is approved. If it was fatigue, costs usually drop back and volume returns within about a day.",
+   "dont": [
+    "Don't keep fatigued winners running out of attachment"
+   ],
+   "steps": [],
+   "do": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "ads-majority-vs-minority-hooks",
+   "title": "Lead with majority hooks and add low-overlap angles to scale",
+   "category": "messaging",
+   "guidance": "A majority hook is the reason to buy that the largest share of your market responds to; a minority hook appeals to a narrower group. Default to majority hooks. When an angle hits its ceiling, keep it running and add a new campaign with an angle that has little overlap with it (for example, a different outcome or audience segment within the same offer). Check which few ads actually got the spend to see which angle you've really been running.",
+   "do": [
+    "Write down the angle behind your top-spending ads",
+    "Add angles rather than replacing working ones"
+   ],
+   "steps": [],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "biz-minimum-viable-roas",
+   "title": "Know your net profit and minimum viable ROAS before scaling",
+   "category": "unit-economics",
+   "guidance": "Net profit is gross revenue minus all expenses (payroll, ad spend, cost of delivery), with an amount set aside for taxes. ROAS is gross, so you need to calculate the lowest ROAS at which ads still make sense after costs: your minimum viable ROAS. A transactional business with no upsells or recurring revenue has a thin buffer and must stop or slow ads sooner when costs rise (for example, in Q4 or election periods). Adding an upsell or recurring element raises revenue per customer and lets you keep scaling through tougher periods. Review profitability at least monthly, and more often when spend is growing quickly.",
+   "steps": [
+    "Calculate monthly net profit precisely",
+    "Work out the ROAS at which you break even after all costs",
+    "Set rules: scale above target ROAS, pull back near minimum",
+    "Add an upsell to widen the buffer"
+   ],
+   "do": [
+    "Consider a fractional CFO or tax specialist once revenue is meaningful"
+   ],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "biz-improvement-cycles",
+   "title": "Growth speed equals how fast you close problem-solution cycles",
+   "category": "scaling",
+   "guidance": "Scaling surfaces a new problem every few weeks. How quickly you diagnose and fix each one determines how fast you grow; unanswered questions mean stalled progress. When a fear comes up (e.g. 'scaling a front-end-only business feels risky'), treat it as a pointer to the next thing to build rather than a reason to stop. Model the path to a revenue goal (calls needed, show rate, close rate, spend) and use conservative assumptions, since rates usually drop as spend rises.",
+   "do": [
+    "Investigate any month where spend rose but results didn't, the same week it happens"
+   ],
+   "steps": [],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "offer-cold-traffic-alignment",
+   "title": "Build the offer for cold traffic and for the market segment you're actually reaching",
+   "category": "offer-design",
+   "guidance": "An offer that converts cold traffic will usually convert warm traffic, but not the other way round. Early on, align the offer to people actively in the market for what you sell. As you scale, you exhaust them and start reaching people who need convincing, who require a differently framed offer stack even for the same core product. If leads keep arriving colder and less sold after you've tried ads, angles, funnels and sales changes, the offer itself may need reframing.",
+   "steps": [],
+   "do": [],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "offer-stack-from-narrative",
+   "title": "Choose what goes in the offer by mapping the buyer's problems, circumstances and desired outcomes",
+   "category": "offer-design",
+   "guidance": "Start with the buyer's narrative: where they are, what they've already tried and why it failed. From that, list their current problems, the circumstances those problems create, and the outcomes they want. Only then decide what's included; every component should answer one of those points (e.g. training for buyers burned by agencies, community for buyers who feel isolated, a replacement guarantee for buyers burned by bad hires). Research the narrative from real sources (customer calls, Reddit, X, Instagram, TikTok, AI-assisted research) instead of guessing.",
+   "steps": [
+    "Write the buyer's narrative",
+    "List problems, circumstances, desired outcomes",
+    "Map each offer component to one of them",
+    "Validate by talking to target buyers"
+   ],
+   "dont": [
+    "Don't add components that don't answer a specific problem or outcome"
+   ],
+   "do": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "offer-objections-to-components",
+   "title": "Turn recurring objections into offer components and in-call add-ons",
+   "category": "offer-design",
+   "guidance": "Analyse sales call recordings (AI makes this fast) for objections and delays. Frequent objections become standard offer components; for example, a money objection becomes a built-in financing option presented as part of the offer. Less common requests become optional add-ons that sales reps can offer once the buyer is clearly leaning in, like extras on a steak. Also look for problems that appear right after purchase and solve them in the offer up front.",
+   "do": [
+    "Chart objections by frequency before deciding what to add",
+    "Equip reps with a short list of approved add-ons"
+   ],
+   "dont": [
+    "Don't bundle niche add-ons into the core offer for everyone"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "mindset-do-the-life-math",
+   "title": "Calculate what your life costs and what independence requires, then compare revenue to it",
+   "category": "business-model",
+   "guidance": "Most founders never quantify what their desired lifestyle and financial independence actually cost, so they set targets too low. Add up personal costs, business goals and the investment needed to stop relying on active income. One common planning shortcut is the 4% withdrawal rule; remember withdrawals are taxed and inflation erodes spending power, so the required portfolio is larger than it first appears. Use a compound interest calculator (e.g. the SEC's investor.gov tool) to see the monthly investing needed. This is general education, not financial advice.",
+   "steps": [
+    "List current and desired lifestyle costs",
+    "Estimate the portfolio needed to fund them",
+    "Calculate monthly investing required over your timeline",
+    "Compare current revenue and savings rate to that target"
+   ],
+   "do": [],
+   "dont": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "mindset-reality-based-effort",
+   "title": "Judge progress by results in reality, and rate your real effort honestly",
+   "category": "coaching",
+   "guidance": "Results lag actions, so judge your actions by the outcomes they produce over weeks, not by how productive you feel. If results aren't coming, what you're doing isn't working, whatever story you tell about it. Score your honest effort from 0 to 100 and compare against it the next day. Skills have an earning window before they lose value, and money invested earlier compounds longer, which is why the current period of high energy and fewer responsibilities matters.",
+   "do": [
+    "Audit what you actually did on a stalled metric this month",
+    "Surround yourself with people aiming higher"
+   ],
+   "dont": [
+    "Don't treat a well-explained reason for being stuck as progress"
+   ],
+   "steps": [],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-vsl-vs-webinar-funnel-choice",
+   "title": "Choose between a VSL call funnel and a webinar based on sales team skill, lead awareness and offer strength",
+   "category": "paid-acquisition",
+   "guidance": "The choice between a VSL-to-call funnel and a webinar should be driven mainly by what the sales team is good at, not by the founder's taste. Teams built on organic content usually receive pre-sold prospects who have binged material for months, so reps act more like order-takers answering a few questions. Cold paid traffic has consumed nothing, so someone has to do the educating: either the funnel (webinar, content-ad sequences) or the rep on an education-style call. If your reps cannot run education calls and transition them into a close, a webinar that front-loads the teaching is the safer bet. If the offer is so in-demand and clearly understood that it outruns the sales team's ability, a lean VSL call funnel can work. Financially qualified buyers still need education when their awareness is low, so judge awareness separately from ability to pay.",
+   "steps": [
+    "Audit how current deals close: are reps mostly fielding a few questions from pre-sold leads, or running full education calls?",
+    "Assess how aware cold prospects are of the problem, the solution category and the vocabulary you use",
+    "If reps are weak at education or awareness is low, default to a webinar or content-first sequence",
+    "If the offer is clearly in-demand and stronger than the sales team, a VSL call funnel is viable",
+    "Revisit the choice once early call recordings and show/close data arrive"
+   ],
+   "do": [
+    "Base the funnel decision on observed rep strengths and lead awareness",
+    "Treat wealthy or B2B buyers as people who still need to understand the mechanism before buying",
+    "Use content sequences or webinars to replicate the organic pre-sell when moving to cold traffic"
+   ],
+   "dont": [
+    "Assume a team that closes warm organic leads will close cold paid leads at the same rate",
+    "Pick a funnel purely because it feels more convenient or premium"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-test-one-funnel-or-two",
+   "title": "Only test two funnels at once if you have both the cash and the testing bandwidth",
+   "category": "scaling",
+   "guidance": "Before running two acquisition funnels in parallel, check two constraints: money to absorb testing losses, and operational bandwidth to diagnose and fix each funnel. Every new launch will be broken at first, and each funnel has its own chain of metrics that may have one to three weak links at the same time. A call funnel requires watching CPM, link click-through rate, cost per call, lead quality, show rate, close rate and average order value. A webinar adds opt-in rate, attendance rate, in-webinar retention and booking rate on top of that. If splitting attention lowers the odds of either funnel working, run only the one with the higher probability of success. Cash alone is not enough; team attention is usually the binding constraint.",
+   "steps": [
+    "Confirm you can absorb the planned test losses without strain",
+    "Estimate the hours per week needed to monitor and fix each funnel's metric chain",
+    "If bandwidth covers only one, rank the options by probability of converting and launch the top one",
+    "Run a bottleneck analysis stage by stage and fix the weakest metric first",
+    "Add the second funnel only after the first is stable"
+   ],
+   "do": [
+    "Map every metric in each funnel before launch so diagnosis is fast",
+    "Assume each new funnel will need several rounds of fixes",
+    "Pick the single higher-probability funnel when bandwidth is thin"
+   ],
+   "dont": [
+    "Launch two funnels just because the budget allows it",
+    "Judge a funnel on one blended number instead of stage-by-stage metrics"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Webinar ad lead time",
+     "value": "Turn ads on roughly 3-4 days before a cold-traffic webinar",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-offer-vocabulary-and-market-narrative",
+   "title": "Validate that buyers use your offer's vocabulary and that the offer fits the current market narrative",
+   "category": "offer-design",
+   "guidance": "An in-market audience is actively searching for what you sell, so a simple claim plus a short video and a booking link can convert with little education. That only holds if prospects already use the exact words in your offer; if the role or product name is not common vocabulary, you are doing mechanism marketing and must define it quickly in outcome terms. Placement-style offers (training and placing a role such as a closer, marketer or AI implementer inside a client business) work best when they match the story the market is telling itself at that moment. Strong timing usually looks like this: buyers understand the value of the role, have tried to fill it with agencies or in-house hires and been burned, and now want a trained person plus ongoing support without the recruiting and management load. If you can name that narrative out loud in ads and content, response tends to be strong and a leaner call funnel becomes viable. Also check that the target buyer can afford both your fee and the payroll cost of the placed person.",
+   "steps": [
+    "Check whether prospects literally use your offer's key term in conversations and searches",
+    "If not, define it in the fewest words by the outcomes it delivers, in the headline and above the fold",
+    "Describe the current market narrative: what buyers have tried, how it failed, and what they now believe they need",
+    "Confirm your offer resolves that narrative and say it plainly in ads and content",
+    "Confirm the buyer's budget covers your fee plus any ongoing cost the offer creates"
+   ],
+   "do": [
+    "Use the market's own words for the problem and solution",
+    "Tie the offer to a recent, widely felt failure buyers have experienced",
+    "Add a short definition section on the page for visitors who skip the video"
+   ],
+   "dont": [
+    "Assume an internal job title is a term buyers recognise",
+    "Launch a placement offer without a reliable supply of people to place"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-top-of-umbrella-messaging-and-clean-packaging",
+   "title": "Speak to the highest-level buyer you want, and keep the front-end offer free of components some buyers lack",
+   "category": "offer-design",
+   "guidance": "Aim messaging at the most advanced customer you want to serve; speaking to their specific problems also reaches everyone below them, while aiming low makes higher-level buyers feel the message is not for them. When pitching a single front-end price, avoid bundling elements that only apply to some buyers, because anchoring makes a buyer who cannot use a component feel they should pay less or that the offer is not for them. For example, an offer pitched as training for the founder and a specific team role confuses founders who do not have that role. Sell the core offer cleanly, mention extra components as a light bonus, and introduce higher tiers or add-ons on the sales call. This keeps the ad and webinar message simple and lets the rep tailor the package to the buyer in front of them.",
+   "steps": [
+    "Define the top-tier buyer and write copy to their specific problems",
+    "Strip the front-end pitch to the core offer that applies to every qualified buyer",
+    "Position optional components as a brief bonus rather than part of the price justification",
+    "Present higher tiers, team training or placement add-ons during the sales call"
+   ],
+   "do": [
+    "Write to the ceiling of your ideal customer range",
+    "Keep one clear price and promise in the funnel",
+    "Use the sales call to upsell to higher tiers"
+   ],
+   "dont": [
+    "Bundle a component into the main pitch that disqualifies buyers who lack it",
+    "Write messaging aimed at the lowest acceptable customer"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-never-pause-acquisition",
+   "title": "Never pause acquisition to focus on fulfillment; treat sales as continuous",
+   "category": "scaling",
+   "guidance": "A common mistake for businesses in the low-to-mid six figures per month is either/or thinking: focusing only on fulfillment or only on sales for a period. A healthy cash-flowing business keeps selling at all times, because revenue expansion and contraction are lagging indicators. A dip caused by neglecting acquisition shows up weeks later and will likely keep worsening for a while after you restart. Restarting with paid acquisition also adds a hard cost at the moment cash is lower, which pushes founders toward short-term thinking and undersized bets. Plan fulfillment overhauls so a baseline of acquisition keeps running, and delegate whichever side the founder cannot cover. Also check for an organic ceiling: if organic has stalled despite effort, that is the signal to add a paid channel rather than squeeze harder.",
+   "steps": [
+    "Set a minimum weekly acquisition activity that never stops, even during fulfillment rebuilds",
+    "Delegate fulfillment documentation or sales execution so both run in parallel",
+    "Track leading indicators (calls booked, pipeline) weekly rather than waiting on monthly revenue",
+    "If revenue has already contracted, restart acquisition immediately and expect the lag to continue for several weeks"
+   ],
+   "do": [
+    "Treat leading pipeline metrics as early warnings for revenue drops",
+    "Keep posting cadence and outreach running during internal projects",
+    "Budget for the cash squeeze when restarting paid acquisition"
+   ],
+   "dont": [
+    "Use a fulfillment project as a reason to stop selling",
+    "Read this month's revenue as a reflection of this month's actions"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-size-the-launch-bet",
+   "title": "Size paid launch budgets in the zone that feels slightly uncomfortable but cannot hurt you",
+   "category": "budgets",
+   "guidance": "Undersized test budgets produce half-hearted execution: a small loss is easy to abandon and a small win does not move the business, so neither outcome changes behaviour. If an offer is already validated organically or by competitors, the launch is not really a test; the question is how much market share to capture, and paid ads simply compress what organic does over months into weeks. Pick a spend that makes you a little nervous yet would not damage the business, because that level forces focus and gives meaningful upside. Judge the bet per event or per week, not per month, since a monthly figure spread across four webinars dilutes both seriousness and upside. Remember the realistic downside: with a validated offer and working tech, a well-run campaign usually recovers most of its spend and at minimum buys data. If fear still blocks action, a smaller bet that actually gets launched beats a larger one that never does.",
+   "steps": [
+    "Decide whether the offer is already validated (organic close rates, competitor success)",
+    "Pick a monthly budget that feels slightly uncomfortable but is survivable",
+    "Break it down per webinar or per week and check that each unit is still large enough to take seriously",
+    "Model outcomes at modest returns (e.g. 3:1 and 5:1) to confirm the upside is material",
+    "Launch, then treat any loss as paid-for data for the next iteration"
+   ],
+   "do": [
+    "Compare the paid bet to what you already spend on organic content and tools",
+    "Model upside at realistic return multiples before choosing a budget",
+    "Commit to a regular cadence such as a weekly webinar"
+   ],
+   "dont": [
+    "Call a validated offer a test to justify a token budget",
+    "Spend so much that desperation shortens your decision horizon",
+    "Delay launching when the remaining setup takes only hours"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Return on paid launch spend used for planning",
+     "value": "3:1 to 5:1 as modelling scenarios",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "High-ticket call-funnel sales cycle",
+     "value": "Often under 10 days; worst case around 10-14 days on average, longer with multiple decision makers",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-vsl-call-funnel-launch-checklist",
+   "title": "Launch a VSL call funnel with a front-loaded summary, video ads and backend selling systems",
+   "category": "sales-process",
+   "guidance": "A VSL call funnel exposes you to under-educated leads, so strengthen it before launch rather than learning the hard way. Open the VSL with a summary of everything it covers within the first minute, then spend the rest expanding on those points. After launch, watch play rate and engagement; if few visitors press play, move the content into a deck-style sales letter embedded on the page or into written page sections. Use video ads rather than image ads for VSL traffic: image ads may be slightly cheaper per lead, but video-sourced leads arrive far better educated. Add at least two backend selling pieces: a confirmation page with short videos answering common questions, and value-dense emails that deliver the key realisations prospects normally reach through organic content. A modest daily budget gives enough calls in a week to read lead quality, show rate and rep feedback, and reveals quickly whether you have an education gap that needs a webinar.",
+   "steps": [
+    "Script the VSL with a sub-one-minute summary up front, then expand each point",
+    "Build the page with a short text section for non-viewers",
+    "Run video ads to the VSL",
+    "Build a confirmation page with FAQ breakout videos",
+    "Write a pre-call email sequence that condenses the core epiphanies of your offer",
+    "Launch at a daily budget that yields a few calls per day and review after one week",
+    "Check play rate, show rate and rep feedback; switch to a deck sales letter or page sections if play rate is low, or to a webinar if education gaps persist"
+   ],
+   "do": [
+    "Monitor VSL play and engagement rates from day one",
+    "Mirror the messaging you want prospects to know before the call in emails and confirmation videos",
+    "Collect sales-team feedback on lead education during week one"
+   ],
+   "dont": [
+    "Launch a call funnel with no confirmation page or pre-call nurture",
+    "Judge ad creative only on cost per lead"
+   ],
+   "benchmarks": [
+    {
+     "metric": "Pre-call email open rate",
+     "value": "40-60%+",
+     "context": "practitioner benchmark; varies by niche"
+    },
+    {
+     "metric": "Test budget math",
+     "value": "About $10K/month is roughly $300+/day; at a $100 cost per call that is about 3 calls/day, enough to read lead quality within a week",
+     "context": "practitioner benchmark; varies by niche"
+    }
+   ],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
+  },
+  {
+   "id": "bd2-founder-reasons-and-bias-to-action",
+   "title": "Diagnose plateaus by stress-testing the founder's reasons and breaking indecision with the easiest viable action",
+   "category": "founder-mindset",
+   "guidance": "When revenue goes sideways, check whether the cause is a real ceiling or strategy gap, or whether the founder has become comfortable and stopped pushing. A useful signal: if there is obvious untapped upside and the founder tolerates contraction or skips simple growth actions, their motivating reasons are no longer strong enough. Reasons are dynamic and need replacing as they wear out; they can be financial security (lifestyle funded by investments rather than active income), material goals, impact, or competitive drive, and only behaviour change proves which ones work. Distinguish high-impact work from busy work; producing more of the same activity does not count if the needle-moving task keeps slipping. When a founder is stuck between options, ask what they would actually execute fastest and start there, since any launched option generates data while indecision generates nothing. Also reframe risk: organic content is the longest, slowest payback channel, while paid ads have a short, direct cash cycle, so avoiding paid out of caution is often the riskier choice.",
+   "steps": [
+    "Determine whether the plateau is a market ceiling, a missing strategy or the founder holding back",
+    "List the founder's current reasons for growth and check whether recent behaviour reflects them",
+    "Identify the single high-impact action being delayed and estimate the actual hours it requires",
+    "If torn between options, choose the one easiest to execute now and set a launch date within days",
+    "Review behaviour after a week; if nothing changed, the reasons need replacing"
+   ],
+   "do": [
+    "Set launch deadlines based on the real hours of work, not on comfort",
+    "Compare spend on new channels to spend already accepted elsewhere to expose framing errors",
+    "Treat each launch as a way to reveal unknown parts of the market"
+   ],
+   "dont": [
+    "Confuse volume of activity with high-impact work",
+    "Wait for certainty before the first paid launch",
+    "Keep debating options when one is clearly executable now"
+   ],
+   "benchmarks": [],
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "sources": [
+    {
+     "title": "Jeremy Haynes - YouTube channel",
+     "url": "https://www.youtube.com/@JeremyHaynesTraining",
+     "publisher": "YouTube"
+    }
+   ]
   }
  ],
  "open_questions": [],
