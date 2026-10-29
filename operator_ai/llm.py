@@ -117,7 +117,9 @@ def _request(system: str, prompt: str, max_tokens: int, timeout: float) -> tuple
         base = (cfg.llm_base_url or "https://api.openai.com/v1").rstrip("/")
         url = f"{base}/chat/completions"
         headers = {"authorization": f"Bearer {key}", "content-type": "application/json"}
-        body = {"model": cfg.llm_model, "max_tokens": max_tokens,
+        # OpenAI's own API wants max_completion_tokens (newer models reject max_tokens); compatible ones max_tokens
+        cap = "max_completion_tokens" if "api.openai.com" in base else "max_tokens"
+        body = {"model": cfg.llm_model, cap: max_tokens,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}]}
     else:
         url = "https://api.anthropic.com/v1/messages"

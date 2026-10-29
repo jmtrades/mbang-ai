@@ -174,9 +174,9 @@ type Plan = { follow_up: string[]; close: string[]; assumed: string[]; sources: 
 function AcquisitionCard({ plan }: { plan: Plan }) {
   return (
     <div className="mt-2 space-y-2 rounded-[10px] border border-line-2 bg-panel p-3 text-xs">
-      <div><div className="font-semibold">Follow-up: the washing machine</div>
+      <div><div className="font-semibold">How to follow up</div>
         <ul className="list-disc space-y-0.5 pl-4">{plan.follow_up.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
-      <div><div className="font-semibold">On the call</div>
+      <div><div className="font-semibold">On the sales call</div>
         <ul className="list-disc space-y-0.5 pl-4">{plan.close.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
       <div className="text-muted">From the lessons: {plan.sources.map((s) => `${s.title} (${s.section})`).join("; ")}
         {plan.assumed.length > 0 && <> · Assumed: {plan.assumed.map((a) => a.replace(/_/g, " ")).join(", ")}</>}</div>

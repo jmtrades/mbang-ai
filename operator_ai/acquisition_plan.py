@@ -112,61 +112,107 @@ def build(situation: dict) -> dict:
             alt = math_rows(max(10_000.0, price * 3), goal, close, show, cpc * 1.5)
     ch = s.get("channels") or []
     week = [
-        "Make 2 pipeline videos (10-25 min), each about one prospect's bottleneck, and send them to that prospect: "
-        "'You inspired this one.'",
-        "Post 3 short clips a day: subtitles, a title that anchors a problem or outcome, and 'comment KEYWORD' for a "
-        "free resource, on screen and on the first line of the caption.",
-        "Start a conversation with everyone who comments, likes or asks for the resource, and log them in the CRM.",
+        "Make 2 short videos (10-25 minutes), each one fixing a problem a specific lead told you about, and send it "
+        "to them: \"You gave me the idea for this one.\"",
+        "Post 3 short clips a day. Add subtitles, a title about a problem or result, and \"comment GUIDE and I'll "
+        "send it to you\" for a free resource.",
+        "Message everyone who comments, likes or asks for the free resource, and add them to your list of leads.",
     ]
     if m and s.get("clients"):
         have = int(s["clients"])
         m["gap_clients"] = max(0, m["clients"] - have)
     if m:
-        week.insert(0, f"Book {m['booked_per_week']} calls this week ({m['booked']} a month gets you to "
-                       f"{_fmt(m['goal'])}).")
+        week.insert(0, f"Book {m['booked_per_week']} sales calls this week. That's the pace that gets you to "
+                       f"{_fmt(m['goal'])} a month.")
     if "ads" in ch:
-        week.append("Ads: fund the booked-call target above and judge creatives on cost per booked call.")
+        week.append("If you run ads, judge them by how much each booked call costs, not by clicks or likes.")
     if "outreach" in ch or not ch:
-        week.append("Outreach: send short personal video pitches to high-ticket prospects only, opening with a result "
-                    "or case study before any offer.")
-    follow = ["Every lead goes into the washing machine: a relevant video or free resource at least once a week.",
-              "Follow up by sending value ('new video on the exact issue you mentioned'), never 'any update?'.",
-              "Film on-site clips when something happens on a call or a launch; those are the ones that travel."]
-    close_steps = ["On the call, show their own numbers and the plan to hit their goal; no script needed.",
-                   "On a verbal yes, ask for a refundable deposit now: 'When people agree to move forward we take a "
-                   "small refundable deposit, so we both know you're in. Are you open to doing that now?'"]
+        week.append("Reach out only to people who can afford a high price. Send a short personal video that shows a "
+                    "result first and the offer second.")
+    follow = ["Keep giving every lead something useful at least once a week: a video or free resource about the "
+              "exact problem they have.",
+              "Never follow up with \"any update?\". Send value instead: \"I made a video about the issue you "
+              "mentioned.\"",
+              "When something happens on a call or a launch, film a quick clip about it right away. Those get the "
+              "most views."]
+    close_steps = ["On the sales call, show them their own numbers and the plan to hit their goal. You don't need a "
+                   "script.",
+                   "When they say yes, ask for a small refundable deposit right then: \"When people decide to move "
+                   "forward, we take a small refundable deposit so we both know you're in. Are you open to doing "
+                   "that now?\""]
     return {"situation": s, "assumed": assumed, "math": m, "higher_price": alt, "this_week": week,
             "follow_up": follow, "close": close_steps, "ask": ask, "sources": SOURCES}
 
 
 def reply_text(plan: dict) -> str:
     m, alt = plan["math"], plan["higher_price"]
-    lines = ["Here's your client acquisition plan, built on the programme's method."]
+    lines = ["Here's your plan to get more clients."]
     if m:
-        lines += ["", f"The money math: {_fmt(m['goal'])} a month at {_fmt(m['price'])} a client is {m['clients']} "
-                      f"clients, so {m['calls']} sales calls and {m['booked']} booked calls a month "
-                      f"(about {m['booked_per_week']} a week), roughly {_fmt(m['spend'])} if you buy those calls."]
+        lines += ["", f"First, the math. To make {_fmt(m['goal'])} a month at {_fmt(m['price'])} per client, you need "
+                      f"{m['clients']} clients. That means about {m['calls']} sales calls, and {m['booked']} calls on "
+                      f"the calendar each month, because some people won't show up. That's about "
+                      f"{m['booked_per_week']} booked calls a week."]
         if m.get("gap_clients") is not None:
             have = int(plan["situation"]["clients"])
-            lines.append(f"You have {have} now, so you're {m['gap_clients']} clients away.")
+            lines.append(f"You have {have} clients now, so you need {m['gap_clients']} more.")
         if alt:
-            lines.append(f"At {_fmt(alt['price'])} a client the same goal needs only {alt['clients']} clients and "
-                         f"{alt['booked']} booked calls. Price is the biggest lever you have.")
+            lines.append(f"Here's the shortcut: at {_fmt(alt['price'])} per client you'd only need {alt['clients']} "
+                         f"clients and {alt['booked']} booked calls a month. Raising your price is the biggest lever.")
     else:
-        lines += ["", "Start with the money math: goal ÷ price = clients needed, ÷ close rate = calls, ÷ show rate = "
-                      "booked calls. Then you know exactly what to do each week."]
-    lines += ["", "This week:"] + [f"• {w}" for w in plan["this_week"][:4]]
+        lines += ["", "Start with the math: your monthly goal divided by your price tells you how many clients you "
+                      "need. From there you can work out how many calls to book each week."]
+    lines += ["", "What to do this week:"] + [f"• {w}" for w in plan["this_week"][:4]]
     if plan["ask"]:
-        lines += ["", "Tell me " + ", ".join(plan["ask"]) + " and I'll put your exact numbers in."]
+        lines += ["", "Tell me " + " and ".join(plan["ask"]) + ", and I'll work out your exact numbers."]
     elif plan["assumed"]:
-        lines += ["", "I assumed " + ", ".join(k.replace("_", " ") for k in plan["assumed"])
-                  + " from typical numbers; send yours and I'll tighten it."]
+        lines += ["", "I guessed your " + " and ".join(k.replace("_", " ") for k in plan["assumed"])
+                  + " using typical numbers. Send me yours and I'll make it exact."]
     return "\n".join(lines)
 
 
-def from_chat(text: str, previous: dict | None = None) -> tuple[str, dict]:
+AI_SYSTEM = (
+    "You are a friendly, direct coach for a high-ticket growth programme. Answer the student's question about getting "
+    "more clients using ONLY the method and the numbers given. Use plain, simple words a beginner understands; explain "
+    "any term you use. Keep every number exactly as given and never invent results, income claims or guarantees. "
+    "Never mention other companies, tools you were not given, or partnerships. Structure: one line on their "
+    "situation, the math in 2-3 sentences, 'What to do this week' as 3-5 bullets, then one line asking for anything "
+    "missing. Under 220 words."
+)
+
+
+def _ai_prompt(text: str, plan: dict) -> str:
+    m, alt = plan["math"], plan["higher_price"]
+    facts = [f"Student wrote: {text}"]
+    if m:
+        facts.append(f"Math: goal {_fmt(m['goal'])}/month, price {_fmt(m['price'])}, clients needed {m['clients']}, "
+                     f"sales calls {m['calls']}, booked calls {m['booked']}/month ({m['booked_per_week']}/week), "
+                     f"cost if buying calls {_fmt(m['spend'])}" + (f", clients still needed {m['gap_clients']}"
+                                                                    if m.get("gap_clients") is not None else ""))
+    if alt:
+        facts.append(f"At {_fmt(alt['price'])}/client: {alt['clients']} clients, {alt['booked']} booked calls/month.")
+    facts.append("Assumed from typical numbers: " + (", ".join(plan["assumed"]) or "nothing"))
+    facts.append("Still to ask for: " + (", ".join(plan["ask"]) or "nothing"))
+    facts.append("Method steps this week: " + " | ".join(plan["this_week"]))
+    facts.append("Follow-up: " + " | ".join(plan["follow_up"]) + " Close: " + " | ".join(plan["close"]))
+    return "\n".join(facts)
+
+
+def from_chat(text: str, previous: dict | None = None, tenant=None) -> tuple[str, dict]:
     """Chat entry point; `previous` is the situation from an earlier plan in this thread, so a reply with numbers
-    sharpens the same plan."""
+    sharpens the same plan. With AI available the plan is written in a coach's voice from the same facts; without
+    it, the plain template below."""
     s = {**(previous or {}), **{k: v for k, v in parse(text).items() if v not in (None, [], "")}}
     plan = build(s)
-    return reply_text(plan), {"acquisition": plan}
+    reply, mode = reply_text(plan), "rules"
+    if tenant is not None:
+        from . import llm
+
+        if llm.unavailable_reason(tenant) is None:
+            try:
+                out = llm.complete(tenant, AI_SYSTEM, _ai_prompt(text, plan), purpose="acquisition_plan",
+                                   max_tokens=600)
+                if out["text"].strip():
+                    reply, mode = out["text"].strip(), "live"
+            except llm.AIUnavailable:
+                pass
+    return reply, {"acquisition": plan, "mode": mode}

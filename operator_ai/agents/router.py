@@ -270,7 +270,7 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
                                                                                                       "fixes", "flags", "label")}}
         payload = res
     elif intent == "acquisition":
-        reply, meta = acquisition_plan.from_chat(text, prev_plan)
+        reply, meta = acquisition_plan.from_chat(text, prev_plan, tenant)
         payload = {"acquisition": meta["acquisition"]}
     elif intent == "launch":
         reply, meta = webinar_launch.from_chat(tenant, text, user)
