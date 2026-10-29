@@ -12,7 +12,30 @@ const LINES: [string, string, string][] = [
   ["webinars", "Webinars", "Seven-segment outline"],
   ["training", "Student training", "Objection drill"],
   ["delivery", "Client delivery", "Weekly client report email"],
+  ["static", "Static ads", "Three finished image ads"],
 ];
+
+type StaticAd = { queue_id: number; status: string; image: string; angle: string; headline: string; mode: string };
+type StaticRes = { ads: StaticAd[]; queue_ids: number[]; image_ai: boolean; note: string | null };
+
+function StaticAds({ res }: { res: StaticRes }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted">{res.image_ai ? "Backgrounds painted by the image AI; words set by the app." : `Designed by the app${res.note ? ` (image AI off: ${res.note})` : ""}.`}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {res.ads.map((a) => (
+          <figure key={a.queue_id} className="space-y-1.5">
+            <img src={a.image} alt={a.headline} className="aspect-square w-full rounded-lg border border-line object-cover" />
+            <figcaption className="flex items-center justify-between gap-2 text-xs">
+              <span className="truncate">{a.headline}</span>
+              <a className="shrink-0 text-brand underline" href={a.image} download={`ad-${a.angle}.png`}>Download</a>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Drafts({ drafts }: { drafts: any[] }) {
   return (
@@ -39,6 +62,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
   const [b, setB] = useState<Record<string, string>>({});
   const [res, setRes] = useState<any>(null);
   const [kit, setKit] = useState<any>(null);
+  const [ads, setAds] = useState<StaticRes | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<ApiError | null>(null);
   const fromNba = query.get("brief");
@@ -46,7 +70,8 @@ export default function Studio({ query }: { query: URLSearchParams }) {
     setBusy(kind);
     setErr(null);
     try {
-      if (kind === "line") setRes(await post("/studio/run", { line, brief: b }));
+      if (kind === "line" && line === "static") setAds(await post<StaticRes>("/static-ads", { brief: b }));
+      else if (kind === "line") setRes(await post("/studio/run", { line, brief: b }));
       else setKit(await post("/studio/launch-kit", { brief: b }));
     } catch (e) {
       setErr(e as ApiError);
@@ -58,7 +83,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
     <div>
       <PageHeader title="Studio" subtitle="Seven lines of work. Each goes brief → draft → rubric + guardrail review → approval queue. Nothing sends." right={<Button tone="primary" onClick={() => run("kit")} loading={busy === "kit"}><Rocket className="size-4" /> Launch kit (all 7)</Button>} />
       {fromNba && <div className="mb-4 rounded-lg border border-brand/30 bg-[color-mix(in_oklab,var(--brand)_8%,white)] px-3 py-2 text-sm">Next best action: <b>{fromNba}</b></div>}
-      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-8">
         {LINES.map(([k, label, hint]) => (
           <button key={k} onClick={() => setLine(k)} data-line={k} className={cx("focus-ring card p-3 text-left transition", line === k ? "border-brand ring-2 ring-brand/20" : "hover:border-line-strong")}>
             <div className="text-sm font-semibold">{label}</div>
@@ -73,6 +98,12 @@ export default function Studio({ query }: { query: URLSearchParams }) {
           <ErrorBox error={err} />
         </Card>
         <div className="space-y-4">
+          {ads && (
+            <Card title="Static ads" actions={<Badge tone="info">Waiting for approval</Badge>}>
+              <StaticAds res={ads} />
+              <Button size="sm" className="mt-3" onClick={() => go(`/queue?ids=${ads.queue_ids.join(",")}`)}>Review in the queue</Button>
+            </Card>
+          )}
           {res && (
             <Card title={`${res.line} drafts`} actions={<><Badge tone="good">Sent: {res.sent}</Badge><TraceLink runId={res.run_id} /></>}>
               <Drafts drafts={res.drafts} />
@@ -87,7 +118,7 @@ export default function Studio({ query }: { query: URLSearchParams }) {
               <Button size="sm" className="mt-3" onClick={() => go(`/queue?ids=${kit.queue_ids.join(",")}`)}>Review {kit.queue_ids.length} drafts</Button>
             </Card>
           )}
-          {!res && !kit && <Empty icon={<PenLine />} title="Nothing drafted yet" hint="Pick a line above and draft it, or run the launch kit to queue every line from one brief. Every draft is scored and screened before it reaches the queue." />}
+          {!res && !kit && !ads && <Empty icon={<PenLine />} title="Nothing drafted yet" hint="Pick a line above and draft it, or run the launch kit to queue every line from one brief. Every draft is scored and screened before it reaches the queue." />}
         </div>
       </div>
     </div>

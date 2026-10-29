@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from .. import brief, studio, webinar_chain
+from .. import brief, static_ads, studio, webinar_chain
 from ..deps import Ctx, require
 
 router = APIRouter()
@@ -39,6 +40,20 @@ def run_line(b: LineBody, ctx: Ctx = Depends(require("studio"))):
 @router.post("/studio/launch-kit")
 def launch_kit(b: BriefBody, ctx: Ctx = Depends(require("studio"))):
     return studio.launch_kit(ctx.tenant, b.brief, ctx.user)
+
+
+@router.post("/static-ads")
+def make_static_ads(b: BriefBody, ctx: Ctx = Depends(require("studio"))):
+    return static_ads.make(ctx.tenant, b.brief, ctx.user)
+
+
+@router.get("/static-ads/{name}")
+def static_ad_image(name: str, ctx: Ctx = Depends(require("studio"))):
+    try:
+        return FileResponse(static_ads.image_path(ctx.tenant, name), media_type="image/png",
+                            headers={"Cache-Control": "private, max-age=86400"})
+    except static_ads.AdError as e:
+        raise HTTPException(e.status, str(e)) from None
 
 
 @router.post("/webinar/chain")

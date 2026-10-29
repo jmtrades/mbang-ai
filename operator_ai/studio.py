@@ -17,14 +17,14 @@ LINES = {
 
 def _drafts(line: str, b: dict, tenant=None) -> list[dict]:
     """Rules drafts per line: (title, asset_type, body, meta)."""
-    n, o, mech, pain, aud = b["niche"], b["outcome"], b["mechanism"], b["pain"], b["audience"]
+    o, mech, pain, aud = b["outcome"], b["mechanism"], b["pain"], b["audience"]
     if line == "outreach":
         return [
             {"title": "Opener DM (question move)", "asset": "dm_script", "kind": "dm_opener", "channel": "instagram_dm",
              "body": f"Quick question: what's the biggest thing standing between you and {o} right now?",
              "meta": {"prospect_facing": True, "lead_tier": "cold"}},
             {"title": "Value-only follow-up", "asset": "followup", "kind": "followup", "channel": "instagram_dm",
-             "body": f"Here's a short video on how {n} get {o} without {pain}. Want me to send it over?",
+             "body": f"Here's a short video on how {aud} get {o} without {pain}. Want me to send it over?",
              "meta": {"prospect_facing": True, "lead_tier": "cold", "prior_contact": True}},
             {"title": "Call offer (warm lead)", "asset": "dm_script", "kind": "dm", "channel": "instagram_dm",
              "body": guardrails.range_line("[their brand]", f"our {mech}", tenant) + " Would a quick call be useful?",
@@ -45,14 +45,14 @@ def _drafts(line: str, b: dict, tenant=None) -> list[dict]:
                  "body": f"Hook: {h}\nVisual: same talking-head setup for every creative (one variable changed: the hook).\n"
                          f"Budget: equal across 3-5 creatives, 72 hours, kill rule at 2x target cost per lead.",
                  "meta": {"client_asset": True}}
-                for i, h in enumerate([f"Your growth shouldn't depend on {pain}.", f"What most {n} get wrong about {o}.",
+                for i, h in enumerate([f"Your growth shouldn't depend on {pain}.", f"What most {aud} get wrong about {o}.",
                                        f"{o.capitalize()}: the simple version."])]
     if line == "webinars":
         segs = "\n".join(f"Segment {i + 1}: {nm} ({m} min)" for i, (nm, m) in enumerate(
             [("Hook and promise", 5), ("Origin and credibility", 7), ("The big mistake", 10), ("The new mechanism", 15),
              ("Proof framework", 10), ("The offer", 12), ("Questions and close", 6)]))
         return [{"title": "Webinar outline", "asset": "webinar", "kind": "webinar_outline", "channel": "manual",
-                 "body": f"How {n} get {o} without {pain}.\n{segs}", "meta": {"client_asset": True}}]
+                 "body": f"How {aud} get {o} without {pain}.\n{segs}", "meta": {"client_asset": True}}]
     if line == "training":
         return [{"title": "Student training: objection drill", "asset": "script", "kind": "training", "channel": "manual",
                  "body": "Drill: 'I need to think about it.' Ask what specifically they want to think through. "

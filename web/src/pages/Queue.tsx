@@ -154,9 +154,10 @@ function Item({ it, index = 0, onChange }: { it: any; index?: number; onChange: 
       </div>
       {editing ? (
         <TextArea rows={5} value={body} onChange={(e) => setBody(e.target.value)} aria-label="Edit draft" className="mt-3" />
-      ) : (
+      ) : (<>
+        {typeof it.meta?.image === "string" && <img src={it.meta.image} alt={it.title} className="mt-3 w-full max-w-sm rounded-lg border border-line" />}
         <p className="prose-pre mt-3 break-words rounded-[10px] border border-line-2 bg-panel-2 px-3.5 py-3 text-[14px] leading-relaxed text-ink">{it.status === "awaiting_manual_send" ? it.send_text || it.body_display : it.body_display}</p>
-      )}
+      </>)}
       <div className="mt-3"><FlagList flags={it.flags} /></div>
 
       {it.status === "scheduled" && (
