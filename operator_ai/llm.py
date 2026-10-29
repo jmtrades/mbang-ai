@@ -113,7 +113,9 @@ def _request(system: str, prompt: str, max_tokens: int, timeout: float) -> tuple
     cfg = config.get()
     key = config.llm_key()
     if cfg.llm_provider == "openai":
-        url = "https://api.openai.com/v1/chat/completions"
+        # Any OpenAI-compatible endpoint (OpenRouter, Gemini, a local server) via OPERATOR_LLM_BASE_URL.
+        base = (cfg.llm_base_url or "https://api.openai.com/v1").rstrip("/")
+        url = f"{base}/chat/completions"
         headers = {"authorization": f"Bearer {key}", "content-type": "application/json"}
         body = {"model": cfg.llm_model, "max_tokens": max_tokens,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}]}
