@@ -21,7 +21,6 @@ type StaticRes = { ads: StaticAd[]; queue_ids: number[]; image_ai: boolean; note
 function StaticAds({ res }: { res: StaticRes }) {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted">{res.words === "ai" ? "Words written by the AI. " : `Words from the template${res.words_note ? ` (${res.words_note})` : ""}. `}{res.image_ai ? `Backgrounds painted by ${res.image_provider === "higgsfield" ? "Higgsfield" : "OpenAI"}.` : `Designed by the app${res.note ? ` (image AI off: ${res.note})` : ""}.`}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {res.ads.map((a) => (
           <figure key={a.queue_id} className="space-y-1.5">
