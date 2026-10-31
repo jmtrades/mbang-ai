@@ -9,6 +9,7 @@ Without the AI nothing here runs and the honest "not covered" answer stands.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from .. import guardrails, llm, runtime
@@ -50,7 +51,11 @@ scaling spend isn't a debate anymore. You double down on what's working. Data, t
 def method_system() -> str:
     return (
         "You are the programme's coach, answering a student one-on-one in the programme owner's style. The course "
-        "lessons don't answer this directly, so answer from the programme's method notes below. Voice: direct, "
+        "lessons don't fully answer this, so answer from the programme's method notes below. Answer exactly what "
+        "was asked, starting with a direct answer to their actual question (if they ask whose fault it is or "
+        "whether to hire someone, say so plainly first). If course passages are given, use one only where it truly "
+        "supports a point and put its [S#] marker right after that point; never cite a passage for anything it "
+        "doesn't say, and ignore passages that are off-topic. Voice: direct, "
         "confident, casual, short punchy sentences, no fluff. Reframe a weak framing when there is one. When numbers "
         "help, walk through the money math with clearly marked example numbers (never invent the student's own "
         "numbers). Honest over hype: no promises, guarantees, income claims or invented results or names. Hold high "
@@ -89,38 +94,52 @@ def _background(ext: list[dict] | None) -> str:
             + "\n".join(out)) if out else ""
 
 
-def method_answer(tenant, run: runtime.Run, question: str, ext: list[dict] | None = None) -> dict | None:
+def method_answer(tenant, run: runtime.Run, question: str, ext: list[dict] | None = None,
+                  cites: list[dict] | None = None) -> dict | None:
+    """The answer in the programme's voice from its method notes, using course passages (cited) only where they truly
+    fit. None when the AI is off or the text is blocked."""
     if llm.unavailable_reason(tenant) is not None:
         return None
-    prompt = f"Student question: {question}{_background(ext)}"
+    cites = cites or []
+    passages = "\n".join(f"[{c['id']}] {c.get('title', '')}: {str(c.get('snippet', ''))[:700]}" for c in cites)
+    prompt = f"Student question: {question}" + (f"\n\nCourse passages:\n{passages}" if passages else "") + \
+        _background(ext)
 
     def _ai() -> str:
-        out = llm.complete(tenant, method_system(), prompt, purpose="coach-method",
-                           run_id=run.id, max_tokens=1500)
+        out = llm.complete(tenant, method_system(), prompt, purpose="coach-method", run_id=run.id, max_tokens=1500)
         return out["text"].strip().replace("**", "")
 
-    text = run.step("method_answer", {"question": question}, _ai, "Answer from the programme's method (AI)",
-                    allow_fail=True)
+    text = run.step("method_answer", {"question": question, "passages": [c["id"] for c in cites]}, _ai,
+                    "Answer in the programme's voice from its method (AI)", allow_fail=True)
     if not text or guardrails.blocked(guardrails.check_for(tenant, text, {"source": "method"})):
         return None
+    ids = {c["id"] for c in cites}
+    text = re.sub(r"\[(S\d+)\]", lambda m: m.group(0) if m.group(1) in ids else "", text)  # no invented markers
+    used = [c for c in cites if f"[{c['id']}]" in text]
     run.use_ai("live")
+    label = LABEL if not used else "The programme's method, with course passages where they fit · AI"
     return {"answer": guardrails.scrub(text, guardrails.tenant_banned_names(tenant)), "mode": "live",
-            "label": LABEL}
+            "label": label, "citations": used}
 
 
 def recover(tenant, run: runtime.Run, question: str, res: dict, retry) -> dict:
-    """`res` is the honest not-covered result; `retry(q)` answers another phrasing the normal way. A rewrite that a
-    course lesson covers wins (it cites the lesson). Otherwise the answer comes from the programme's method in its
-    voice, replacing loosely related playbook entries. Without the AI, `res` stands unchanged."""
-    if res.get("covered") != "no" or llm.unavailable_reason(tenant) is not None:
+    """With the AI on, any question the course doesn't FULLY cover is answered in the programme's voice from its
+    method (the student's actual question first), citing course passages only where they truly fit. A typo-fixed
+    rewrite that a lesson fully covers wins as a normal cited course answer. AI off: `res` stands unchanged."""
+    if res.get("covered") == "yes" or llm.unavailable_reason(tenant) is not None:
         return res
-    for q in rewrites(tenant, run, question):
-        alt = retry(q)
-        if alt.get("covered") != "no":
-            alt["note"] = f"Searched as: \"{q}\""
-            return alt
-    m = method_answer(tenant, run, question, res.get("external"))
+    base, note = res, None
+    if res.get("covered") == "no":
+        for q in rewrites(tenant, run, question):
+            alt = retry(q)
+            if alt.get("covered") == "yes":
+                alt["note"] = f"Searched as: \"{q}\""
+                return alt
+            if alt.get("covered") == "partly" and base is res:
+                base, note = alt, f"Searched as: \"{q}\""
+    m = method_answer(tenant, run, question, res.get("external"), base.get("citations") or [])
     if m is None:
         return res
-    return {**res, "answer": m["answer"], "mode": m["mode"], "label": m["label"], "method": True, "external": [],
-            "external_mode": None, "note": None}
+    return {**base, "answer": m["answer"], "mode": m["mode"], "label": m["label"], "citations": m["citations"],
+            "covered": "partly" if m["citations"] else "no", "method": True, "external": [], "external_mode": None,
+            "note": note}
