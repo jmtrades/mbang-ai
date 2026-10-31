@@ -122,11 +122,20 @@ def method_answer(tenant, run: runtime.Run, question: str, ext: list[dict] | Non
             "label": label, "citations": used}
 
 
+SWITCH = "method_answers"
+
+
+def enabled(tenant) -> bool:
+    """On by default; a workspace can switch it off to keep strict course-only answers plus external playbooks."""
+    v = tenant.get(SWITCH) if tenant is not None else None
+    return v is None or v is True or str(v).strip().lower() in ("1", "true", "yes", "on")
+
+
 def recover(tenant, run: runtime.Run, question: str, res: dict, retry) -> dict:
     """With the AI on, any question the course doesn't FULLY cover is answered in the programme's voice from its
     method (the student's actual question first), citing course passages only where they truly fit. A typo-fixed
     rewrite that a lesson fully covers wins as a normal cited course answer. AI off: `res` stands unchanged."""
-    if res.get("covered") == "yes" or llm.unavailable_reason(tenant) is not None:
+    if res.get("covered") == "yes" or llm.unavailable_reason(tenant) is not None or not enabled(tenant):
         return res
     base, note = res, None
     if res.get("covered") == "no":

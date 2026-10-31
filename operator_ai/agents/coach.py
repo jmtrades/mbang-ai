@@ -380,6 +380,7 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
     actor = f"{user['username']}({user['role']})" if user else "system"
     if own_run:
         run = runtime.Run(tenant, "coach", f"Coach: {question[:80]}", PLAN, actor)
+    assert run is not None
     # [memory] what this person told the assistant about their business ("What I know about you"): with the AI on it
     # helps pick which course passages apply to them; the answer still comes only from the course, with citations
     about = None

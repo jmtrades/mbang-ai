@@ -32,6 +32,7 @@ def on(tenant):
 
 @pytest.fixture
 def ai_on(tenant, monkeypatch):
+    tenant.set("method_answers", False)  # these tests pin the external-playbook path, not the method-voice answer
     fm = FakeModel()
     llm.set_transport(fm.transport)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
