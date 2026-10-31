@@ -11,6 +11,7 @@ import re
 
 from .. import guardrails, index, llm, playbooks, retrieval, runtime, textnorm, threads, translate
 from ..content_policy import SKIP_IN_KB
+from . import coach_recover
 
 PLAN = ["Detect language", "Rewrite / decompose question", "Hybrid retrieval per part", "Coverage judge",
         "Answer from passages only", "Verify citations"]
@@ -389,6 +390,9 @@ def answer(tenant, question: str, user: dict | None = None, record: bool = True,
         about = "; ".join(f"{k}: {str(mem[k])[:120]}" for k in ("niche", "offer", "goal") if mem.get(k)) or None
     try:
         res = _answer(tenant, question, run, k, context, external, about=about)
+        if external:  # typo-proof search, then the programme's method, before a dead-end "not covered" (AI on only)
+            res = coach_recover.recover(tenant, run, question, res,
+                                        lambda q: _answer(tenant, q, run, k, context, external, about=about))
     except Exception as e:
         run.fail(e)
         raise
