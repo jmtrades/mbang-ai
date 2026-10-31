@@ -38,7 +38,8 @@ WRITER_SYSTEM = (
     "direct, confident, conversational, plain words, short punchy sentences, real examples and simple math where it "
     "helps (clearly marked as examples). No hype, no guarantees or income claims, no invented results, students or "
     "names. Proof is a framework for showing verified results with permission, never made-up results. No fake "
-    "scarcity or pressure ('act now', 'last chance', 'limited spots', 'doors closing'). Use only the brief's facts "
+    "scarcity or pressure ('act now', 'last chance', 'limited spots', 'doors closing'). Don't mention refunds, "
+    "deposits, prices or payment terms in the video; those belong on the call. Use only the brief's facts "
     "and the method notes.\n\n"
     "Write it in EXACTLY this plain-text layout (no markdown, no asterisks, no JSON):\n"
     "HEADLINE: <max 12 words>\nSUBHEAD: <max 25 words>\nCTA: <max 5 words>\nBULLETS:\n- <benefit>\n- <benefit>\n"
@@ -149,6 +150,33 @@ def _ai_copy(tenant, b: dict) -> tuple[dict | None, str | None]:
     }, None
 
 
+def _clean_blocked(tenant, copy: dict) -> tuple[dict, str]:
+    """Drop just the sentences a guardrail blocks (for example a stray 'refundable') and keep the rest of the AI's
+    script. Returns (copy, "") when clean, or (copy, phrase) when it is still blocked after a few passes."""
+    for _ in range(4):
+        flags = guardrails.check_for(tenant, script_text(copy["headline"], copy), {"client_asset": True})
+        if not guardrails.blocked(flags):
+            return copy, ""
+        hits = [str(f.get("match") or "") for f in flags if f.get("severity") == "block"]
+        hits = [h for h in hits if h]
+        if not hits:
+            break
+
+        def scrub(text: str, hits: list[str] = hits) -> str:
+            parts = re.split(r"(?<=[.!?])\s+", text)
+            return " ".join(p for p in parts if not any(h.lower() in p.lower() for h in hits))
+
+        copy = {**copy, "headline": copy["headline"] if not any(h.lower() in copy["headline"].lower() for h in hits)
+                else "", "script": [{**p, "text": scrub(p["text"])} for p in copy["script"]],
+                "subhead": scrub(copy["subhead"]), "bullets": [scrub(x) for x in copy["bullets"] if scrub(x)],
+                "followups": [scrub(x) for x in copy["followups"] if scrub(x)]}
+        if not copy["headline"]:
+            return copy, hits[0]
+    flags = guardrails.check_for(tenant, script_text(copy["headline"], copy), {"client_asset": True})
+    hit = next((str(f.get("match") or "") for f in flags if f.get("severity") == "block"), "")
+    return copy, hit
+
+
 def minutes(copy: dict) -> int:
     """Spoken length at about 150 words a minute."""
     words = sum(len(p.get("text", "").split()) for p in copy.get("script") or [])
@@ -179,9 +207,8 @@ def launch(tenant, data: dict, user: dict | None = None) -> dict:
     b = brief_mod.build(None if client else tenant, partial)["brief"]
     written, note = _ai_copy(tenant, b)
     if written:
-        flags = guardrails.check_for(tenant, script_text(written["headline"], written), {"client_asset": True})
-        if guardrails.blocked(flags):  # a guardrail caught the AI's wording: the clean template, not a held pack
-            hit = next((f.get("match") for f in flags if f.get("severity") == "block"), "")
+        written, hit = _clean_blocked(tenant, written)
+        if hit:  # still blocked after removing the offending sentences: the clean template, not a held pack
             written, note = None, f"the AI's script used a blocked phrase (\"{hit}\")"
     copy = written or _template(b)
     title = copy["headline"]

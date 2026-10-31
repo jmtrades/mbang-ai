@@ -107,8 +107,22 @@ def test_student_sees_and_approves_only_their_own(client, env):
     assert real.status_code == 422  # the demo takes only fictional addresses
 
 
+def test_one_blocked_sentence_is_removed_and_the_rest_of_the_ai_script_kept(tenant, monkeypatch):
+    body = "".join(f"### {s}\nStrong opening line. {LONG}. We take a refundable deposit on the call.\n\n"
+                   for s in SECTIONS)
+    _ai(monkeypatch, tenant, _ai_text(body))
+    try:
+        s = funnel_launch.launch(tenant, {"niche": "fitness coaching"})
+    finally:
+        llm.set_transport(None)
+    assert s["words"] == "ai" and s["pack"]["status"] == "pending"
+    text = " ".join(p["text"] for p in s["copy"]["script"])
+    assert "Strong opening line." in text and "refundable" not in text
+
+
 def test_ai_copy_that_trips_a_guardrail_falls_back_to_the_template(tenant, monkeypatch):
-    _ai(monkeypatch, tenant, _ai_text("".join(f"### {s}\nAct now, last chance! {LONG}\n\n" for s in SECTIONS)))
+    reply = _ai_text("".join(f"### {s}\nAct now, last chance! {LONG}\n\n" for s in SECTIONS))
+    _ai(monkeypatch, tenant, reply.replace("HEADLINE: Your first", "HEADLINE: Act now, last chance: your first"))
     try:
         s = funnel_launch.launch(tenant, {"niche": "fitness coaching"})
     finally:
