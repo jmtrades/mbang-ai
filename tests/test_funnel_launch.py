@@ -1,6 +1,5 @@
 """One sentence -> a whole VSL funnel (script, VSL page, application page, thank-you page, follow-ups) waiting on one
 approval; approving puts the pages live; applications are stored; students see only their own."""
-import json
 
 from tests.conftest import demo_login
 from tests.fakes import FakeModel
@@ -50,23 +49,47 @@ def test_chat_builds_approve_publishes_apply_and_script(owner):
     assert script.status_code == 200 and "VSL SCRIPT" in script.text and "CALL TO ACTION" in script.text
 
 
-def test_ai_writes_the_copy_and_script(tenant, monkeypatch):
-    sections = ["Hook", "The problem", "The big mistake", "The mechanism", "Proof", "The offer",
-                "Who it's for (and not for)", "Call to action"]
-    fm = FakeModel(reply=json.dumps({"headline": "Your first Section 8 deal, without the guesswork",
-                                     "subhead": "A short video.", "bullets": ["One", "Two", "Three"], "cta": "Apply",
-                                     "script": [{"section": s, "text": f"{s} text."} for s in sections],
-                                     "followups": ["a", "b", "c"]}))
+LONG = " ".join(["word"] * 40)
+
+
+def _ai_text(sections_text: str) -> str:
+    return ("HEADLINE: Your first AI client, without learning to code\nSUBHEAD: A short video.\nCTA: Apply now\n"
+            "BULLETS:\n- One\n- Two\n- Three\n" + sections_text +
+            "FOLLOWUPS:\n- First follow-up\n- Second\n- Third\n")
+
+
+SECTIONS = ["Hook", "The problem", "The big mistake", "The mechanism", "Proof", "The offer",
+            "Who it's for (and not for)", "Call to action"]
+
+
+def _ai(monkeypatch, tenant, reply: str):
+    fm = FakeModel(reply=reply)
     llm.set_transport(fm.transport)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
     monkeypatch.setenv("OPERATOR_DISABLE_LLM", "0")
     tenant.set("ai_token_budget", 50_000)
+    return fm
+
+
+def test_ai_writes_a_full_script_in_plain_labelled_text(tenant, monkeypatch):
+    fm = _ai(monkeypatch, tenant, _ai_text("".join(f"### {s}\n{s} opening. {LONG} {LONG}\n\n" for s in SECTIONS)))
     try:
-        s = funnel_launch.launch(tenant, {"niche": "Section 8 real estate"})
+        s = funnel_launch.launch(tenant, {"niche": "AI agency biz op"})
     finally:
         llm.set_transport(None)
-    assert s["words"] == "ai" and s["title"] == "Your first Section 8 deal, without the guesswork"
-    assert s["copy"]["script"][0]["text"] == "Hook text." and "Method notes" in fm.calls[-1]["body"]["system"]
+    assert s["words"] == "ai" and s["title"] == "Your first AI client, without learning to code"
+    assert s["copy"]["script"][0]["text"].startswith("Hook opening.") and s["copy"]["followups"][0] == "First follow-up"
+    assert s["minutes"] >= 4 and "Method notes" in fm.calls[-1]["body"]["system"]
+    assert "people who want to start their own AI agency" in fm.calls[-1]["body"]["messages"][-1]["content"]
+
+
+def test_incomplete_ai_script_falls_back_and_says_why(tenant, monkeypatch):
+    _ai(monkeypatch, tenant, _ai_text("### Hook\nToo short.\n"))
+    try:
+        s = funnel_launch.launch(tenant, {"niche": "fitness coaching"})
+    finally:
+        llm.set_transport(None)
+    assert s["words"] == "template" and "incomplete" in (s["words_note"] or "")
 
 
 def test_student_sees_and_approves_only_their_own(client, env):
@@ -85,17 +108,9 @@ def test_student_sees_and_approves_only_their_own(client, env):
 
 
 def test_ai_copy_that_trips_a_guardrail_falls_back_to_the_template(tenant, monkeypatch):
-    sections = ["Hook", "The problem", "The big mistake", "The mechanism", "Proof", "The offer",
-                "Who it's for (and not for)", "Call to action"]
-    fm = FakeModel(reply=json.dumps({"headline": "Last chance, doors closing", "subhead": "x", "bullets": ["a"],
-                                     "cta": "Act now", "script": [{"section": s, "text": "Act now, last chance!"}
-                                                                  for s in sections], "followups": ["a"]}))
-    llm.set_transport(fm.transport)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-123456789")
-    monkeypatch.setenv("OPERATOR_DISABLE_LLM", "0")
-    tenant.set("ai_token_budget", 50_000)
+    _ai(monkeypatch, tenant, _ai_text("".join(f"### {s}\nAct now, last chance! {LONG}\n\n" for s in SECTIONS)))
     try:
         s = funnel_launch.launch(tenant, {"niche": "fitness coaching"})
     finally:
         llm.set_transport(None)
-    assert s["words"] == "template" and s["pack"]["status"] == "pending"
+    assert s["words"] == "template" and s["pack"]["status"] == "pending" and "blocked phrase" in s["words_note"]

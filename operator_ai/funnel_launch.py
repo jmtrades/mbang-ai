@@ -35,14 +35,48 @@ CREATE TABLE IF NOT EXISTS funnel_applications (
 """
 WRITER_SYSTEM = (
     "You write a VSL (video sales letter) funnel for a coaching or info business, in the programme owner's voice: "
-    "direct, confident, plain words, no hype, no guarantees or income claims, no invented results or names. Reply "
-    "ONLY with JSON: {\"headline\": max 12 words, \"subhead\": max 25 words, \"bullets\": [3 short benefit lines], "
-    "\"cta\": max 5 words, \"script\": [one object per section {\"section\", \"text\"} in this order: Hook, The "
-    "problem, The big mistake, The mechanism, Proof, The offer, Who it's for (and not for), Call to action; each text "
-    "60-180 words, spoken to camera, proof as a framework for showing verified results with permission, never made "
-    "up; no fake scarcity or pressure such as 'act now', 'last chance', 'limited spots' or 'doors closing'], "
-    "\"followups\": [3 short messages for people who applied but didn't book]}. Use only the brief's facts.\n\n"
+    "direct, confident, conversational, plain words, short punchy sentences, real examples and simple math where it "
+    "helps (clearly marked as examples). No hype, no guarantees or income claims, no invented results, students or "
+    "names. Proof is a framework for showing verified results with permission, never made-up results. No fake "
+    "scarcity or pressure ('act now', 'last chance', 'limited spots', 'doors closing'). Use only the brief's facts "
+    "and the method notes.\n\n"
+    "Write it in EXACTLY this plain-text layout (no markdown, no asterisks, no JSON):\n"
+    "HEADLINE: <max 12 words>\nSUBHEAD: <max 25 words>\nCTA: <max 5 words>\nBULLETS:\n- <benefit>\n- <benefit>\n"
+    "- <benefit>\n" + "".join(f"### {s}\n<{w}>\n" for s, w in (
+        ("Hook", "80-150 words: call out who it's for and the big promise, give a reason to watch to the end"),
+        ("The problem", "150-250 words: their situation in their words, what it's costing them"),
+        ("The big mistake", "150-250 words: what most people do wrong and why it keeps them stuck"),
+        ("The mechanism", "250-400 words: the method, step by step, in plain terms"),
+        ("Proof", "120-200 words: how results are shown and checked; no invented results"),
+        ("The offer", "150-250 words: what they get, how it works, the outcome and timeframe"),
+        ("Who it's for (and not for)", "80-150 words"),
+        ("Call to action", "60-120 words: apply, answer a few questions, book a call"))) +
+    "FOLLOWUPS:\n- <short message for someone who applied but didn't book>\n- <another>\n- <another>\n\n"
     "Method notes:\n")
+_SECTION_RE = re.compile(r"^#{2,3}\s*(.+?)\s*$", re.M)
+
+
+def _parse(text: str) -> dict:
+    """The labelled plain-text layout back into fields (forgiving about spacing and case)."""
+    t = text.replace("**", "").replace("\r", "")
+    out: dict = {}
+    for key in ("HEADLINE", "SUBHEAD", "CTA"):
+        m = re.search(rf"^\s*{key}\s*:\s*(.+)$", t, re.M | re.I)
+        if m:
+            out[key.lower()] = m.group(1).strip().strip('"')
+    bm = re.search(r"^\s*BULLETS\s*:\s*\n((?:\s*[-•].*\n?)+)", t, re.M | re.I)
+    out["bullets"] = [ln.strip(" -•\t") for ln in (bm.group(1).splitlines() if bm else []) if ln.strip(" -•\t")]
+    fm = re.search(r"^\s*FOLLOW-?UPS\s*:\s*\n((?:\s*[-•].*\n?)+)", t, re.M | re.I)
+    out["followups"] = [ln.strip(" -•\t") for ln in (fm.group(1).splitlines() if fm else []) if ln.strip(" -•\t")]
+    script: dict[str, str] = {}
+    heads = list(_SECTION_RE.finditer(t))
+    for i, h in enumerate(heads):
+        end = heads[i + 1].start() if i + 1 < len(heads) else len(t)
+        body = t[h.end():end]
+        body = re.split(r"^\s*FOLLOW-?UPS\s*:", body, flags=re.M | re.I)[0].strip()
+        script[h.group(1).strip().lower()] = body
+    out["script"] = script
+    return out
 
 
 class FunnelError(Exception):
@@ -85,39 +119,47 @@ def _template(b: dict) -> dict:
                           "Still keen? Grab a time that works and we'll map out your plan."]}
 
 
-def _ai_copy(tenant, b: dict) -> dict | None:
-    if llm.unavailable_reason(tenant) is not None:
-        return None
+def _ai_copy(tenant, b: dict) -> tuple[dict | None, str | None]:
+    """(copy, None) when the AI wrote it; (None, why) otherwise, and the template is used."""
+    reason = llm.unavailable_reason(tenant)
+    if reason is not None:
+        return None, reason
     from .agents import coach_recover
 
     facts = {k: b.get(k) for k in ("business", "niche", "audience", "offer", "price", "outcome", "mechanism", "pain",
                                    "timeframe")}
     try:
         out = llm.complete(tenant, WRITER_SYSTEM + coach_recover.method_notes(), f"Brief: {facts}",
-                           purpose="funnel_copy", max_tokens=4000, timeout=90.0)
-        data = llm.parse_json(out["text"])
-    except (llm.AIUnavailable, ValueError):
-        return None
+                           purpose="funnel_copy", max_tokens=6000, timeout=180.0)
+    except llm.AIUnavailable as e:
+        return None, e.reason
+    data = _parse(out["text"])
+    got = [s for s, _ in SECTIONS if len(data["script"].get(s.lower(), "").split()) >= 25]
+    if len(got) < 6:
+        return None, f"the AI's script came back incomplete ({len(got)} of {len(SECTIONS)} sections)"
     tpl = _template(b)
-    script = {str(s.get("section", "")).lower(): str(s.get("text", "")).strip().replace("**", "")
-              for s in data.get("script") or [] if isinstance(s, dict)}
-    good = {
-        "headline": str(data.get("headline") or tpl["headline"])[:120],
-        "subhead": str(data.get("subhead") or tpl["subhead"])[:240],
-        "bullets": [str(x)[:140] for x in (data.get("bullets") or [])][:4] or tpl["bullets"],
-        "cta": str(data.get("cta") or tpl["cta"])[:40],
-        "script": [{"section": s, "text": script.get(s.lower()) or t["text"]} for (s, _), t in
+    return {
+        "headline": (data.get("headline") or tpl["headline"])[:120],
+        "subhead": (data.get("subhead") or tpl["subhead"])[:240],
+        "bullets": [x[:140] for x in data["bullets"]][:4] or tpl["bullets"],
+        "cta": (data.get("cta") or tpl["cta"])[:40],
+        "script": [{"section": s, "text": data["script"].get(s.lower()) or t["text"]} for (s, _), t in
                    zip(SECTIONS, tpl["script"], strict=False)],
-        "followups": [str(x)[:400] for x in (data.get("followups") or [])][:3] or tpl["followups"],
-    }
-    return good
+        "followups": [x[:400] for x in data["followups"]][:3] or tpl["followups"],
+    }, None
+
+
+def minutes(copy: dict) -> int:
+    """Spoken length at about 150 words a minute."""
+    words = sum(len(p.get("text", "").split()) for p in copy.get("script") or [])
+    return max(1, round(words / 150))
 
 
 def script_text(title: str, copy: dict) -> str:
-    total = sum(m for _, m in SECTIONS)
+    total = minutes(copy)
     lines = [f"VSL SCRIPT: {title}", f"About {total} minutes. Read to camera; pause between sections.", ""]
-    for (name, mins), part in zip(SECTIONS, copy["script"], strict=False):
-        lines += [f"{name.upper()} (about {mins} min)", part["text"], ""]
+    for (name, _mins), part in zip(SECTIONS, copy["script"], strict=False):
+        lines += [name.upper(), part["text"], ""]
     return "\n".join(lines).strip() + "\n"
 
 
@@ -135,16 +177,18 @@ def launch(tenant, data: dict, user: dict | None = None) -> dict:
     partial.update({k: data[k] for k in brief_mod.FIELDS if data.get(k) not in (None, "")})
     partial = webinar_launch._fill_audience(partial, for_client=client is not None)
     b = brief_mod.build(None if client else tenant, partial)["brief"]
-    written = _ai_copy(tenant, b)
-    if written and guardrails.blocked(guardrails.check_for(tenant, script_text(written["headline"], written),
-                                                           {"client_asset": True})):
-        written = None  # the AI's wording tripped a guardrail: use the clean template rather than a held pack
+    written, note = _ai_copy(tenant, b)
+    if written:
+        flags = guardrails.check_for(tenant, script_text(written["headline"], written), {"client_asset": True})
+        if guardrails.blocked(flags):  # a guardrail caught the AI's wording: the clean template, not a held pack
+            hit = next((f.get("match") for f in flags if f.get("severity") == "block"), "")
+            written, note = None, f"the AI's script used a blocked phrase (\"{hit}\")"
     copy = written or _template(b)
     title = copy["headline"]
     now = time.time()
     owner = (user or {}).get("id") if not webinar_launch._is_owner(user) else None
     store = {"copy": copy, "brief": {k: b.get(k) for k in ("business", "niche", "audience", "offer", "price")},
-             "words": "ai" if written else "template"}
+             "words": "ai" if written else "template", "words_note": note}
     with tenant.db() as c:
         _ensure(c)
         fid = c.execute("INSERT INTO funnels(slug,title,status,client_id,owner_user_id,data,video_url,booking_url,"
@@ -153,7 +197,7 @@ def launch(tenant, data: dict, user: dict | None = None) -> dict:
                          str(data.get("video_url") or ""), str(data.get("booking_url") or ""), now, now)).lastrowid
     body = "\n".join([f"Approve once to put the VSL funnel \"{title}\" live.", "",
                       "Approving this will publish three pages: the VSL page, the application page and the thank-you "
-                      "page with the booking link.", "", "Already written: the VSL script (about 14 minutes), the "
+                      "page with the booking link.", "", "Already written: the VSL script, the "
                       "page copy and 3 follow-ups for people who apply but don't book.", "",
                       script_text(title, copy)])
     meta = {"funnel_id": fid, "client_id": client["id"] if client else None, "client_asset": True}
@@ -194,7 +238,9 @@ def summary(tenant, fid: int, user: dict | None = None) -> dict:
             "page_url": base, "apply_url": f"{base}/apply", "thanks_url": f"{base}/thanks",
             "script_url": f"/t/{tenant.id}/api/funnels/{r['id']}/script.txt", "video_url": r["video_url"] or "",
             "booking_url": r["booking_url"] or "", "applications": apps, "words": d.get("words"),
-            "copy": d.get("copy") or {}, "pack": {"id": pack["id"], "status": pack["status"]} if pack else None}
+            "words_note": d.get("words_note"),
+            "copy": d.get("copy") or {}, "minutes": minutes(d.get("copy") or {}),
+            "pack": {"id": pack["id"], "status": pack["status"]} if pack else None}
 
 
 def update(tenant, fid: int, patch: dict, user: dict | None = None) -> dict:
@@ -274,8 +320,8 @@ def from_chat(tenant, text: str, user: dict) -> tuple[str, dict]:
     except FunnelError as e:
         return str(e), {"funnel": None}
     who = f" for {client['name']}" if client else ""
-    reply = (f"Done. I built your VSL funnel{who}: \"{res['title']}\". The VSL script (about 14 minutes, ready to read "
-             "on camera), the VSL page, the application page with qualifying questions, the thank-you page with the "
-             "booking link, and 3 follow-ups are ready. Approve once and the pages go live. Paste your video and "
+    reply = (f"Done. I built your VSL funnel{who}: \"{res['title']}\". The VSL script (about {res['minutes']} minutes, "
+             "ready to read on camera), the VSL page, the application page with qualifying questions, the thank-you "
+             "page with the booking link, and 3 follow-ups are ready. Approve once and the pages go live. Paste your video and "
              "booking links whenever you have them.")
     return reply, {"funnel": res}

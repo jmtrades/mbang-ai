@@ -6,6 +6,7 @@ import { Badge, Button, ErrorBox, Input, useApp } from "../components/ui";
 export type Funnel = {
   funnel_id: number; title: string; live: boolean; page_url: string; apply_url: string; thanks_url: string;
   script_url: string; video_url: string; booking_url: string; applications: number; words?: string;
+  words_note?: string | null; minutes?: number;
   copy: { script?: { section: string; text: string }[]; followups?: string[] };
   pack: { id: number; status: string } | null;
 };
@@ -38,7 +39,8 @@ export function FunnelCard({ funnel }: { funnel: Funnel }) {
         <Badge tone={s.live ? "good" : "warn"}>{s.live ? "Live" : "Waiting for your approval"}</Badge>
       </div>
       <ul className="mt-2 space-y-0.5 text-[12.5px] text-ink-2">
-        <li>VSL script: about 14 minutes, ready to read on camera</li>
+        <li>VSL script: about {s.minutes ?? 1} minutes, ready to read on camera{s.words === "ai" ? ", written by the AI" : ""}</li>
+        {s.words !== "ai" && <li className="text-muted">Template script{s.words_note ? ` (${s.words_note})` : ""}</li>}
         <li>VSL page, application page, thank-you and booking page: {s.live ? "live" : "ready to publish"}</li>
         <li>Follow-ups for people who apply but don't book: {s.copy.followups?.length ?? 0} drafted</li>
         {s.live && <li>Applications so far: {s.applications}</li>}
