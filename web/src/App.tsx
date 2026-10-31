@@ -65,7 +65,7 @@ function applyBrand(brand: Me["brand"] | undefined) {
     r.setProperty("--brand-ink", l !== null && l > 0.42 ? "#0b0b0d" : "#ffffff");
   }
   if (brand?.accent) r.setProperty("--brand-2", brand.accent);
-  document.title = brand?.name || "Operator AI";
+  document.title = brand?.name || "Mbang AI";
 }
 
 const initial = (s: string) => (s.trim()[0] || "O").toUpperCase();
@@ -132,7 +132,7 @@ function SignIn({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     get("/public").then((d) => { setPub(d); applyBrand(d.brand); }).catch(() => setPub({}));
   }, []);
-  const brand = pub?.brand?.name || "Operator AI";
+  const brand = pub?.brand?.name || "Mbang AI";
   const isDemo = !!pub?.is_demo;
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,7 +174,7 @@ function SignIn({ onDone }: { onDone: () => void }) {
           <span className="text-[15px] font-semibold">{brand}</span>
         </div>
         <div className="max-w-lg">
-          <p className="t-display text-ink">Your programme's AI operator.</p>
+          <p className="t-display text-ink">Your programme's <span className="t-gold">AI operator.</span></p>
           <p className="t-lead mt-4">Trained on your material, speaking in your brand, doing the work for you and your students.</p>
           <ul className="mt-10 space-y-5">
             {promises.map(({ icon: I, t, d }) => (
@@ -257,7 +257,7 @@ function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; 
     writeJSON("op.nav.collapsed", next);
   };
   const roleLabel = `${me.user.role[0].toUpperCase()}${me.user.role.slice(1)}${me.is_demo ? " (DEMO)" : ""}`;
-  const brand = me.brand?.name || "Operator AI";
+  const brand = me.brand?.name || "Mbang AI";
   const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (open) setTimeout(() => navRef.current?.querySelector<HTMLElement>("[aria-current=page], a")?.focus({ preventScroll: true }), 50);
@@ -346,7 +346,7 @@ function Sidebar({ me, page, open, onClose, onLogout }: { me: Me; page: string; 
 // ---------------------------------------------------------------- header
 function Header({ me, page, onMenu, onSearch }: { me: Me; page: string; onMenu: () => void; onSearch: () => void }) {
   const current = PAGE_BY_KEY[page];
-  const brand = me.brand?.name || "Operator AI";
+  const brand = me.brand?.name || "Mbang AI";
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-[color-mix(in_oklab,var(--bg)_82%,transparent)] px-3 backdrop-blur-xl backdrop-saturate-150 md:px-5">
       <IconButton label="Open menu" className="-ml-1 md:hidden" onClick={onMenu}><Menu className="size-5" /></IconButton>
@@ -476,7 +476,7 @@ function Shell({ me, reloadMe }: { me: Me; reloadMe: () => void }) {
     setNavOpen(false);
     scroller.current?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0 });
-    const brand = me.brand?.name || "Operator AI";
+    const brand = me.brand?.name || "Mbang AI";
     document.title = current ? `${current.label} · ${brand}` : brand;
     if (current) {
       const recent = readJSON<string[]>("op.recent", []).filter((k) => k !== page);

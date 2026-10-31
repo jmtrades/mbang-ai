@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter/opsz.css";
+@import "@fontsource-variable/montserrat";
 
 /* `dark:` utilities follow <html data-theme="dark"> (set from the user's choice or the system). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -8,9 +9,11 @@
    White-label: the app overwrites --brand / --brand-2 (and --brand-ink) from tenant settings.
    Everything else derives from them, so any brand colour gets readable buttons, links and tints. */
 :root {
-  --brand: #5b6cff;
-  --brand-2: #16a34a;
-  --brand-ink: #ffffff;
+  --brand: #c9a44c;
+  --brand-2: #e7cf8a;
+  --brand-ink: #0b0b0d;
+  --gold-grad: linear-gradient(135deg, #f3dc9a 0%, #d6b25e 38%, #a9802f 72%, #e7c977 100%);
+  --font-display: "Montserrat Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 
   --brand-solid: color-mix(in oklab, var(--brand) 92%, black);
   --brand-hover: color-mix(in oklab, var(--brand) 80%, black);
@@ -89,31 +92,31 @@
   --brand-line: color-mix(in oklab, var(--brand) 40%, var(--line));
   --brand-ring: color-mix(in oklab, var(--brand) 40%, transparent);
 
-  --side: #0a0a0c;
-  --bg: #0e0e11;
-  --panel: #151518;
-  --panel-2: #1a1a1e;
+  --side: #050505;
+  --bg: #0a0a0a;
+  --panel: #121212;
+  --panel-2: #181818;
   --hover: rgb(255 255 255 / 0.055);
   --press: rgb(255 255 255 / 0.09);
-  --side-ink: #a6a6b0;
-  --side-active: rgb(255 255 255 / 0.075);
+  --side-ink: #b3ada0;
+  --side-active: rgb(201 164 76 / 0.12);
   --overlay: rgb(0 0 0 / 0.62);
 
-  --ink: #ececef;
+  --ink: #f2efe8;
   --ink-2: #c6c6cd;
-  --muted: #9696a1;
+  --muted: #a19b8f;
   --faint: #72727c;
   --placeholder: #8a8a94;
 
-  --line: #26262b;
-  --line-2: #1f1f23;
-  --line-strong: #36363d;
+  --line: #262420;
+  --line-2: #1c1b18;
+  --line-strong: #3a362d;
 
   --good: #4ade80; --good-soft: rgb(34 197 94 / 0.12); --good-ink: #86efac; --good-line: rgb(34 197 94 / 0.26); --good-solid: #15803d;
   --bad: #f87171; --bad-soft: rgb(239 68 68 / 0.13); --bad-ink: #fca5a5; --bad-line: rgb(239 68 68 / 0.3); --bad-solid: #b91c1c;
   --warn: #fbbf24; --warn-soft: rgb(245 158 11 / 0.12); --warn-ink: #fcd34d; --warn-line: rgb(245 158 11 / 0.28);
   --info: #38bdf8; --info-soft: rgb(14 165 233 / 0.13); --info-ink: #7dd3fc; --info-line: rgb(14 165 233 / 0.3);
-  --demo: #a78bfa; --demo-soft: rgb(139 92 246 / 0.16); --demo-ink: #c4b5fd; --demo-line: rgb(139 92 246 / 0.34);
+  --demo: #e7cf8a; --demo-soft: rgb(201 164 76 / 0.12); --demo-ink: #e7cf8a; --demo-line: rgb(201 164 76 / 0.38);
   --neutral-soft: rgb(255 255 255 / 0.06); --neutral-line: rgb(255 255 255 / 0.1);
 
   --sh-xs: 0 1px 2px rgb(0 0 0 / 0.4);
@@ -267,9 +270,10 @@
 
 /* ============================================================================ type scale */
 @layer components {
-  .t-display { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.04; letter-spacing: -0.034em; font-weight: 640; }
-  .t-h1 { font-size: 24px; line-height: 1.2; letter-spacing: -0.021em; font-weight: 600; }
-  .t-h2 { font-size: 18px; line-height: 1.3; letter-spacing: -0.016em; font-weight: 600; }
+  .t-display { font-family: var(--font-display); font-size: clamp(30px, 3.6vw, 46px); line-height: 1.06; letter-spacing: -0.02em; font-weight: 700; }
+  .t-gold { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .t-h1 { font-family: var(--font-display); font-size: 25px; line-height: 1.2; letter-spacing: -0.012em; font-weight: 700; }
+  .t-h2 { font-family: var(--font-display); font-size: 18px; line-height: 1.3; letter-spacing: -0.01em; font-weight: 650; }
   .t-h3 { font-size: 15px; line-height: 1.35; letter-spacing: -0.011em; font-weight: 600; }
   .t-lead { font-size: 15.5px; line-height: 1.6; letter-spacing: -0.009em; color: var(--muted); }
   .t-body { font-size: 14px; line-height: 1.55; }
@@ -311,28 +315,31 @@
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(70% 90% at 0% 0%, color-mix(in oklab, var(--brand) 13%, transparent) 0%, transparent 70%),
-      radial-gradient(60% 80% at 100% 100%, color-mix(in oklab, var(--brand) 8%, transparent) 0%, transparent 70%),
-      var(--panel);
+      radial-gradient(60% 70% at 18% 8%, color-mix(in oklab, var(--brand) 22%, transparent) 0%, transparent 70%),
+      radial-gradient(50% 60% at 100% 100%, color-mix(in oklab, var(--brand) 12%, transparent) 0%, transparent 70%),
+      linear-gradient(160deg, #0d0c0a 0%, #050505 60%, #0a0907 100%);
+    color: #f2efe8;
+    --ink: #f2efe8; --muted: #a19b8f; --line: #2a2721; --panel: #121212;
   }
   .hero-surface::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-image:
-      linear-gradient(to right, var(--line-2) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--line-2) 1px, transparent 1px);
-    background-size: 28px 28px;
-    mask-image: radial-gradient(80% 70% at 15% 0%, black 0%, transparent 75%);
-    -webkit-mask-image: radial-gradient(80% 70% at 15% 0%, black 0%, transparent 75%);
-    opacity: 0.85;
+    background:
+      linear-gradient(115deg, transparent 0 8%, rgb(231 207 138 / 0.22) 8.1% 8.25%, transparent 8.35% 100%),
+      linear-gradient(115deg, transparent 0 11%, rgb(231 207 138 / 0.1) 11.1% 11.2%, transparent 11.3% 100%),
+      repeating-linear-gradient(135deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 7px);
+    mask-image: radial-gradient(90% 90% at 0% 0%, black 0%, transparent 65%);
+    -webkit-mask-image: radial-gradient(90% 90% at 0% 0%, black 0%, transparent 65%);
     pointer-events: none;
   }
   .brand-mark {
-    background: linear-gradient(140deg, color-mix(in oklab, var(--brand) 82%, white) 0%, var(--brand) 45%, color-mix(in oklab, var(--brand) 62%, black) 100%);
-    color: var(--brand-ink);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(16 16 20 / 0.2);
+    background: var(--gold-grad);
+    color: #0b0b0d;
+    font-family: var(--font-display);
+    font-weight: 800;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 0 0 1px rgb(201 164 76 / 0.4), 0 4px 14px -4px rgb(201 164 76 / 0.45);
   }
 }
 

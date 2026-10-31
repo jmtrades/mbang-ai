@@ -89,7 +89,7 @@ def get() -> Config:
     return Config(
         data_dir=Path(_env("OPERATOR_DATA_DIR", str(ROOT / "data"))),
         corpus_dir=Path(_env("OPERATOR_CORPUS_DIR", str(ROOT / "inputs"))),
-        brand=_env("OPERATOR_BRAND", "Operator AI"),
+        brand=_env("OPERATOR_BRAND", "Mbang AI"),
         owner_display=_env("OPERATOR_OWNER_DISPLAY", "Programme owner"),
         port=_int("OPERATOR_PORT", 8850),
         llm_provider=_env("OPERATOR_LLM_PROVIDER", "anthropic"),

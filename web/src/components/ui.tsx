@@ -67,7 +67,7 @@ type BtnTone = "primary" | "secondary" | "ghost" | "danger" | "good" | "subtle";
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { tone?: BtnTone; loading?: boolean; size?: "sm" | "md" | "lg" | "icon" | "icon-sm" };
 
 const BTN_TONES: Record<BtnTone, string> = {
-  primary: "border-transparent bg-brand text-[var(--brand-ink)] shadow-[var(--shadow-primary)] hover:bg-[var(--brand-hover)]",
+  primary: "border-transparent bg-brand bg-[image:var(--gold-grad)] text-[#0b0b0d] font-semibold shadow-[var(--shadow-primary)] hover:brightness-110",
   secondary: "border-line bg-panel text-ink shadow-[var(--shadow-btn)] hover:border-line-strong hover:bg-[color-mix(in_oklab,var(--panel),var(--ink)_3%)]",
   ghost: "border-transparent bg-transparent text-ink-2 hover:bg-hover hover:text-ink",
   subtle: "border-transparent bg-hover text-ink hover:bg-press",

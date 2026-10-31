@@ -154,7 +154,7 @@ def create(tid: str, name: str, kb_scope: str = "empty", kind: str = "client") -
     t.dir.mkdir(parents=True, exist_ok=True)
     t.kb_dir.mkdir(parents=True, exist_ok=True)
     db.init_tenant_db(t.db_path)
-    t.set("brand", {"name": config.get().brand, "primary": "#5b6cff", "accent": "#16a34a",
+    t.set("brand", {"name": config.get().brand, "primary": "#c9a44c", "accent": "#e7cf8a",
                     "owner_display": config.get().owner_display, "logo": ""})
     t.set("is_demo", t.is_demo)
     if kind == "client":

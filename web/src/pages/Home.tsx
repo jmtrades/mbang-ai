@@ -100,7 +100,7 @@ export default function Home() {
   const has = (k: string) => me.tabs.includes(k);
   const { data, error, loading, reload } = useApi<any>("/day-one");
   const brief = useApi<any>(has("brief") ? "/brief" : null);
-  const brand = me.brand?.name || "Operator AI";
+  const brand = me.brand?.name || "Mbang AI";
   const shown = (me.user.display || "").replace(/\s*\(DEMO\)\s*/g, "").trim().split(/\s+/)[0];
   // demo users are named after their role; "Good morning, Owner" reads oddly, so only greet real names
   const first = shown && shown.toLowerCase() !== me.user.role.toLowerCase() ? shown : "";

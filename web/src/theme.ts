@@ -12,7 +12,7 @@ const subs = new Set<() => void>();
 function readPref(): ThemePref {
   try {
     const v = localStorage.getItem(KEY);
-    return v === "light" || v === "dark" ? v : "system";
+    return v === "light" || v === "dark" ? v : "dark";
   } catch {
     return "system";
   }
@@ -28,7 +28,7 @@ function paint() {
   el.dataset.theme = t;
   el.style.colorScheme = t;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", t === "dark" ? "#0a0a0c" : "#f2f2f4");
+  if (meta) meta.setAttribute("content", t === "dark" ? "#050505" : "#f2f2f4");
 }
 
 function emit() {
@@ -38,8 +38,7 @@ function emit() {
 export function setThemePref(next: ThemePref) {
   pref = next;
   try {
-    if (next === "system") localStorage.removeItem(KEY);
-    else localStorage.setItem(KEY, next);
+    localStorage.setItem(KEY, next);
   } catch {
     /* private mode: the choice still applies for this visit */
   }
