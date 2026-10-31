@@ -29,6 +29,11 @@ DEFAULT_HOUR = 19
 # people. When the client's brief has no audience/outcome yet, these fill the gaps by niche keyword. Explicit brief
 # fields always win; B2B niches (agency, coaching businesses) keep the business-growth defaults.
 AUDIENCE_PRESETS: list[tuple[tuple[str, ...], dict]] = [
+    (("ai agency", "ai automation agency", "bizop", "biz op", "business opportunity", "side hustle",
+      "make money online", "aaa"),
+     {"audience": "people who want to start their own AI agency", "outcome": "their first paying AI clients",
+      "mechanism": "AI agency launch system", "pain": "learning to code or wasting months on tutorials",
+      "timeframe": "90 days"}),
     (("trad", "forex", "crypto", "stock", "futures", "options"),
      {"audience": "new {market}traders", "outcome": "consistent results", "mechanism": "3-step trade plan",
       "pain": "blowing up their account", "timeframe": "90 days"}),
