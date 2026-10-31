@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUp, BookOpen, Calculator, ClipboardCheck, Lightbulb, MessageCircle, Mic, MicOff, Paperclip, Plus, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { ApiError, api, get, post } from "../api";
 import { Badge, Button, Card, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, cx, useApi, useApp } from "../components/ui";
-import { NeutralVoiceNote } from "./persona/StyledBadge";
 import { FunnelCard, type Funnel } from "./FunnelCard";
 
 type Msg = { role: string; content: string; meta?: any };
@@ -143,8 +142,6 @@ function AcquisitionCard({ plan }: { plan: Plan }) {
         <ul className="list-disc space-y-0.5 pl-4">{plan.follow_up.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
       <div><div className="font-semibold">On the sales call</div>
         <ul className="list-disc space-y-0.5 pl-4">{plan.close.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
-      <div className="text-muted">From the lessons: {plan.sources.map((s) => `${s.title} (${s.section})`).join("; ")}
-        {plan.assumed.length > 0 && <> · Assumed: {plan.assumed.map((a) => a.replace(/_/g, " ")).join(", ")}</>}</div>
     </div>
   );
 }
@@ -201,7 +198,6 @@ export default function Coach({ query }: { query: URLSearchParams }) {
   const [err, setErr] = useState<ApiError | null>(null);
   const [voiceOut, setVoiceOut] = useState(false);
   const list = useApi<any>("/threads");
-  const personaMe = useApi<any>("/persona/me");
   const end = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const voice = useVoice((t) => setQ((cur) => (cur ? cur + " " : "") + t));
@@ -271,7 +267,7 @@ export default function Coach({ query }: { query: URLSearchParams }) {
   ];
   return (
     <div>
-      <PageHeader title="Coach" subtitle={<>One chat that does the work. Ask a question, paste your numbers, a script, an ad or a DM, or drop a screenshot or an Ads Manager export. Every answer cites the programme's own material.<NeutralVoiceNote me={personaMe.data} onChange={personaMe.reload} /></>} />
+      <PageHeader title="Coach" subtitle={<>One chat that does the work. Ask a question, paste your numbers, a script, an ad or a DM, or drop a screenshot or an Ads Manager export. Every answer comes from the programme's own method.</>} />
       <div className="grid gap-4 lg:grid-cols-[248px_minmax(0,1fr)]">
         <Card title="Threads" actions={<Button size="sm" onClick={() => setThreadId(null)}><Plus className="size-3.5" /> New</Button>} pad={false} className="hidden self-start lg:block">
           <div className="scroll-thin max-h-[62vh] space-y-px overflow-auto p-2">
