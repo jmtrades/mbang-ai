@@ -1,5 +1,6 @@
-"""Coach with the AI on: a question the course doesn't cover gets a typo-proof second search, then an answer from
-the programme's method, clearly labelled, instead of a dead end. With the AI off, the honest 'not covered' stands."""
+"""Coach with the AI on: a question no lesson covers gets a typo-proof second search, then an answer in the
+programme's voice from its method notes (labelled as such), never loose playbook bullets or a dead end. With the AI
+off, the honest 'not covered' stands."""
 import json
 
 from tests.fakes import FakeModel
@@ -28,6 +29,7 @@ def test_ai_on_answers_from_the_method_with_a_clear_label(tenant, monkeypatch):
         res = coach.answer(tenant, Q, record=False)
     finally:
         llm.set_transport(None)
-    assert res.get("method") and res["mode"] == "live" and "isn't covered in the course material" in res["answer"]
-    assert "own numbers" in res["answer"] and "Not in the course material yet" in res["label"]
-    assert "Method notes" in fm.calls[-1]["body"]["system"]
+    assert res.get("method") and res["mode"] == "live" and res["external"] == []
+    assert res["answer"].startswith("Show your client their own numbers") and "programme's method" in res["label"]
+    system = fm.calls[-1]["body"]["system"]
+    assert "Method notes" in system and "You don't \"convince\" anyone" in system and "Example of the voice" in system
