@@ -14,7 +14,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OPERATOR_PORT=8850 OPERATOR_DAT
     OPERATOR_CORPUS_DIR=/app/inputs OPERATOR_COOKIE_SECURE=1 OPERATOR_COMMIT=${OPERATOR_COMMIT}
 RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr curl sqlite3 \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 operator
+    && useradd --create-home --uid 10001 --gid operator operator
 WORKDIR /app
 COPY requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
