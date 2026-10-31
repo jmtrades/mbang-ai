@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUp, BookOpen, BookOpenCheck, Calculator, ClipboardCheck, Lightbulb, MessageCircle, Mic, MicOff, Paperclip, Plus, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpen, Calculator, ClipboardCheck, Lightbulb, MessageCircle, Mic, MicOff, Paperclip, Plus, Send, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { ApiError, api, get, post } from "../api";
-import { AiModeBadge, Badge, Button, Card, Citations, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, TraceLink, cx, useApi, useApp } from "../components/ui";
-import { NeutralVoiceNote, StyledBadge, isStyledLabel } from "./persona/StyledBadge";
+import { Badge, Button, Card, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, cx, useApi, useApp } from "../components/ui";
+import { NeutralVoiceNote } from "./persona/StyledBadge";
 
 type Msg = { role: string; content: string; meta?: any };
 
-const INTENT_LABEL: Record<string, string> = { question: "Coach", metrics: "Diagnosis", asset: "Review", ads_csv: "Ads audit", goal: "Mission", launch: "Webinar launch", acquisition: "Client acquisition plan" };
 
 function StartMission({ draft }: { draft: any }) {
   const { go, toast } = useApp();
@@ -74,42 +73,7 @@ function speak(text: string) {
 }
 
 // External 2026 Playbooks entries [X#]: researched public best practice, shown apart from the course [S#] chips.
-function ExternalChips({ items }: { items?: any[] }) {
-  const { go } = useApp();
-  if (!items || !items.length) return null;
-  return (
-    <div className="mt-2 rounded-lg border border-dashed border-sky-300 bg-white/60 p-2" data-testid="external-chips">
-      <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-        <Badge tone="info">External · 2026</Badge>
-        <span>Researched public best practice, dated. Not the course material.</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((x: any) => (
-          <button key={x.id + (x.entry_id || "")} onClick={() => go(`/playbooks?entry=${encodeURIComponent(x.entry_id)}`)} title={x.snippet}
-            className="focus-ring inline-flex max-w-full items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] text-ink hover:border-brand" data-testid="external-chip">
-            <BookOpenCheck className="size-3 shrink-0 text-sky-700" />
-            <span className="font-semibold">[{x.id}]</span>
-            <span className="truncate">{x.title}</span>
-            {x.as_of && <span className="shrink-0 text-muted">{x.as_of}</span>}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** What the assistant remembered about this person and used for the answer ("What I know about you"). */
-function Remembered({ r }: { r: { facts: { label: string; value: unknown }[]; label: string } }) {
-  if (!r?.facts?.length) return null;
-  return (
-    <div className="rounded-[10px] border border-line bg-panel px-2.5 py-1.5 text-[11.5px] text-muted" data-testid="remembered">
-      <span className="font-medium text-ink-2">Using what you told me: </span>
-      {r.facts.map((f, i) => <span key={i}>{i ? " · " : ""}{f.label}: <span className="text-ink">{String(f.value)}</span></span>)}
-      <span className="block text-[11px]">{r.label}</span>
-    </div>
-  );
-}
-
 /** One-click webinar launch: everything built, one approval puts it live. */
 type Launch = {
   webinar_id: number; title: string; when: string; live: boolean; page_url: string; deck_url: string; registrants: number;
@@ -183,6 +147,9 @@ function AcquisitionCard({ plan }: { plan: Plan }) {
     </div>
   );
 }
+
+// The chat reads like talking to the coach: no source markers, badges or traces (those stay in Runs & traces).
+const clean = (t: string) => (t || "").replace(/\s?\[(?:S|X)\d+\]/g, "").replace(/\(Not covered by the course material: "[^"]*"\)/g, "").trim();
 
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
@@ -339,31 +306,11 @@ export default function Coach({ query }: { query: URLSearchParams }) {
               <div key={i} className={cx("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}>
                 {m.role !== "user" && <span aria-hidden className="brand-mark mt-0.5 hidden size-7 shrink-0 place-items-center rounded-[8px] sm:grid"><Sparkles className="size-3.5" /></span>}
                 <div className={cx("min-w-0 max-w-[88%] text-[14px] leading-relaxed", m.role === "user" ? "rounded-[18px] rounded-br-[6px] bg-brand px-4 py-2.5 text-[var(--brand-ink)] shadow-xs" : "rounded-[18px] rounded-tl-[6px] border border-line bg-panel-2 px-4 py-3")}>
-                  <p className="prose-pre">{m.content}</p>
+                  <p className="prose-pre">{m.role === "assistant" ? clean(m.content) : m.content}</p>
                   {m.role === "assistant" && m.meta && (
-                    <div className="mt-2.5 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {m.meta.intent && <Badge tone="brand">{INTENT_LABEL[m.meta.intent] || m.meta.intent}</Badge>}
-                        {m.meta.covered && <Badge tone={m.meta.covered === "yes" ? "good" : m.meta.covered === "partly" ? "warn" : "neutral"}>covered: {m.meta.covered}</Badge>}
-                        {m.meta.followup && <Badge tone="info">follow-up, read in context</Badge>}
-                        {(m.meta.mode || m.meta.covered) && <AiModeBadge mode={m.meta.mode === "live" ? "live" : m.meta.mode === "replay" ? "replay" : "rules"} />}
-                        {m.meta.label && (isStyledLabel(m.meta.label)
-                          ? <StyledBadge label={m.meta.label} me={personaMe.data} onChange={personaMe.reload} />
-                          : <span className="text-[11.5px] text-muted">{m.meta.label}</span>)}
-                        <TraceLink runId={m.meta.run_id} />
-                        <button type="button" className="focus-ring rounded p-0.5 text-muted hover:text-ink" onClick={() => speak(m.content)} aria-label="Read aloud"><Volume2 className="size-3.5" /></button>
-                      </div>
-                      {m.meta.receipt && <p className="text-[11.5px] text-muted">{m.meta.receipt.summary}{m.meta.receipt.warnings?.length ? ` — ${m.meta.receipt.warnings[0]}` : ""}</p>}
-                      {m.meta.note && <p className="text-[11.5px] italic text-muted">{m.meta.note}</p>}
-                      {m.meta.remembered && <Remembered r={m.meta.remembered} />}
+                    <div className="mt-2 space-y-1.5">
                       <Extra meta={m.meta} />
-                      <Citations items={m.meta.citations} />
-                      <ExternalChips items={m.meta.external} />
-                      {m.meta.not_used?.length > 0 && (
-                        <details className="text-[11.5px] text-muted"><summary>{m.meta.not_used.length} {m.meta.not_used.length === 1 ? "passage" : "passages"} not used</summary>
-                          {m.meta.not_used.map((n: any, j: number) => <div key={j}>{n.label} ({n.file} L{n.lines})</div>)}
-                        </details>
-                      )}
+                      <button type="button" className="focus-ring rounded p-0.5 text-muted hover:text-ink" onClick={() => speak(clean(m.content))} aria-label="Read aloud"><Volume2 className="size-3.5" /></button>
                     </div>
                   )}
                 </div>
