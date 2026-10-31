@@ -225,10 +225,21 @@ STYLES = ["editorial magazine photography", "cinematic, moody lighting", "bright
 
 
 def _hf_key() -> tuple[str, str] | None:
-    kid, sec = os.environ.get("HF_API_KEY_ID", ""), os.environ.get("HF_API_KEY_SECRET", "")
-    if not (kid and sec) and ":" in os.environ.get("HIGGSFIELD_API_KEY", ""):
-        kid, sec = os.environ["HIGGSFIELD_API_KEY"].split(":", 1)
-    return (kid.strip(), sec.strip()) if kid.strip() and sec.strip() else None
+    """(key id, secret). Accepts the two parts separately, or the one combined "id:secret" key Higgsfield copies,
+    pasted into HF_API_KEY_ID, HIGGSFIELD_API_KEY or HF_API_KEY. A single key with no colon is used as is
+    (secret "")."""
+    kid, sec = os.environ.get("HF_API_KEY_ID", "").strip(), os.environ.get("HF_API_KEY_SECRET", "").strip()
+    if kid and sec:
+        return kid, sec
+    one = kid or os.environ.get("HIGGSFIELD_API_KEY", "").strip() or os.environ.get("HF_API_KEY", "").strip()
+    if not one:
+        return None
+    a, _, b = one.partition(":")
+    return a.strip(), b.strip()
+
+
+def _hf_auth(key: tuple[str, str]) -> str:
+    return f"Key {key[0]}:{key[1]}" if key[1] else f"Key {key[0]}"
 
 
 def image_provider() -> str | None:
@@ -276,7 +287,7 @@ def _higgsfield(prompt: str, wait: float = 150.0) -> bytes:
     key = _hf_key()
     if not key:
         raise llm.AIUnavailable("no Higgsfield key")
-    head = {"Authorization": f"Key {key[0]}:{key[1]}", "Content-Type": "application/json",
+    head = {"Authorization": _hf_auth(key), "Content-Type": "application/json",
             "Idempotency-Key": secrets.token_hex(12)}
     path = os.environ.get("HIGGSFIELD_IMAGE_PATH", "/higgsfield-ai/soul/v2/standard")
     with httpx.Client(transport=llm._transport, timeout=60.0) as client:
