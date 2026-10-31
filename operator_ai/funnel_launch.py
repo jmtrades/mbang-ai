@@ -320,7 +320,8 @@ def from_chat(tenant, text: str, user: dict) -> tuple[str, dict]:
     except FunnelError as e:
         return str(e), {"funnel": None}
     who = f" for {client['name']}" if client else ""
-    reply = (f"Done. I built your VSL funnel{who}: \"{res['title']}\". The VSL script (about {res['minutes']} minutes, "
+    reply = (f"Done. I built your VSL funnel{who}: \"{res['title']}\". The VSL script "
+             f"(about {res['minutes']} minutes, "
              "ready to read on camera), the VSL page, the application page with qualifying questions, the thank-you "
              "page with the booking link, and 3 follow-ups are ready. Approve once and the pages go live. Paste your video and "
              "booking links whenever you have them.")
