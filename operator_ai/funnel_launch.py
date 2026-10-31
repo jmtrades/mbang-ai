@@ -52,7 +52,8 @@ WRITER_SYSTEM = (
         ("The offer", "150-250 words: what they get, how it works, the outcome and timeframe"),
         ("Who it's for (and not for)", "80-150 words"),
         ("Call to action", "60-120 words: apply, answer a few questions, book a call"))) +
-    "FOLLOWUPS:\n- <short message for someone who applied but didn't book>\n- <another>\n- <another>\n\n"
+    "FOLLOWUPS:\n- <short message for someone who applied but didn't book>\n- <another>\n- <another>\n"
+    "PREP:\n- <one thing to prepare or know before the booked call>\n- <another>\n- <another>\n\n"
     "Method notes:\n")
 _SECTION_RE = re.compile(r"^#{2,3}\s*(.+?)\s*$", re.M)
 
@@ -67,6 +68,8 @@ def _parse(text: str) -> dict:
             out[key.lower()] = m.group(1).strip().strip('"')
     bm = re.search(r"^\s*BULLETS\s*:\s*\n((?:\s*[-•].*\n?)+)", t, re.M | re.I)
     out["bullets"] = [ln.strip(" -•\t") for ln in (bm.group(1).splitlines() if bm else []) if ln.strip(" -•\t")]
+    pm = re.search(r"^\s*PREP\s*:\s*\n((?:\s*[-•].*\n?)+)", t, re.M | re.I)
+    out["prep"] = [ln.strip(" -•\t") for ln in (pm.group(1).splitlines() if pm else []) if ln.strip(" -•\t")]
     fm = re.search(r"^\s*FOLLOW-?UPS\s*:\s*\n((?:\s*[-•].*\n?)+)", t, re.M | re.I)
     out["followups"] = [ln.strip(" -•\t") for ln in (fm.group(1).splitlines() if fm else []) if ln.strip(" -•\t")]
     script: dict[str, str] = {}
@@ -74,7 +77,7 @@ def _parse(text: str) -> dict:
     for i, h in enumerate(heads):
         end = heads[i + 1].start() if i + 1 < len(heads) else len(t)
         body = t[h.end():end]
-        body = re.split(r"^\s*FOLLOW-?UPS\s*:", body, flags=re.M | re.I)[0].strip()
+        body = re.split(r"^\s*(?:FOLLOW-?UPS|PREP)\s*:", body, flags=re.M | re.I)[0].strip()
         script[h.group(1).strip().lower()] = body
     out["script"] = script
     return out
@@ -88,6 +91,8 @@ class FunnelError(Exception):
 
 def _ensure(c) -> None:
     c.executescript(_SCHEMA)
+    if "precall_url" not in {r["name"] for r in c.execute("PRAGMA table_info(funnels)")}:
+        c.execute("ALTER TABLE funnels ADD COLUMN precall_url TEXT")
 
 
 def _slug(title: str) -> str:
@@ -115,6 +120,9 @@ def _template(b: dict) -> dict:
             f"get {_yours(o)} in {tf}.", "bullets": [f"Why most {aud} stay stuck", f"The {mech}, explained simply",
                                              "How to know if this is right for you"],
             "cta": "Apply for a call", "script": [{"section": s, "text": texts[s]} for s, _ in SECTIONS],
+            "prep": ["Have your current numbers ready: monthly revenue, leads, calls and closes",
+                     "Know your goal for the next 6 months", "Write down the one thing you most want to fix",
+                     "Join from somewhere quiet, on time, ready to decide if it's a fit"],
             "followups": [f"Saw you applied. Anything I can answer before we talk about {o}?",
                           "Quick one: here's a short video on the exact problem you mentioned.",
                           "Still keen? Grab a time that works and we'll map out your plan."]}
@@ -147,6 +155,7 @@ def _ai_copy(tenant, b: dict) -> tuple[dict | None, str | None]:
         "script": [{"section": s, "text": data["script"].get(s.lower()) or t["text"]} for (s, _), t in
                    zip(SECTIONS, tpl["script"], strict=False)],
         "followups": [x[:400] for x in data["followups"]][:3] or tpl["followups"],
+        "prep": [x[:200] for x in data.get("prep") or []][:4] or tpl["prep"],
     }, None
 
 
@@ -223,10 +232,10 @@ def launch(tenant, data: dict, user: dict | None = None) -> dict:
                         (_slug(title), title, "draft", client["id"] if client else None, owner, json.dumps(store),
                          str(data.get("video_url") or ""), str(data.get("booking_url") or ""), now, now)).lastrowid
     body = "\n".join([f"Approve once to put the VSL funnel \"{title}\" live.", "",
-                      "Approving this will publish three pages: the VSL page, the application page and the thank-you "
-                      "page with the booking link.", "", "Already written: the VSL script, the "
-                      "page copy and 3 follow-ups for people who apply but don't book.", "",
-                      script_text(title, copy)])
+                      "Approving this will publish four pages: the VSL page, the application page, the thank-you "
+                      "page with the booking link and the booking confirmation page.", "",
+                      "Already written: the VSL script, the page copy, the pre-call prep and 3 follow-ups for people "
+                      "who apply but don't book.", "", script_text(title, copy)])
     meta = {"funnel_id": fid, "client_id": client["id"] if client else None, "client_asset": True}
     if owner:
         meta["owner_user_id"] = owner
@@ -263,6 +272,7 @@ def summary(tenant, fid: int, user: dict | None = None) -> dict:
     base = f"/f/{tenant.id}/{r['slug']}"
     return {"funnel_id": r["id"], "title": r["title"], "status": r["status"], "live": r["status"] == "live",
             "page_url": base, "apply_url": f"{base}/apply", "thanks_url": f"{base}/thanks",
+            "confirmed_url": f"{base}/confirmed", "precall_url": r.get("precall_url") or "",
             "script_url": f"/t/{tenant.id}/api/funnels/{r['id']}/script.txt", "video_url": r["video_url"] or "",
             "booking_url": r["booking_url"] or "", "applications": apps, "words": d.get("words"),
             "words_note": d.get("words_note"),
@@ -272,7 +282,8 @@ def summary(tenant, fid: int, user: dict | None = None) -> dict:
 
 def update(tenant, fid: int, patch: dict, user: dict | None = None) -> dict:
     _row(tenant, fid, user)
-    sets = {k: str(v or "").strip() for k, v in patch.items() if k in ("video_url", "booking_url") and v is not None}
+    sets = {k: str(v or "").strip() for k, v in patch.items()
+            if k in ("video_url", "booking_url", "precall_url") and v is not None}
     for k, v in sets.items():
         if v and not re.match(r"^https://[^\s<>\"']{4,500}$", v):
             raise FunnelError(422, f"The {k.replace('_', ' ')} must be a full https:// link")

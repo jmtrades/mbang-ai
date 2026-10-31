@@ -38,6 +38,7 @@ class FunnelBody(BaseModel):
 class FunnelPatch(BaseModel):
     video_url: str | None = Field(None, max_length=500)
     booking_url: str | None = Field(None, max_length=500)
+    precall_url: str | None = Field(None, max_length=500)
 
 
 def _err(e: funnel_launch.FunnelError):
@@ -203,3 +204,21 @@ def thanks_page(tid: str, slug: str):
             f'your one biggest question.</p>{book}</div></section>'
             f'<footer>&copy; {e(funnel_launch.brand(t, f))}</footer>')
     return _html(t, f"Thanks: {f['title']}", body)
+
+
+@public_router.get("/f/{tid}/{slug}/confirmed", response_class=HTMLResponse)
+def confirmed_page(tid: str, slug: str):
+    """Where the booking tool sends people after they book: the pre-call video and how to prepare."""
+    t, f, copy = _live(tid, slug)
+    e = html.escape
+    prep = "".join(f"<li>{e(p)}</li>" for p in copy.get("prep") or [])
+    video = (f'<div class="frame" style="margin-top:28px">{_embed(f["precall_url"])}</div>'
+             if f.get("precall_url") else "")
+    body = (f'<section class="hero"><div class="vsl center"><span class="kicker">Call booked</span>'
+            f'<h1>You\'re booked. Here\'s how to get the most out of the call.</h1><p class="sub">Check your email for '
+            f'the calendar invite. {"Watch this short video before we talk." if video else ""}</p>{video}</div>'
+            f'</section><section class="learn" style="max-width:900px"><div class="panel" style="margin:0 auto">'
+            f'<h3>Before your call</h3><ul>{prep}</ul><p class="sub" style="color:#475569;margin-top:18px">On the '
+            f'call we look at your numbers, map out the plan to your goal, and tell you honestly whether we can '
+            f'help.</p></div></section><footer>&copy; {e(funnel_launch.brand(t, f))}</footer>')
+    return _html(t, f"Booked: {f['title']}", body)

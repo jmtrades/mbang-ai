@@ -45,6 +45,12 @@ def test_chat_builds_approve_publishes_apply_and_script(owner):
     thanks = owner.get(f"/f/owner/{slug}/thanks")
     assert thanks.status_code == 200 and "calendly.com/keys/strategy" in thanks.text
     assert owner.get(f"/t/owner/api/funnels/{f['funnel_id']}").json()["applications"] == 1
+    loom = "https://www.loom.com/share/abcdef1234567890"
+    owner.patch(f"/t/owner/api/funnels/{f['funnel_id']}", json={"precall_url": loom})
+    conf = owner.get(f"/f/owner/{slug}/confirmed")
+    assert conf.status_code == 200 and "Before your call" in conf.text
+    assert "loom.com/embed/abcdef1234567890" in conf.text
+    assert len(f["copy"]["prep"]) >= 3
     script = owner.get(f["script_url"])
     assert script.status_code == 200 and "VSL SCRIPT" in script.text and "CALL TO ACTION" in script.text
 
@@ -55,7 +61,8 @@ LONG = " ".join(["word"] * 40)
 def _ai_text(sections_text: str) -> str:
     return ("HEADLINE: Your first AI client, without learning to code\nSUBHEAD: A short video.\nCTA: Apply now\n"
             "BULLETS:\n- One\n- Two\n- Three\n" + sections_text +
-            "FOLLOWUPS:\n- First follow-up\n- Second\n- Third\n")
+            "FOLLOWUPS:\n- First follow-up\n- Second\n- Third\n"
+            "PREP:\n- Bring your numbers\n- Know your goal\n- Be on time\n")
 
 
 SECTIONS = ["Hook", "The problem", "The big mistake", "The mechanism", "Proof", "The offer",
@@ -80,6 +87,7 @@ def test_ai_writes_a_full_script_in_plain_labelled_text(tenant, monkeypatch):
     assert s["words"] == "ai" and s["title"] == "Your first AI client, without learning to code"
     assert s["copy"]["script"][0]["text"].startswith("Hook opening.") and s["copy"]["followups"][0] == "First follow-up"
     assert s["minutes"] >= 4 and "Method notes" in fm.calls[-1]["body"]["system"]
+    assert s["copy"]["prep"][0] == "Bring your numbers" and "PREP" not in s["copy"]["script"][-1]["text"]
     assert "people who want to start their own AI agency" in fm.calls[-1]["body"]["messages"][-1]["content"]
 
 
