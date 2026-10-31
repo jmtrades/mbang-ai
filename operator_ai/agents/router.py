@@ -15,7 +15,7 @@ import csv
 import math
 import re
 
-from .. import acquisition_plan, ads_import, diagnostic, guardrails, runtime, threads, webinar_launch
+from .. import acquisition_plan, ads_import, funnel_launch, diagnostic, guardrails, runtime, threads, webinar_launch
 from . import coach, reviewer
 
 REVIEW_ASK = re.compile(r"\b(review|feedback|critique|roast|rate (this|my)|thoughts on|fix (this|my)|improve (this|my)|"
@@ -154,6 +154,8 @@ def is_goal(text: str) -> bool:
 def classify(text: str, filename: str | None = None) -> str:
     if looks_like_ads_export(text):
         return "ads_csv"
+    if funnel_launch.wants_funnel(text):
+        return "funnel"
     if webinar_launch.wants_launch(text):
         return "launch"
     if is_goal(text):
@@ -272,6 +274,9 @@ def handle(tenant, text: str, user: dict, thread_id: int | None = None, filename
     elif intent == "acquisition":
         reply, meta = acquisition_plan.from_chat(text, prev_plan, tenant)
         payload = {"acquisition": meta["acquisition"]}
+    elif intent == "funnel":
+        reply, meta = funnel_launch.from_chat(tenant, text, user)
+        payload = {"funnel": meta.get("funnel")}
     elif intent == "launch":
         reply, meta = webinar_launch.from_chat(tenant, text, user)
         payload = {"launch": meta.get("launch")}

@@ -53,7 +53,7 @@ ROLE_DECIDE: dict[str, set[str]] = {
 # DMs and emails. Guardrails still run on every approval.
 OWN_DECIDE: set[str] = {"dm_opener", "followup", "prospect_dm", "prospect_email", "booking_dm", "proposal",
                         "reminder", "client_report", "channel_reply", "mission_draft",
-                        "webinar_launch"}
+                        "webinar_launch", "funnel_launch"}
 
 LOGIN_WINDOW = 15 * 60
 LOGIN_MAX_FAILS = 8

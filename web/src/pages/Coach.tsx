@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUp, BookOpen, Calculator, ClipboardCheck, Lightbulb, M
 import { ApiError, api, get, post } from "../api";
 import { Badge, Button, Card, Empty, ErrorBox, FlagList, Loading, PageHeader, Table, TextArea, cx, useApi, useApp } from "../components/ui";
 import { NeutralVoiceNote } from "./persona/StyledBadge";
+import { FunnelCard, type Funnel } from "./FunnelCard";
 
 type Msg = { role: string; content: string; meta?: any };
 
@@ -154,6 +155,7 @@ const clean = (t: string) => (t || "").replace(/\s?\[(?:S|X)\d+\]/g, "").replace
 function Extra({ meta }: { meta: any }) {
   const { go } = useApp();
   if (meta.intent === "launch" && meta.launch) return <LaunchCard launch={meta.launch} />;
+  if (meta.intent === "funnel" && meta.funnel) return <FunnelCard funnel={meta.funnel as Funnel} />;
   if (meta.intent === "acquisition" && meta.acquisition) return <AcquisitionCard plan={meta.acquisition as Plan} />;
   if (meta.intent === "goal" && meta.mission_draft) return <StartMission draft={meta.mission_draft} />;
   if (meta.intent === "metrics" && meta.bottleneck) {
